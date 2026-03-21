@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowJs": false,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@listen-graphic/schema": ["packages/schema/src"],
+      "@listen-graphic/domain": ["packages/domain/src"],
+      "@listen-graphic/providers": ["packages/providers/src"],
+      "@listen-graphic/graph-renderers": ["packages/graph-renderers/src"],
+      "@listen-graphic/storage": ["packages/storage/src"],
+      "@listen-graphic/ui": ["packages/ui/src"],
+      "@listen-graphic/shared-utils": ["packages/shared-utils/src"]
+    }
+  }
+}

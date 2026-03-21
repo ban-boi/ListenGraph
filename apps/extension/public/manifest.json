@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Listen Graphic",
+  "version": "0.0.1",
+  "permissions": [
+    "storage",
+    "sidePanel",
+    "tabCapture",
+    "activeTab",
+    "scripting",
+    "offscreen"
+  ],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "Listen Graphic"
+  },
+  "host_permissions": ["<all_urls>"]
+}
