@@ -1,12 +1,22 @@
-import type { SegmentGraph, StructurerProvider } from '@listen-graphic/schema';
+import type {
+  SegmentGraph,
+  StructurerProvider,
+  MergedGraph,
+  TranscriptChunk,
+} from '@listen-graphic/schema';
 
 export class MockStructurerProvider implements StructurerProvider {
   name = 'mock-structurer';
 
-  async extractSegmentGraph(): Promise<SegmentGraph> {
+  async extractSegmentGraph(input: {
+    sessionId: string;
+    transcriptWindow: TranscriptChunk[];
+    previousGraph?: MergedGraph;
+    language?: string;
+  }): Promise<SegmentGraph> {
     return {
       segmentId: 'seg_1',
-      sessionId: 'session_mock',
+      sessionId: input.sessionId,
       startMs: 0,
       endMs: 60000,
       topic: 'mock topic',

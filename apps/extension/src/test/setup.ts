@@ -13,6 +13,16 @@ import '@testing-library/jest-dom';
       addListener: vi.fn(),
       removeListener: vi.fn(),
     },
+    onInstalled: {
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+    },
+    onSuspend: {
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+    },
+    getURL: vi.fn((path: string) => `chrome-extension://test/${path}`),
+    getContexts: vi.fn(() => Promise.resolve([])),
   },
   tabs: {
     query: vi.fn(() =>
@@ -31,6 +41,7 @@ import '@testing-library/jest-dom';
   },
   sidePanel: {
     setOptions: vi.fn(() => Promise.resolve()),
+    open: vi.fn(() => Promise.resolve()),
   },
 };
 

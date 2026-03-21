@@ -137,7 +137,22 @@ async function startSession() {
 
   try {
     // 创建 offscreen document（如果还没有）
-    if (!offscreenCreated) {
+    // 注意：service worker 重启后 offscreenCreated 会丢失，需要先检查
+    let hasExistingOffscreen = false;
+    try {
+      const existingClients = await chrome.runtime.getContexts({
+        contextTypes: ['OFFSCREEN_DOCUMENT'],
+      });
+      hasExistingOffscreen = existingClients.length > 0;
+      console.log(
+        '[Service Worker] Existing offscreen docs:',
+        existingClients.length,
+      );
+    } catch (e) {
+      console.log('[Service Worker] getContexts not available:', e.message);
+    }
+
+    if (!offscreenCreated && !hasExistingOffscreen) {
       console.log('[Service Worker] Creating offscreen document');
       await chrome.offscreen.createDocument({
         url: 'offscreen/offscreen.html',
@@ -146,6 +161,11 @@ async function startSession() {
       });
       offscreenCreated = true;
       console.log('[Service Worker] Offscreen document created');
+    } else {
+      console.log(
+        '[Service Worker] Offscreen document already exists, reusing',
+      );
+      offscreenCreated = true;
     }
 
     // 请求 offscreen document 开始捕获

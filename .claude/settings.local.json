@@ -2,7 +2,17 @@
   "permissions": {
     "allow": [
       "Bash(ls:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(echo {\"active\":true,\"mode\":\"team\",\"team_name\":\"listen-graphic-v1\",\"current_phase\":\"team-exec\",\"agent_count\":5,\"task\":\"Complete ListenGraphic V1 core functionality\",\"stage_history\":\"team-plan:2026-03-21T15:50:00Z,team-exec:2026-03-21T15:52:00Z\"}:*)",
+      "Bash(head:*)",
+      "Bash(cd /c/Users/finni/Desktop/ListenGraph/apps/extension && pnpm typecheck 2>&1)",
+      "Bash(cd C:/Users/finni/Desktop/ListenGraph/apps/extension && pnpm run typecheck 2>&1)",
+      "Bash(tail:*)",
+      "Bash(cd /c/Users/finni/Desktop/ListenGraph/apps/extension && pnpm test src/service-worker/index.test.ts 2>&1)",
+      "Bash(echo Test timeout or completed:*)",
+      "Bash(cd C:/Users/finni/Desktop/ListenGraph/apps/extension && pnpm test src/service-worker/index.test.ts 2>&1)",
+      "Bash(cd C:/Users/finni/Desktop/ListenGraph/apps/extension && pnpm test -- --run src/service-worker/index.test.ts 2>&1)"
     ]
   }
 }
