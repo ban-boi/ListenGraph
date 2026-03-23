@@ -1198,10 +1198,29 @@ export default function App() {
                     updateProviderEntry(stageKey, 'type', event.target.value)
                   }
                 >
-                  <option value="mock">mock</option>
-                  <option value="openai">openai</option>
+                  <option value="mock">Mock (测试)</option>
+                  <option value="openai">OpenAI</option>
+                  {stageKey === 'asr' && <option value="tencent">腾讯云</option>}
                 </select>
               </label>
+              {providerConfig[stageKey].type === 'tencent' && stageKey === 'asr' && (
+                <div style={{ 
+                  padding: '8px', 
+                  backgroundColor: '#f0f9ff', 
+                  borderRadius: 4, 
+                  fontSize: 10,
+                  color: '#0369a1',
+                  lineHeight: 1.5
+                }}>
+                  <div style={{ fontWeight: 600, marginBottom: 4 }}>💡 腾讯云 ASR 配置</div>
+                  <div>• 免费额度：10小时/月</div>
+                  <div>• 价格：0.7-1.5元/小时</div>
+                  <div>• 推荐区域：华东地区(上海)</div>
+                  <div style={{ marginTop: 4, fontSize: 9, color: '#0c4a6e' }}>
+                    获取密钥：console.cloud.tencent.com/cam/capi
+                  </div>
+                </div>
+              )}
               <label style={{ display: 'grid', gap: 4 }}>
                 <span>{label} Mode</span>
                 <select
@@ -1235,17 +1254,63 @@ export default function App() {
                   }
                 />
               </label>
-              <label style={{ display: 'grid', gap: 4 }}>
-                <span>{label} API Key</span>
-                <input
-                  aria-label={`${label} API Key`}
-                  type="password"
-                  value={providerConfig[stageKey].apiKey ?? ''}
-                  onChange={(event) =>
-                    updateProviderEntry(stageKey, 'apiKey', event.target.value)
-                  }
-                />
-              </label>
+              {/* 腾讯云：独立的 Secret ID 和 Secret Key 输入框 */}
+              {providerConfig[stageKey].type === 'tencent' && stageKey === 'asr' ? (
+                <>
+                  <label style={{ display: 'grid', gap: 4 }}>
+                    <span>Secret ID</span>
+                    <input
+                      aria-label="Tencent Secret ID"
+                      type="password"
+                      value={providerConfig[stageKey].secretId ?? ''}
+                      onChange={(event) =>
+                        updateProviderEntry(stageKey, 'secretId', event.target.value)
+                      }
+                      placeholder="AKIDxxxxxxxxxxxx"
+                    />
+                  </label>
+                  <label style={{ display: 'grid', gap: 4 }}>
+                    <span>Secret Key</span>
+                    <input
+                      aria-label="Tencent Secret Key"
+                      type="password"
+                      value={providerConfig[stageKey].secretKey ?? ''}
+                      onChange={(event) =>
+                        updateProviderEntry(stageKey, 'secretKey', event.target.value)
+                      }
+                      placeholder="xxxxxxxxxxxxxxxx"
+                    />
+                  </label>
+                  <label style={{ display: 'grid', gap: 4 }}>
+                    <span>Region (区域)</span>
+                    <select
+                      aria-label="Tencent Region"
+                      value={providerConfig[stageKey].region ?? 'ap-shanghai'}
+                      onChange={(event) =>
+                        updateProviderEntry(stageKey, 'region', event.target.value)
+                      }
+                    >
+                      <option value="ap-shanghai">华东地区(上海) - 推荐</option>
+                      <option value="ap-guangzhou">华南地区(广州)</option>
+                      <option value="ap-beijing">华北地区(北京)</option>
+                      <option value="ap-chengdu">西南地区(成都)</option>
+                    </select>
+                  </label>
+                </>
+              ) : (
+                /* 其他 provider：通用的 API Key 输入框 */
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span>{label} API Key</span>
+                  <input
+                    aria-label={`${label} API Key`}
+                    type="password"
+                    value={providerConfig[stageKey].apiKey ?? ''}
+                    onChange={(event) =>
+                      updateProviderEntry(stageKey, 'apiKey', event.target.value)
+                    }
+                  />
+                </label>
+              )}
               <label style={{ display: 'grid', gap: 4 }}>
                 <span>{label} Session Token</span>
                 <input

@@ -147,6 +147,20 @@ export function requireProviderCredential(
     return;
   }
 
+  // 腾讯云：检查 secretId 和 secretKey
+  if (config.type === 'tencent') {
+    if (config.mode === 'direct') {
+      if (!config.secretId && !config.secretKey && !config.apiKey) {
+        throw new Error(`${label} requires secretId and secretKey (or apiKey) for direct mode`);
+      }
+    }
+    if (config.mode === 'relay' && !config.sessionToken) {
+      throw new Error(`${label} requires a session token for relay mode`);
+    }
+    return;
+  }
+
+  // 其他 provider：检查 apiKey
   if (config.mode === 'direct' && !config.apiKey) {
     throw new Error(`${label} requires an API key for direct mode`);
   }

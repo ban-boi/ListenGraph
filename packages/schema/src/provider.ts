@@ -2,7 +2,7 @@ import type { MergedGraph, SegmentGraph } from './graph';
 import type { TranscriptChunk } from './transcript';
 
 export type ProviderMode = 'direct' | 'relay';
-export type AsrProviderType = 'mock' | 'openai';
+export type AsrProviderType = 'mock' | 'openai' | 'tencent';
 export type StructurerProviderType = 'mock' | 'openai';
 export type ProviderStage = 'asr' | 'structurer';
 
@@ -22,6 +22,10 @@ export interface AsrProviderConfig {
   sessionToken?: string;
   model?: string;
   language?: string;
+  region?: string;
+  // 腾讯云特有字段
+  secretId?: string;
+  secretKey?: string;
   retry?: Partial<ProviderRetryPolicy>;
 }
 

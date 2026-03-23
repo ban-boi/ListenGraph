@@ -14,6 +14,7 @@ import {
 import { MockAsrProvider } from './mock/mock-asr';
 import { MockStructurerProvider } from './mock/mock-structurer';
 import { OpenAIAsrProvider } from './asr/openai-asr';
+import { TencentAsrProvider } from './asr/tencent-asr';
 import { OpenAIStructurerProvider } from './structurer/openai-structurer';
 
 export interface ProviderRegistry {
@@ -39,6 +40,11 @@ export function createProviderRegistry(): ProviderRegistry {
     getAsrProvider(config) {
       if (config.type === 'mock') {
         return new MockAsrProvider();
+      }
+
+      if (config.type === 'tencent') {
+        requireProviderCredential(config, 'Tencent ASR provider');
+        return new TencentAsrProvider(config);
       }
 
       requireProviderCredential(config, 'ASR provider');
