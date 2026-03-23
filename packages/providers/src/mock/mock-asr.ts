@@ -25,7 +25,6 @@ const MOCK_TRANSCRIPTS = [
 
 export class MockAsrProvider implements AsrProvider {
   name = 'mock-asr';
-  private transcriptIndex = 0;
 
   async transcribeChunk(input: {
     audio: Blob | ArrayBuffer;
@@ -37,10 +36,10 @@ export class MockAsrProvider implements AsrProvider {
     // 模拟 ASR 处理延迟
     await new Promise((resolve) => setTimeout(resolve, 200));
 
-    // 循环使用 mock transcript
-    const text =
-      MOCK_TRANSCRIPTS[this.transcriptIndex % MOCK_TRANSCRIPTS.length];
-    this.transcriptIndex++;
+    // 使用 chunk 时间位置推导输出，避免 worker 重载后序列回退
+    const chunkSpanMs = Math.max(1, input.endMs - input.startMs);
+    const transcriptIndex = Math.floor(input.startMs / chunkSpanMs);
+    const text = MOCK_TRANSCRIPTS[transcriptIndex % MOCK_TRANSCRIPTS.length];
 
     // 生成假的 token 数据
     const words = text.split('');
@@ -85,6 +84,6 @@ export class MockAsrProvider implements AsrProvider {
 
   // 重置索引（用于新会话）
   reset() {
-    this.transcriptIndex = 0;
+    // stateless mock provider: keep as no-op for compatibility
   }
 }

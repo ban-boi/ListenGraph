@@ -1,6 +1,11 @@
 /**
  * SessionOrchestrator - 会话编排器
  *
+ * 注意：
+ * 2026-03 的扩展主链路暂未启用本文件。
+ * 当前实际运行的是 `src/service-worker/index.ts -> content-script -> sidepanel`。
+ * 本文件保留为后续切回 `offscreen + orchestrator` 方案时的实验实现。
+ *
  * 负责协调整个音频转写和图谱生成流程：
  * 1. 音频数据接收（从 offscreen document）
  * 2. ASR 转写（使用 MockAsrProvider）

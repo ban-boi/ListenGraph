@@ -5,6 +5,18 @@ import '@testing-library/jest-dom';
 
 // Set up chrome global before any imports
 (globalThis as any).chrome = {
+  storage: {
+    session: {
+      get: vi.fn(() => Promise.resolve({})),
+      set: vi.fn(() => Promise.resolve()),
+      remove: vi.fn(() => Promise.resolve()),
+    },
+    local: {
+      get: vi.fn(() => Promise.resolve({})),
+      set: vi.fn(() => Promise.resolve()),
+      remove: vi.fn(() => Promise.resolve()),
+    },
+  },
   runtime: {
     id: 'test-extension-id',
     lastError: null,
@@ -25,9 +37,24 @@ import '@testing-library/jest-dom';
     getContexts: vi.fn(() => Promise.resolve([])),
   },
   tabs: {
-    query: vi.fn(() =>
-      Promise.resolve([{ id: 1, active: true, currentWindow: true }]),
+    query: vi.fn(
+      (
+        _queryInfo: chrome.tabs.QueryInfo,
+        callback?: (tabs: chrome.tabs.Tab[]) => void,
+      ) => {
+        const tabs = [{ id: 1, active: true, currentWindow: true }];
+        if (callback) {
+          callback(tabs as unknown as chrome.tabs.Tab[]);
+          return;
+        }
+        return Promise.resolve(tabs);
+      },
     ),
+    sendMessage: vi.fn(() => Promise.resolve({ success: true })),
+    onRemoved: {
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+    },
   },
   action: {
     onClicked: {

@@ -7,3 +7,17 @@ coverage
 *.log
 .env
 .env.*
+
+# Playwright
+test-results/
+
+# Turbo
+.turbo
+
+# OMC (oh-my-claude-code)
+/.omc/
+.omc/
+*/.omc/
+
+# 本地配置文件
+*.local.json

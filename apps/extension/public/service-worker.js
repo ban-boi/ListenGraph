@@ -1,4 +1,6 @@
-// Service Worker - 音频捕获 + ASR + Structurer 协调器
+// Deprecated: 当前构建不再从本文件生成扩展的 service worker。
+// 运行时入口已切换到 `src/service-worker/index.ts` 并输出为 `dist/service-worker.js`。
+// 保留此文件仅用于对照旧实现，避免与当前主链路混淆。
 
 let currentSessionId = null;
 let offscreenCreated = false;
@@ -132,51 +134,45 @@ async function startSession() {
     return { success: true, sessionId: currentSessionId, alreadyRunning: true };
   }
 
-  // 注意：chrome.tabCapture 在 MV3 service worker 中不可用
-  // 我们通过 offscreen document 来调用 tabCapture API
+  // 获取当前标签页
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) {
+    return { success: false, error: 'No active tab' };
+  }
+
+  console.log('[Service Worker] Active tab ID:', tab.id);
 
   try {
-    // 创建 offscreen document（如果还没有）
-    // 注意：service worker 重启后 offscreenCreated 会丢失，需要先检查
-    let hasExistingOffscreen = false;
-    try {
-      const existingClients = await chrome.runtime.getContexts({
-        contextTypes: ['OFFSCREEN_DOCUMENT'],
-      });
-      hasExistingOffscreen = existingClients.length > 0;
-      console.log(
-        '[Service Worker] Existing offscreen docs:',
-        existingClients.length,
-      );
-    } catch (e) {
-      console.log('[Service Worker] getContexts not available:', e.message);
-    }
+    // ========== 核心：先注入 Content Script，再发送消息 ==========
+    console.log('[Service Worker] Injecting content script...');
 
-    if (!offscreenCreated && !hasExistingOffscreen) {
-      console.log('[Service Worker] Creating offscreen document');
-      await chrome.offscreen.createDocument({
-        url: 'offscreen/offscreen.html',
-        reasons: ['USER_MEDIA'],
-        justification: 'Audio capture for Listen Graphic',
-      });
-      offscreenCreated = true;
-      console.log('[Service Worker] Offscreen document created');
-    } else {
-      console.log(
-        '[Service Worker] Offscreen document already exists, reusing',
-      );
-      offscreenCreated = true;
-    }
+    // 动态注入 content script
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ['content-script/content-script.js'],
+    });
 
-    // 请求 offscreen document 开始捕获
-    // 注意：tabCapture 现在由 offscreen 自己调用
-    console.log('[Service Worker] Requesting offscreen to start capture');
-    await chrome.runtime.sendMessage({
+    console.log(
+      '[Service Worker] Content script injected, sending START_CAPTURE...',
+    );
+
+    // 等待一小段时间确保脚本加载完成
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // 向 content script 发送消息
+    const response = await chrome.tabs.sendMessage(tab.id, {
       type: 'START_CAPTURE',
-      target: 'offscreen',
+      target: 'content-script',
       payload: {},
     });
-    console.log('[Service Worker] START_CAPTURE message sent');
+
+    console.log('[Service Worker] Content script response:', response);
+
+    if (!response?.success) {
+      throw new Error(
+        response?.error || 'Content script failed to start capture',
+      );
+    }
 
     // 重置状态
     currentSessionId = 'session_' + Date.now();
@@ -253,48 +249,42 @@ async function handleMessage(message, _sender) {
 async function stopSession() {
   console.log('[Service Worker] Stopping session');
 
-  try {
-    // 1. 停止 offscreen 音频捕获
-    console.log('[Service Worker] Sending STOP_CAPTURE to offscreen');
-    await chrome.runtime.sendMessage({
-      type: 'STOP_CAPTURE',
-      target: 'offscreen',
-      payload: {},
-    });
+  // 获取当前标签页
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-    // 2. 关闭 offscreen document
-    if (offscreenCreated) {
-      console.log('[Service Worker] Closing offscreen document');
-      await chrome.offscreen.closeDocument();
+  try {
+    // 通知 content script 停止捕获
+    if (tab?.id) {
+      console.log('[Service Worker] Sending STOP_CAPTURE to content script');
+      await chrome.tabs.sendMessage(tab.id, {
+        type: 'STOP_CAPTURE',
+        target: 'content-script',
+        payload: {},
+      });
     }
   } catch (error) {
-    // 即使停止过程中出错，也要继续清理状态
-    console.error(
-      '[Service Worker] Error during stop cleanup (continuing with state reset):',
-      error,
-    );
+    console.error('[Service Worker] Error stopping capture:', error.message);
   } finally {
-    // 确保状态总是被重置，无论上面的操作成功还是失败
+    // 确保状态总是被重置
     console.log('[Service Worker] Resetting session state');
     currentSessionId = null;
-    offscreenCreated = false;
     chunkIndex = 0;
     mergedGraph = null;
 
     try {
-      // 4. 通知 sidepanel
+      // 通知 sidepanel
       await notifySidepanel('SESSION_STATE_CHANGED', {
         sessionId: currentSessionId,
         state: 'stopped',
       });
     } catch (notifyError) {
-      console.error(
-        '[Service Worker] Failed to notify sidepanel about stop:',
-        notifyError,
+      console.log(
+        '[Service Worker] Could not notify sidepanel:',
+        notifyError.message,
       );
     }
 
-    console.log('[Service Worker] Session stopped and state reset');
+    console.log('[Service Worker] Session stopped');
   }
 
   return { success: true };

@@ -11,7 +11,8 @@
     "offscreen"
   ],
   "background": {
-    "service_worker": "service-worker.js"
+    "service_worker": "service-worker.js",
+    "type": "module"
   },
   "side_panel": {
     "default_path": "sidepanel.html"
@@ -19,5 +20,12 @@
   "action": {
     "default_title": "Listen Graphic"
   },
-  "host_permissions": ["<all_urls>"]
+  "host_permissions": ["<all_urls>"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script/content-script.js"],
+      "run_at": "document_start"
+    }
+  ]
 }

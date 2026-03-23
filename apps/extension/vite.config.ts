@@ -23,9 +23,6 @@ export default defineConfig({
         // 复制 manifest.json
         copyFileSync('public/manifest.json', 'dist/manifest.json');
 
-        // 复制 service-worker.js
-        copyFileSync('public/service-worker.js', 'dist/service-worker.js');
-
         // 移动 sidepanel HTML：dist/src/sidepanel.html -> dist/sidepanel.html
         if (existsSync('dist/src/sidepanel.html')) {
           renameSync('dist/src/sidepanel.html', 'dist/sidepanel.html');
@@ -36,6 +33,11 @@ export default defineConfig({
           if (!existsSync('dist/offscreen'))
             mkdirSync('dist/offscreen', { recursive: true });
           cpSync('dist/src/offscreen', 'dist/offscreen', { recursive: true });
+        }
+
+        // 移动 content-script：dist/src/content-script/* -> dist/src/content-script/
+        if (existsSync('dist/src/content-script')) {
+          // content-script 已经在正确位置了
         }
 
         // 清理 dist/src
@@ -52,9 +54,29 @@ export default defineConfig({
       input: {
         sidepanel: resolve(__dirname, 'src/sidepanel.html'),
         offscreen: resolve(__dirname, 'src/offscreen/offscreen.html'),
+        'service-worker': resolve(__dirname, 'src/service-worker/index.ts'),
+        'content-script': resolve(
+          __dirname,
+          'src/content-script/content-script.ts',
+        ),
+        'audio-processor.worklet': resolve(
+          __dirname,
+          'src/offscreen/audio-processor.worklet.ts',
+        ),
       },
       output: {
-        entryFileNames: '[name]/[name].js',
+        entryFileNames: (chunkInfo) => {
+          switch (chunkInfo.name) {
+            case 'service-worker':
+              return 'service-worker.js';
+            case 'content-script':
+              return 'content-script/content-script.js';
+            case 'audio-processor.worklet':
+              return 'offscreen/audio-processor.worklet.js';
+            default:
+              return '[name]/[name].js';
+          }
+        },
         chunkFileNames: 'chunks/[name].[hash].js',
         assetFileNames: '[name].[ext]',
       },

@@ -18,8 +18,9 @@ import type {
   GraphEdge,
   EdgeType,
   NodeType,
+  ProviderConfig,
 } from '@listen-graphic/schema';
-import { scoreViews } from '@listen-graphic/domain';
+import { pickDefaultView, scoreViews } from '@listen-graphic/domain';
 import {
   toCausalRendererGraph,
   toTimelineRendererGraph,
@@ -27,6 +28,19 @@ import {
   toHierarchyRendererGraph,
   toFlowRendererGraph,
 } from '@listen-graphic/graph-renderers';
+import {
+  createDefaultProviderConfig,
+  normalizeProviderConfig,
+  redactProviderConfig,
+} from '@listen-graphic/providers';
+import type {
+  AppMessage,
+  DebugSessionData,
+  ExportFormat,
+  ReplaySessionData,
+  RuntimeSnapshot,
+  SessionState,
+} from '../shared/messages';
 
 // ============ 初始空 Graph ============
 
@@ -98,6 +112,19 @@ function getTypeLabel(type: string): string {
     conclusion: '结论',
   };
   return labels[type] || type;
+}
+
+function downloadTextFile(filename: string, content: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  try {
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 // ============ 自定义节点组件 ============
@@ -221,6 +248,7 @@ const VIEW_TYPES: ViewType[] = [
   'causal',
   'timeline',
   'comparison',
+  'flow',
   'hierarchy',
 ];
 const VIEW_LABELS: Record<ViewType, string> = {
@@ -233,30 +261,36 @@ const VIEW_LABELS: Record<ViewType, string> = {
 
 // ============ 主组件 ============
 
-type SessionState =
-  | 'idle'
-  | 'capturing'
-  | 'transcribing'
-  | 'structuring'
-  | 'paused'
-  | 'stopped'
-  | 'error';
-
 // 是否为开发模式（模拟数据，不依赖 service worker）
 const isDevMode = false;
 
 export default function App() {
   const [sessionState, setSessionState] = useState<SessionState>('idle');
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [stopPending, setStopPending] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [debugOpen, setDebugOpen] = useState(false);
+  const [debugData, setDebugData] = useState<DebugSessionData | null>(null);
+  const [replayOpen, setReplayOpen] = useState(false);
+  const [replayPlaying, setReplayPlaying] = useState(false);
+  const [replayData, setReplayData] = useState<ReplaySessionData | null>(null);
   const [currentView, setCurrentView] = useState<ViewType>('causal');
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [graph, setGraph] = useState<MergedGraph>(createEmptyGraph);
+  const [providerConfig, setProviderConfig] = useState<ProviderConfig>(() =>
+    createDefaultProviderConfig(),
+  );
+  const [providerSummary, setProviderSummary] = useState(() =>
+    redactProviderConfig(createDefaultProviderConfig()),
+  );
 
   // 开发模式下的 ref
   const transcriptIndexRef = useRef(0);
   const sessionStartTimeRef = useRef(0);
+  const userPinnedViewRef = useRef(false);
 
   const addLog = useCallback((msg: string) => {
     const time = new Date().toLocaleTimeString();
@@ -345,42 +379,125 @@ export default function App() {
   useEffect(() => {
     if (isDevMode) return;
 
-    const handleMessage = (message: {
-      type: string;
-      target?: string;
-      payload?: unknown;
-    }) => {
+    const handleMessage = (message: AppMessage) => {
       if (message.target && message.target !== 'sidepanel') return;
       switch (message.type) {
         case 'SESSION_STATE_CHANGED': {
-          const p = message.payload as {
-            sessionId: string;
-            state: SessionState;
-          };
-          setSessionId(p.sessionId);
-          setSessionState(p.state);
+          const p = message.payload;
+          const nextState = p.state === 'stopped' ? 'idle' : p.state;
+          setSessionId(p.state === 'stopped' ? p.sessionId : nextState === 'idle' ? null : p.sessionId);
+          setSessionState(nextState);
+          if (p.state === 'stopped' || p.state === 'error') {
+            setStopPending(false);
+          }
+          if (nextState === 'idle' && p.state !== 'stopped') {
+            setGraph(createEmptyGraph());
+            setCurrentTimeMs(0);
+            setSelectedNodeId(null);
+            setCurrentView('causal');
+            userPinnedViewRef.current = false;
+          }
           addLog(`状态: ${p.state}`);
           break;
         }
         case 'TRANSCRIPT_READY': {
-          const p = message.payload as { transcript: { text: string } };
-          addLog(`转写: ${p.transcript.text}`);
+          addLog(`转写: ${message.payload.transcript.text}`);
           break;
         }
         case 'MERGED_GRAPH_UPDATED': {
-          const p = message.payload as { graph: MergedGraph };
-          setGraph(p.graph);
-          addLog(`图更新: ${p.graph.nodes.length} 个节点`);
+          const nextGraph = message.payload.graph;
+          setGraph(nextGraph);
+          setCurrentView((prev) =>
+            userPinnedViewRef.current
+              ? prev
+              : nextGraph.viewHints?.defaultView ?? pickDefaultView(nextGraph),
+          );
+          addLog(`图更新: ${nextGraph.nodes.length} 个节点`);
           break;
         }
-        case 'AUDIO_CHUNK_READY':
-          addLog('收到音频 chunk');
+        case 'PLAYBACK_TIME_UPDATED':
+          setCurrentTimeMs(message.payload.currentTimeMs);
+          break;
+        case 'ERROR':
+          addLog(`错误(${message.payload.code}): ${message.payload.message}`);
           break;
       }
     };
     chrome.runtime.onMessage.addListener(handleMessage);
     return () => chrome.runtime.onMessage.removeListener(handleMessage);
   }, [addLog]);
+
+  useEffect(() => {
+    if (isDevMode) return;
+
+    let disposed = false;
+
+    const hydrateSnapshot = async () => {
+      const response = (await chrome.runtime.sendMessage({
+        type: 'GET_RUNTIME_SNAPSHOT',
+        target: 'service-worker',
+        payload: {},
+      } as AppMessage)) as
+        | { success: true; snapshot: RuntimeSnapshot }
+        | { success: false; error?: string };
+
+      if (disposed || !response?.success) {
+        return;
+      }
+
+      const snapshot = response.snapshot;
+      setSessionId(snapshot.sessionId);
+      setSessionState(snapshot.state === 'stopped' ? 'idle' : snapshot.state);
+      setCurrentTimeMs(snapshot.currentTimeMs);
+      setProviderSummary(
+        snapshot.providerSummary ?? redactProviderConfig(createDefaultProviderConfig()),
+      );
+
+      if (snapshot.graph) {
+        setGraph(snapshot.graph);
+        setCurrentView(
+          snapshot.currentView ??
+            snapshot.graph.viewHints?.defaultView ??
+            pickDefaultView(snapshot.graph),
+        );
+        userPinnedViewRef.current = snapshot.currentViewPinned ?? false;
+      } else {
+        setGraph(createEmptyGraph());
+        setCurrentView('causal');
+        userPinnedViewRef.current = false;
+      }
+    };
+
+    void hydrateSnapshot();
+
+    return () => {
+      disposed = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    setReplayOpen(false);
+    setReplayPlaying(false);
+    setReplayData(null);
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (!replayPlaying || !replayData) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setCurrentTimeMs((prev) => {
+        const next = Math.min(prev + 1000, replayData.durationMs);
+        if (next >= replayData.durationMs) {
+          setReplayPlaying(false);
+        }
+        return next;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [replayData, replayPlaying]);
 
   // 获取当前 tab（仅生产模式）
   useEffect(() => {
@@ -391,6 +508,118 @@ export default function App() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]?.id) addLog(`标签页 ID: ${tabs[0].id}`);
     });
+  }, [addLog]);
+
+  const clearHistoricalContext = useCallback(() => {
+    setSessionId(null);
+    setGraph(createEmptyGraph());
+    setCurrentTimeMs(0);
+    setSelectedNodeId(null);
+    setCurrentView('causal');
+    setStopPending(false);
+    setDebugOpen(false);
+    setDebugData(null);
+    setReplayOpen(false);
+    setReplayPlaying(false);
+    setReplayData(null);
+    userPinnedViewRef.current = false;
+  }, []);
+
+  const updateProviderEntry = useCallback(
+    (
+      stage: keyof ProviderConfig,
+      field: keyof ProviderConfig['asr'],
+      value: string,
+    ) => {
+      setProviderConfig((prev) => ({
+        ...prev,
+        [stage]: {
+          ...prev[stage],
+          [field]: value === '' ? undefined : value,
+        },
+      }));
+    },
+    [],
+  );
+
+  const handleToggleSettings = useCallback(async () => {
+    const nextOpen = !settingsOpen;
+    setSettingsOpen(nextOpen);
+
+    if (!nextOpen || isDevMode) {
+      return;
+    }
+
+    try {
+      const response = (await chrome.runtime.sendMessage({
+        type: 'GET_PROVIDER_SETTINGS',
+        target: 'service-worker',
+        payload: {},
+      } as AppMessage)) as
+        | { success: true; config: ProviderConfig }
+        | { success: false; error?: string };
+
+      if (!response?.success) {
+        addLog(`加载设置失败: ${response?.error || '未知错误'}`);
+        return;
+      }
+
+      setProviderConfig(normalizeProviderConfig(response.config));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '读取 provider 设置失败';
+      addLog(`加载设置失败: ${message}`);
+    }
+  }, [addLog, settingsOpen]);
+
+  const handleSaveSettings = useCallback(async () => {
+    setSettingsSaving(true);
+    try {
+      const normalized = normalizeProviderConfig(providerConfig);
+      const response = await chrome.runtime.sendMessage({
+        type: 'SAVE_PROVIDER_SETTINGS',
+        target: 'service-worker',
+        payload: {
+          config: normalized,
+        },
+      } as AppMessage);
+
+      if (!response?.success) {
+        addLog(`保存设置失败: ${response?.error || '未知错误'}`);
+        return;
+      }
+
+      setProviderConfig(normalized);
+      setProviderSummary(redactProviderConfig(normalized));
+      addLog('provider 设置已保存');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '保存 provider 设置失败';
+      addLog(`保存设置失败: ${message}`);
+    } finally {
+      setSettingsSaving(false);
+    }
+  }, [addLog, providerConfig]);
+
+  const handleClearSecrets = useCallback(async () => {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'CLEAR_PROVIDER_SECRETS',
+        target: 'service-worker',
+        payload: {},
+      } as AppMessage);
+
+      if (!response?.success) {
+        addLog(`清除密钥失败: ${response?.error || '未知错误'}`);
+        return;
+      }
+
+      const fallbackConfig = createDefaultProviderConfig();
+      setProviderConfig(fallbackConfig);
+      setProviderSummary(redactProviderConfig(fallbackConfig));
+      addLog('provider 密钥已清除');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '清除 provider 密钥失败';
+      addLog(`清除密钥失败: ${message}`);
+    }
   }, [addLog]);
 
   // ============ 会话控制 ============
@@ -404,6 +633,7 @@ export default function App() {
 
       setSessionId(newSessionId);
       setSessionState('capturing');
+      userPinnedViewRef.current = false;
       setGraph({
         sessionId: newSessionId,
         revision: 0,
@@ -424,21 +654,25 @@ export default function App() {
     // 生产模式：通过 Chrome API
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       if (!tabs[0]?.id) return;
+      clearHistoricalContext();
       setSessionState('capturing');
       const res = await chrome.runtime.sendMessage({
         type: 'SESSION_START',
         target: 'service-worker',
         payload: { tabId: tabs[0].id, sourceType: 'tab' },
-      });
+      } as AppMessage);
       if (res?.success) {
         setSessionId(res.sessionId);
+        setStopPending(false);
+        userPinnedViewRef.current = false;
         addLog(`已启动: ${res.sessionId}`);
       } else {
+        setStopPending(false);
         setSessionState('error');
         addLog(`失败: ${res?.error}`);
       }
     });
-  }, [addLog]);
+  }, [addLog, clearHistoricalContext]);
 
   const handleStop = useCallback(() => {
     if (isDevMode) {
@@ -452,21 +686,200 @@ export default function App() {
 
     // 生产模式：通过 Chrome API
     if (!sessionId) return;
-    chrome.runtime.sendMessage({
+    setStopPending(true);
+    void chrome.runtime.sendMessage({
       type: 'SESSION_STOP',
       target: 'service-worker',
       payload: { sessionId },
-    });
-    setSessionState('idle');
-    setSessionId(null);
-    addLog('已停止');
+    } as AppMessage);
+    addLog('停止中...');
   }, [sessionId, addLog]);
 
+  const isRunning = ['capturing', 'transcribing', 'structuring'].includes(
+    sessionState,
+  );
+  const canExport =
+    Boolean(sessionId) &&
+    graph.nodes.length > 0 &&
+    !stopPending &&
+    !['transcribing', 'structuring', 'error'].includes(sessionState);
+  const canReplay =
+    Boolean(sessionId) && graph.nodes.length > 0 && !stopPending && !isRunning;
+
+  const handleExport = useCallback(
+    async (format: ExportFormat) => {
+      if (!sessionId || !canExport) return;
+
+      try {
+        const response = (await chrome.runtime.sendMessage({
+          type: 'EXPORT_SESSION',
+          target: 'service-worker',
+          payload: { sessionId, format },
+        } as AppMessage)) as
+          | {
+              success: true;
+              exportData: { filename: string; mimeType: string; content: string };
+            }
+          | { success: false; error?: string };
+
+        if (!response?.success) {
+          addLog(`导出失败: ${response?.error || '未知错误'}`);
+          return;
+        }
+
+        downloadTextFile(
+          response.exportData.filename,
+          response.exportData.content,
+          response.exportData.mimeType,
+        );
+        addLog(`已导出: ${response.exportData.filename}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '未知错误';
+        addLog(`导出失败: ${message}`);
+      }
+    },
+    [addLog, canExport, sessionId],
+  );
+
+  const handleToggleReplay = useCallback(async () => {
+    if (replayOpen) {
+      setReplayOpen(false);
+      setReplayPlaying(false);
+      return;
+    }
+
+    setReplayOpen(true);
+    setReplayPlaying(false);
+
+    if (!sessionId) {
+      setReplayData(null);
+      return;
+    }
+
+    try {
+      const response = (await chrome.runtime.sendMessage({
+        type: 'GET_REPLAY_SESSION',
+        target: 'service-worker',
+        payload: { sessionId },
+      } as AppMessage)) as
+        | { success: true; replayData: ReplaySessionData }
+        | { success: false; error?: string };
+
+      if (!response?.success) {
+        addLog(`回放数据加载失败: ${response?.error || '未知错误'}`);
+        return;
+      }
+
+      setReplayData(response.replayData);
+      setCurrentTimeMs(0);
+      setSelectedNodeId(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '未知错误';
+      addLog(`回放数据加载失败: ${message}`);
+    }
+  }, [addLog, replayOpen, sessionId]);
+
+  const handleReplayTogglePlay = useCallback(() => {
+    if (!replayData) return;
+    if (currentTimeMs >= replayData.durationMs) {
+      setCurrentTimeMs(0);
+      setSelectedNodeId(null);
+    }
+    setReplayPlaying((prev) => !prev);
+  }, [currentTimeMs, replayData]);
+
+  const handleReplayScrub = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const nextTimeMs = Number(event.target.value);
+      setReplayPlaying(false);
+      setCurrentTimeMs(nextTimeMs);
+      if (graph.nodes.length === 0) {
+        setSelectedNodeId(null);
+        return;
+      }
+      const nearest = graph.nodes.reduce((a, b) =>
+        Math.abs(a.timestampMs - nextTimeMs) < Math.abs(b.timestampMs - nextTimeMs) ? a : b,
+      );
+      setSelectedNodeId(nearest.id);
+    },
+    [graph.nodes],
+  );
+
+  const activeReplayTranscript = useMemo(() => {
+    if (!replayData) {
+      return null;
+    }
+
+    return (
+      replayData.transcripts.find(
+        (chunk) => currentTimeMs >= chunk.startMs && currentTimeMs < chunk.endMs,
+      ) ?? replayData.transcripts[replayData.transcripts.length - 1] ?? null
+    );
+  }, [currentTimeMs, replayData]);
+
+  const handleToggleDebug = useCallback(async () => {
+    if (debugOpen) {
+      setDebugOpen(false);
+      return;
+    }
+
+    setDebugOpen(true);
+    if (!sessionId) {
+      setDebugData(null);
+      return;
+    }
+
+    try {
+      const response = (await chrome.runtime.sendMessage({
+        type: 'GET_DEBUG_SESSION',
+        target: 'service-worker',
+        payload: { sessionId },
+      } as AppMessage)) as
+        | { success: true; debugData: DebugSessionData }
+        | { success: false; error?: string };
+
+      if (!response?.success) {
+        addLog(`调试数据加载失败: ${response?.error || '未知错误'}`);
+        return;
+      }
+
+      setDebugData(response.debugData);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '未知错误';
+      addLog(`调试数据加载失败: ${message}`);
+    }
+  }, [addLog, debugOpen, sessionId]);
+
+  const sendSeekMessage = useCallback(
+    async (nodeId: string, timestampMs: number) => {
+      if (!sessionId || !isRunning) return;
+
+      const result = await chrome.runtime.sendMessage({
+        type: 'NODE_CLICKED',
+        target: 'service-worker',
+        payload: {
+          sessionId,
+          nodeId,
+          timestampMs,
+        },
+      } as AppMessage);
+
+      if (!result?.success) {
+        addLog(`跳转失败: ${result?.error || '未知错误'}`);
+      }
+    },
+    [addLog, isRunning, sessionId],
+  );
+
   // 处理节点点击
-  const handleNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
-    setCurrentTimeMs(node.data.timestampMs as number);
-    setSelectedNodeId(node.id);
-  }, []);
+  const handleNodeClick = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      setCurrentTimeMs(node.data.timestampMs as number);
+      setSelectedNodeId(node.id);
+      void sendSeekMessage(node.id, node.data.timestampMs as number);
+    },
+    [sendSeekMessage],
+  );
 
   const handleTimeClick = useCallback(
     (ms: number) => {
@@ -476,8 +889,9 @@ export default function App() {
         Math.abs(a.timestampMs - ms) < Math.abs(b.timestampMs - ms) ? a : b,
       );
       setSelectedNodeId(nearest.id);
+      void sendSeekMessage(nearest.id, ms);
     },
-    [graph],
+    [graph, sendSeekMessage],
   );
 
   // 获取 renderer
@@ -571,10 +985,6 @@ export default function App() {
     getRenderer,
   ]);
 
-  const isRunning = ['capturing', 'transcribing', 'structuring'].includes(
-    sessionState,
-  );
-
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* 顶部栏 */}
@@ -600,6 +1010,94 @@ export default function App() {
         <span style={{ fontSize: 11, color: '#6b7280' }}>
           {isRunning ? '运行中' : '空闲'}
         </span>
+        <button
+          onClick={() => void handleExport('json')}
+          disabled={!canExport}
+          style={{
+            padding: '4px 8px',
+            borderRadius: 4,
+            border: '1px solid #d1d5db',
+            backgroundColor: canExport ? 'white' : '#f3f4f6',
+            color: '#374151',
+            fontSize: 11,
+            cursor: canExport ? 'pointer' : 'not-allowed',
+          }}
+        >
+          导出 JSON
+        </button>
+        <button
+          onClick={() => void handleExport('markdown')}
+          disabled={!canExport}
+          style={{
+            padding: '4px 8px',
+            borderRadius: 4,
+            border: '1px solid #d1d5db',
+            backgroundColor: canExport ? 'white' : '#f3f4f6',
+            color: '#374151',
+            fontSize: 11,
+            cursor: canExport ? 'pointer' : 'not-allowed',
+          }}
+        >
+          导出 Markdown
+        </button>
+        <button
+          onClick={() => void handleExport('mermaid')}
+          disabled={!canExport}
+          style={{
+            padding: '4px 8px',
+            borderRadius: 4,
+            border: '1px solid #d1d5db',
+            backgroundColor: canExport ? 'white' : '#f3f4f6',
+            color: '#374151',
+            fontSize: 11,
+            cursor: canExport ? 'pointer' : 'not-allowed',
+          }}
+        >
+          导出 Mermaid
+        </button>
+        <button
+          onClick={() => void handleToggleSettings()}
+          style={{
+            padding: '4px 8px',
+            borderRadius: 4,
+            border: '1px solid #d1d5db',
+            backgroundColor: settingsOpen ? '#eff6ff' : 'white',
+            color: settingsOpen ? '#1d4ed8' : '#374151',
+            fontSize: 11,
+            cursor: 'pointer',
+          }}
+        >
+          设置
+        </button>
+        <button
+          onClick={() => void handleToggleDebug()}
+          style={{
+            padding: '4px 8px',
+            borderRadius: 4,
+            border: '1px solid #d1d5db',
+            backgroundColor: debugOpen ? '#eff6ff' : 'white',
+            color: debugOpen ? '#1d4ed8' : '#374151',
+            fontSize: 11,
+            cursor: 'pointer',
+          }}
+        >
+          调试
+        </button>
+        <button
+          onClick={() => void handleToggleReplay()}
+          disabled={!canReplay}
+          style={{
+            padding: '4px 8px',
+            borderRadius: 4,
+            border: '1px solid #d1d5db',
+            backgroundColor: canReplay ? (replayOpen ? '#eff6ff' : 'white') : '#f3f4f6',
+            color: replayOpen ? '#1d4ed8' : '#374151',
+            fontSize: 11,
+            cursor: canReplay ? 'pointer' : 'not-allowed',
+          }}
+        >
+          回放
+        </button>
         <button
           onClick={isRunning ? handleStop : handleStart}
           style={{
@@ -631,7 +1129,17 @@ export default function App() {
         {VIEW_TYPES.map((v) => (
           <button
             key={v}
-            onClick={() => setCurrentView(v)}
+            onClick={() => {
+              userPinnedViewRef.current = true;
+              setCurrentView(v);
+              if (sessionId && isRunning) {
+                void chrome.runtime.sendMessage({
+                  type: 'VIEW_SELECTED',
+                  target: 'service-worker',
+                  payload: { sessionId, view: v },
+                } as AppMessage);
+              }
+            }}
             style={{
               padding: '3px 8px',
               borderRadius: 4,
@@ -650,6 +1158,140 @@ export default function App() {
           </button>
         ))}
       </div>
+      {settingsOpen && (
+        <div
+          data-testid="settings-panel"
+          style={{
+            borderBottom: '1px solid #e5e7eb',
+            backgroundColor: '#f8fafc',
+            padding: '10px 12px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: 12,
+            fontSize: 11,
+          }}
+        >
+          {(
+            [
+              ['asr', 'ASR'],
+              ['structurer', 'Structurer'],
+            ] as const
+          ).map(([stageKey, label]) => (
+            <div
+              key={stageKey}
+              style={{
+                border: '1px solid #dbe4ee',
+                borderRadius: 6,
+                padding: 10,
+                backgroundColor: 'white',
+                display: 'grid',
+                gap: 6,
+              }}
+            >
+              <div style={{ fontWeight: 600 }}>{label}</div>
+              <label style={{ display: 'grid', gap: 4 }}>
+                <span>{label} Provider Type</span>
+                <select
+                  aria-label={`${label} Provider Type`}
+                  value={providerConfig[stageKey].type}
+                  onChange={(event) =>
+                    updateProviderEntry(stageKey, 'type', event.target.value)
+                  }
+                >
+                  <option value="mock">mock</option>
+                  <option value="openai">openai</option>
+                </select>
+              </label>
+              <label style={{ display: 'grid', gap: 4 }}>
+                <span>{label} Mode</span>
+                <select
+                  aria-label={`${label} Mode`}
+                  value={providerConfig[stageKey].mode}
+                  onChange={(event) =>
+                    updateProviderEntry(stageKey, 'mode', event.target.value)
+                  }
+                >
+                  <option value="direct">direct</option>
+                  <option value="relay">relay</option>
+                </select>
+              </label>
+              <label style={{ display: 'grid', gap: 4 }}>
+                <span>{label} Endpoint</span>
+                <input
+                  aria-label={`${label} Endpoint`}
+                  value={providerConfig[stageKey].endpoint ?? ''}
+                  onChange={(event) =>
+                    updateProviderEntry(stageKey, 'endpoint', event.target.value)
+                  }
+                />
+              </label>
+              <label style={{ display: 'grid', gap: 4 }}>
+                <span>{label} Model</span>
+                <input
+                  aria-label={`${label} Model`}
+                  value={providerConfig[stageKey].model ?? ''}
+                  onChange={(event) =>
+                    updateProviderEntry(stageKey, 'model', event.target.value)
+                  }
+                />
+              </label>
+              <label style={{ display: 'grid', gap: 4 }}>
+                <span>{label} API Key</span>
+                <input
+                  aria-label={`${label} API Key`}
+                  type="password"
+                  value={providerConfig[stageKey].apiKey ?? ''}
+                  onChange={(event) =>
+                    updateProviderEntry(stageKey, 'apiKey', event.target.value)
+                  }
+                />
+              </label>
+              <label style={{ display: 'grid', gap: 4 }}>
+                <span>{label} Session Token</span>
+                <input
+                  aria-label={`${label} Session Token`}
+                  type="password"
+                  value={providerConfig[stageKey].sessionToken ?? ''}
+                  onChange={(event) =>
+                    updateProviderEntry(stageKey, 'sessionToken', event.target.value)
+                  }
+                />
+              </label>
+              <label style={{ display: 'grid', gap: 4 }}>
+                <span>{label} Language</span>
+                <input
+                  aria-label={`${label} Language`}
+                  value={providerConfig[stageKey].language ?? ''}
+                  onChange={(event) =>
+                    updateProviderEntry(stageKey, 'language', event.target.value)
+                  }
+                />
+              </label>
+            </div>
+          ))}
+          <div
+            style={{
+              gridColumn: '1 / -1',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}
+          >
+            <div style={{ color: '#64748b' }}>
+              当前摘要:
+              {` ASR=${providerSummary.asr.type}(${providerSummary.asr.mode}) `}
+              {`Structurer=${providerSummary.structurer.type}(${providerSummary.structurer.mode})`}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => void handleClearSecrets()}>清除密钥</button>
+              <button onClick={() => void handleSaveSettings()} disabled={settingsSaving}>
+                {settingsSaving ? '保存中...' : '保存设置'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 图表区域 */}
       <div
@@ -697,6 +1339,93 @@ export default function App() {
             ))
           )}
         </div>
+        {debugOpen && (
+          <div
+            data-testid="debug-panel"
+            style={{
+              borderTop: '1px solid #d1d5db',
+              backgroundColor: '#f8fafc',
+              padding: '8px 12px',
+              fontSize: 11,
+              color: '#334155',
+              maxHeight: 220,
+              overflowY: 'auto',
+            }}
+          >
+            <div style={{ fontWeight: 600, marginBottom: 6 }}>Debug</div>
+            <div style={{ marginBottom: 6 }}>
+              sessionId: {debugData?.session?.sessionId ?? sessionId ?? 'none'}
+            </div>
+            <div style={{ marginBottom: 6 }}>
+              transcript chunks: {debugData?.transcripts.length ?? 0}
+            </div>
+            <div style={{ marginBottom: 6 }}>
+              merged graph nodes: {debugData?.graph?.nodes.length ?? 0}
+            </div>
+            <pre
+              style={{
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                margin: 0,
+                fontFamily: 'monospace',
+              }}
+            >
+              {JSON.stringify(debugData, null, 2)}
+            </pre>
+          </div>
+        )}
+        {replayOpen && (
+          <div
+            data-testid="replay-panel"
+            style={{
+              borderTop: '1px solid #d1d5db',
+              backgroundColor: '#fff7ed',
+              padding: '8px 12px',
+              fontSize: 11,
+              color: '#7c2d12',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 6,
+              }}
+            >
+              <div style={{ fontWeight: 600 }}>Replay</div>
+              <button
+                onClick={handleReplayTogglePlay}
+                disabled={!replayData}
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  border: '1px solid #fdba74',
+                  backgroundColor: replayData ? 'white' : '#fed7aa',
+                  color: '#9a3412',
+                  fontSize: 11,
+                  cursor: replayData ? 'pointer' : 'not-allowed',
+                }}
+              >
+                {replayPlaying ? '暂停' : '播放'}
+              </button>
+              <span>回放时长: {formatTime(replayData?.durationMs ?? 0)}</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={replayData?.durationMs ?? 0}
+              step={1000}
+              value={Math.min(currentTimeMs, replayData?.durationMs ?? 0)}
+              onChange={handleReplayScrub}
+              style={{ width: '100%', marginBottom: 6 }}
+            />
+            <div style={{ marginBottom: 4 }}>回放当前时间: {formatTime(currentTimeMs)}</div>
+            <div>
+              当前片段: {activeReplayTranscript?.text ?? '暂无 transcript'}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 底部状态 */}

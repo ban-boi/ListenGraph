@@ -266,6 +266,10 @@ Listen Graphic 的真正差异化在于：
 * **验证用户是否真的愿意使用结构化收听界面**
 * 再进入播放器联动和插件化
 
+补充说明：
+
+当前仓库里的插件实现也遵循这个原则，先收口到一条可运行的 side panel 主链路：`service worker -> content script -> AudioWorklet -> sidepanel`。`offscreen + tabCapture` 仍作为后续增强路线保留，而不是当前必须同步做满的部分。
+
 ### 7.3 中长期形态
 
 * 浏览器插件
