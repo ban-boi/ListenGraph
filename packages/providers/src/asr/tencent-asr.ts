@@ -477,12 +477,17 @@ export class TencentAsrProvider implements AsrProvider {
    */
   private getEngineType(language?: string): EngineTypeValue {
     const lang = language?.toLowerCase();
+    
+    // Check for mixed language first
+    if (lang?.includes('zh_en') || lang?.includes('zh-en') || lang?.includes('mix')) {
+      return EngineType.CHINESE_ENGLISH_16K;
+    }
+    
+    // Then check for pure English
     if (lang?.includes('en')) {
       return EngineType.ENGLISH_16K;
     }
-    if (lang?.includes('zh_en') || lang?.includes('mix')) {
-      return EngineType.CHINESE_ENGLISH_16K;
-    }
+    
     // Default to Chinese engine
     return EngineType.CHINESE_16K;
   }
