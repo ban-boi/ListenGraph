@@ -98,6 +98,7 @@ describe('Service Worker - provider settings', () => {
       createProviderRegistry: () => ({
         createRuntimeProviders: createRuntimeProvidersMock,
       }),
+      TencentAsrProvider: class {},
       redactProviderConfig: (config: any) => ({
         asr: {
           type: config.asr.type,
@@ -230,6 +231,51 @@ describe('Service Worker - provider settings', () => {
     expect(startResponse.error).toContain('API key');
   });
 
+  it('启动时读取到历史 relay 配置，也会按 direct 形态加载 runtime', async () => {
+    getProviderConfigMock.mockResolvedValue({
+      asr: {
+        type: 'openai',
+        mode: 'relay',
+        endpoint: 'https://api.openai.com/v1',
+        sessionToken: 'relay-asr-token',
+        model: 'gpt-4o-mini-transcribe',
+        language: 'zh',
+      },
+      structurer: {
+        type: 'openai',
+        mode: 'relay',
+        endpoint: 'https://api.openai.com/v1',
+        sessionToken: 'relay-structurer-token',
+        model: 'gpt-4.1-mini',
+        language: 'zh',
+      },
+    });
+    createRuntimeProvidersMock.mockClear();
+
+    const startResponse = await dispatchMessage(
+      {
+        type: 'SESSION_START',
+        target: 'service-worker',
+        payload: { tabId: 123 },
+      },
+      { tab: { id: 123 } },
+    );
+
+    expect(startResponse.success).toBe(true);
+    expect(createRuntimeProvidersMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        asr: expect.objectContaining({
+          mode: 'direct',
+          sessionToken: undefined,
+        }),
+        structurer: expect.objectContaining({
+          mode: 'direct',
+          sessionToken: undefined,
+        }),
+      }),
+    );
+  });
+
   it('可以读取并保存 provider 设置', async () => {
     const getResponse = await dispatchMessage({
       type: 'GET_PROVIDER_SETTINGS',
@@ -271,6 +317,100 @@ describe('Service Worker - provider settings', () => {
     );
   });
 
+  it('保存设置失败时不会把无效配置写入本地 settings', async () => {
+    createRuntimeProvidersMock.mockImplementation(() => {
+      throw new Error('Tencent ASR provider requires secretId and secretKey (or apiKey) for direct mode');
+    });
+
+    const response = await dispatchMessage({
+      type: 'SAVE_PROVIDER_SETTINGS',
+      target: 'service-worker',
+      payload: {
+        config: {
+          asr: {
+            type: 'tencent',
+            mode: 'direct',
+            region: 'ap-shanghai',
+            language: 'zh',
+          },
+          structurer: {
+            type: 'mock',
+            mode: 'direct',
+            model: 'mock-structurer',
+            language: 'zh',
+          },
+        },
+      },
+    });
+
+    expect(response.success).toBe(false);
+    expect(saveProviderConfigMock).not.toHaveBeenCalled();
+  });
+
+  it('持久化 provider 设置失败时不会污染当前 runtime provider', async () => {
+    saveProviderConfigMock.mockRejectedValueOnce(new Error('settings db unavailable'));
+
+    const response = await dispatchMessage({
+      type: 'SAVE_PROVIDER_SETTINGS',
+      target: 'service-worker',
+      payload: {
+        config: {
+          asr: {
+            type: 'mock',
+            mode: 'direct',
+            model: 'mock-asr',
+            language: 'zh',
+          },
+          structurer: {
+            type: 'mock',
+            mode: 'direct',
+            model: 'mock-structurer',
+            language: 'zh',
+          },
+        },
+      },
+    });
+
+    const snapshotResponse = await dispatchMessage({
+      type: 'GET_RUNTIME_SNAPSHOT',
+      target: 'service-worker',
+      payload: {},
+    });
+
+    expect(response.success).toBe(false);
+    expect(snapshotResponse.snapshot.providerSummary.asr.type).toBe('openai');
+  });
+
+  it('读取腾讯 provider 设置时不会把 secretId 或 secretKey 返回给 sidepanel', async () => {
+    getProviderConfigMock.mockResolvedValue({
+      asr: {
+        type: 'tencent',
+        mode: 'direct',
+        region: 'ap-shanghai',
+        secretId: 'secret-id',
+        secretKey: 'secret-key',
+        language: 'zh',
+      },
+      structurer: {
+        type: 'mock',
+        mode: 'direct',
+        model: 'mock-structurer',
+        language: 'zh',
+      },
+    });
+
+    const getResponse = await dispatchMessage({
+      type: 'GET_PROVIDER_SETTINGS',
+      target: 'service-worker',
+      payload: {},
+    });
+
+    expect(getResponse.success).toBe(true);
+    expect(getResponse.config.asr.secretId).toBeUndefined();
+    expect(getResponse.config.asr.secretKey).toBeUndefined();
+    expect(getResponse.config.asr.region).toBe('ap-shanghai');
+  });
+
   it('保存设置时若密钥字段为空，会沿用本地已保存的密钥', async () => {
     await dispatchMessage({
       type: 'SAVE_PROVIDER_SETTINGS',
@@ -302,6 +442,119 @@ describe('Service Worker - provider settings', () => {
         }),
         structurer: expect.objectContaining({
           apiKey: 'structurer-secret',
+        }),
+      }),
+    );
+  });
+
+  it('保存腾讯设置时若 secretId 和 secretKey 为空，会沿用已保存的腾讯密钥', async () => {
+    getProviderConfigMock.mockResolvedValue({
+      asr: {
+        type: 'tencent',
+        mode: 'direct',
+        region: 'ap-shanghai',
+        secretId: 'saved-secret-id',
+        secretKey: 'saved-secret-key',
+        language: 'zh',
+      },
+      structurer: {
+        type: 'mock',
+        mode: 'direct',
+        model: 'mock-structurer',
+        language: 'zh',
+      },
+    });
+
+    await dispatchMessage({
+      type: 'SAVE_PROVIDER_SETTINGS',
+      target: 'service-worker',
+      payload: {
+        config: {
+          asr: {
+            type: 'tencent',
+            mode: 'direct',
+            region: 'ap-shanghai',
+            language: 'zh',
+          },
+          structurer: {
+            type: 'mock',
+            mode: 'direct',
+            model: 'mock-structurer',
+            language: 'zh',
+          },
+        },
+      },
+    });
+
+    expect(saveProviderConfigMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        asr: expect.objectContaining({
+          type: 'tencent',
+          secretId: 'saved-secret-id',
+          secretKey: 'saved-secret-key',
+        }),
+      }),
+    );
+  });
+
+  it('保存历史 relay 配置时会强制收敛为 direct 并清掉 relay token', async () => {
+    getProviderConfigMock.mockResolvedValue({
+      asr: {
+        type: 'tencent',
+        mode: 'relay',
+        sessionToken: 'saved-relay-token',
+        region: 'ap-shanghai',
+        language: 'zh',
+      },
+      structurer: {
+        type: 'openai',
+        mode: 'relay',
+        endpoint: 'https://api.openai.com/v1',
+        sessionToken: 'saved-structurer-relay-token',
+        model: 'gpt-4.1-mini',
+        language: 'zh',
+      },
+    });
+
+    await dispatchMessage({
+      type: 'SAVE_PROVIDER_SETTINGS',
+      target: 'service-worker',
+      payload: {
+        config: {
+          asr: {
+            type: 'tencent',
+            mode: 'relay',
+            sessionToken: 'relay-session-token',
+            region: 'ap-shanghai',
+            secretId: 'saved-secret-id',
+            secretKey: 'saved-secret-key',
+            language: 'zh',
+          },
+          structurer: {
+            type: 'openai',
+            mode: 'relay',
+            endpoint: 'https://api.openai.com/v1',
+            sessionToken: 'relay-structurer-token',
+            model: 'gpt-4.1-mini',
+            language: 'zh',
+          },
+        },
+      },
+    });
+
+    expect(saveProviderConfigMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        asr: expect.objectContaining({
+          type: 'tencent',
+          mode: 'direct',
+          sessionToken: undefined,
+          secretId: 'saved-secret-id',
+          secretKey: 'saved-secret-key',
+        }),
+        structurer: expect.objectContaining({
+          type: 'openai',
+          mode: 'direct',
+          sessionToken: undefined,
         }),
       }),
     );

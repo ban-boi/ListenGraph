@@ -111,9 +111,11 @@ describe('Service Worker - 当前主链路', () => {
           language: 'zh',
         },
       }),
+      normalizeProviderConfig: (config: any) => config,
       createProviderRegistry: () => ({
         createRuntimeProviders: createRuntimeProvidersMock,
       }),
+      TencentAsrProvider: class {},
       redactProviderConfig: (config: any) => ({
         asr: {
           type: config.asr.type,
@@ -246,6 +248,31 @@ describe('Service Worker - 当前主链路', () => {
     );
   });
 
+  it('扩展重载后当前标签页缺少 content script 时，会重新注入并重试启动采集', async () => {
+    const chromeMock = (globalThis as any).chrome;
+    chromeMock.tabs.sendMessage
+      .mockRejectedValueOnce(
+        new Error('Could not establish connection. Receiving end does not exist.'),
+      )
+      .mockResolvedValueOnce({ success: true });
+
+    const startResponse = await dispatchMessage(
+      {
+        type: 'SESSION_START',
+        target: 'service-worker',
+        payload: { tabId: 123 },
+      },
+      { tab: { id: 123 } },
+    );
+
+    expect(startResponse.success).toBe(true);
+    expect(chromeMock.scripting.executeScript).toHaveBeenCalledWith({
+      target: { tabId: 123 },
+      files: ['content-script/content-script.js'],
+    });
+    expect(chromeMock.tabs.sendMessage).toHaveBeenCalledTimes(2);
+  });
+
   it('启动会话时会写入 session 资产记录', async () => {
     const startResponse = await dispatchMessage(
       {
@@ -371,6 +398,10 @@ describe('Service Worker - 当前主链路', () => {
         target: 'service-worker',
         payload: {
           audioData: [1, 2, 3, 4],
+          audioMimeType: 'audio/wav',
+          sampleRate: 16000,
+          channels: 1,
+          bitDepth: 16,
           startMs: 0,
           endMs: 30000,
         },
@@ -383,9 +414,11 @@ describe('Service Worker - 当前主链路', () => {
         sessionId: expect.any(String),
         startMs: 0,
         endMs: 30000,
-        audio: expect.any(ArrayBuffer),
+        audio: expect.any(Blob),
       }),
     );
+    const transcribeInput = transcribeChunkMock.mock.calls[0]?.[0];
+    expect(transcribeInput.audio.type).toBe('audio/wav');
     expect(extractSegmentGraphMock).toHaveBeenCalledWith(
       expect.objectContaining({
         sessionId: expect.any(String),
@@ -438,6 +471,100 @@ describe('Service Worker - 当前主链路', () => {
         ]),
       }),
     );
+  });
+
+  it('多个音频 chunk 会串行处理，避免并发触发多个 ASR 请求', async () => {
+    let activeTranscribeCalls = 0;
+    let maxConcurrentTranscribeCalls = 0;
+    let releaseFirstChunk!: () => void;
+
+    transcribeChunkMock
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            activeTranscribeCalls += 1;
+            maxConcurrentTranscribeCalls = Math.max(
+              maxConcurrentTranscribeCalls,
+              activeTranscribeCalls,
+            );
+            releaseFirstChunk = () => {
+              activeTranscribeCalls -= 1;
+              resolve({
+                chunkId: 'chunk_serial_1',
+                sessionId: 'session_serial',
+                text: '第一段',
+                startMs: 0,
+                endMs: 10000,
+                provider: 'mock-asr',
+              });
+            };
+          }),
+      )
+      .mockImplementationOnce(async () => {
+        activeTranscribeCalls += 1;
+        maxConcurrentTranscribeCalls = Math.max(
+          maxConcurrentTranscribeCalls,
+          activeTranscribeCalls,
+        );
+        activeTranscribeCalls -= 1;
+        return {
+          chunkId: 'chunk_serial_2',
+          sessionId: 'session_serial',
+          text: '第二段',
+          startMs: 10000,
+          endMs: 20000,
+          provider: 'mock-asr',
+        };
+      });
+
+    await dispatchMessage(
+      {
+        type: 'SESSION_START',
+        target: 'service-worker',
+        payload: { tabId: 123 },
+      },
+      { tab: { id: 123 } },
+    );
+
+    const firstChunkPromise = dispatchMessage(
+      {
+        type: 'AUDIO_CHUNK_READY',
+        target: 'service-worker',
+        payload: {
+          audioData: [1, 2, 3, 4],
+          startMs: 0,
+          endMs: 10000,
+        },
+      },
+      { tab: { id: 123 } },
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const secondChunkPromise = dispatchMessage(
+      {
+        type: 'AUDIO_CHUNK_READY',
+        target: 'service-worker',
+        payload: {
+          audioData: [5, 6, 7, 8],
+          startMs: 10000,
+          endMs: 20000,
+        },
+      },
+      { tab: { id: 123 } },
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(transcribeChunkMock).toHaveBeenCalledTimes(1);
+
+    releaseFirstChunk();
+
+    const firstChunkResponse = await firstChunkPromise;
+    const secondChunkResponse = await secondChunkPromise;
+
+    expect(firstChunkResponse.success).toBe(true);
+    expect(secondChunkResponse.success).toBe(true);
+    expect(transcribeChunkMock).toHaveBeenCalledTimes(2);
+    expect(maxConcurrentTranscribeCalls).toBe(1);
   });
 
   it('如果 transcript 落库失败，不会推进 runtime transcript 与时间状态', async () => {

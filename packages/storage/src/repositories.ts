@@ -120,6 +120,8 @@ export function createSettingsRepository(tables: {
           ...config.asr,
           apiKey: undefined,
           sessionToken: undefined,
+          secretId: undefined,
+          secretKey: undefined,
         },
         structurer: {
           ...config.structurer,

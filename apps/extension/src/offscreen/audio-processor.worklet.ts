@@ -3,7 +3,8 @@
 // 负责：收集 PCM 数据、按时间分帧、发送到主线程
 // 注意：此文件使用 Web Audio API 的 AudioWorklet 类型，TypeScript 无法完全检查
 
-const CHUNK_DURATION_SAMPLES = 16000 * 30; // 30 秒 @ 16kHz
+const CHUNK_DURATION_MS = 10_000;
+const CHUNK_DURATION_SAMPLES = 16000 * 10; // 10 秒 @ 16kHz
 
 class AudioChunkProcessor extends AudioWorkletProcessor {
   private buffer: Float32Array = new Float32Array(0);
@@ -40,8 +41,8 @@ class AudioChunkProcessor extends AudioWorkletProcessor {
       const chunk = this.buffer.slice(0, CHUNK_DURATION_SAMPLES);
       this.buffer = this.buffer.slice(CHUNK_DURATION_SAMPLES);
 
-      const chunkStartMs = this.startTimeMs + this.chunkIndex * 30000;
-      const chunkEndMs = chunkStartMs + 30000;
+      const chunkStartMs = this.startTimeMs + this.chunkIndex * CHUNK_DURATION_MS;
+      const chunkEndMs = chunkStartMs + CHUNK_DURATION_MS;
 
       // 发送 chunk 到主线程
       this.port.postMessage({

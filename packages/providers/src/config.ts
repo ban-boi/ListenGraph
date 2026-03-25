@@ -103,6 +103,9 @@ function normalizeEntry<T extends AsrProviderConfig | StructurerProviderConfig>(
     if (!params.input?.model || params.input.type === 'openai') {
       merged.model = params.input?.model ?? params.openAiDefaults.model;
     }
+  } else if (merged.type === 'tencent') {
+    merged.endpoint = params.input?.endpoint;
+    merged.model = params.input?.model;
   } else {
     merged.model = merged.model ?? params.defaults.model;
   }
@@ -113,6 +116,8 @@ function normalizeEntry<T extends AsrProviderConfig | StructurerProviderConfig>(
 function summarizeEntry(
   config: AsrProviderConfig | StructurerProviderConfig,
 ): ProviderRuntimeEntrySummary {
+  const hasTencentSecrets =
+    config.type === 'tencent' && Boolean(config.secretId && config.secretKey);
   return {
     type: config.type,
     mode: config.mode,
@@ -121,6 +126,7 @@ function summarizeEntry(
     language: config.language,
     apiKeyConfigured: Boolean(config.apiKey),
     sessionTokenConfigured: Boolean(config.sessionToken),
+    secretConfigured: hasTencentSecrets,
   };
 }
 
@@ -130,6 +136,8 @@ export function clearProviderSecrets(config: ProviderConfig): ProviderConfig {
       ...config.asr,
       apiKey: undefined,
       sessionToken: undefined,
+      secretId: undefined,
+      secretKey: undefined,
     },
     structurer: {
       ...config.structurer,
@@ -150,7 +158,10 @@ export function requireProviderCredential(
   // 腾讯云：检查 secretId 和 secretKey
   if (config.type === 'tencent') {
     if (config.mode === 'direct') {
-      if (!config.secretId && !config.secretKey && !config.apiKey) {
+      const hasPair = Boolean(config.secretId && config.secretKey);
+      const legacyParts = config.apiKey?.split(':').map((part) => part.trim()) ?? [];
+      const hasLegacyPair = legacyParts.length === 2 && legacyParts.every(Boolean);
+      if (!hasPair && !hasLegacyPair) {
         throw new Error(`${label} requires secretId and secretKey (or apiKey) for direct mode`);
       }
     }

@@ -11,12 +11,13 @@
 import type {
   AsrProvider,
   AsrProviderConfig,
+  ProviderErrorCode,
   TranscriptChunk,
   ProviderRetryPolicy,
 } from '@listen-graphic/schema';
 import { generateId } from '@listen-graphic/shared-utils';
+import { DEFAULT_RETRY_POLICY } from '../config';
 import {
-  DEFAULT_RETRY_POLICY,
   createTimeoutSignal,
   mapHttpError,
   retryAsync,
@@ -70,12 +71,18 @@ type EngineTypeValue = typeof EngineType[keyof typeof EngineType];
 export class TencentAsrProvider implements AsrProvider {
   readonly name = 'tencent-asr';
   private readonly config: AsrProviderConfig;
-  private readonly endpoint = 'asr.tencentcloudapi.com';
+  private readonly endpoint: string;
   private readonly apiVersion = '2019-06-14';
   private readonly service = 'asr';
+  private progressListener?: (message: string) => void;
 
   constructor(config: AsrProviderConfig) {
     this.config = config;
+    this.endpoint = this.normalizeEndpoint(config.endpoint);
+  }
+
+  setProgressListener(listener?: (message: string) => void) {
+    this.progressListener = listener;
   }
 
   /**
@@ -103,18 +110,51 @@ export class TencentAsrProvider implements AsrProvider {
       // Step 3: Parse and return result
       return this.parseResult(result, input);
     } catch (error) {
-      // Map errors to standard format
+      if (this.isProviderRequestError(error)) {
+        throw error;
+      }
+
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw mapHttpError({
+          provider: this.name,
+          stage: 'asr',
+          code: 'TIMEOUT_ERROR',
+          message: 'Tencent ASR request timed out',
+          retriable: true,
+          attemptCount: 1,
+        });
+      }
+
+      if (error instanceof TypeError) {
+        throw mapHttpError({
+          provider: this.name,
+          stage: 'asr',
+          code: 'NETWORK_ERROR',
+          message: error.message,
+          retriable: true,
+          attemptCount: 1,
+        });
+      }
+
       if (error instanceof Error) {
         throw mapHttpError({
           provider: this.name,
           stage: 'asr',
-          code: 'TRANSCRIBE_ERROR',
+          code: this.inferLocalErrorCode(error.message),
           message: error.message,
           retriable: this.isRetriableError(error),
           attemptCount: 1,
         });
       }
-      throw error;
+
+      throw mapHttpError({
+        provider: this.name,
+        stage: 'asr',
+        code: 'TRANSCRIBE_ERROR',
+        message: 'Tencent ASR request failed',
+        retriable: false,
+        attemptCount: 1,
+      });
     }
   }
 
@@ -139,7 +179,7 @@ export class TencentAsrProvider implements AsrProvider {
 
     // Prepare request payload
     const payload = {
-      EngineModelType: this.getEngineType(input.language),
+      EngineModelType: this.config.model ?? this.getEngineType(input.language),
       ChannelNum: 1,
       ResTextFormat: 0,
       SourceType: 1, // Audio data (not URL)
@@ -149,6 +189,7 @@ export class TencentAsrProvider implements AsrProvider {
 
     return retryAsync(
       async (attempt) => {
+        this.reportProgress(`腾讯 ASR 正在创建识别任务，第 ${attempt} 次请求`);
         const timestamp = Math.floor(Date.now() / 1000);
         const authorization = await this.buildAuthorization(payload, timestamp);
 
@@ -163,7 +204,7 @@ export class TencentAsrProvider implements AsrProvider {
             ...(this.config.region && { 'X-TC-Region': this.config.region }),
           },
           body: JSON.stringify(payload),
-          signal: createTimeoutSignal(retryPolicy.timeoutMs),
+          signal: createTimeoutSignal(Math.max(retryPolicy.timeoutMs, 30_000)),
         });
 
         if (!result.ok) {
@@ -171,7 +212,6 @@ export class TencentAsrProvider implements AsrProvider {
             provider: this.name,
             stage: 'asr',
             status: result.status,
-            code: 'HTTP_ERROR',
             message: await result.text(),
             retriable: this.isRetriableStatus(result.status),
             attemptCount: attempt,
@@ -180,12 +220,9 @@ export class TencentAsrProvider implements AsrProvider {
 
         const data: TencentAsrResponse = await result.json();
         if (data.Response?.Error) {
-          throw mapHttpError({
-            provider: this.name,
-            stage: 'asr',
-            code: data.Response.Error.Code as any,
+          throw this.mapTencentError({
+            rawCode: data.Response.Error.Code,
             message: data.Response.Error.Message,
-            retriable: false,
             attemptCount: attempt,
           });
         }
@@ -201,6 +238,7 @@ export class TencentAsrProvider implements AsrProvider {
           });
         }
 
+        this.reportProgress(`腾讯 ASR 任务已创建，TaskId=${data.Response.Data.TaskId}`);
         return data.Response.Data.TaskId;
       },
       retryPolicy,
@@ -214,8 +252,8 @@ export class TencentAsrProvider implements AsrProvider {
   private async pollTaskStatus(
     taskId: number,
     retryPolicy: ProviderRetryPolicy,
-  ): Promise<TencentAsrResponse['Response']['Data']> {
-    const maxAttempts = 30;
+  ): Promise<NonNullable<TencentAsrResponse['Response']['Data']>> {
+    const maxAttempts = 60;
     const pollInterval = 2000; // 2 seconds
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -233,6 +271,7 @@ export class TencentAsrProvider implements AsrProvider {
           ...(this.config.region && { 'X-TC-Region': this.config.region }),
         },
         body: JSON.stringify({ TaskId: taskId }),
+        signal: createTimeoutSignal(Math.max(retryPolicy.timeoutMs, 30_000)),
       });
 
       if (!response.ok) {
@@ -240,7 +279,6 @@ export class TencentAsrProvider implements AsrProvider {
           provider: this.name,
           stage: 'asr',
           status: response.status,
-          code: 'HTTP_ERROR',
           message: await response.text(),
           retriable: this.isRetriableStatus(response.status),
           attemptCount: attempt + 1,
@@ -249,19 +287,29 @@ export class TencentAsrProvider implements AsrProvider {
 
       const data: TencentAsrResponse = await response.json();
       if (data.Response?.Error) {
-        throw mapHttpError({
-          provider: this.name,
-          stage: 'asr',
-          code: data.Response.Error.Code as any,
+        throw this.mapTencentError({
+          rawCode: data.Response.Error.Code,
           message: data.Response.Error.Message,
-          retriable: false,
           attemptCount: attempt + 1,
         });
       }
 
       const task = data.Response?.Data;
       if (!task) {
-        throw new Error('No task data in response');
+        throw mapHttpError({
+          provider: this.name,
+          stage: 'asr',
+          code: 'INVALID_RESPONSE',
+          message: 'No task data in response',
+          retriable: true,
+          attemptCount: attempt + 1,
+        });
+      }
+
+      if (this.shouldReportPollProgress(attempt)) {
+        this.reportProgress(
+          `腾讯 ASR 轮询中，TaskId=${taskId}，第 ${attempt + 1} 次，状态=${task.StatusStr ?? task.TaskStatus ?? 'unknown'}`,
+        );
       }
 
       // Check if task is complete
@@ -271,8 +319,18 @@ export class TencentAsrProvider implements AsrProvider {
         task.TaskStatus === TaskStatus.CANCELED
       ) {
         if (task.TaskStatus !== TaskStatus.SUCCESS) {
-          throw new Error(`ASR task failed with status: ${task.StatusStr}`);
+          throw mapHttpError({
+            provider: this.name,
+            stage: 'asr',
+            code: 'TRANSCRIBE_ERROR',
+            message: `ASR task failed with status: ${task.StatusStr ?? 'unknown'}`,
+            retriable: false,
+            attemptCount: attempt + 1,
+          });
         }
+        this.reportProgress(
+          `腾讯 ASR 完成，TaskId=${taskId}，耗时约 ${(attempt + 1) * (pollInterval / 1000)} 秒`,
+        );
         return task;
       }
 
@@ -280,9 +338,17 @@ export class TencentAsrProvider implements AsrProvider {
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
     }
 
-    throw new Error(
-      `ASR task ${taskId} did not complete within ${maxAttempts * (pollInterval / 1000)} seconds`,
+    this.reportProgress(
+      `腾讯 ASR 超时，TaskId=${taskId}，超过 ${maxAttempts * (pollInterval / 1000)} 秒仍未完成`,
     );
+    throw mapHttpError({
+      provider: this.name,
+      stage: 'asr',
+      code: 'TIMEOUT_ERROR',
+      message: `ASR task ${taskId} did not complete within ${maxAttempts * (pollInterval / 1000)} seconds`,
+      retriable: true,
+      attemptCount: maxAttempts,
+    });
   }
 
   /**
@@ -492,6 +558,77 @@ export class TencentAsrProvider implements AsrProvider {
     return EngineType.CHINESE_16K;
   }
 
+  private mapTencentError(params: {
+    rawCode?: string;
+    message: string;
+    attemptCount: number;
+  }) {
+    const normalizedCode = this.mapTencentErrorCode(params.rawCode);
+    return mapHttpError({
+      provider: this.name,
+      stage: 'asr',
+      code: normalizedCode,
+      message: params.message,
+      retriable:
+        normalizedCode === 'RATE_LIMIT_ERROR' ||
+        (params.rawCode?.includes('InternalError') ?? false),
+      attemptCount: params.attemptCount,
+    });
+  }
+
+  private mapTencentErrorCode(rawCode?: string): ProviderErrorCode {
+    const code = rawCode ?? '';
+    if (code.includes('AuthFailure') || code.includes('UnauthorizedOperation')) {
+      return 'AUTH_ERROR';
+    }
+    if (
+      code.includes('LimitExceeded') ||
+      code.includes('RequestLimitExceeded') ||
+      code.includes('TooManyRequests') ||
+      code.includes('Throttling')
+    ) {
+      return 'RATE_LIMIT_ERROR';
+    }
+    if (
+      code.includes('InvalidParameter') ||
+      code.includes('MissingParameter') ||
+      code.includes('UnsupportedOperation')
+    ) {
+      return 'CONFIG_ERROR';
+    }
+    if (code.includes('InternalError') || code.includes('FailedOperation')) {
+      return 'TRANSCRIBE_ERROR';
+    }
+    return 'INVALID_RESPONSE';
+  }
+
+  private inferLocalErrorCode(message: string): ProviderErrorCode {
+    if (message.includes('SecretId is required') || message.includes('SecretKey is required')) {
+      return 'CONFIG_ERROR';
+    }
+    return 'TRANSCRIBE_ERROR';
+  }
+
+  private normalizeEndpoint(endpoint?: string): string {
+    const officialHost = 'asr.tencentcloudapi.com';
+    if (!endpoint) {
+      return officialHost;
+    }
+    const normalized = (() => {
+      try {
+        return new URL(endpoint).host || endpoint;
+      } catch {
+        return endpoint.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+      }
+    })();
+
+    if (normalized !== officialHost) {
+      throw new Error(`Tencent ASR endpoint must use ${officialHost}`);
+    }
+
+    return normalized;
+  }
+
   /**
    * Build tokens from Tencent Cloud result detail
    */
@@ -534,6 +671,14 @@ export class TencentAsrProvider implements AsrProvider {
     }));
   }
 
+  private reportProgress(message: string) {
+    this.progressListener?.(message);
+  }
+
+  private shouldReportPollProgress(attempt: number) {
+    return attempt < 3 || (attempt + 1) % 5 === 0;
+  }
+
   /**
    * Check if error is retriable for retry logic
    */
@@ -543,6 +688,10 @@ export class TencentAsrProvider implements AsrProvider {
   ): boolean {
     if (error instanceof Error && error.name === 'AbortError') {
       return true;
+    }
+
+    if (this.isProviderRequestError(error)) {
+      return error.retriable;
     }
 
     if (error && typeof error === 'object' && 'status' in error) {
@@ -561,6 +710,18 @@ export class TencentAsrProvider implements AsrProvider {
     if (error?.status === 429) return true; // Rate limit
     if (error?.status >= 500) return true; // Server error
     return false;
+  }
+
+  private isProviderRequestError(error: unknown): error is ProviderRequestError {
+    return (
+      error instanceof ProviderRequestError ||
+      (typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        'provider' in error &&
+        'stage' in error &&
+        'retriable' in error)
+    );
   }
 
   /**

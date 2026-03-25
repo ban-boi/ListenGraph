@@ -17,6 +17,10 @@ export type SessionState =
 
 export interface AudioChunkPayload {
   audioData: number[];
+  audioMimeType?: string;
+  sampleRate?: number;
+  channels?: number;
+  bitDepth?: number;
   startMs: number;
   endMs: number;
 }
@@ -156,4 +160,9 @@ export type AppMessage =
       type: 'ERROR';
       target: 'sidepanel';
       payload: { code: string; message: string };
+    }
+  | {
+      type: 'PROVIDER_PROGRESS';
+      target: 'sidepanel';
+      payload: { stage: 'asr' | 'structurer'; message: string };
     };

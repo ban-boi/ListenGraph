@@ -19,6 +19,7 @@ import type {
   EdgeType,
   NodeType,
   ProviderConfig,
+  ProviderRuntimeSummary,
 } from '@listen-graphic/schema';
 import { pickDefaultView, scoreViews } from '@listen-graphic/domain';
 import {
@@ -125,6 +126,54 @@ function downloadTextFile(filename: string, content: string, mimeType: string) {
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+function renderSecretHint(params: {
+  configured: boolean;
+  label: string;
+}) {
+  if (!params.configured) {
+    return (
+      <div style={{ fontSize: 10, color: '#64748b' }}>
+        未保存 {params.label}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ fontSize: 10, color: '#0369a1' }}>
+      已保存 {params.label}，留空则保持不变
+    </div>
+  );
+}
+
+function getStageCredentialState(
+  summary: ProviderRuntimeSummary,
+  stageKey: keyof ProviderConfig,
+) {
+  const entry = summary[stageKey];
+  const isTencentAsr = stageKey === 'asr' && entry.type === 'tencent';
+
+  return {
+    apiKeyConfigured: entry.apiKeyConfigured,
+    sessionTokenConfigured: entry.sessionTokenConfigured,
+    secretConfigured: isTencentAsr ? Boolean(entry.secretConfigured) : false,
+  };
+}
+
+function pinProviderConfigToDirectMode(config: ProviderConfig): ProviderConfig {
+  return {
+    asr: {
+      ...config.asr,
+      mode: 'direct',
+      sessionToken: undefined,
+    },
+    structurer: {
+      ...config.structurer,
+      mode: 'direct',
+      sessionToken: undefined,
+    },
+  };
 }
 
 // ============ 自定义节点组件 ============
@@ -404,6 +453,10 @@ export default function App() {
           addLog(`转写: ${message.payload.transcript.text}`);
           break;
         }
+        case 'PROVIDER_PROGRESS': {
+          addLog(`${message.payload.stage.toUpperCase()}: ${message.payload.message}`);
+          break;
+        }
         case 'MERGED_GRAPH_UPDATED': {
           const nextGraph = message.payload.graph;
           setGraph(nextGraph);
@@ -564,7 +617,9 @@ export default function App() {
         return;
       }
 
-      setProviderConfig(normalizeProviderConfig(response.config));
+      setProviderConfig(
+        pinProviderConfigToDirectMode(normalizeProviderConfig(response.config)),
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : '读取 provider 设置失败';
       addLog(`加载设置失败: ${message}`);
@@ -574,7 +629,9 @@ export default function App() {
   const handleSaveSettings = useCallback(async () => {
     setSettingsSaving(true);
     try {
-      const normalized = normalizeProviderConfig(providerConfig);
+      const normalized = pinProviderConfigToDirectMode(
+        normalizeProviderConfig(providerConfig),
+      );
       const response = await chrome.runtime.sendMessage({
         type: 'SAVE_PROVIDER_SETTINGS',
         target: 'service-worker',
@@ -1176,8 +1233,10 @@ export default function App() {
               ['asr', 'ASR'],
               ['structurer', 'Structurer'],
             ] as const
-          ).map(([stageKey, label]) => (
-            <div
+          ).map(([stageKey, label]) => {
+            const credentialState = getStageCredentialState(providerSummary, stageKey);
+
+            return <div
               key={stageKey}
               style={{
                 border: '1px solid #dbe4ee',
@@ -1221,29 +1280,18 @@ export default function App() {
                   </div>
                 </div>
               )}
-              <label style={{ display: 'grid', gap: 4 }}>
-                <span>{label} Mode</span>
-                <select
-                  aria-label={`${label} Mode`}
-                  value={providerConfig[stageKey].mode}
-                  onChange={(event) =>
-                    updateProviderEntry(stageKey, 'mode', event.target.value)
-                  }
-                >
-                  <option value="direct">direct</option>
-                  <option value="relay">relay</option>
-                </select>
-              </label>
-              <label style={{ display: 'grid', gap: 4 }}>
-                <span>{label} Endpoint</span>
-                <input
-                  aria-label={`${label} Endpoint`}
-                  value={providerConfig[stageKey].endpoint ?? ''}
-                  onChange={(event) =>
-                    updateProviderEntry(stageKey, 'endpoint', event.target.value)
-                  }
-                />
-              </label>
+              {!(stageKey === 'asr' && providerConfig[stageKey].type === 'tencent') && (
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span>{label} Endpoint</span>
+                  <input
+                    aria-label={`${label} Endpoint`}
+                    value={providerConfig[stageKey].endpoint ?? ''}
+                    onChange={(event) =>
+                      updateProviderEntry(stageKey, 'endpoint', event.target.value)
+                    }
+                  />
+                </label>
+              )}
               <label style={{ display: 'grid', gap: 4 }}>
                 <span>{label} Model</span>
                 <input
@@ -1266,8 +1314,16 @@ export default function App() {
                       onChange={(event) =>
                         updateProviderEntry(stageKey, 'secretId', event.target.value)
                       }
-                      placeholder="AKIDxxxxxxxxxxxx"
+                      placeholder={
+                        credentialState.secretConfigured
+                          ? '已保存，留空保持不变'
+                          : 'AKIDxxxxxxxxxxxx'
+                      }
                     />
+                    {renderSecretHint({
+                      configured: credentialState.secretConfigured,
+                      label: 'Secret ID / Secret Key',
+                    })}
                   </label>
                   <label style={{ display: 'grid', gap: 4 }}>
                     <span>Secret Key</span>
@@ -1278,7 +1334,11 @@ export default function App() {
                       onChange={(event) =>
                         updateProviderEntry(stageKey, 'secretKey', event.target.value)
                       }
-                      placeholder="xxxxxxxxxxxxxxxx"
+                      placeholder={
+                        credentialState.secretConfigured
+                          ? '已保存，留空保持不变'
+                          : 'xxxxxxxxxxxxxxxx'
+                      }
                     />
                   </label>
                   <label style={{ display: 'grid', gap: 4 }}>
@@ -1308,20 +1368,18 @@ export default function App() {
                     onChange={(event) =>
                       updateProviderEntry(stageKey, 'apiKey', event.target.value)
                     }
+                    placeholder={
+                      credentialState.apiKeyConfigured
+                        ? '已保存，留空保持不变'
+                        : '请输入 API Key'
+                    }
                   />
+                  {renderSecretHint({
+                    configured: credentialState.apiKeyConfigured,
+                    label: 'API Key',
+                  })}
                 </label>
               )}
-              <label style={{ display: 'grid', gap: 4 }}>
-                <span>{label} Session Token</span>
-                <input
-                  aria-label={`${label} Session Token`}
-                  type="password"
-                  value={providerConfig[stageKey].sessionToken ?? ''}
-                  onChange={(event) =>
-                    updateProviderEntry(stageKey, 'sessionToken', event.target.value)
-                  }
-                />
-              </label>
               <label style={{ display: 'grid', gap: 4 }}>
                 <span>{label} Language</span>
                 <input
@@ -1330,10 +1388,10 @@ export default function App() {
                   onChange={(event) =>
                     updateProviderEntry(stageKey, 'language', event.target.value)
                   }
-                />
-              </label>
-            </div>
-          ))}
+                  />
+                </label>
+            </div>;
+          })}
           <div
             style={{
               gridColumn: '1 / -1',
@@ -1345,8 +1403,12 @@ export default function App() {
           >
             <div style={{ color: '#64748b' }}>
               当前摘要:
-              {` ASR=${providerSummary.asr.type}(${providerSummary.asr.mode}) `}
-              {`Structurer=${providerSummary.structurer.type}(${providerSummary.structurer.mode})`}
+              {` ASR=${providerSummary.asr.type} `}
+              {`Structurer=${providerSummary.structurer.type}`}
+              {providerSummary.asr.type === 'tencent'
+                ? ` | ASR 密钥=${providerSummary.asr.secretConfigured ? '已保存' : '未保存'}`
+                : ` | ASR Key=${providerSummary.asr.apiKeyConfigured ? '已保存' : '未保存'}`}
+              {` | Structurer Key=${providerSummary.structurer.apiKeyConfigured ? '已保存' : '未保存'}`}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => void handleClearSecrets()}>清除密钥</button>

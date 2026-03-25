@@ -16,6 +16,7 @@ export class ProviderRequestError extends Error {
   constructor(input: SerializableProviderError) {
     super(input.message);
     this.name = 'ProviderRequestError';
+    Object.setPrototypeOf(this, ProviderRequestError.prototype);
     this.code = input.code;
     this.provider = input.provider;
     this.stage = input.stage;
@@ -42,16 +43,17 @@ export async function retryAsync<T>(
   policy: ProviderRetryPolicy,
   shouldRetry: (error: unknown) => boolean = isRetryableError,
 ): Promise<T> {
+  const maxAttempts = Math.max(policy.maxAttempts ?? 1, 1);
   let attempt = 0;
   let lastError: unknown;
 
-  while (attempt < policy.maxAttempts) {
+  while (attempt < maxAttempts) {
     attempt += 1;
     try {
       return await operation(attempt);
     } catch (error) {
       lastError = error;
-      if (attempt >= policy.maxAttempts || !shouldRetry(error)) {
+      if (attempt >= maxAttempts || !shouldRetry(error)) {
         throw attachAttemptCount(error, attempt);
       }
 

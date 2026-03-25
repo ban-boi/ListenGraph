@@ -91,9 +91,11 @@ describe('Service Worker - provider recovery', () => {
           language: 'zh',
         },
       }),
+      normalizeProviderConfig: (config: any) => config,
       createProviderRegistry: () => ({
         createRuntimeProviders: createRuntimeProvidersMock,
       }),
+      TencentAsrProvider: class {},
       redactProviderConfig: (config: any) => ({
         asr: {
           type: config.asr.type,

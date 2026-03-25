@@ -63,6 +63,7 @@ describe('provider registry contract', () => {
         language: 'zh',
         apiKeyConfigured: true,
         sessionTokenConfigured: false,
+        secretConfigured: false,
       },
       structurer: {
         type: 'openai',
@@ -72,8 +73,37 @@ describe('provider registry contract', () => {
         language: 'zh',
         apiKeyConfigured: false,
         sessionTokenConfigured: true,
+        secretConfigured: false,
       },
     });
+  });
+
+  it('腾讯 ASR 摘要会反映 secretId/secretKey 已配置状态，但不暴露具体值', () => {
+    const summary = redactProviderConfig({
+      asr: {
+        type: 'tencent',
+        mode: 'direct',
+        region: 'ap-shanghai',
+        secretId: 'secret-id',
+        secretKey: 'secret-key',
+        language: 'zh',
+      },
+      structurer: {
+        type: 'mock',
+        mode: 'direct',
+        model: 'mock-structurer',
+        language: 'zh',
+      },
+    });
+
+    expect(summary.asr).toEqual(
+      expect.objectContaining({
+        type: 'tencent',
+        apiKeyConfigured: false,
+        sessionTokenConfigured: false,
+        secretConfigured: true,
+      }),
+    );
   });
 
   it('registry 能根据配置构造 mock 与 openai provider', () => {
@@ -127,5 +157,125 @@ describe('provider registry contract', () => {
         },
       }),
     ).toThrow(/api key/i);
+  });
+
+  it('腾讯 direct 模式只有半套凭证时会拒绝构造运行时 provider', () => {
+    const registry = createProviderRegistry();
+
+    expect(() =>
+      registry.createRuntimeProviders({
+        asr: {
+          type: 'tencent',
+          mode: 'direct',
+          secretId: 'only-secret-id',
+          language: 'zh',
+        },
+        structurer: {
+          type: 'mock',
+          mode: 'direct',
+          model: 'mock-structurer',
+          language: 'zh',
+        },
+      }),
+    ).toThrow(/secretId and secretKey/i);
+
+    expect(() =>
+      registry.createRuntimeProviders({
+        asr: {
+          type: 'tencent',
+          mode: 'direct',
+          secretKey: 'only-secret-key',
+          language: 'zh',
+        },
+        structurer: {
+          type: 'mock',
+          mode: 'direct',
+          model: 'mock-structurer',
+          language: 'zh',
+        },
+      }),
+    ).toThrow(/secretId and secretKey/i);
+
+    expect(() =>
+      registry.createRuntimeProviders({
+        asr: {
+          type: 'tencent',
+          mode: 'direct',
+          apiKey: 'missing-secret-key-part',
+          language: 'zh',
+        },
+        structurer: {
+          type: 'mock',
+          mode: 'direct',
+          model: 'mock-structurer',
+          language: 'zh',
+        },
+      }),
+    ).toThrow(/secretId and secretKey/i);
+  });
+
+  it('腾讯 direct 模式接受成对密钥或 legacy apiKey', () => {
+    const registry = createProviderRegistry();
+
+    expect(
+      registry.createRuntimeProviders({
+        asr: {
+          type: 'tencent',
+          mode: 'direct',
+          secretId: 'secret-id',
+          secretKey: 'secret-key',
+          language: 'zh',
+        },
+        structurer: {
+          type: 'mock',
+          mode: 'direct',
+          model: 'mock-structurer',
+          language: 'zh',
+        },
+      }).asr.name,
+    ).toBe('tencent-asr');
+
+    expect(
+      registry.createRuntimeProviders({
+        asr: {
+          type: 'tencent',
+          mode: 'direct',
+          apiKey: 'secret-id:secret-key',
+          language: 'zh',
+        },
+        structurer: {
+          type: 'mock',
+          mode: 'direct',
+          model: 'mock-structurer',
+          language: 'zh',
+        },
+      }).asr.name,
+    ).toBe('tencent-asr');
+  });
+
+  it('腾讯 ASR 默认化时不会继承 mock 模型占位值', () => {
+    const config = normalizeProviderConfig({
+      asr: {
+        type: 'tencent',
+        mode: 'direct',
+        secretId: 'secret-id',
+        secretKey: 'secret-key',
+        region: 'ap-shanghai',
+      },
+      structurer: {
+        type: 'mock',
+      },
+    });
+
+    expect(config.asr).toEqual(
+      expect.objectContaining({
+        type: 'tencent',
+        mode: 'direct',
+        region: 'ap-shanghai',
+        language: 'zh',
+      }),
+    );
+    expect(config.asr.model).toBeUndefined();
+    expect(config.asr.endpoint).toBeUndefined();
   });
 });

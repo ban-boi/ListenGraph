@@ -39,9 +39,9 @@ apps/
 ├── web-demo/         # React Web 演示应用
 └── extension/        # Chrome MV3 扩展
     ├── sidepanel/    # 侧边栏 UI
-    ├── offscreen/    # 离屏文档（音频处理）
+    ├── offscreen/    # 保留/实验路径，不是当前主链路宿主
     ├── service-worker/  # 后台服务
-    └── content-script/  # 内容脚本（待实现）
+    └── content-script/  # 当前音频捕获入口
 
 packages/
 ├── schema/           # 核心 TypeScript 类型定义
@@ -83,7 +83,8 @@ React Flow Visualization
 
 - **Service Worker**: 后台服务，处理扩展生命周期
 - **SidePanel**: 主 UI，使用 React + ReactFlow
-- **Offscreen Document**: 处理音频捕获（使用 AudioWorklet）
+- **Content Script**: 当前通过 `getDisplayMedia + AudioWorklet` 处理音频捕获
+- **Offscreen Document**: 保留在仓库中，但不是当前 production mainline
 - **Message Types**: 定义在 `apps/extension/src/shared/messages.ts`
 
 ### 图谱渲染器
@@ -133,4 +134,5 @@ import { mergeSegmentGraph } from '@listen-graphic/domain';
 2. **类型安全**: 使用 Zod 进行运行时验证（主要在 schema 包中）
 3. **React Flow**: 所有视图渲染器基于 `reactflow` 库
 4. **扩展开发**: 修改扩展代码后，需要在 `chrome://extensions` 中重新加载
-5. **AudioWorklet**: 音频处理在 offscreen 文档中进行，受 MV3 限制
+5. **AudioWorklet**: 当前音频处理链路位于 content script；`offscreen` 仍是保留路径
+6. **Provider 设置**: 当前产品面只暴露 `direct` 直连配置；`relay` 仅保留在底层 schema/provider 合约中

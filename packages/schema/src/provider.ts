@@ -53,6 +53,7 @@ export interface ProviderRuntimeEntrySummary {
   language?: string;
   apiKeyConfigured: boolean;
   sessionTokenConfigured: boolean;
+  secretConfigured?: boolean;
 }
 
 export interface ProviderRuntimeSummary {

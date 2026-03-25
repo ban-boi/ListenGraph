@@ -5,6 +5,7 @@ import {
   createProviderRegistry,
   ProviderRequestError,
   redactProviderConfig,
+  TencentAsrProvider,
 } from '@listen-graphic/providers';
 import {
   createMergedGraphRepository,
@@ -74,6 +75,7 @@ let currentView: RuntimeSnapshot['currentView'];
 let currentViewPinned = false;
 let pendingSessionFinalize: { sessionId: string; endedAt: number } | null = null;
 let inFlightChunkPromise: Promise<ServiceWorkerResponse> | null = null;
+let chunkQueueTail: Promise<void> = Promise.resolve();
 let runtimeStateHydrated = false;
 let hydrationPromise: Promise<void> | null = null;
 let activeProviderConfig: ProviderConfig = createDefaultProviderConfig();
@@ -83,6 +85,7 @@ let asrProvider: AsrProvider;
 let structurerProvider: StructurerProvider;
 
 const RUNTIME_STATE_KEY = 'listen-graphic-runtime-state';
+const CONTENT_SCRIPT_FILE = 'content-script/content-script.js';
 const providerRegistry = createProviderRegistry();
 const sessionRepository = createSessionRepository({ sessions: db.sessions });
 const transcriptChunkRepository = createTranscriptChunkRepository({
@@ -223,7 +226,7 @@ async function startSession(tabId: number): Promise<ServiceWorkerResponse> {
   let captureStarted = false;
 
   try {
-    const response = await chrome.tabs.sendMessage(tabId, {
+    const response = await sendMessageToContentScript(tabId, {
       type: 'START_CAPTURE',
       target: 'content-script',
       payload: {},
@@ -300,27 +303,70 @@ async function stopSession(sessionId: string): Promise<ServiceWorkerResponse> {
   return { success: true };
 }
 
-function enqueueAudioChunk(payload: AudioChunkPayload): Promise<ServiceWorkerResponse> {
-  const chunkPromise = handleAudioChunk(payload);
-  const trackedPromise = chunkPromise.finally(() => {
-    if (inFlightChunkPromise === trackedPromise) {
-      inFlightChunkPromise = null;
+async function sendMessageToContentScript<TResponse = any>(
+  tabId: number,
+  message: AppMessage | { type: 'START_CAPTURE' | 'STOP_CAPTURE' | 'SEEK_TO_TIMESTAMP'; target: 'content-script'; payload: any },
+): Promise<TResponse> {
+  try {
+    return await chrome.tabs.sendMessage(tabId, message) as TResponse;
+  } catch (error) {
+    if (!isMissingReceiverError(error)) {
+      throw error;
     }
+
+    await ensureContentScriptInjected(tabId);
+    return await chrome.tabs.sendMessage(tabId, message) as TResponse;
+  }
+}
+
+async function ensureContentScriptInjected(tabId: number) {
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    files: [CONTENT_SCRIPT_FILE],
   });
-  inFlightChunkPromise = trackedPromise;
-  return trackedPromise;
+}
+
+function isMissingReceiverError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return (
+    error.message.includes('Receiving end does not exist') ||
+    error.message.includes('Could not establish connection')
+  );
+}
+
+function enqueueAudioChunk(payload: AudioChunkPayload): Promise<ServiceWorkerResponse> {
+  const chunkPromise = chunkQueueTail
+    .catch(() => undefined)
+    .then(async () => {
+      const currentPromise = handleAudioChunk(payload);
+      inFlightChunkPromise = currentPromise;
+
+      try {
+        return await currentPromise;
+      } finally {
+        if (inFlightChunkPromise === currentPromise) {
+          inFlightChunkPromise = null;
+        }
+      }
+    });
+
+  chunkQueueTail = chunkPromise.then(
+    () => undefined,
+    () => undefined,
+  );
+
+  return chunkPromise;
 }
 
 async function waitForChunkQueueToSettle() {
-  let observedPromise: Promise<ServiceWorkerResponse> | null = null;
+  await chunkQueueTail;
 
-  do {
-    observedPromise = inFlightChunkPromise;
-    if (observedPromise) {
-      await observedPromise;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 0));
-  } while (inFlightChunkPromise && inFlightChunkPromise !== observedPromise);
+  if (inFlightChunkPromise) {
+    await inFlightChunkPromise;
+  }
 }
 
 async function handleAudioChunk(
@@ -337,16 +383,16 @@ async function handleAudioChunk(
   }
 
   const audioBytes = new Uint8Array(payload.audioData);
+  const audioBlob = new Blob([audioBytes], {
+    type: payload.audioMimeType ?? 'audio/wav',
+  });
 
   try {
     await notifySessionState('transcribing');
 
     const transcript = await asrProvider.transcribeChunk({
       sessionId: currentSession.sessionId,
-      audio: audioBytes.buffer.slice(
-        audioBytes.byteOffset,
-        audioBytes.byteOffset + audioBytes.byteLength,
-      ),
+      audio: audioBlob,
       startMs: payload.startMs,
       endMs: payload.endMs,
     });
@@ -526,8 +572,10 @@ async function handleGetDebugSession(sessionId: string): Promise<ServiceWorkerRe
 async function handleGetProviderSettings(): Promise<ServiceWorkerResponse> {
   await ensureHydrated();
   const config = stripProviderSecrets(
-    normalizeProviderConfig(
-      (await settingsRepository.getProviderConfig()) ?? activeProviderConfig,
+    constrainProviderConfigToDirectMode(
+      normalizeProviderConfig(
+        (await settingsRepository.getProviderConfig()) ?? activeProviderConfig,
+      ),
     ),
   );
   return {
@@ -542,11 +590,12 @@ async function handleSaveProviderSettings(
   await ensureHydrated();
   const existingConfig = await settingsRepository.getProviderConfig();
   const normalized = mergeProviderSecrets(
-    normalizeProviderConfig(config),
+    constrainProviderConfigToDirectMode(normalizeProviderConfig(config)),
     existingConfig ? normalizeProviderConfig(existingConfig) : undefined,
   );
+  const runtime = providerRegistry.createRuntimeProviders(normalized);
   await settingsRepository.saveProviderConfig(normalized);
-  applyProviderRuntime(normalized);
+  commitProviderRuntime(runtime);
   await persistRuntimeState();
   return { success: true };
 }
@@ -926,6 +975,17 @@ async function notifyError(code: string, message: string) {
   });
 }
 
+async function notifyProviderProgress(
+  stage: 'asr' | 'structurer',
+  message: string,
+) {
+  await broadcastToSidepanel({
+    type: 'PROVIDER_PROGRESS',
+    target: 'sidepanel',
+    payload: { stage, message },
+  });
+}
+
 async function broadcastToSidepanel(message: AppMessage): Promise<void> {
   try {
     await chrome.runtime.sendMessage(message);
@@ -940,15 +1000,31 @@ chrome.runtime.onSuspend.addListener(() => {
 
 async function loadProviderRuntimeFromSettings() {
   const storedConfig = await settingsRepository.getProviderConfig();
-  applyProviderRuntime(storedConfig ?? createDefaultProviderConfig());
+  applyProviderRuntime(
+    constrainProviderConfigToDirectMode(
+      normalizeProviderConfig(storedConfig ?? createDefaultProviderConfig()),
+    ),
+  );
 }
 
 function applyProviderRuntime(config: Partial<ProviderConfig> | ProviderConfig) {
   const runtime = providerRegistry.createRuntimeProviders(config);
+  commitProviderRuntime(runtime);
+}
+
+function commitProviderRuntime(
+  runtime: ReturnType<typeof providerRegistry.createRuntimeProviders>,
+) {
   activeProviderConfig = runtime.config;
   providerSummary = redactProviderConfig(activeProviderConfig);
   asrProvider = runtime.asr;
   structurerProvider = runtime.structurer;
+
+  if (asrProvider instanceof TencentAsrProvider) {
+    asrProvider.setProgressListener((message) => {
+      void notifyProviderProgress('asr', message);
+    });
+  }
 }
 
 function serializeProviderError(error: unknown): SerializableProviderError {
@@ -986,6 +1062,20 @@ function mergeProviderSecrets(
         nextConfig.asr.mode === existingConfig.asr.mode
           ? existingConfig.asr.sessionToken
           : undefined),
+      secretId:
+        nextConfig.asr.secretId ??
+        (nextConfig.asr.type === existingConfig.asr.type &&
+        nextConfig.asr.type === 'tencent' &&
+        nextConfig.asr.mode === 'direct'
+          ? existingConfig.asr.secretId
+          : undefined),
+      secretKey:
+        nextConfig.asr.secretKey ??
+        (nextConfig.asr.type === existingConfig.asr.type &&
+        nextConfig.asr.type === 'tencent' &&
+        nextConfig.asr.mode === 'direct'
+          ? existingConfig.asr.secretKey
+          : undefined),
     },
     structurer: {
       ...nextConfig.structurer,
@@ -1004,12 +1094,29 @@ function mergeProviderSecrets(
   };
 }
 
+function constrainProviderConfigToDirectMode(config: ProviderConfig): ProviderConfig {
+  return {
+    asr: {
+      ...config.asr,
+      mode: 'direct',
+      sessionToken: undefined,
+    },
+    structurer: {
+      ...config.structurer,
+      mode: 'direct',
+      sessionToken: undefined,
+    },
+  };
+}
+
 function stripProviderSecrets(config: ProviderConfig): ProviderConfig {
   return {
     asr: {
       ...config.asr,
       apiKey: undefined,
       sessionToken: undefined,
+      secretId: undefined,
+      secretKey: undefined,
     },
     structurer: {
       ...config.structurer,
@@ -1020,19 +1127,8 @@ function stripProviderSecrets(config: ProviderConfig): ProviderConfig {
 }
 
 function sanitizeProviderError(error: SerializableProviderError): SerializableProviderError {
-  const messageByCode: Record<SerializableProviderError['code'], string> = {
-    AUTH_ERROR: 'Provider authentication failed',
-    RATE_LIMIT_ERROR: 'Provider rate limited the request',
-    NETWORK_ERROR: 'Provider network request failed',
-    TIMEOUT_ERROR: 'Provider request timed out',
-    INVALID_RESPONSE: 'Provider returned an invalid response',
-    CONFIG_ERROR: 'Provider configuration is invalid',
-    TRANSCRIBE_ERROR: 'ASR provider request failed',
-    STRUCTURE_ERROR: 'Structurer provider request failed',
-  };
-
   return {
     ...error,
-    message: messageByCode[error.code] ?? 'Provider request failed',
+    message: error.message || 'Provider request failed',
   };
 }

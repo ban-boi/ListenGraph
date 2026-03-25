@@ -172,11 +172,11 @@ describe('storage repositories contract', () => {
     });
     const providerConfig: ProviderConfig = {
       asr: {
-        type: 'openai',
+        type: 'tencent',
         mode: 'direct',
-        endpoint: 'https://api.openai.com/v1',
-        apiKey: 'asr-secret',
-        model: 'gpt-4o-mini-transcribe',
+        secretId: 'secret-id',
+        secretKey: 'secret-key',
+        region: 'ap-shanghai',
         language: 'zh',
       },
       structurer: {
@@ -196,9 +196,11 @@ describe('storage repositories contract', () => {
 
     expect(saved).toEqual({
       asr: expect.objectContaining({
-        type: 'openai',
-        endpoint: 'https://api.openai.com/v1',
+        type: 'tencent',
+        region: 'ap-shanghai',
         apiKey: undefined,
+        secretId: undefined,
+        secretKey: undefined,
       }),
       structurer: expect.objectContaining({
         type: 'openai',

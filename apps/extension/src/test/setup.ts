@@ -56,6 +56,9 @@ import '@testing-library/jest-dom';
       removeListener: vi.fn(),
     },
   },
+  scripting: {
+    executeScript: vi.fn(() => Promise.resolve()),
+  },
   action: {
     onClicked: {
       addListener: vi.fn(),

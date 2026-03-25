@@ -259,6 +259,12 @@ describe('App 组件', () => {
     expect(
       within(settingsPanel).getByDisplayValue('gpt-4o-mini-transcribe'),
     ).toBeInTheDocument();
+    expect(within(settingsPanel).queryByLabelText('ASR Mode')).not.toBeInTheDocument();
+    expect(within(settingsPanel).queryByLabelText('Structurer Mode')).not.toBeInTheDocument();
+    expect(within(settingsPanel).queryByLabelText('ASR Session Token')).not.toBeInTheDocument();
+    expect(
+      within(settingsPanel).queryByLabelText('Structurer Session Token'),
+    ).not.toBeInTheDocument();
   });
 
   it('保存设置时会把 provider 配置发送给 service worker', async () => {
@@ -346,14 +352,281 @@ describe('App 组件', () => {
           config: expect.objectContaining({
             asr: expect.objectContaining({
               type: 'openai',
+              mode: 'direct',
               endpoint: 'https://api.openai.com/v1',
               model: 'gpt-4o-mini-transcribe',
               apiKey: 'asr-secret',
+              sessionToken: undefined,
             }),
           }),
         },
       }),
     );
+  });
+
+  it('历史 relay 配置进入设置页后仍会按 direct 形态保存', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string; payload?: any }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: null,
+              state: 'idle',
+              graph: null,
+              currentTimeMs: 0,
+              providerSummary: {
+                asr: {
+                  type: 'openai',
+                  mode: 'relay',
+                  model: 'gpt-4o-mini-transcribe',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: true,
+                },
+                structurer: {
+                  type: 'openai',
+                  mode: 'relay',
+                  model: 'gpt-4.1-mini',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: true,
+                },
+              },
+              lastProviderError: null,
+            },
+          });
+        }
+        if (message?.type === 'GET_PROVIDER_SETTINGS') {
+          return Promise.resolve({
+            success: true,
+            config: {
+              asr: {
+                type: 'openai',
+                mode: 'relay',
+                endpoint: 'https://api.openai.com/v1',
+                sessionToken: 'relay-token',
+                model: 'gpt-4o-mini-transcribe',
+                language: 'zh',
+              },
+              structurer: {
+                type: 'openai',
+                mode: 'relay',
+                endpoint: 'https://api.openai.com/v1',
+                sessionToken: 'relay-token',
+                model: 'gpt-4.1-mini',
+                language: 'zh',
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+    const user = userEvent.setup();
+
+    await renderApp();
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^设置$/ }));
+    });
+
+    const settingsPanel = await screen.findByTestId('settings-panel');
+    expect(within(settingsPanel).queryByLabelText('ASR Mode')).not.toBeInTheDocument();
+    expect(within(settingsPanel).queryByLabelText('Structurer Mode')).not.toBeInTheDocument();
+    expect(within(settingsPanel).queryByLabelText('ASR Session Token')).not.toBeInTheDocument();
+    expect(
+      within(settingsPanel).queryByLabelText('Structurer Session Token'),
+    ).not.toBeInTheDocument();
+
+    await act(async () => {
+      await user.click(within(settingsPanel).getByRole('button', { name: /保存设置/i }));
+    });
+
+    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'SAVE_PROVIDER_SETTINGS',
+        payload: {
+          config: expect.objectContaining({
+            asr: expect.objectContaining({
+              mode: 'direct',
+              sessionToken: undefined,
+            }),
+            structurer: expect.objectContaining({
+              mode: 'direct',
+              sessionToken: undefined,
+            }),
+          }),
+        },
+      }),
+    );
+  });
+
+  it('保存腾讯设置时空的 secret 字段会以 undefined 发送，避免覆盖本地已存密钥', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string; payload?: any }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: null,
+              state: 'idle',
+              graph: null,
+              currentTimeMs: 0,
+              providerSummary: {
+                asr: {
+                  type: 'mock',
+                  mode: 'direct',
+                  model: 'mock-asr',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                },
+                structurer: {
+                  type: 'mock',
+                  mode: 'direct',
+                  model: 'mock-structurer',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                },
+              },
+              lastProviderError: null,
+            },
+          });
+        }
+        if (message?.type === 'GET_PROVIDER_SETTINGS') {
+          return Promise.resolve({
+            success: true,
+            config: {
+              asr: {
+                type: 'tencent',
+                mode: 'direct',
+                region: 'ap-shanghai',
+                language: 'zh',
+              },
+              structurer: {
+                type: 'mock',
+                mode: 'direct',
+                model: 'mock-structurer',
+                language: 'zh',
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    const user = userEvent.setup();
+    await renderApp();
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^设置$/ }));
+    });
+
+    const settingsPanel = await screen.findByTestId('settings-panel');
+    const providerTypeSelect = within(settingsPanel).getAllByLabelText(/Provider Type/i)[0];
+
+    await act(async () => {
+      await user.selectOptions(providerTypeSelect, 'tencent');
+    });
+
+    const secretIdInput = within(settingsPanel).getByLabelText('Tencent Secret ID');
+    const secretKeyInput = within(settingsPanel).getByLabelText('Tencent Secret Key');
+
+    await act(async () => {
+      await user.type(secretIdInput, 'temp-secret-id');
+      await user.clear(secretIdInput);
+      await user.type(secretKeyInput, 'temp-secret-key');
+      await user.clear(secretKeyInput);
+      await user.click(within(settingsPanel).getByRole('button', { name: /保存设置/i }));
+    });
+
+    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'SAVE_PROVIDER_SETTINGS',
+        payload: {
+          config: expect.objectContaining({
+            asr: expect.objectContaining({
+              type: 'tencent',
+              secretId: undefined,
+              secretKey: undefined,
+            }),
+          }),
+        },
+      }),
+    );
+  });
+
+  it('已保存的腾讯密钥不会回显明文，但会显示留空保持不变的提示', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: null,
+              state: 'idle',
+              graph: null,
+              currentTimeMs: 0,
+              providerSummary: {
+                asr: {
+                  type: 'tencent',
+                  mode: 'direct',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                  secretConfigured: true,
+                },
+                structurer: {
+                  type: 'mock',
+                  mode: 'direct',
+                  model: 'mock-structurer',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                },
+              },
+              lastProviderError: null,
+            },
+          });
+        }
+        if (message?.type === 'GET_PROVIDER_SETTINGS') {
+          return Promise.resolve({
+            success: true,
+            config: {
+              asr: {
+                type: 'tencent',
+                mode: 'direct',
+                region: 'ap-shanghai',
+                language: 'zh',
+              },
+              structurer: {
+                type: 'mock',
+                mode: 'direct',
+                model: 'mock-structurer',
+                language: 'zh',
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    const user = userEvent.setup();
+    await renderApp();
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^设置$/ }));
+    });
+
+    const settingsPanel = await screen.findByTestId('settings-panel');
+    const secretIdInput = within(settingsPanel).getByLabelText('Tencent Secret ID') as HTMLInputElement;
+    const secretKeyInput = within(settingsPanel).getByLabelText('Tencent Secret Key') as HTMLInputElement;
+
+    expect(secretIdInput.value).toBe('');
+    expect(secretKeyInput.value).toBe('');
+    expect(secretIdInput.placeholder).toContain('已保存');
+    expect(screen.getByText(/已保存 Secret ID \/ Secret Key，留空则保持不变/)).toBeInTheDocument();
   });
 
   it('冷启动时会从 service worker 恢复会话快照', async () => {
@@ -681,6 +954,49 @@ describe('App 组件', () => {
         }),
       }),
     );
+  });
+
+  it('收到 provider progress 后会把腾讯调试进度写入日志', async () => {
+    const listeners: Array<(message: any) => void> = [];
+    (globalThis as any).chrome.runtime.onMessage.addListener.mockImplementation(
+      (listener: (message: any) => void) => {
+        listeners.push(listener);
+      },
+    );
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: 'session_progress',
+              state: 'transcribing',
+              graph: null,
+              currentTimeMs: 10000,
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+
+    await act(async () => {
+      listeners[0]?.({
+        type: 'PROVIDER_PROGRESS',
+        target: 'sidepanel',
+        payload: {
+          stage: 'asr',
+          message: '腾讯 ASR 任务已创建，TaskId=9527',
+        },
+      });
+      await Promise.resolve();
+    });
+
+    expect(
+      screen.getByText(/ASR: 腾讯 ASR 任务已创建，TaskId=9527/),
+    ).toBeInTheDocument();
   });
 
   it('点击停止后会等待 stopped 广播，再恢复可导出状态', async () => {

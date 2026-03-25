@@ -1,4 +1,9 @@
 import type { AppMessage } from '../shared/messages';
+import {
+  CAPTURE_CHANNELS,
+  CAPTURE_SAMPLE_RATE,
+  encodeAudioChunkAsWav,
+} from '../shared/audio';
 
 let audioContext: AudioContext | null = null;
 let mediaStream: MediaStream | null = null;
@@ -7,7 +12,7 @@ let processorNode: AudioWorkletNode | null = null;
 let isCapturing = false;
 let hasReportedCaptureEnd = false;
 
-const SAMPLE_RATE = 16000;
+const SAMPLE_RATE = CAPTURE_SAMPLE_RATE;
 
 chrome.runtime.onMessage.addListener((message: AppMessage | any, _sender, sendResponse) => {
   if (message.target && message.target !== 'content-script') return false;
@@ -88,12 +93,16 @@ async function startTabCapture() {
     processorNode = new AudioWorkletNode(audioContext, 'audio-chunk-processor');
     processorNode.port.onmessage = (event: MessageEvent) => {
       if (event.data?.type !== 'AUDIO_CHUNK') return;
+      const wavChunk = encodeAudioChunkAsWav(new Float32Array(event.data.audioData), {
+        sampleRate: SAMPLE_RATE,
+        channels: CAPTURE_CHANNELS,
+      });
 
       void chrome.runtime.sendMessage({
         type: 'AUDIO_CHUNK_READY',
         target: 'service-worker',
         payload: {
-          audioData: Array.from(new Uint8Array(event.data.audioData)),
+          ...wavChunk,
           startMs: event.data.startMs,
           endMs: event.data.endMs,
         },

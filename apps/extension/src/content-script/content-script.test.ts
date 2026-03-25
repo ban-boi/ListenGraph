@@ -18,6 +18,7 @@ describe('content-script 主链路', () => {
     getTracks: () => Array<typeof audioTrack | typeof videoTrack>;
   };
   let getDisplayMediaMock: ReturnType<typeof vi.fn>;
+  let processorNodeInstance: { port: { onmessage: ((event: MessageEvent) => void) | null } } | null;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -47,6 +48,7 @@ describe('content-script 主链路', () => {
     };
 
     getDisplayMediaMock = vi.fn().mockResolvedValue(mediaStreamMock);
+    processorNodeInstance = null;
     Object.defineProperty(globalThis.navigator, 'mediaDevices', {
       configurable: true,
       value: {
@@ -57,6 +59,10 @@ describe('content-script 主链路', () => {
     class AudioWorkletNodeMock {
       port = { onmessage: null as ((event: MessageEvent) => void) | null };
       disconnect = vi.fn();
+
+      constructor() {
+        processorNodeInstance = this;
+      }
     }
 
     class AudioContextMock {
@@ -147,5 +153,43 @@ describe('content-script 主链路', () => {
         payload: { reason: 'share-ended' },
       }),
     );
+  });
+
+  it('收到 worklet 音频块时会转成 wav 字节并发送到 service worker', async () => {
+    await dispatchMessage({
+      type: 'START_CAPTURE',
+      target: 'content-script',
+      payload: {},
+    });
+
+    const floatChunk = new Float32Array([0, 0.5, -0.5, 1]);
+    processorNodeInstance?.port.onmessage?.({
+      data: {
+        type: 'AUDIO_CHUNK',
+        audioData: floatChunk.buffer,
+        startMs: 0,
+        endMs: 30000,
+      },
+    } as MessageEvent);
+
+    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'AUDIO_CHUNK_READY',
+        target: 'service-worker',
+        payload: expect.objectContaining({
+          audioData: expect.any(Array),
+          audioMimeType: 'audio/wav',
+          sampleRate: 16000,
+          channels: 1,
+          bitDepth: 16,
+          startMs: 0,
+          endMs: 30000,
+        }),
+      }),
+    );
+
+    const payload = (globalThis as any).chrome.runtime.sendMessage.mock.calls.at(-1)?.[0]?.payload;
+    const riff = String.fromCharCode(...payload.audioData.slice(0, 4));
+    expect(riff).toBe('RIFF');
   });
 });

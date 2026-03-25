@@ -2,7 +2,7 @@
 
 ## Purpose
 This note records the execution baseline for the real-provider phase after providerization landed.
-Its goal is to keep implementation, testing, and future relay work aligned with the current extension mainline.
+Its goal is to keep implementation, testing, and the current direct-mode scope aligned with the current extension mainline.
 
 ## Source Of Truth
 - Extension mainline: `docs/plans/2026-03-21-extension-execution-baseline.md`
@@ -33,9 +33,9 @@ Its goal is to keep implementation, testing, and future relay work aligned with 
 ## Current Provider Strategy
 - Default local config remains `mock + mock`.
 - Real-provider path is `openai + openai`.
-- Access mode is currently:
-  - `direct`: user-provided API key in local-only storage
-  - `relay`: schema and UI are reserved, but no backend relay is implemented yet
+- Access mode for the current product surface is `direct` only:
+  - user-provided API key or Tencent direct credentials in local-only storage
+  - `relay` stays in schema/provider contracts as a reserved future path, but is out of scope for now and not exposed in the settings UI
 - Business code still depends on provider contracts rather than provider-specific SDKs.
 
 ## Mainline Rule
@@ -50,13 +50,13 @@ This phase does not revive `tabCapture` or `offscreen` as the production executi
 - Secrets are never written to sync storage.
 - Sidepanel offers:
   - provider type
-  - mode
   - endpoint
   - model
   - API key
-  - session token
+  - Tencent `secretId` / `secretKey`
   - language
-- A dedicated clear-secrets action removes `apiKey` and `sessionToken` while preserving the rest of the config.
+- A dedicated clear-secrets action removes `apiKey`, `sessionToken`, `secretId`, and `secretKey` while preserving the rest of the config.
+- If legacy stored settings still contain `relay`, the current UI/runtime normalizes them back to `direct` on load/save.
 
 ## Testing Baseline
 Testing is now split into three layers:
@@ -103,7 +103,7 @@ The current code treats those failures as transient on the live path:
 - still fail hard for ordinary storage errors that are not backing-store flukes
 
 ## Next Step
-The next natural increment is hosted relay support:
-- keep the same `ProviderConfig` shape
-- implement `relay` mode token flow
-- reuse the same sidepanel settings surface
+The next natural increment is direct-mode hardening rather than hosted relay:
+- keep `ProviderConfig` compatible with future relay work, but do not expose relay in the current UI
+- finish direct-mode smoke validation for `mock`, `openai`, and `tencent` provider combinations
+- keep documentation and acceptance checks aligned with the active direct-only product surface
