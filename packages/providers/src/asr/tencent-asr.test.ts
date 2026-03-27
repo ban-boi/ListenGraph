@@ -299,9 +299,124 @@ describe('TencentAsrProvider', () => {
         '腾讯 ASR 正在创建识别任务，第 1 次请求',
         '腾讯 ASR 任务已创建，TaskId=9527',
         '腾讯 ASR 轮询中，TaskId=9527，第 1 次，状态=running',
-        '腾讯 ASR 轮询中，TaskId=9527，第 2 次，状态=success',
         '腾讯 ASR 完成，TaskId=9527，耗时约 4 秒',
       ])
+    })
+
+    it('should treat Tencent Status=2 plus StatusStr=success as a completed task', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            Response: {
+              RequestId: 'req-create-status',
+              Data: {
+                TaskId: 9531,
+              },
+            },
+          }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            Response: {
+              RequestId: 'req-poll-status',
+              Data: {
+                TaskId: 9531,
+                Status: 2,
+                StatusStr: 'success',
+                Result: '按文档字段完成',
+              },
+            },
+          }),
+        } as Response)
+
+      const transcript = await provider.transcribeChunk({
+        audio: new Uint8Array([1, 2, 3, 4]).buffer,
+        startMs: 0,
+        endMs: 1000,
+        sessionId: 'session-status',
+      })
+
+      expect(transcript.text).toBe('按文档字段完成')
+    })
+
+    it('should not spam repeated poll logs when Tencent task stays in the same status', async () => {
+      const progressMessages: string[] = []
+      provider.setProgressListener((message) => {
+        progressMessages.push(message)
+      })
+
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            Response: {
+              RequestId: 'req-create-repeat',
+              Data: {
+                TaskId: 9532,
+              },
+            },
+          }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            Response: {
+              RequestId: 'req-poll-repeat-1',
+              Data: {
+                TaskId: 9532,
+                Status: 1,
+                StatusStr: 'doing',
+              },
+            },
+          }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            Response: {
+              RequestId: 'req-poll-repeat-2',
+              Data: {
+                TaskId: 9532,
+                Status: 1,
+                StatusStr: 'doing',
+              },
+            },
+          }),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            Response: {
+              RequestId: 'req-poll-repeat-3',
+              Data: {
+                TaskId: 9532,
+                Status: 2,
+                StatusStr: 'success',
+                Result: '日志去噪成功',
+              },
+            },
+          }),
+        } as Response)
+
+      const transcript = await provider.transcribeChunk({
+        audio: new Uint8Array([1, 2, 3, 4]).buffer,
+        startMs: 0,
+        endMs: 1000,
+        sessionId: 'session-repeat-status',
+      })
+
+      expect(transcript.text).toBe('日志去噪成功')
+      expect(
+        progressMessages.filter((message) => message.includes('轮询中')).length,
+      ).toBe(1)
+      expect(progressMessages).toContain(
+        '腾讯 ASR 轮询中，TaskId=9532，第 1 次，状态=doing',
+      )
+      expect(progressMessages.at(-1)).toBe(
+        '腾讯 ASR 完成，TaskId=9532，耗时约 6 秒',
+      )
     })
 
     it('should map Tencent auth errors to AUTH_ERROR without overwriting them', async () => {

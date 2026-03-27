@@ -3,7 +3,7 @@ import type { TranscriptChunk } from './transcript';
 
 export type ProviderMode = 'direct' | 'relay';
 export type AsrProviderType = 'mock' | 'openai' | 'tencent';
-export type StructurerProviderType = 'mock' | 'openai';
+export type StructurerProviderType = 'mock' | 'openai' | 'zhipu';
 export type ProviderStage = 'asr' | 'structurer';
 
 export interface ProviderRetryPolicy {

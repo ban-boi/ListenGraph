@@ -76,6 +76,7 @@ let currentViewPinned = false;
 let pendingSessionFinalize: { sessionId: string; endedAt: number } | null = null;
 let inFlightChunkPromise: Promise<ServiceWorkerResponse> | null = null;
 let chunkQueueTail: Promise<void> = Promise.resolve();
+let stoppingSessionId: string | null = null;
 let runtimeStateHydrated = false;
 let hydrationPromise: Promise<void> | null = null;
 let activeProviderConfig: ProviderConfig = createDefaultProviderConfig();
@@ -220,6 +221,7 @@ async function startSession(tabId: number): Promise<ServiceWorkerResponse> {
   currentTimeMs = 0;
   currentView = undefined;
   currentViewPinned = false;
+  stoppingSessionId = null;
   asrProvider.reset?.();
   structurerProvider.reset?.();
   await persistRuntimeState();
@@ -287,6 +289,8 @@ async function stopSession(sessionId: string): Promise<ServiceWorkerResponse> {
     return { success: false, error: '停止请求的 sessionId 与当前活动会话不匹配' };
   }
 
+  stoppingSessionId = activeSession.sessionId;
+
   try {
     await chrome.tabs.sendMessage(activeSession.tabId, {
       type: 'STOP_CAPTURE',
@@ -297,6 +301,8 @@ async function stopSession(sessionId: string): Promise<ServiceWorkerResponse> {
     console.warn('[Service Worker] 停止采集时未收到内容脚本响应:', error);
   }
 
+  asrProvider.reset?.();
+  structurerProvider.reset?.();
   await waitForChunkQueueToSettle();
 
   await cleanupSession({ sessionId: activeSession.sessionId, state: 'stopped' });
@@ -382,6 +388,13 @@ async function handleAudioChunk(
     return { success: false, error: '没有活动会话' };
   }
 
+  if (
+    currentSession.state === 'error' ||
+    stoppingSessionId === currentSession.sessionId
+  ) {
+    return { success: false, error: '当前会话已停止或进入错误状态' };
+  }
+
   const audioBytes = new Uint8Array(payload.audioData);
   const audioBlob = new Blob([audioBytes], {
     type: payload.audioMimeType ?? 'audio/wav',
@@ -446,6 +459,10 @@ async function handleAudioChunk(
     await persistRuntimeState();
     return { success: true };
   } catch (error) {
+    if (currentSession && stoppingSessionId === currentSession.sessionId) {
+      return { success: false, error: '会话停止中' };
+    }
+
     lastProviderError = serializeProviderError(error);
     const message = lastProviderError.message;
     currentSession.state = 'error';
@@ -899,6 +916,7 @@ async function cleanupSession(payload: {
       endedAt,
     };
   } finally {
+    stoppingSessionId = null;
     currentSession = null;
     recoveredSessionId = null;
     transcriptWindow = [];

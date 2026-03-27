@@ -137,6 +137,34 @@ describe('provider registry contract', () => {
     expect(liveProviders.structurer.name).toBe('openai-structurer');
   });
 
+  it('智谱 structurer 会使用独立 provider 类型和默认 endpoint/model', () => {
+    const registry = createProviderRegistry();
+    const config = normalizeProviderConfig({
+      asr: {
+        type: 'mock',
+      },
+      structurer: {
+        type: 'zhipu',
+        mode: 'direct',
+        apiKey: 'zhipu-secret',
+      },
+    });
+
+    expect(config.structurer).toEqual(
+      expect.objectContaining({
+        type: 'zhipu',
+        mode: 'direct',
+        endpoint: 'https://open.bigmodel.cn/api/paas/v4',
+        model: 'glm-4.7-flash',
+        apiKey: 'zhipu-secret',
+        language: 'zh',
+      }),
+    );
+
+    const providers = registry.createRuntimeProviders(config);
+    expect(providers.structurer.name).toBe('zhipu-structurer');
+  });
+
   it('直连真实 provider 缺少密钥时会拒绝构造运行时 provider', () => {
     const registry = createProviderRegistry();
 

@@ -4,6 +4,7 @@ import {
   OpenAIStructurerProvider,
   ProviderRequestError,
   retryAsync,
+  ZhipuStructurerProvider,
 } from '@listen-graphic/providers';
 
 describe('real provider adapters', () => {
@@ -182,6 +183,75 @@ describe('real provider adapters', () => {
         text: '这是结构化节点',
         timestampMs: 1_000,
         evidenceChunkIds: ['chunk_1'],
+      }),
+    );
+  });
+
+  it('ZhipuStructurerProvider 会使用智谱默认 endpoint/model 并保留独立 provider 名称', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                topic: '智谱主题',
+                nodes: [
+                  {
+                    type: 'claim',
+                    text: '智谱结构化节点',
+                  },
+                ],
+              }),
+            },
+          },
+        ],
+      }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const provider = new ZhipuStructurerProvider({
+      type: 'zhipu',
+      mode: 'direct',
+      apiKey: 'zhipu-secret',
+      language: 'zh',
+    });
+
+    const segment = await provider.extractSegmentGraph({
+      sessionId: 'session_zhipu',
+      transcriptWindow: [
+        {
+          chunkId: 'chunk_zhipu_1',
+          sessionId: 'session_zhipu',
+          text: '智谱 transcript',
+          startMs: 2_000,
+          endMs: 5_000,
+          provider: 'openai-asr',
+        },
+      ],
+      language: 'zh',
+    });
+
+    const requestCalls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    const requestInit = requestCalls[0]?.[1];
+    const parsedBody = JSON.parse(String(requestInit?.body ?? '{}'));
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer zhipu-secret',
+        }),
+      }),
+    );
+    expect(parsedBody.model).toBe('glm-4.7-flash');
+    expect(parsedBody.response_format).toEqual({ type: 'json_object' });
+    expect(segment).toEqual(
+      expect.objectContaining({
+        sessionId: 'session_zhipu',
+        topic: '智谱主题',
+        provider: 'zhipu-structurer',
       }),
     );
   });

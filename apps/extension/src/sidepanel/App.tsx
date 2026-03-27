@@ -84,6 +84,8 @@ const EDGE_TYPES: EdgeType[] = [
   'example_of',
 ];
 const SPEAKERS = ['主持人', '嘉宾A', '嘉宾B'];
+const ZHIPU_ENDPOINT_STANDARD = 'https://open.bigmodel.cn/api/paas/v4';
+const ZHIPU_ENDPOINT_CODING_PLAN = 'https://open.bigmodel.cn/api/coding/paas/v4';
 
 // ============ 工具函数 ============
 
@@ -174,6 +176,44 @@ function pinProviderConfigToDirectMode(config: ProviderConfig): ProviderConfig {
       sessionToken: undefined,
     },
   };
+}
+
+function getProviderTypeSelectValue(
+  stage: keyof ProviderConfig,
+  entry: ProviderConfig[keyof ProviderConfig],
+) {
+  if (
+    stage === 'structurer' &&
+    entry.type === 'zhipu' &&
+    entry.endpoint === ZHIPU_ENDPOINT_CODING_PLAN
+  ) {
+    return 'zhipu-coding-plan';
+  }
+
+  return entry.type;
+}
+
+function resetProviderEntryForTypeChange(
+  stage: keyof ProviderConfig,
+  nextType: ProviderConfig[keyof ProviderConfig]['type'],
+  config: ProviderConfig,
+): ProviderConfig {
+  const nextConfig: ProviderConfig = {
+    ...config,
+    [stage]: {
+      ...config[stage],
+      type: nextType as never,
+      endpoint: undefined,
+      apiKey: undefined,
+      sessionToken: undefined,
+      model: undefined,
+      region: undefined,
+      secretId: undefined,
+      secretKey: undefined,
+    },
+  };
+
+  return pinProviderConfigToDirectMode(normalizeProviderConfig(nextConfig));
 }
 
 // ============ 自定义节点组件 ============
@@ -312,6 +352,16 @@ const VIEW_LABELS: Record<ViewType, string> = {
 
 // 是否为开发模式（模拟数据，不依赖 service worker）
 const isDevMode = false;
+const DEFAULT_LOG_PANEL_HEIGHT = 120;
+const MIN_LOG_PANEL_HEIGHT = 80;
+const MAX_LOG_PANEL_HEIGHT = 360;
+
+function clampLogPanelHeight(nextHeight: number) {
+  const viewportMax = typeof window === 'undefined'
+    ? MAX_LOG_PANEL_HEIGHT
+    : Math.min(MAX_LOG_PANEL_HEIGHT, Math.floor(window.innerHeight * 0.6));
+  return Math.min(Math.max(nextHeight, MIN_LOG_PANEL_HEIGHT), viewportMax);
+}
 
 export default function App() {
   const [sessionState, setSessionState] = useState<SessionState>('idle');
@@ -329,6 +379,7 @@ export default function App() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [graph, setGraph] = useState<MergedGraph>(createEmptyGraph);
+  const [logPanelHeight, setLogPanelHeight] = useState(DEFAULT_LOG_PANEL_HEIGHT);
   const [providerConfig, setProviderConfig] = useState<ProviderConfig>(() =>
     createDefaultProviderConfig(),
   );
@@ -340,6 +391,7 @@ export default function App() {
   const transcriptIndexRef = useRef(0);
   const sessionStartTimeRef = useRef(0);
   const userPinnedViewRef = useRef(false);
+  const logResizeStartRef = useRef<{ pointerY: number; height: number } | null>(null);
 
   const addLog = useCallback((msg: string) => {
     const time = new Date().toLocaleTimeString();
@@ -591,6 +643,33 @@ export default function App() {
           [field]: value === '' ? undefined : value,
         },
       }));
+    },
+    [],
+  );
+
+  const handleProviderTypeChange = useCallback(
+    (
+      stage: keyof ProviderConfig,
+      nextType: string,
+    ) => {
+      setProviderConfig((prev) => {
+        if (stage === 'structurer' && nextType === 'zhipu-coding-plan') {
+          const nextConfig = resetProviderEntryForTypeChange(stage, 'zhipu', prev);
+          return {
+            ...nextConfig,
+            structurer: {
+              ...nextConfig.structurer,
+              endpoint: ZHIPU_ENDPOINT_CODING_PLAN,
+            },
+          };
+        }
+
+        return resetProviderEntryForTypeChange(
+          stage,
+          nextType as ProviderConfig[keyof ProviderConfig]['type'],
+          prev,
+        );
+      });
     },
     [],
   );
@@ -951,6 +1030,53 @@ export default function App() {
     [graph, sendSeekMessage],
   );
 
+  const stopLogResize = useCallback(() => {
+    logResizeStartRef.current = null;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  }, []);
+
+  const handleLogResizeMove = useCallback((clientY: number) => {
+    const resizeState = logResizeStartRef.current;
+    if (!resizeState) {
+      return;
+    }
+
+    const deltaY = resizeState.pointerY - clientY;
+    setLogPanelHeight(clampLogPanelHeight(resizeState.height + deltaY));
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      handleLogResizeMove(event.clientY);
+    };
+    const handleMouseUp = () => {
+      stopLogResize();
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      stopLogResize();
+    };
+  }, [handleLogResizeMove, stopLogResize]);
+
+  const handleLogResizeStart = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      logResizeStartRef.current = {
+        pointerY: event.clientY,
+        height: logPanelHeight,
+      };
+      document.body.style.cursor = 'row-resize';
+      document.body.style.userSelect = 'none';
+      event.preventDefault();
+    },
+    [logPanelHeight],
+  );
+
   // 获取 renderer
   const getRenderer = useCallback(
     (view: ViewType) => {
@@ -1252,14 +1378,18 @@ export default function App() {
                 <span>{label} Provider Type</span>
                 <select
                   aria-label={`${label} Provider Type`}
-                  value={providerConfig[stageKey].type}
+                  value={getProviderTypeSelectValue(stageKey, providerConfig[stageKey])}
                   onChange={(event) =>
-                    updateProviderEntry(stageKey, 'type', event.target.value)
+                    handleProviderTypeChange(stageKey, event.target.value)
                   }
                 >
                   <option value="mock">Mock (测试)</option>
                   <option value="openai">OpenAI</option>
                   {stageKey === 'asr' && <option value="tencent">腾讯云</option>}
+                  {stageKey === 'structurer' && <option value="zhipu">智谱 GLM</option>}
+                  {stageKey === 'structurer' && (
+                    <option value="zhipu-coding-plan">智谱 GLM（Coding Plan）</option>
+                  )}
                 </select>
               </label>
               {providerConfig[stageKey].type === 'tencent' && stageKey === 'asr' && (
@@ -1442,11 +1572,37 @@ export default function App() {
           <Controls />
         </ReactFlow>
 
+        <div
+          data-testid="log-resizer"
+          onMouseDown={handleLogResizeStart}
+          style={{
+            height: 8,
+            flexShrink: 0,
+            cursor: 'row-resize',
+            background:
+              'linear-gradient(to bottom, #dbe4ee 0, #dbe4ee 1px, #f8fafc 1px, #f8fafc 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          aria-label="调整日志面板高度"
+          role="separator"
+        >
+          <div
+            style={{
+              width: 48,
+              height: 4,
+              borderRadius: 999,
+              backgroundColor: '#94a3b8',
+            }}
+          />
+        </div>
+
         {/* 日志区域 */}
         <div
           data-testid="log-area"
           style={{
-            height: 120,
+            height: logPanelHeight,
             overflowY: 'auto',
             backgroundColor: '#1e1e1e',
             color: '#10b981',

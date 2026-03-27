@@ -18,7 +18,6 @@ import type {
 import { generateId } from '@listen-graphic/shared-utils';
 import { DEFAULT_RETRY_POLICY } from '../config';
 import {
-  createTimeoutSignal,
   mapHttpError,
   retryAsync,
   ProviderRequestError,
@@ -34,9 +33,11 @@ interface TencentAsrResponse {
     };
     Data?: {
       TaskId: number;
+      Status?: number;
       TaskStatus?: number;
       StatusStr?: string;
       Result?: string;
+      ErrorMsg?: string;
       ResultDetail?: Array<{
         FinalSentence?: string;
         StartMs?: number;
@@ -75,6 +76,9 @@ export class TencentAsrProvider implements AsrProvider {
   private readonly apiVersion = '2019-06-14';
   private readonly service = 'asr';
   private progressListener?: (message: string) => void;
+  private abortInProgress = false;
+  private readonly activeRequestControllers = new Set<AbortController>();
+  private readonly pendingPollWaitCancels = new Set<() => void>();
 
   constructor(config: AsrProviderConfig) {
     this.config = config;
@@ -83,6 +87,20 @@ export class TencentAsrProvider implements AsrProvider {
 
   setProgressListener(listener?: (message: string) => void) {
     this.progressListener = listener;
+  }
+
+  reset() {
+    this.abortInProgress = true;
+
+    for (const controller of this.activeRequestControllers) {
+      controller.abort();
+    }
+    this.activeRequestControllers.clear();
+
+    for (const cancel of this.pendingPollWaitCancels) {
+      cancel();
+    }
+    this.pendingPollWaitCancels.clear();
   }
 
   /**
@@ -95,6 +113,7 @@ export class TencentAsrProvider implements AsrProvider {
     sessionId: string;
     language?: string;
   }): Promise<TranscriptChunk> {
+    this.abortInProgress = false;
     const retryPolicy = {
       ...DEFAULT_RETRY_POLICY,
       ...this.config.retry,
@@ -193,7 +212,7 @@ export class TencentAsrProvider implements AsrProvider {
         const timestamp = Math.floor(Date.now() / 1000);
         const authorization = await this.buildAuthorization(payload, timestamp);
 
-        const result = await fetch(`https://${this.endpoint}`, {
+        const result = await this.fetchWithTimeout(`https://${this.endpoint}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -204,7 +223,9 @@ export class TencentAsrProvider implements AsrProvider {
             ...(this.config.region && { 'X-TC-Region': this.config.region }),
           },
           body: JSON.stringify(payload),
-          signal: createTimeoutSignal(Math.max(retryPolicy.timeoutMs, 30_000)),
+        }, Math.max(retryPolicy.timeoutMs, 30_000), {
+          abortMessage: 'Tencent ASR create task aborted by reset',
+          attemptCount: attempt,
         });
 
         if (!result.ok) {
@@ -255,12 +276,13 @@ export class TencentAsrProvider implements AsrProvider {
   ): Promise<NonNullable<TencentAsrResponse['Response']['Data']>> {
     const maxAttempts = 60;
     const pollInterval = 2000; // 2 seconds
+    let lastReportedStatus: string | undefined;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const timestamp = Math.floor(Date.now() / 1000);
       const authorization = await this.buildAuthorization({ TaskId: taskId }, timestamp);
 
-      const response = await fetch(`https://${this.endpoint}`, {
+      const response = await this.fetchWithTimeout(`https://${this.endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -271,7 +293,9 @@ export class TencentAsrProvider implements AsrProvider {
           ...(this.config.region && { 'X-TC-Region': this.config.region }),
         },
         body: JSON.stringify({ TaskId: taskId }),
-        signal: createTimeoutSignal(Math.max(retryPolicy.timeoutMs, 30_000)),
+      }, Math.max(retryPolicy.timeoutMs, 30_000), {
+        abortMessage: `Tencent ASR polling aborted for task ${taskId}`,
+        attemptCount: attempt + 1,
       });
 
       if (!response.ok) {
@@ -306,24 +330,30 @@ export class TencentAsrProvider implements AsrProvider {
         });
       }
 
-      if (this.shouldReportPollProgress(attempt)) {
+      const statusLabel = this.formatTaskStatus(task);
+
+      if (
+        !this.isTaskTerminal(task) &&
+        this.shouldReportPollProgress({
+          attempt,
+          statusLabel,
+          lastReportedStatus,
+        })
+      ) {
         this.reportProgress(
-          `腾讯 ASR 轮询中，TaskId=${taskId}，第 ${attempt + 1} 次，状态=${task.StatusStr ?? task.TaskStatus ?? 'unknown'}`,
+          `腾讯 ASR 轮询中，TaskId=${taskId}，第 ${attempt + 1} 次，状态=${statusLabel}`,
         );
+        lastReportedStatus = statusLabel;
       }
 
       // Check if task is complete
-      if (
-        task.TaskStatus === TaskStatus.SUCCESS ||
-        task.TaskStatus === TaskStatus.FAILED ||
-        task.TaskStatus === TaskStatus.CANCELED
-      ) {
-        if (task.TaskStatus !== TaskStatus.SUCCESS) {
+      if (this.isTaskTerminal(task)) {
+        if (!this.isTaskSuccess(task)) {
           throw mapHttpError({
             provider: this.name,
             stage: 'asr',
             code: 'TRANSCRIBE_ERROR',
-            message: `ASR task failed with status: ${task.StatusStr ?? 'unknown'}`,
+            message: task.ErrorMsg || `ASR task failed with status: ${this.formatTaskStatus(task)}`,
             retriable: false,
             attemptCount: attempt + 1,
           });
@@ -335,7 +365,7 @@ export class TencentAsrProvider implements AsrProvider {
       }
 
       // Wait before next poll
-      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      await this.waitForPollInterval(pollInterval, taskId, attempt + 1);
     }
 
     this.reportProgress(
@@ -675,8 +705,135 @@ export class TencentAsrProvider implements AsrProvider {
     this.progressListener?.(message);
   }
 
-  private shouldReportPollProgress(attempt: number) {
-    return attempt < 3 || (attempt + 1) % 5 === 0;
+  private shouldReportPollProgress(params: {
+    attempt: number;
+    statusLabel: string;
+    lastReportedStatus?: string;
+  }) {
+    if (params.attempt === 0) {
+      return true;
+    }
+
+    if (params.statusLabel !== params.lastReportedStatus) {
+      return true;
+    }
+
+    return (params.attempt + 1) % 15 === 0;
+  }
+
+  private getTaskStatus(task: NonNullable<TencentAsrResponse['Response']['Data']>) {
+    if (typeof task.Status === 'number') {
+      return task.Status;
+    }
+
+    if (typeof task.TaskStatus === 'number') {
+      return task.TaskStatus;
+    }
+
+    return undefined;
+  }
+
+  private formatTaskStatus(task: NonNullable<TencentAsrResponse['Response']['Data']>) {
+    return String(task.StatusStr ?? this.getTaskStatus(task) ?? 'unknown');
+  }
+
+  private isTaskSuccess(task: NonNullable<TencentAsrResponse['Response']['Data']>) {
+    const status = this.getTaskStatus(task);
+    const statusStr = task.StatusStr?.toLowerCase();
+    return status === TaskStatus.SUCCESS || statusStr === 'success';
+  }
+
+  private isTaskFailure(task: NonNullable<TencentAsrResponse['Response']['Data']>) {
+    const status = this.getTaskStatus(task);
+    const statusStr = task.StatusStr?.toLowerCase();
+    return (
+      status === TaskStatus.FAILED ||
+      status === TaskStatus.CANCELED ||
+      statusStr === 'failed' ||
+      statusStr === 'failure' ||
+      statusStr === 'canceled' ||
+      statusStr === 'cancelled'
+    );
+  }
+
+  private isTaskTerminal(task: NonNullable<TencentAsrResponse['Response']['Data']>) {
+    return this.isTaskSuccess(task) || this.isTaskFailure(task);
+  }
+
+  private createManagedRequestSignal(timeoutMs: number) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    this.activeRequestControllers.add(controller);
+
+    return {
+      signal: controller.signal,
+      cleanup: () => {
+        clearTimeout(timeout);
+        this.activeRequestControllers.delete(controller);
+      },
+    };
+  }
+
+  private async fetchWithTimeout(
+    input: string,
+    init: RequestInit,
+    timeoutMs: number,
+    params: {
+      abortMessage: string;
+      attemptCount: number;
+    },
+  ) {
+    const request = this.createManagedRequestSignal(timeoutMs);
+
+    try {
+      return await fetch(input, {
+        ...init,
+        signal: request.signal,
+      });
+    } catch (error) {
+      if (this.abortInProgress && this.isAbortError(error)) {
+        throw mapHttpError({
+          provider: this.name,
+          stage: 'asr',
+          code: 'TRANSCRIBE_ERROR',
+          message: params.abortMessage,
+          retriable: false,
+          attemptCount: params.attemptCount,
+        });
+      }
+
+      throw error;
+    } finally {
+      request.cleanup();
+    }
+  }
+
+  private waitForPollInterval(ms: number, taskId: number, attemptCount: number) {
+    return new Promise<void>((resolve, reject) => {
+      const cleanup = () => {
+        this.pendingPollWaitCancels.delete(cancel);
+      };
+      const timeout = setTimeout(() => {
+        cleanup();
+        resolve();
+      }, ms);
+      const cancel = () => {
+        clearTimeout(timeout);
+        cleanup();
+        reject(
+          mapHttpError({
+            provider: this.name,
+            stage: 'asr',
+            code: 'TRANSCRIBE_ERROR',
+            message: `Tencent ASR polling aborted for task ${taskId}`,
+            retriable: false,
+            attemptCount,
+          }),
+        );
+      };
+
+      this.pendingPollWaitCancels.add(cancel);
+    });
   }
 
   /**
@@ -687,6 +844,9 @@ export class TencentAsrProvider implements AsrProvider {
     retryPolicy: { retryableStatusCodes: number[] },
   ): boolean {
     if (error instanceof Error && error.name === 'AbortError') {
+      if (this.abortInProgress) {
+        return false;
+      }
       return true;
     }
 
@@ -707,9 +867,14 @@ export class TencentAsrProvider implements AsrProvider {
    */
   private isRetriableError(error: any): boolean {
     if (error instanceof TypeError) return true;
+    if (this.abortInProgress && this.isAbortError(error)) return false;
     if (error?.status === 429) return true; // Rate limit
     if (error?.status >= 500) return true; // Server error
     return false;
+  }
+
+  private isAbortError(error: unknown) {
+    return error instanceof Error && error.name === 'AbortError';
   }
 
   private isProviderRequestError(error: unknown): error is ProviderRequestError {

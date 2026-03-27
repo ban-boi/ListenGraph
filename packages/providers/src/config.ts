@@ -66,6 +66,10 @@ export function normalizeProviderConfig(
         endpoint: 'https://api.openai.com/v1',
         model: 'gpt-4.1-mini',
       },
+      zhipuDefaults: {
+        endpoint: 'https://open.bigmodel.cn/api/paas/v4',
+        model: 'glm-4.7-flash',
+      },
     }),
   };
 }
@@ -81,6 +85,10 @@ function normalizeEntry<T extends AsrProviderConfig | StructurerProviderConfig>(
   defaults: T;
   input?: Partial<T>;
   openAiDefaults: {
+    endpoint: string;
+    model: string;
+  };
+  zhipuDefaults?: {
     endpoint: string;
     model: string;
   };
@@ -102,6 +110,11 @@ function normalizeEntry<T extends AsrProviderConfig | StructurerProviderConfig>(
     merged.endpoint = merged.endpoint ?? params.openAiDefaults.endpoint;
     if (!params.input?.model || params.input.type === 'openai') {
       merged.model = params.input?.model ?? params.openAiDefaults.model;
+    }
+  } else if (merged.type === 'zhipu') {
+    merged.endpoint = merged.endpoint ?? params.zhipuDefaults?.endpoint;
+    if (!params.input?.model || params.input.type === 'zhipu') {
+      merged.model = params.input?.model ?? params.zhipuDefaults?.model;
     }
   } else if (merged.type === 'tencent') {
     merged.endpoint = params.input?.endpoint;

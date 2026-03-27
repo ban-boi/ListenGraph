@@ -16,6 +16,7 @@ import { MockStructurerProvider } from './mock/mock-structurer';
 import { OpenAIAsrProvider } from './asr/openai-asr';
 import { TencentAsrProvider } from './asr/tencent-asr';
 import { OpenAIStructurerProvider } from './structurer/openai-structurer';
+import { ZhipuStructurerProvider } from './structurer/zhipu-structurer';
 
 export interface ProviderRegistry {
   createRuntimeProviders(config?: PartialProviderConfig | null): {
@@ -53,6 +54,11 @@ export function createProviderRegistry(): ProviderRegistry {
     getStructurerProvider(config) {
       if (config.type === 'mock') {
         return new MockStructurerProvider();
+      }
+
+      if (config.type === 'zhipu') {
+        requireProviderCredential(config, 'Zhipu structurer provider');
+        return new ZhipuStructurerProvider(config);
       }
 
       requireProviderCredential(config, 'Structurer provider');

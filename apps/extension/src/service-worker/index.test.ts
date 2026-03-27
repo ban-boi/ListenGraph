@@ -21,6 +21,8 @@ describe('Service Worker - 当前主链路', () => {
   let getMergedGraphBySessionMock: any;
   let getProviderConfigMock: any;
   let createRuntimeProvidersMock: any;
+  let asrResetMock: any;
+  let structurerResetMock: any;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -80,17 +82,19 @@ describe('Service Worker - 当前主链路', () => {
     saveMergedGraphMock = vi.fn(async () => undefined);
     getMergedGraphBySessionMock = vi.fn(async () => undefined);
     getProviderConfigMock = vi.fn(async () => undefined);
+    asrResetMock = vi.fn();
+    structurerResetMock = vi.fn();
     createRuntimeProvidersMock = vi.fn((config: any) => ({
       config,
       asr: {
         name: 'mock-asr',
         transcribeChunk: transcribeChunkMock,
-        reset: vi.fn(),
+        reset: asrResetMock,
       },
       structurer: {
         name: 'mock-structurer',
         extractSegmentGraph: extractSegmentGraphMock,
-        reset: vi.fn(),
+        reset: structurerResetMock,
       },
     }));
 
@@ -1361,14 +1365,18 @@ describe('Service Worker - 当前主链路', () => {
     expect(replayResponse.replayData.graph.nodes[0].text).toBe('回放节点');
   });
 
-  it('stop 发生在 transcribing 中途时会等待当前 chunk 收口后再清理会话', async () => {
-    let resolveTranscribe!: (value: any) => void;
+  it('stop 发生在 transcribing 中途时会中断当前 chunk 并立即清理会话', async () => {
+    let rejectTranscribe!: (reason?: unknown) => void;
     transcribeChunkMock.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolveTranscribe = resolve;
-        }),
+      () => new Promise((_, reject) => {
+        rejectTranscribe = reject;
+      }),
     );
+    asrResetMock.mockImplementation(() => {
+      if (rejectTranscribe) {
+        rejectTranscribe(new Error('Tencent ASR polling aborted for task 9529'));
+      }
+    });
 
     const startResponse = await dispatchMessage(
       {
@@ -1393,37 +1401,28 @@ describe('Service Worker - 当前主链路', () => {
     );
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const stopPromise = dispatchMessage({
+    const stopResponse = await dispatchMessage({
       type: 'SESSION_STOP',
       target: 'service-worker',
       payload: { sessionId: startResponse.sessionId },
     });
-
-    resolveTranscribe({
-      chunkId: 'chunk_stop_race',
-      sessionId: startResponse.sessionId,
-      text: '停止前最后一段',
-      startMs: 0,
-      endMs: 30000,
-      provider: 'mock-asr',
-    });
-
     const chunkResponse = await chunkPromise;
-    const stopResponse = await stopPromise;
     const snapshotResponse = await dispatchMessage({
       type: 'GET_RUNTIME_SNAPSHOT',
       target: 'service-worker',
       payload: {},
     });
 
-    expect(chunkResponse.success).toBe(true);
+    expect(chunkResponse.success).toBe(false);
+    expect(chunkResponse.error).toContain('停止中');
     expect(stopResponse.success).toBe(true);
-    expect(saveMergedGraphMock).toHaveBeenCalled();
+    expect(asrResetMock).toHaveBeenCalled();
+    expect(saveMergedGraphMock).not.toHaveBeenCalled();
     expect(snapshotResponse.snapshot.sessionId).toBeNull();
     expect(snapshotResponse.snapshot.state).toBe('idle');
   });
 
-  it('stop 先发出而最后一个 chunk 后到时，仍会在清理前收口该 chunk', async () => {
+  it('stop 先发出而最后一个 chunk 后到时，会直接丢弃该 chunk 并完成清理', async () => {
     const startResponse = await dispatchMessage(
       {
         type: 'SESSION_START',
@@ -1458,9 +1457,10 @@ describe('Service Worker - 当前主链路', () => {
       payload: {},
     });
 
-    expect(lateChunkResponse.success).toBe(true);
+    expect(lateChunkResponse.success).toBe(false);
+    expect(lateChunkResponse.error).toContain('停止或进入错误状态');
     expect(stopResponse.success).toBe(true);
-    expect(saveMergedGraphMock).toHaveBeenCalled();
+    expect(saveMergedGraphMock).not.toHaveBeenCalled();
     expect(snapshotResponse.snapshot.sessionId).toBeNull();
     expect(snapshotResponse.snapshot.state).toBe('idle');
   });

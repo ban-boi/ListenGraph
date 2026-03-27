@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { act, type ReactNode } from 'react';
 
@@ -145,6 +145,21 @@ describe('App 组件', () => {
     expect(logContent).toBeInTheDocument();
   });
 
+  it('拖动日志分割条时会调整日志面板高度', async () => {
+    await renderApp();
+
+    const logArea = screen.getByTestId('log-area');
+    const resizer = screen.getByTestId('log-resizer');
+
+    expect(logArea).toHaveStyle({ height: '120px' });
+
+    fireEvent.mouseDown(resizer, { clientY: 500 });
+    fireEvent.mouseMove(window, { clientY: 440 });
+    fireEvent.mouseUp(window);
+
+    expect(logArea).toHaveStyle({ height: '180px' });
+  });
+
   it('应该渲染开始/停止按钮', async () => {
     await renderApp();
 
@@ -258,6 +273,9 @@ describe('App 组件', () => {
     ).toBeGreaterThanOrEqual(1);
     expect(
       within(settingsPanel).getByDisplayValue('gpt-4o-mini-transcribe'),
+    ).toBeInTheDocument();
+    expect(
+      within(settingsPanel).getByRole('option', { name: '智谱 GLM' }),
     ).toBeInTheDocument();
     expect(within(settingsPanel).queryByLabelText('ASR Mode')).not.toBeInTheDocument();
     expect(within(settingsPanel).queryByLabelText('Structurer Mode')).not.toBeInTheDocument();
@@ -459,6 +477,160 @@ describe('App 组件', () => {
         },
       }),
     );
+  });
+
+  it('切换到智谱 GLM 后会自动回填默认 endpoint 和 model', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: null,
+              state: 'idle',
+              graph: null,
+              currentTimeMs: 0,
+              providerSummary: {
+                asr: {
+                  type: 'mock',
+                  mode: 'direct',
+                  model: 'mock-asr',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                },
+                structurer: {
+                  type: 'mock',
+                  mode: 'direct',
+                  model: 'mock-structurer',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                },
+              },
+              lastProviderError: null,
+            },
+          });
+        }
+        if (message?.type === 'GET_PROVIDER_SETTINGS') {
+          return Promise.resolve({
+            success: true,
+            config: {
+              asr: {
+                type: 'mock',
+                mode: 'direct',
+                model: 'mock-asr',
+                language: 'zh',
+              },
+              structurer: {
+                type: 'mock',
+                mode: 'direct',
+                model: 'mock-structurer',
+                language: 'zh',
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    const user = userEvent.setup();
+    await renderApp();
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^设置$/ }));
+    });
+
+    const settingsPanel = await screen.findByTestId('settings-panel');
+    const providerTypeSelects = within(settingsPanel).getAllByLabelText(/Provider Type/i);
+    const endpointInputs = within(settingsPanel).getAllByLabelText(/Endpoint/i);
+    const modelInputs = within(settingsPanel).getAllByLabelText(/Model/i);
+
+    await act(async () => {
+      await user.selectOptions(providerTypeSelects[1], 'zhipu');
+    });
+
+    expect(endpointInputs[1]).toHaveValue('https://open.bigmodel.cn/api/paas/v4');
+    expect(modelInputs[1]).toHaveValue('glm-4.7-flash');
+    expect(
+      within(settingsPanel).queryByLabelText('Structurer Endpoint Preset'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('Structurer provider type 可以直接切换到智谱 GLM（Coding Plan）', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: null,
+              state: 'idle',
+              graph: null,
+              currentTimeMs: 0,
+              providerSummary: {
+                asr: {
+                  type: 'mock',
+                  mode: 'direct',
+                  model: 'mock-asr',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                },
+                structurer: {
+                  type: 'mock',
+                  mode: 'direct',
+                  model: 'mock-structurer',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                },
+              },
+              lastProviderError: null,
+            },
+          });
+        }
+        if (message?.type === 'GET_PROVIDER_SETTINGS') {
+          return Promise.resolve({
+            success: true,
+            config: {
+              asr: {
+                type: 'mock',
+                mode: 'direct',
+                model: 'mock-asr',
+                language: 'zh',
+              },
+              structurer: {
+                type: 'mock',
+                mode: 'direct',
+                model: 'mock-structurer',
+                language: 'zh',
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    const user = userEvent.setup();
+    await renderApp();
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^设置$/ }));
+    });
+
+    const settingsPanel = await screen.findByTestId('settings-panel');
+    const providerTypeSelects = within(settingsPanel).getAllByLabelText(/Provider Type/i);
+
+    await act(async () => {
+      await user.selectOptions(providerTypeSelects[1], 'zhipu-coding-plan');
+    });
+
+    const endpointInput = within(settingsPanel).getByLabelText('Structurer Endpoint');
+    const modelInput = within(settingsPanel).getByLabelText('Structurer Model');
+
+    expect(endpointInput).toHaveValue('https://open.bigmodel.cn/api/coding/paas/v4');
+    expect(modelInput).toHaveValue('glm-4.7-flash');
   });
 
   it('保存腾讯设置时空的 secret 字段会以 undefined 发送，避免覆盖本地已存密钥', async () => {
