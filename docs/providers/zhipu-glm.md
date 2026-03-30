@@ -83,10 +83,37 @@ model: 'glm-5'  // 旗舰，编程能力强
 
 ### 端点
 
-| 项目 | 值 |
-|------|-----|
-| **Base URL** | `https://open.bigmodel.cn/api/paas/v4/` |
-| **Chat Completions** | `https://open.bigmodel.cn/api/paas/v4/chat/completions` |
+| 项目 | 值 | 说明 |
+|------|-----|------|
+| **Base URL** | `https://open.bigmodel.cn/api/paas/v4/` | 所有接口的前缀，**不能直接请求** |
+| **Chat Completions** | `https://open.bigmodel.cn/api/paas/v4/chat/completions` | 同步对话补全（推荐） |
+| **Async Chat Completions** | `https://open.bigmodel.cn/api/paas/v4/async/chat/completions` | 异步对话补全（长任务场景） |
+
+> **⚠️ Base URL vs 完整 URL**
+>
+> Base URL（`https://open.bigmodel.cn/api/paas/v4/`）只是一个前缀，直接请求会返回 404。
+> 所有具体接口都在 Base URL 后面拼接路径：
+>
+> | 用途 | 完整 URL | 拼接方式 |
+> |------|----------|----------|
+> | 对话补全 | `{base_url}chat/completions` | Base URL + `chat/completions` |
+> | 异步对话补全 | `{base_url}async/chat/completions` | Base URL + `async/chat/completions` |
+> | Embeddings | `{base_url}embeddings` | Base URL + `embeddings` |
+> | 模型列表 | `{base_url}models` | Base URL + `models` |
+>
+> **使用 SDK 时**：只需传 Base URL，SDK 会自动拼接路径。
+> **使用 cURL / HTTP 请求时**：必须传完整 URL。
+
+### 同步 vs 异步接口
+
+| | 同步（推荐） | 异步 |
+|---|---|---|
+| **端点** | `/paas/v4/chat/completions` | `/paas/v4/async/chat/completions` |
+| **方式** | 请求后直接返回结果 | 请求后返回任务 ID，需轮询获取结果 |
+| **流式** | ✅ 支持 `stream: true` | ❌ 不支持 |
+| **适用场景** | 实时对话、结构化提取 | 长文本生成、批量处理（避免 HTTP 超时） |
+
+> ListenGraph 的 Structurer 场景属于实时处理，**应使用同步接口**。
 
 ### 认证方式
 
@@ -124,6 +151,8 @@ Authorization: Bearer YOUR_API_KEY
 | `base_url` | 默认 | `https://open.bigmodel.cn/api/paas/v4/` |
 
 ### Python 示例
+
+> SDK 示例中传的是 **Base URL**，SDK 内部会自动拼接 `/chat/completions` 路径。
 
 ```python
 from openai import OpenAI
@@ -168,6 +197,8 @@ console.log(response.choices[0].message.content);
 ```
 
 ### cURL 示例
+
+> cURL 是直接 HTTP 请求，所以要用**完整 URL**（不是 Base URL）。
 
 ```bash
 curl https://open.bigmodel.cn/api/paas/v4/chat/completions \
@@ -523,4 +554,5 @@ if (config.type === 'zhipu') {
 
 ## 更新日志
 
+- **2026-03-30**: 补充 Base URL 与完整 URL 的区别说明，新增同步/异步接口对比
 - **2026-03-25**: 初版创建，基于智谱 AI 官方文档整理
