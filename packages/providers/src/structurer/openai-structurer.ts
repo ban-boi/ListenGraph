@@ -8,8 +8,13 @@ import type {
   TranscriptChunk,
 } from '@listen-graphic/schema';
 import { generateId } from '@listen-graphic/shared-utils';
-import { DEFAULT_RETRY_POLICY } from '../config';
-import { createTimeoutSignal, mapHttpError, retryAsync } from '../http/retry';
+import { DEFAULT_STRUCTURER_RETRY_POLICY } from '../config';
+import {
+  createTimeoutSignal,
+  mapHttpError,
+  retryAsync,
+  type ProviderRequestError,
+} from '../http/retry';
 
 type OpenAIChatResponse = {
   choices?: Array<{
@@ -42,7 +47,7 @@ export class OpenAIStructurerProvider implements StructurerProvider {
     }
 
     const retryPolicy = {
-      ...DEFAULT_RETRY_POLICY,
+      ...DEFAULT_STRUCTURER_RETRY_POLICY,
       ...this.config.retry,
     };
 
@@ -60,6 +65,13 @@ export class OpenAIStructurerProvider implements StructurerProvider {
               model: this.config.model ?? 'gpt-4.1-mini',
               response_format: { type: 'json_object' },
               messages: buildMessages(input),
+              ...(this.config.type === 'zhipu'
+                ? {
+                    thinking: {
+                      type: 'disabled',
+                    },
+                  }
+                : {}),
             }),
             signal: createTimeoutSignal(retryPolicy.timeoutMs),
           },
@@ -102,6 +114,7 @@ export class OpenAIStructurerProvider implements StructurerProvider {
         }
       },
       retryPolicy,
+      (error) => isRetriableProviderError(error, retryPolicy),
     );
 
     return {
@@ -211,4 +224,20 @@ async function safeReadError(response: Response) {
   } catch {
     return `Structurer request failed with status ${response.status}`;
   }
+}
+
+function isRetriableProviderError(
+  error: unknown,
+  retryPolicy: { retryableStatusCodes: number[] },
+) {
+  if (error instanceof Error && error.name === 'AbortError') {
+    return true;
+  }
+
+  if (typeof error === 'object' && error && 'status' in error) {
+    const status = (error as ProviderRequestError).status;
+    return typeof status === 'number' && retryPolicy.retryableStatusCodes.includes(status);
+  }
+
+  return error instanceof TypeError;
 }

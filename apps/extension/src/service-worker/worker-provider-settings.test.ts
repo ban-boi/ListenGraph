@@ -137,6 +137,10 @@ describe('Service Worker - provider settings', () => {
         append: vi.fn(async () => undefined),
         listBySession: vi.fn(async () => []),
       }),
+      createSegmentGraphRepository: () => ({
+        append: vi.fn(async () => undefined),
+        listBySession: vi.fn(async () => []),
+      }),
       createMergedGraphRepository: () => ({
         save: vi.fn(async () => undefined),
         getBySession: vi.fn(async () => undefined),
@@ -149,6 +153,7 @@ describe('Service Worker - provider settings', () => {
       db: {
         sessions: {},
         transcriptChunks: {},
+        segmentGraphs: {},
         mergedGraphs: {},
         settings: {},
       },
@@ -409,6 +414,73 @@ describe('Service Worker - provider settings', () => {
     expect(getResponse.config.asr.secretId).toBeUndefined();
     expect(getResponse.config.asr.secretKey).toBeUndefined();
     expect(getResponse.config.asr.region).toBe('ap-shanghai');
+  });
+
+  it('读取旧 provider 设置时会清掉持久化的 retry 覆盖值，避免旧 15 秒超时继续生效', async () => {
+    getProviderConfigMock.mockResolvedValue({
+      asr: {
+        type: 'openai',
+        mode: 'direct',
+        endpoint: 'https://api.openai.com/v1',
+        apiKey: 'asr-secret',
+        model: 'gpt-4o-mini-transcribe',
+        language: 'zh',
+        retry: {
+          maxAttempts: 3,
+          baseDelayMs: 400,
+          maxDelayMs: 2_000,
+          timeoutMs: 15_000,
+          retryableStatusCodes: [408, 409, 425, 429, 500, 502, 503, 504],
+        },
+      },
+      structurer: {
+        type: 'zhipu',
+        mode: 'direct',
+        endpoint: 'https://open.bigmodel.cn/api/paas/v4',
+        apiKey: 'structurer-secret',
+        model: 'glm-4.7-flash',
+        language: 'zh',
+        retry: {
+          maxAttempts: 3,
+          baseDelayMs: 400,
+          maxDelayMs: 2_000,
+          timeoutMs: 15_000,
+          retryableStatusCodes: [408, 409, 425, 429, 500, 502, 503, 504],
+        },
+      },
+    });
+    saveProviderConfigMock.mockClear();
+    createRuntimeProvidersMock.mockClear();
+
+    const getResponse = await dispatchMessage({
+      type: 'GET_PROVIDER_SETTINGS',
+      target: 'service-worker',
+      payload: {},
+    });
+
+    expect(getResponse.success).toBe(true);
+    expect(getResponse.config.asr.retry).toBeUndefined();
+    expect(getResponse.config.structurer.retry).toBeUndefined();
+    expect(createRuntimeProvidersMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        asr: expect.objectContaining({
+          retry: undefined,
+        }),
+        structurer: expect.objectContaining({
+          retry: undefined,
+        }),
+      }),
+    );
+    expect(saveProviderConfigMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        asr: expect.objectContaining({
+          retry: undefined,
+        }),
+        structurer: expect.objectContaining({
+          retry: undefined,
+        }),
+      }),
+    );
   });
 
   it('保存设置时若密钥字段为空，会沿用本地已保存的密钥', async () => {

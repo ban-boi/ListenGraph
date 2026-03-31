@@ -28,6 +28,7 @@ import {
   toComparisonRendererGraph,
   toHierarchyRendererGraph,
   toFlowRendererGraph,
+  type RendererGraph,
 } from '@listen-graphic/graph-renderers';
 import {
   createDefaultProviderConfig,
@@ -42,6 +43,7 @@ import type {
   RuntimeSnapshot,
   SessionState,
 } from '../shared/messages';
+import { BUILD_INFO } from '../shared/build-info';
 
 // ============ 初始空 Graph ============
 
@@ -115,6 +117,149 @@ function getTypeLabel(type: string): string {
     conclusion: '结论',
   };
   return labels[type] || type;
+}
+
+type ReactFlowDebugNodeData = {
+  label: string;
+  nodeType: string;
+  speaker?: string;
+  timestampMs: number;
+  status: 'draft' | 'confirmed';
+  isActive: boolean;
+};
+
+type ReactFlowDebugNode = {
+  id: string;
+  type: 'graphNode';
+  position: { x: number; y: number };
+  data: ReactFlowDebugNodeData;
+};
+
+type ReactFlowDebugEdge = {
+  id: string;
+  source: string;
+  target: string;
+  label: string;
+  style: { stroke: string };
+  animated: boolean;
+};
+
+type DebugViewArtifact = {
+  rendererGraph: RendererGraph;
+  reactFlow: {
+    nodes: ReactFlowDebugNode[];
+    edges: ReactFlowDebugEdge[];
+  };
+};
+
+function getRendererGraph(graph: MergedGraph, view: ViewType): RendererGraph {
+  switch (view) {
+    case 'timeline':
+      return toTimelineRendererGraph(graph);
+    case 'comparison':
+      return toComparisonRendererGraph(graph);
+    case 'hierarchy':
+      return toHierarchyRendererGraph(graph);
+    case 'flow':
+      return toFlowRendererGraph(graph);
+    default:
+      return toCausalRendererGraph(graph);
+  }
+}
+
+function getReactFlowDebugNodePosition(
+  view: ViewType,
+  index: number,
+  speaker?: string,
+) {
+  switch (view) {
+    case 'timeline':
+      return {
+        x: (index % 3) * 200,
+        y: Math.floor(index / 3) * 130,
+      };
+    case 'comparison':
+      return {
+        x: speaker === '嘉宾B' ? 250 : 50,
+        y: index * 90,
+      };
+    case 'hierarchy':
+      return {
+        x: 50 + (index % 3) * 180,
+        y: Math.floor(index / 3) * 140,
+      };
+    default:
+      return {
+        x: 50 + (index % 2) * 220,
+        y: index * 110,
+      };
+  }
+}
+
+function buildReactFlowDebugGraph(params: {
+  rendererGraph: RendererGraph;
+  view: ViewType;
+  currentTimeMs: number;
+  selectedNodeId: string | null;
+}) {
+  const nodes: ReactFlowDebugNode[] = params.rendererGraph.nodes.map((node, index) => ({
+    id: node.id,
+    type: 'graphNode',
+    position: getReactFlowDebugNodePosition(params.view, index, node.speaker),
+    data: {
+      label: node.label,
+      nodeType: node.type,
+      speaker: node.speaker,
+      timestampMs: node.timestampMs,
+      status: node.status,
+      isActive:
+        Math.abs(node.timestampMs - params.currentTimeMs) < 30000 ||
+        node.id === params.selectedNodeId,
+    },
+  }));
+
+  const edges: ReactFlowDebugEdge[] = params.rendererGraph.edges.map((edge) => ({
+    id: edge.id,
+    source: edge.source,
+    target: edge.target,
+    label: edge.relation,
+    style: {
+      stroke:
+        edge.relation === 'supports'
+          ? '#10b981'
+          : edge.relation === 'opposes'
+            ? '#ef4444'
+            : edge.relation === 'causes'
+              ? '#f59e0b'
+              : '#6b7280',
+    },
+    animated: edge.relation === 'causes',
+  }));
+
+  return { nodes, edges };
+}
+
+function buildDebugViewArtifacts(params: {
+  graph: MergedGraph;
+  currentTimeMs: number;
+  selectedNodeId: string | null;
+}) {
+  return VIEW_TYPES.reduce(
+    (acc, view) => {
+      const rendererGraph = getRendererGraph(params.graph, view);
+      acc[view] = {
+        rendererGraph,
+        reactFlow: buildReactFlowDebugGraph({
+          rendererGraph,
+          view,
+          currentTimeMs: params.currentTimeMs,
+          selectedNodeId: params.selectedNodeId,
+        }),
+      };
+      return acc;
+    },
+    {} as Record<ViewType, DebugViewArtifact>,
+  );
 }
 
 function downloadTextFile(filename: string, content: string, mimeType: string) {
@@ -386,6 +531,7 @@ export default function App() {
   const [providerSummary, setProviderSummary] = useState(() =>
     redactProviderConfig(createDefaultProviderConfig()),
   );
+  const [workerBuildLabel, setWorkerBuildLabel] = useState('waiting');
 
   // 开发模式下的 ref
   const transcriptIndexRef = useRef(0);
@@ -557,6 +703,7 @@ export default function App() {
       setProviderSummary(
         snapshot.providerSummary ?? redactProviderConfig(createDefaultProviderConfig()),
       );
+      setWorkerBuildLabel(snapshot.workerBuild?.label ?? 'unknown');
 
       if (snapshot.graph) {
         setGraph(snapshot.graph);
@@ -953,13 +1100,7 @@ export default function App() {
     );
   }, [currentTimeMs, replayData]);
 
-  const handleToggleDebug = useCallback(async () => {
-    if (debugOpen) {
-      setDebugOpen(false);
-      return;
-    }
-
-    setDebugOpen(true);
+  const loadDebugSession = useCallback(async () => {
     if (!sessionId) {
       setDebugData(null);
       return;
@@ -984,7 +1125,19 @@ export default function App() {
       const message = error instanceof Error ? error.message : '未知错误';
       addLog(`调试数据加载失败: ${message}`);
     }
-  }, [addLog, debugOpen, sessionId]);
+  }, [addLog, sessionId]);
+
+  useEffect(() => {
+    if (!debugOpen || isDevMode) {
+      return;
+    }
+
+    void loadDebugSession();
+  }, [debugOpen, graph.revision, loadDebugSession, sessionState]);
+
+  const handleToggleDebug = useCallback(() => {
+    setDebugOpen((prev) => !prev);
+  }, []);
 
   const sendSeekMessage = useCallback(
     async (nodeId: string, timestampMs: number) => {
@@ -1077,96 +1230,69 @@ export default function App() {
     [logPanelHeight],
   );
 
-  // 获取 renderer
-  const getRenderer = useCallback(
-    (view: ViewType) => {
-      switch (view) {
-        case 'timeline':
-          return toTimelineRendererGraph(graph);
-        case 'comparison':
-          return toComparisonRendererGraph(graph);
-        case 'hierarchy':
-          return toHierarchyRendererGraph(graph);
-        case 'flow':
-          return toFlowRendererGraph(graph);
-        default:
-          return toCausalRendererGraph(graph);
-      }
-    },
-    [graph],
+  const debugViewArtifacts = useMemo(
+    () =>
+      buildDebugViewArtifacts({
+        graph,
+        currentTimeMs,
+        selectedNodeId,
+      }),
+    [currentTimeMs, graph, selectedNodeId],
   );
 
-  // 生成 ReactFlow 节点和边
-  const { nodes: flowNodes, edges: flowEdges } = useMemo(() => {
-    const rendererGraph = getRenderer(currentView);
-
-    const nodes: Node[] = rendererGraph.nodes.map((n, i) => {
-      let x = 0,
-        y = 0;
-      switch (currentView) {
-        case 'timeline':
-          x = (i % 3) * 200;
-          y = Math.floor(i / 3) * 130;
-          break;
-        case 'comparison':
-          x = n.speaker === '嘉宾B' ? 250 : 50;
-          y = i * 90;
-          break;
-        case 'hierarchy':
-          x = 50 + (i % 3) * 180;
-          y = Math.floor(i / 3) * 140;
-          break;
-        default:
-          x = 50 + (i % 2) * 220;
-          y = i * 110;
-      }
-
-      const isActive =
-        Math.abs(n.timestampMs - currentTimeMs) < 30000 ||
-        n.id === selectedNodeId;
-
-      return {
-        id: n.id,
-        type: 'graphNode',
-        position: { x, y },
+  const flowNodes = useMemo<Node[]>(
+    () =>
+      debugViewArtifacts[currentView].reactFlow.nodes.map((node) => ({
+        ...node,
         data: {
-          label: n.label,
-          nodeType: n.type,
-          speaker: n.speaker,
-          timestampMs: n.timestampMs,
-          status: n.status,
-          isActive,
+          ...node.data,
           onClickTime: handleTimeClick,
         },
-      };
-    });
+      })),
+    [currentView, debugViewArtifacts, handleTimeClick],
+  );
 
-    const edges: Edge[] = rendererGraph.edges.map((e) => ({
-      id: e.id,
-      source: e.source,
-      target: e.target,
-      label: e.relation,
-      style: {
-        stroke:
-          e.relation === 'supports'
-            ? '#10b981'
-            : e.relation === 'opposes'
-              ? '#ef4444'
-              : e.relation === 'causes'
-                ? '#f59e0b'
-                : '#6b7280',
-      },
-      animated: e.relation === 'causes',
-    }));
+  const flowEdges = useMemo<Edge[]>(
+    () => debugViewArtifacts[currentView].reactFlow.edges,
+    [currentView, debugViewArtifacts],
+  );
 
-    return { nodes, edges };
-  }, [
-    currentView,
-    currentTimeMs,
-    selectedNodeId,
-    handleTimeClick,
-    getRenderer,
-  ]);
+  const debugExportPayload = useMemo(
+    () => ({
+      exportedAt: new Date().toISOString(),
+      sessionId,
+      sessionState,
+      currentView,
+      uiBuild: BUILD_INFO,
+      workerBuildLabel,
+      providerSummary,
+      logs,
+      debugData,
+      derivedViews: debugViewArtifacts,
+    }),
+    [
+      currentView,
+      debugData,
+      debugViewArtifacts,
+      logs,
+      providerSummary,
+      sessionId,
+      sessionState,
+      workerBuildLabel,
+    ],
+  );
+
+  const handleExportDebug = useCallback(() => {
+    if (!debugData) {
+      addLog('调试数据为空，无法导出');
+      return;
+    }
+
+    const debugSessionId = debugData.session?.sessionId ?? sessionId ?? 'listen-graphic';
+    const filename = `${debugSessionId}-debug.json`;
+    downloadTextFile(filename, JSON.stringify(debugExportPayload, null, 2), 'application/json');
+    addLog(`已导出: ${filename}`);
+  }, [addLog, debugData, debugExportPayload, sessionId]);
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -1635,7 +1761,34 @@ export default function App() {
               overflowY: 'auto',
             }}
           >
-            <div style={{ fontWeight: 600, marginBottom: 6 }}>Debug</div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 8,
+                marginBottom: 6,
+              }}
+            >
+              <div style={{ fontWeight: 600 }}>Debug</div>
+              <button
+                data-testid="debug-export-button"
+                type="button"
+                onClick={handleExportDebug}
+                disabled={!debugData}
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: debugData ? 'white' : '#e2e8f0',
+                  color: '#334155',
+                  fontSize: 11,
+                  cursor: debugData ? 'pointer' : 'not-allowed',
+                }}
+              >
+                导出调试 JSON
+              </button>
+            </div>
             <div style={{ marginBottom: 6 }}>
               sessionId: {debugData?.session?.sessionId ?? sessionId ?? 'none'}
             </div>
@@ -1643,9 +1796,16 @@ export default function App() {
               transcript chunks: {debugData?.transcripts.length ?? 0}
             </div>
             <div style={{ marginBottom: 6 }}>
+              structurer segments: {debugData?.segments.length ?? 0}
+            </div>
+            <div style={{ marginBottom: 6 }}>
+              chunk traces: {debugData?.traces.length ?? 0}
+            </div>
+            <div style={{ marginBottom: 6 }}>
               merged graph nodes: {debugData?.graph?.nodes.length ?? 0}
             </div>
             <pre
+              data-testid="debug-json"
               style={{
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
@@ -1653,7 +1813,7 @@ export default function App() {
                 fontFamily: 'monospace',
               }}
             >
-              {JSON.stringify(debugData, null, 2)}
+              {JSON.stringify(debugExportPayload, null, 2)}
             </pre>
           </div>
         )}
@@ -1721,12 +1881,17 @@ export default function App() {
           flexShrink: 0,
           display: 'flex',
           justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
         }}
       >
         <span>会话: {sessionId || '无'}</span>
         <span>当前时间: {formatTime(currentTimeMs)}</span>
         <span>
           节点: {graph.nodes.length} | 边: {graph.edges.length}
+        </span>
+        <span data-testid="build-info" style={{ fontFamily: 'monospace' }}>
+          {`UI ${BUILD_INFO.label} | Worker ${workerBuildLabel}`}
         </span>
       </div>
     </div>

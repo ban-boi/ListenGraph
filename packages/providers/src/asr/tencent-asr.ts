@@ -208,7 +208,7 @@ export class TencentAsrProvider implements AsrProvider {
 
     return retryAsync(
       async (attempt) => {
-        this.reportProgress(`腾讯 ASR 正在创建识别任务，第 ${attempt} 次请求`);
+        this.reportProgress(`腾讯 ASR CreateRecTask 请求中，第 ${attempt} 次`);
         const timestamp = Math.floor(Date.now() / 1000);
         const authorization = await this.buildAuthorization(payload, timestamp);
 
@@ -259,7 +259,7 @@ export class TencentAsrProvider implements AsrProvider {
           });
         }
 
-        this.reportProgress(`腾讯 ASR 任务已创建，TaskId=${data.Response.Data.TaskId}`);
+        this.reportProgress(`腾讯 ASR CreateRecTask 成功，TaskId=${data.Response.Data.TaskId}`);
         return data.Response.Data.TaskId;
       },
       retryPolicy,
@@ -341,7 +341,7 @@ export class TencentAsrProvider implements AsrProvider {
         })
       ) {
         this.reportProgress(
-          `腾讯 ASR 轮询中，TaskId=${taskId}，第 ${attempt + 1} 次，状态=${statusLabel}`,
+          `腾讯 ASR DescribeTaskStatus 轮询中，TaskId=${taskId}，第 ${attempt + 1} 次，状态=${statusLabel}`,
         );
         lastReportedStatus = statusLabel;
       }
@@ -359,7 +359,7 @@ export class TencentAsrProvider implements AsrProvider {
           });
         }
         this.reportProgress(
-          `腾讯 ASR 完成，TaskId=${taskId}，耗时约 ${(attempt + 1) * (pollInterval / 1000)} 秒`,
+          `腾讯 ASR DescribeTaskStatus 完成，TaskId=${taskId}，耗时约 ${(attempt + 1) * (pollInterval / 1000)} 秒`,
         );
         return task;
       }
@@ -369,7 +369,7 @@ export class TencentAsrProvider implements AsrProvider {
     }
 
     this.reportProgress(
-      `腾讯 ASR 超时，TaskId=${taskId}，超过 ${maxAttempts * (pollInterval / 1000)} 秒仍未完成`,
+      `腾讯 ASR DescribeTaskStatus 超时，TaskId=${taskId}，超过 ${maxAttempts * (pollInterval / 1000)} 秒仍未完成`,
     );
     throw mapHttpError({
       provider: this.name,

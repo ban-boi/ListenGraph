@@ -8,10 +8,23 @@ import {
   renameSync,
   rmSync,
   cpSync,
+  readFileSync,
 } from 'fs';
+
+const extensionPackageJson = JSON.parse(
+  readFileSync(resolve(__dirname, 'package.json'), 'utf-8'),
+) as { version: string };
+const extensionBuildId = new Date()
+  .toISOString()
+  .replace(/[-:.TZ]/g, '')
+  .slice(0, 14);
 
 // Chrome Extension MV3 构建配置
 export default defineConfig({
+  define: {
+    __LISTEN_GRAPHIC_VERSION__: JSON.stringify(extensionPackageJson.version),
+    __LISTEN_GRAPHIC_BUILD_ID__: JSON.stringify(extensionBuildId),
+  },
   plugins: [
     react(),
     // 构建后整理文件结构

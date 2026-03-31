@@ -20,6 +20,12 @@ const DEFAULT_RETRY_POLICY: ProviderRetryPolicy = {
   retryableStatusCodes: [408, 409, 425, 429, 500, 502, 503, 504],
 };
 
+const DEFAULT_STRUCTURER_RETRY_POLICY: ProviderRetryPolicy = {
+  ...DEFAULT_RETRY_POLICY,
+  timeoutMs: 60_000,
+  retryableStatusCodes: DEFAULT_RETRY_POLICY.retryableStatusCodes.filter((status) => status !== 429),
+};
+
 const DEFAULT_ASR_CONFIG: AsrProviderConfig = {
   type: 'mock',
   mode: 'direct',
@@ -33,7 +39,7 @@ const DEFAULT_STRUCTURER_CONFIG: StructurerProviderConfig = {
   mode: 'direct',
   model: 'mock-structurer',
   language: 'zh',
-  retry: DEFAULT_RETRY_POLICY,
+  retry: DEFAULT_STRUCTURER_RETRY_POLICY,
 };
 
 export function createDefaultProviderConfig(): ProviderConfig {
@@ -41,7 +47,7 @@ export function createDefaultProviderConfig(): ProviderConfig {
     asr: { ...DEFAULT_ASR_CONFIG, retry: { ...DEFAULT_RETRY_POLICY } },
     structurer: {
       ...DEFAULT_STRUCTURER_CONFIG,
-      retry: { ...DEFAULT_RETRY_POLICY },
+      retry: { ...DEFAULT_STRUCTURER_RETRY_POLICY },
     },
   };
 }
@@ -194,4 +200,4 @@ export function requireProviderCredential(
   }
 }
 
-export { DEFAULT_RETRY_POLICY };
+export { DEFAULT_RETRY_POLICY, DEFAULT_STRUCTURER_RETRY_POLICY };

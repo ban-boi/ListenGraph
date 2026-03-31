@@ -17,6 +17,8 @@ describe('Service Worker - 当前主链路', () => {
   let markEndedMock: any;
   let appendTranscriptChunkMock: any;
   let listTranscriptChunksBySessionMock: any;
+  let appendSegmentGraphMock: any;
+  let listSegmentGraphsBySessionMock: any;
   let saveMergedGraphMock: any;
   let getMergedGraphBySessionMock: any;
   let getProviderConfigMock: any;
@@ -79,6 +81,8 @@ describe('Service Worker - 当前主链路', () => {
     markEndedMock = vi.fn(async () => undefined);
     appendTranscriptChunkMock = vi.fn(async () => undefined);
     listTranscriptChunksBySessionMock = vi.fn(async () => []);
+    appendSegmentGraphMock = vi.fn(async () => undefined);
+    listSegmentGraphsBySessionMock = vi.fn(async () => []);
     saveMergedGraphMock = vi.fn(async () => undefined);
     getMergedGraphBySessionMock = vi.fn(async () => undefined);
     getProviderConfigMock = vi.fn(async () => undefined);
@@ -171,6 +175,10 @@ describe('Service Worker - 当前主链路', () => {
         append: appendTranscriptChunkMock,
         listBySession: listTranscriptChunksBySessionMock,
       }),
+      createSegmentGraphRepository: () => ({
+        append: appendSegmentGraphMock,
+        listBySession: listSegmentGraphsBySessionMock,
+      }),
       createMergedGraphRepository: () => ({
         save: saveMergedGraphMock,
         getBySession: getMergedGraphBySessionMock,
@@ -181,6 +189,7 @@ describe('Service Worker - 当前主链路', () => {
       db: {
         sessions: {},
         transcriptChunks: {},
+        segmentGraphs: {},
         mergedGraphs: {},
         settings: {},
       },
@@ -465,6 +474,12 @@ describe('Service Worker - 当前主链路', () => {
         text: 'provider transcript',
       }),
     );
+    expect(appendSegmentGraphMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        segmentId: 'segment_mock',
+        topic: 'provider topic',
+      }),
+    );
     expect(saveMergedGraphMock).toHaveBeenCalledWith(
       expect.objectContaining({
         sessionId: expect.any(String),
@@ -475,6 +490,90 @@ describe('Service Worker - 当前主链路', () => {
         ]),
       }),
     );
+  });
+
+  it('调试会话会返回 transcript、segment 和逐轮 trace', async () => {
+    const storedTranscripts: any[] = [];
+    const storedSegments: any[] = [];
+    let storedGraph: any;
+
+    appendTranscriptChunkMock.mockImplementation(async (chunk: any) => {
+      storedTranscripts.push(chunk);
+    });
+    listTranscriptChunksBySessionMock.mockImplementation(async (sessionId: string) =>
+      storedTranscripts.filter((chunk) => chunk.sessionId === sessionId),
+    );
+    appendSegmentGraphMock.mockImplementation(async (segment: any) => {
+      storedSegments.push(segment);
+    });
+    listSegmentGraphsBySessionMock.mockImplementation(async (sessionId: string) =>
+      storedSegments.filter((segment) => segment.sessionId === sessionId),
+    );
+    saveMergedGraphMock.mockImplementation(async (graph: any) => {
+      storedGraph = graph;
+    });
+    getMergedGraphBySessionMock.mockImplementation(async (sessionId: string) =>
+      storedGraph?.sessionId === sessionId ? storedGraph : undefined,
+    );
+
+    const startResponse = await dispatchMessage(
+      {
+        type: 'SESSION_START',
+        target: 'service-worker',
+        payload: { tabId: 123 },
+      },
+      { tab: { id: 123 } },
+    );
+    const sessionId = startResponse.sessionId;
+
+    await dispatchMessage(
+      {
+        type: 'AUDIO_CHUNK_READY',
+        target: 'service-worker',
+        payload: {
+          audioData: [1, 2, 3, 4],
+          startMs: 0,
+          endMs: 10000,
+        },
+      },
+      { tab: { id: 123 } },
+    );
+
+    const debugResponse = await dispatchMessage({
+      type: 'GET_DEBUG_SESSION',
+      target: 'service-worker',
+      payload: { sessionId },
+    });
+
+    expect(debugResponse.success).toBe(true);
+    expect(debugResponse.debugData.transcripts).toHaveLength(1);
+    expect(debugResponse.debugData.segments).toHaveLength(1);
+    expect(debugResponse.debugData.traces).toEqual([
+      expect.objectContaining({
+        sequence: 1,
+        transcript: expect.objectContaining({
+          chunkId: 'chunk_mock',
+          text: 'provider transcript',
+        }),
+        transcriptWindow: [
+          expect.objectContaining({
+            chunkId: 'chunk_mock',
+          }),
+        ],
+        segment: expect.objectContaining({
+          segmentId: 'segment_mock',
+          provider: 'mock-structurer',
+        }),
+        mergedGraphAfter: expect.objectContaining({
+          sessionId,
+          nodes: expect.arrayContaining([
+            expect.objectContaining({
+              text: 'provider transcript',
+            }),
+          ]),
+        }),
+      }),
+    ]);
   });
 
   it('多个音频 chunk 会串行处理，避免并发触发多个 ASR 请求', async () => {

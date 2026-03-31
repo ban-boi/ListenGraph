@@ -247,6 +247,7 @@ describe('real provider adapters', () => {
     );
     expect(parsedBody.model).toBe('glm-4.7-flash');
     expect(parsedBody.response_format).toEqual({ type: 'json_object' });
+    expect(parsedBody.thinking).toEqual({ type: 'disabled' });
     expect(segment).toEqual(
       expect.objectContaining({
         sessionId: 'session_zhipu',
@@ -254,6 +255,51 @@ describe('real provider adapters', () => {
         provider: 'zhipu-structurer',
       }),
     );
+  });
+
+  it('ZhipuStructurerProvider 遇到 429 会直接返回而不重试', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      text: async () => 'rate limit',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const provider = new ZhipuStructurerProvider({
+      type: 'zhipu',
+      mode: 'direct',
+      apiKey: 'zhipu-secret',
+      language: 'zh',
+      retry: {
+        maxAttempts: 3,
+        baseDelayMs: 1,
+        maxDelayMs: 1,
+        timeoutMs: 1_000,
+      },
+    });
+
+    await expect(
+      provider.extractSegmentGraph({
+        sessionId: 'session_zhipu_rate_limit',
+        transcriptWindow: [
+          {
+            chunkId: 'chunk_zhipu_rate_limit_1',
+            sessionId: 'session_zhipu_rate_limit',
+            text: '智谱限流 transcript',
+            startMs: 2_000,
+            endMs: 5_000,
+            provider: 'openai-asr',
+          },
+        ],
+        language: 'zh',
+      }),
+    ).rejects.toMatchObject({
+      code: 'RATE_LIMIT_ERROR',
+      status: 429,
+      attemptCount: 1,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('relay 模式会使用 session token 而不是 api key', async () => {

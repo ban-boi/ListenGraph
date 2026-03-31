@@ -296,10 +296,10 @@ describe('TencentAsrProvider', () => {
 
       expect(transcript.text).toBe('调试日志已就绪')
       expect(progressMessages).toEqual([
-        '腾讯 ASR 正在创建识别任务，第 1 次请求',
-        '腾讯 ASR 任务已创建，TaskId=9527',
-        '腾讯 ASR 轮询中，TaskId=9527，第 1 次，状态=running',
-        '腾讯 ASR 完成，TaskId=9527，耗时约 4 秒',
+        '腾讯 ASR CreateRecTask 请求中，第 1 次',
+        '腾讯 ASR CreateRecTask 成功，TaskId=9527',
+        '腾讯 ASR DescribeTaskStatus 轮询中，TaskId=9527，第 1 次，状态=running',
+        '腾讯 ASR DescribeTaskStatus 完成，TaskId=9527，耗时约 4 秒',
       ])
     })
 
@@ -412,10 +412,10 @@ describe('TencentAsrProvider', () => {
         progressMessages.filter((message) => message.includes('轮询中')).length,
       ).toBe(1)
       expect(progressMessages).toContain(
-        '腾讯 ASR 轮询中，TaskId=9532，第 1 次，状态=doing',
+        '腾讯 ASR DescribeTaskStatus 轮询中，TaskId=9532，第 1 次，状态=doing',
       )
       expect(progressMessages.at(-1)).toBe(
-        '腾讯 ASR 完成，TaskId=9532，耗时约 6 秒',
+        '腾讯 ASR DescribeTaskStatus 完成，TaskId=9532，耗时约 6 秒',
       )
     })
 
@@ -584,7 +584,7 @@ describe('TencentAsrProvider', () => {
       await vi.runAllTimersAsync()
       await pendingExpectation
       expect(progressMessages.at(-1)).toBe(
-        '腾讯 ASR 超时，TaskId=9529，超过 120 秒仍未完成',
+        '腾讯 ASR DescribeTaskStatus 超时，TaskId=9529，超过 120 秒仍未完成',
       )
     })
 

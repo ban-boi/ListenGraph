@@ -1,4 +1,4 @@
-import type { MergedGraph, ProviderConfig, TranscriptChunk } from '@listen-graphic/schema';
+import type { MergedGraph, ProviderConfig, SegmentGraph, TranscriptChunk } from '@listen-graphic/schema';
 import type { SessionRecord, SettingRecord } from './indexeddb';
 
 type TableLike<T, Key> = {
@@ -11,6 +11,7 @@ type TableLike<T, Key> = {
 
 export type SessionRepository = ReturnType<typeof createSessionRepository>;
 export type TranscriptChunkRepository = ReturnType<typeof createTranscriptChunkRepository>;
+export type SegmentGraphRepository = ReturnType<typeof createSegmentGraphRepository>;
 export type MergedGraphRepository = ReturnType<typeof createMergedGraphRepository>;
 export type SettingsRepository = ReturnType<typeof createSettingsRepository>;
 
@@ -55,6 +56,22 @@ export function createTranscriptChunkRepository(tables: {
       const chunks = await tables.transcriptChunks.toArray();
       return chunks
         .filter((chunk) => chunk.sessionId === sessionId)
+        .sort((a, b) => a.startMs - b.startMs);
+    },
+  };
+}
+
+export function createSegmentGraphRepository(tables: {
+  segmentGraphs: TableLike<SegmentGraph, string>;
+}) {
+  return {
+    async append(segment: SegmentGraph) {
+      await tables.segmentGraphs.put(segment);
+    },
+    async listBySession(sessionId: string) {
+      const segments = await tables.segmentGraphs.toArray();
+      return segments
+        .filter((segment) => segment.sessionId === sessionId)
         .sort((a, b) => a.startMs - b.startMs);
     },
   };

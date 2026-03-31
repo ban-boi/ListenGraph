@@ -9,6 +9,7 @@ import {
 } from '@listen-graphic/providers';
 import {
   createMergedGraphRepository,
+  createSegmentGraphRepository,
   createSessionRepository,
   createSettingsRepository,
   createTranscriptChunkRepository,
@@ -37,6 +38,7 @@ import type {
   RuntimeSnapshot,
   SessionState,
 } from '../shared/messages';
+import { BUILD_INFO } from '../shared/build-info';
 import { buildSessionExport } from './export-formatters';
 
 type ServiceWorkerResponse = {
@@ -91,6 +93,9 @@ const providerRegistry = createProviderRegistry();
 const sessionRepository = createSessionRepository({ sessions: db.sessions });
 const transcriptChunkRepository = createTranscriptChunkRepository({
   transcriptChunks: db.transcriptChunks,
+});
+const segmentGraphRepository = createSegmentGraphRepository({
+  segmentGraphs: db.segmentGraphs,
 });
 const mergedGraphRepository = createMergedGraphRepository({
   mergedGraphs: db.mergedGraphs,
@@ -434,6 +439,14 @@ async function handleAudioChunk(
       previousGraph: mergedGraph ?? undefined,
       language: 'zh',
     });
+    try {
+      await withIndexedDbRetry(() => segmentGraphRepository.append(segment));
+    } catch (error) {
+      if (!isIndexedDbBackingStoreError(error)) {
+        throw error;
+      }
+      console.warn('[Service Worker] segment graph 持久化暂不可用，保留内存态结果:', error);
+    }
     const nextMergedGraph = buildMergedGraph(segment);
     try {
       await withIndexedDbRetry(() => mergedGraphRepository.save(nextMergedGraph));
@@ -588,10 +601,11 @@ async function handleGetDebugSession(sessionId: string): Promise<ServiceWorkerRe
 
 async function handleGetProviderSettings(): Promise<ServiceWorkerResponse> {
   await ensureHydrated();
+  const storedConfig = await settingsRepository.getProviderConfig();
   const config = stripProviderSecrets(
     constrainProviderConfigToDirectMode(
       normalizeProviderConfig(
-        (await settingsRepository.getProviderConfig()) ?? activeProviderConfig,
+        stripProviderRetryOverrides(storedConfig ?? activeProviderConfig),
       ),
     ),
   );
@@ -606,10 +620,12 @@ async function handleSaveProviderSettings(
 ): Promise<ServiceWorkerResponse> {
   await ensureHydrated();
   const existingConfig = await settingsRepository.getProviderConfig();
-  const normalized = mergeProviderSecrets(
+  const normalized = stripProviderRetryOverrides(mergeProviderSecrets(
     constrainProviderConfigToDirectMode(normalizeProviderConfig(config)),
-    existingConfig ? normalizeProviderConfig(existingConfig) : undefined,
-  );
+    existingConfig
+      ? normalizeProviderConfig(stripProviderRetryOverrides(existingConfig))
+      : undefined,
+  ));
   const runtime = providerRegistry.createRuntimeProviders(normalized);
   await settingsRepository.saveProviderConfig(normalized);
   commitProviderRuntime(runtime);
@@ -620,7 +636,7 @@ async function handleSaveProviderSettings(
 async function handleClearProviderSecrets(): Promise<ServiceWorkerResponse> {
   await ensureHydrated();
   await settingsRepository.clearProviderSecrets();
-  const fallbackConfig = createDefaultProviderConfig();
+  const fallbackConfig = stripProviderRetryOverrides(createDefaultProviderConfig());
   await settingsRepository.saveProviderConfig(fallbackConfig);
   applyProviderRuntime(fallbackConfig);
   await persistRuntimeState();
@@ -630,11 +646,14 @@ async function handleClearProviderSecrets(): Promise<ServiceWorkerResponse> {
 async function loadDebugSessionData(sessionId: string): Promise<DebugSessionData> {
   const session = (await sessionRepository.get(sessionId)) as SessionRecord | undefined;
   const transcripts = await transcriptChunkRepository.listBySession(sessionId);
+  const segments = await segmentGraphRepository.listBySession(sessionId);
   const graph = await mergedGraphRepository.getBySession(sessionId);
 
   return {
     session: session ?? null,
     transcripts,
+    segments,
+    traces: buildDebugChunkTraces(transcripts, segments),
     graph: graph ?? null,
     providerSummary,
     lastProviderError,
@@ -694,8 +713,15 @@ function pushTranscript(transcript: TranscriptChunk) {
 }
 
 function buildMergedGraph(segment: SegmentGraph): MergedGraph {
+  return buildMergedGraphFromState(mergedGraph, segment);
+}
+
+function buildMergedGraphFromState(
+  previousGraph: MergedGraph | null,
+  segment: SegmentGraph,
+): MergedGraph {
   const baseGraph =
-    mergedGraph === null
+    previousGraph === null
       ? {
           sessionId: segment.sessionId,
           revision: 1,
@@ -713,7 +739,7 @@ function buildMergedGraph(segment: SegmentGraph): MergedGraph {
           edges: segment.edges,
           updatedAt: Date.now(),
         }
-      : mergeSegmentGraph(mergeTopics(mergedGraph, segment), segment);
+      : mergeSegmentGraph(mergeTopics(previousGraph, segment), segment);
 
   const stabilizedGraph = stabilizeGraph(baseGraph);
   const scores = scoreViews(stabilizedGraph);
@@ -728,6 +754,40 @@ function buildMergedGraph(segment: SegmentGraph): MergedGraph {
     },
     updatedAt: Date.now(),
   };
+}
+
+function buildDebugChunkTraces(
+  transcripts: TranscriptChunk[],
+  segments: SegmentGraph[],
+): DebugSessionData['traces'] {
+  const remainingSegments = [...segments].sort(
+    (a, b) => a.startMs - b.startMs || a.endMs - b.endMs,
+  );
+  let mergedAfter: MergedGraph | null = null;
+
+  return transcripts.map((transcript, index) => {
+    const transcriptWindow = transcripts.slice(Math.max(0, index - 2), index + 1);
+    const matchedSegmentIndex = remainingSegments.findIndex(
+      (segment) =>
+        segment.startMs === transcript.startMs && segment.endMs === transcript.endMs,
+    );
+    const segment =
+      matchedSegmentIndex >= 0
+        ? remainingSegments.splice(matchedSegmentIndex, 1)[0]
+        : null;
+
+    if (segment) {
+      mergedAfter = buildMergedGraphFromState(mergedAfter, segment);
+    }
+
+    return {
+      sequence: index + 1,
+      transcript,
+      transcriptWindow,
+      segment,
+      mergedGraphAfter: mergedAfter,
+    };
+  });
 }
 
 function mergeTopics(graph: MergedGraph, segment: SegmentGraph): MergedGraph {
@@ -982,6 +1042,7 @@ function getRuntimeSnapshot(): RuntimeSnapshot {
     currentViewPinned,
     providerSummary,
     lastProviderError,
+    workerBuild: BUILD_INFO,
   };
 }
 
@@ -1018,11 +1079,18 @@ chrome.runtime.onSuspend.addListener(() => {
 
 async function loadProviderRuntimeFromSettings() {
   const storedConfig = await settingsRepository.getProviderConfig();
+  const sanitizedStoredConfig = storedConfig
+    ? stripProviderRetryOverrides(storedConfig)
+    : undefined;
   applyProviderRuntime(
     constrainProviderConfigToDirectMode(
-      normalizeProviderConfig(storedConfig ?? createDefaultProviderConfig()),
+      normalizeProviderConfig(sanitizedStoredConfig ?? createDefaultProviderConfig()),
     ),
   );
+
+  if (storedConfig && sanitizedStoredConfig && hasProviderRetryOverrides(storedConfig)) {
+    await settingsRepository.saveProviderConfig(sanitizedStoredConfig);
+  }
 }
 
 function applyProviderRuntime(config: Partial<ProviderConfig> | ProviderConfig) {
@@ -1125,6 +1193,23 @@ function constrainProviderConfigToDirectMode(config: ProviderConfig): ProviderCo
       sessionToken: undefined,
     },
   };
+}
+
+function stripProviderRetryOverrides(config: ProviderConfig): ProviderConfig {
+  return {
+    asr: {
+      ...config.asr,
+      retry: undefined,
+    },
+    structurer: {
+      ...config.structurer,
+      retry: undefined,
+    },
+  };
+}
+
+function hasProviderRetryOverrides(config: Partial<ProviderConfig> | null | undefined) {
+  return Boolean(config?.asr?.retry || config?.structurer?.retry);
 }
 
 function stripProviderSecrets(config: ProviderConfig): ProviderConfig {

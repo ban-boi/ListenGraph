@@ -3,9 +3,11 @@ import type {
   ProviderConfig,
   ProviderRuntimeSummary,
   SerializableProviderError,
+  SegmentGraph,
   TranscriptChunk,
 } from '@listen-graphic/schema';
 import type { ViewType } from '@listen-graphic/schema';
+import type { BuildInfo } from './build-info';
 
 export type SessionState =
   | 'idle'
@@ -34,6 +36,7 @@ export interface RuntimeSnapshot {
   currentViewPinned?: boolean;
   providerSummary: ProviderRuntimeSummary;
   lastProviderError?: SerializableProviderError | null;
+  workerBuild?: BuildInfo;
 }
 
 export type ExportFormat = 'json' | 'markdown' | 'mermaid';
@@ -47,6 +50,14 @@ export interface DebugSessionData {
     title?: string;
   } | null;
   transcripts: TranscriptChunk[];
+  segments: SegmentGraph[];
+  traces: Array<{
+    sequence: number;
+    transcript: TranscriptChunk;
+    transcriptWindow: TranscriptChunk[];
+    segment: SegmentGraph | null;
+    mergedGraphAfter: MergedGraph | null;
+  }>;
   graph: MergedGraph | null;
   providerSummary: ProviderRuntimeSummary;
   lastProviderError?: SerializableProviderError | null;

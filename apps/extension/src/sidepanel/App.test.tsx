@@ -184,6 +184,36 @@ describe('App 组件', () => {
     expect(screen.getByText(/边: 0/)).toBeInTheDocument();
   });
 
+  it('应该显示 UI 和 Worker 的构建标识', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: null,
+              state: 'idle',
+              graph: null,
+              currentTimeMs: 0,
+              workerBuild: {
+                version: '0.0.1',
+                buildId: '20260330173000',
+                label: 'v0.0.1#20260330173000',
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+
+    expect(screen.getByTestId('build-info')).toHaveTextContent(
+      /UI .* \| Worker v0\.0\.1#20260330173000/,
+    );
+  });
+
   it('点击开始按钮后应该改变状态', async () => {
     const user = userEvent.setup();
     await renderApp();
@@ -1377,6 +1407,86 @@ describe('App 组件', () => {
                   provider: 'mock-asr',
                 },
               ],
+              segments: [
+                {
+                  segmentId: 'segment_1',
+                  sessionId: 'session_debug',
+                  startMs: 0,
+                  endMs: 30000,
+                  topic: '调试话题',
+                  provider: 'mock-structurer',
+                  nodes: [
+                    {
+                      id: 'n1',
+                      type: 'claim',
+                      text: '调试图节点',
+                      timestampMs: 0,
+                      status: 'confirmed',
+                    },
+                  ],
+                  edges: [],
+                  raw: {
+                    topic: '调试话题',
+                  },
+                },
+              ],
+              traces: [
+                {
+                  sequence: 1,
+                  transcript: {
+                    chunkId: 'chunk_1',
+                    sessionId: 'session_debug',
+                    text: '第一段调试转写',
+                    startMs: 0,
+                    endMs: 30000,
+                    provider: 'mock-asr',
+                  },
+                  transcriptWindow: [
+                    {
+                      chunkId: 'chunk_1',
+                      sessionId: 'session_debug',
+                      text: '第一段调试转写',
+                      startMs: 0,
+                      endMs: 30000,
+                      provider: 'mock-asr',
+                    },
+                  ],
+                  segment: {
+                    segmentId: 'segment_1',
+                    sessionId: 'session_debug',
+                    startMs: 0,
+                    endMs: 30000,
+                    topic: '调试话题',
+                    provider: 'mock-structurer',
+                    nodes: [
+                      {
+                        id: 'n1',
+                        type: 'claim',
+                        text: '调试图节点',
+                        timestampMs: 0,
+                        status: 'confirmed',
+                      },
+                    ],
+                    edges: [],
+                  },
+                  mergedGraphAfter: {
+                    sessionId: 'session_debug',
+                    revision: 1,
+                    topics: [],
+                    nodes: [
+                      {
+                        id: 'n1',
+                        type: 'claim',
+                        text: '调试图节点',
+                        timestampMs: 0,
+                        status: 'confirmed',
+                      },
+                    ],
+                    edges: [],
+                    updatedAt: 200,
+                  },
+                },
+              ],
               graph: {
                 sessionId: 'session_debug',
                 revision: 1,
@@ -1425,8 +1535,123 @@ describe('App 组件', () => {
     const debugPanel = await screen.findByTestId('debug-panel');
     expect(within(debugPanel).getByText(/sessionId: session_debug/)).toBeInTheDocument();
     expect(within(debugPanel).getByText(/transcript chunks: 1/)).toBeInTheDocument();
+    expect(within(debugPanel).getByText(/structurer segments: 1/)).toBeInTheDocument();
+    expect(within(debugPanel).getByText(/chunk traces: 1/)).toBeInTheDocument();
     expect(within(debugPanel).getByText(/第一段调试转写/)).toBeInTheDocument();
     expect(within(debugPanel).getByText(/调试图节点/)).toBeInTheDocument();
+  });
+
+  it('调试面板支持导出包含派生视图的 debug JSON', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: 'session_debug_export',
+              state: 'stopped',
+              currentTimeMs: 30000,
+              currentView: 'timeline',
+              graph: {
+                sessionId: 'session_debug_export',
+                revision: 1,
+                topics: [],
+                nodes: [
+                  {
+                    id: 'n1',
+                    type: 'claim',
+                    text: '导出调试节点',
+                    timestampMs: 0,
+                    status: 'confirmed',
+                  },
+                ],
+                edges: [],
+                updatedAt: 200,
+              },
+            },
+          });
+        }
+        if (message?.type === 'GET_DEBUG_SESSION') {
+          return Promise.resolve({
+            success: true,
+            debugData: {
+              session: {
+                sessionId: 'session_debug_export',
+                sourceType: 'tab',
+                createdAt: 100,
+              },
+              transcripts: [
+                {
+                  chunkId: 'chunk_1',
+                  sessionId: 'session_debug_export',
+                  text: '导出调试转写',
+                  startMs: 0,
+                  endMs: 30000,
+                  provider: 'mock-asr',
+                },
+              ],
+              segments: [
+                {
+                  segmentId: 'segment_1',
+                  sessionId: 'session_debug_export',
+                  startMs: 0,
+                  endMs: 30000,
+                  provider: 'mock-structurer',
+                  nodes: [
+                    {
+                      id: 'n1',
+                      type: 'claim',
+                      text: '导出调试节点',
+                      timestampMs: 0,
+                      status: 'confirmed',
+                    },
+                  ],
+                  edges: [],
+                },
+              ],
+              traces: [],
+              graph: {
+                sessionId: 'session_debug_export',
+                revision: 1,
+                topics: [],
+                nodes: [
+                  {
+                    id: 'n1',
+                    type: 'claim',
+                    text: '导出调试节点',
+                    timestampMs: 0,
+                    status: 'confirmed',
+                  },
+                ],
+                edges: [],
+                updatedAt: 200,
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    const user = userEvent.setup();
+    await renderApp();
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^调试$/ }));
+    });
+
+    await act(async () => {
+      await user.click(await screen.findByTestId('debug-export-button'));
+    });
+
+    const exportedBlob = createObjectURLSpy.mock.calls.at(-1)?.[0] as Blob;
+    const exportedJson = await exportedBlob.text();
+
+    expect(anchorClickSpy).toHaveBeenCalled();
+    expect(exportedJson).toContain('"segments"');
+    expect(exportedJson).toContain('"derivedViews"');
+    expect(exportedJson).toContain('"timeline"');
+    expect(exportedJson).toContain('导出调试节点');
   });
 
   it('点击回放后会拉取回放资产并显示当前片段', async () => {

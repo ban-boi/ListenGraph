@@ -139,6 +139,10 @@ describe('Service Worker - provider recovery', () => {
         append: vi.fn(async () => undefined),
         listBySession: vi.fn(async () => []),
       }),
+      createSegmentGraphRepository: () => ({
+        append: vi.fn(async () => undefined),
+        listBySession: vi.fn(async () => []),
+      }),
       createMergedGraphRepository: () => ({
         save: vi.fn(async () => undefined),
         getBySession: vi.fn(async () => undefined),
@@ -149,6 +153,7 @@ describe('Service Worker - provider recovery', () => {
       db: {
         sessions: {},
         transcriptChunks: {},
+        segmentGraphs: {},
         mergedGraphs: {},
         settings: {},
       },

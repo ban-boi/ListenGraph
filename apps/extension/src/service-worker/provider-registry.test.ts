@@ -165,6 +165,17 @@ describe('provider registry contract', () => {
     expect(providers.structurer.name).toBe('zhipu-structurer');
   });
 
+  it('structurer 默认超时时间会延长到 60 秒，并且不重试 429', () => {
+    const config = createDefaultProviderConfig();
+
+    expect(config.structurer.retry).toEqual(
+      expect.objectContaining({
+        timeoutMs: 60_000,
+      }),
+    );
+    expect(config.structurer.retry?.retryableStatusCodes).not.toContain(429);
+  });
+
   it('直连真实 provider 缺少密钥时会拒绝构造运行时 provider', () => {
     const registry = createProviderRegistry();
 
