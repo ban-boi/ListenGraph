@@ -12,7 +12,10 @@
       "Bash(cd /c/Users/finni/Desktop/ListenGraph/apps/extension && pnpm test src/service-worker/index.test.ts 2>&1)",
       "Bash(echo Test timeout or completed:*)",
       "Bash(cd C:/Users/finni/Desktop/ListenGraph/apps/extension && pnpm test src/service-worker/index.test.ts 2>&1)",
-      "Bash(cd C:/Users/finni/Desktop/ListenGraph/apps/extension && pnpm test -- --run src/service-worker/index.test.ts 2>&1)"
+      "Bash(cd C:/Users/finni/Desktop/ListenGraph/apps/extension && pnpm test -- --run src/service-worker/index.test.ts 2>&1)",
+      "Bash(powershell:*)",
+      "Bash(python:*)",
+      "Bash(omc cancel:*)"
     ]
   }
 }

@@ -45,15 +45,17 @@ describe('Service Worker - 当前主链路', () => {
     }));
     extractSegmentGraphMock = vi.fn(
       async ({ sessionId, transcriptWindow, previousGraph }: any) => ({
-        segmentId: 'segment_mock',
+        segmentId: `segment_${transcriptWindow[transcriptWindow.length - 1].endMs}`,
         sessionId,
-        startMs: transcriptWindow[transcriptWindow.length - 1].startMs,
+        startMs: previousGraph
+          ? transcriptWindow[transcriptWindow.length - 1].startMs
+          : transcriptWindow[0].startMs,
         endMs: transcriptWindow[transcriptWindow.length - 1].endMs,
         topic: 'provider topic',
         provider: 'mock-structurer',
         nodes: [
           {
-            id: `node_${transcriptWindow.length}`,
+            id: `segment_${transcriptWindow[transcriptWindow.length - 1].endMs}:node_${transcriptWindow.length}`,
             type: 'claim',
             text: transcriptWindow[transcriptWindow.length - 1].text,
             timestampMs: transcriptWindow[transcriptWindow.length - 1].startMs,
@@ -236,6 +238,40 @@ describe('Service Worker - 当前主链路', () => {
       });
   }
 
+  async function sendAudioChunk(params: {
+    startMs: number;
+    endMs: number;
+    audioData?: number[];
+    audioMimeType?: string;
+    sampleRate?: number;
+    channels?: number;
+    bitDepth?: number;
+    tabId?: number;
+  }) {
+    return dispatchMessage(
+      {
+        type: 'AUDIO_CHUNK_READY',
+        target: 'service-worker',
+        payload: {
+          audioData: params.audioData ?? [1, 2, 3, 4],
+          audioMimeType: params.audioMimeType,
+          sampleRate: params.sampleRate,
+          channels: params.channels,
+          bitDepth: params.bitDepth,
+          startMs: params.startMs,
+          endMs: params.endMs,
+        },
+      },
+      { tab: { id: params.tabId ?? 123 } },
+    );
+  }
+
+  async function bootstrapStructurerWindow() {
+    await sendAudioChunk({ startMs: 0, endMs: 10000 });
+    await sendAudioChunk({ startMs: 10000, endMs: 20000 });
+    return sendAudioChunk({ startMs: 20000, endMs: 30000 });
+  }
+
   it('注册扩展生命周期监听器', () => {
     const chromeMock = (globalThis as any).chrome;
     expect(chromeMock.runtime.onInstalled.addListener).toHaveBeenCalled();
@@ -375,18 +411,7 @@ describe('Service Worker - 当前主链路', () => {
       { tab: { id: 123 } },
     );
 
-    await dispatchMessage(
-      {
-        type: 'AUDIO_CHUNK_READY',
-        target: 'service-worker',
-        payload: {
-          audioData: [1, 2, 3, 4],
-          startMs: 0,
-          endMs: 30000,
-        },
-      },
-      { tab: { id: 123 } },
-    );
+    await bootstrapStructurerWindow();
 
     const sentMessageTypes = chromeMock.runtime.sendMessage.mock.calls.map(
       (call: any[]) => call[0]?.type,
@@ -405,28 +430,22 @@ describe('Service Worker - 当前主链路', () => {
       { tab: { id: 123 } },
     );
 
-    await dispatchMessage(
-      {
-        type: 'AUDIO_CHUNK_READY',
-        target: 'service-worker',
-        payload: {
-          audioData: [1, 2, 3, 4],
-          audioMimeType: 'audio/wav',
-          sampleRate: 16000,
-          channels: 1,
-          bitDepth: 16,
-          startMs: 0,
-          endMs: 30000,
-        },
-      },
-      { tab: { id: 123 } },
-    );
+    await sendAudioChunk({
+      startMs: 0,
+      endMs: 10000,
+      audioMimeType: 'audio/wav',
+      sampleRate: 16000,
+      channels: 1,
+      bitDepth: 16,
+    });
+    await sendAudioChunk({ startMs: 10000, endMs: 20000 });
+    await sendAudioChunk({ startMs: 20000, endMs: 30000 });
 
     expect(transcribeChunkMock).toHaveBeenCalledWith(
       expect.objectContaining({
         sessionId: expect.any(String),
         startMs: 0,
-        endMs: 30000,
+        endMs: 10000,
         audio: expect.any(Blob),
       }),
     );
@@ -435,13 +454,46 @@ describe('Service Worker - 当前主链路', () => {
     expect(extractSegmentGraphMock).toHaveBeenCalledWith(
       expect.objectContaining({
         sessionId: expect.any(String),
-        transcriptWindow: [
+        transcriptWindow: expect.arrayContaining([
           expect.objectContaining({
             text: 'provider transcript',
             provider: 'mock-asr',
           }),
-        ],
+        ]),
       }),
+    );
+    expect(extractSegmentGraphMock.mock.calls[0]?.[0].transcriptWindow).toHaveLength(3);
+  });
+
+  it('前两个 10 秒 chunk 只累计上下文，不会提前触发 structurer', async () => {
+    const chromeMock = (globalThis as any).chrome;
+
+    await dispatchMessage(
+      {
+        type: 'SESSION_START',
+        target: 'service-worker',
+        payload: { tabId: 123 },
+      },
+      { tab: { id: 123 } },
+    );
+
+    await sendAudioChunk({ startMs: 0, endMs: 10000 });
+    await sendAudioChunk({ startMs: 10000, endMs: 20000 });
+
+    expect(extractSegmentGraphMock).not.toHaveBeenCalled();
+
+    const sentProgressMessages = chromeMock.runtime.sendMessage.mock.calls
+      .map((call: any[]) => call[0])
+      .filter((message: any) => message?.type === 'PROVIDER_PROGRESS');
+    expect(sentProgressMessages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          payload: expect.objectContaining({
+            stage: 'structurer',
+            message: expect.stringContaining('等待 30 秒上下文'),
+          }),
+        }),
+      ]),
     );
   });
 
@@ -455,18 +507,7 @@ describe('Service Worker - 当前主链路', () => {
       { tab: { id: 123 } },
     );
 
-    await dispatchMessage(
-      {
-        type: 'AUDIO_CHUNK_READY',
-        target: 'service-worker',
-        payload: {
-          audioData: [1, 2, 3, 4],
-          startMs: 0,
-          endMs: 30000,
-        },
-      },
-      { tab: { id: 123 } },
-    );
+    await bootstrapStructurerWindow();
 
     expect(appendTranscriptChunkMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -476,7 +517,7 @@ describe('Service Worker - 当前主链路', () => {
     );
     expect(appendSegmentGraphMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        segmentId: 'segment_mock',
+        segmentId: 'segment_30000',
         topic: 'provider topic',
       }),
     );
@@ -526,18 +567,7 @@ describe('Service Worker - 当前主链路', () => {
     );
     const sessionId = startResponse.sessionId;
 
-    await dispatchMessage(
-      {
-        type: 'AUDIO_CHUNK_READY',
-        target: 'service-worker',
-        payload: {
-          audioData: [1, 2, 3, 4],
-          startMs: 0,
-          endMs: 10000,
-        },
-      },
-      { tab: { id: 123 } },
-    );
+    await bootstrapStructurerWindow();
 
     const debugResponse = await dispatchMessage({
       type: 'GET_DEBUG_SESSION',
@@ -546,11 +576,23 @@ describe('Service Worker - 当前主链路', () => {
     });
 
     expect(debugResponse.success).toBe(true);
-    expect(debugResponse.debugData.transcripts).toHaveLength(1);
+    expect(debugResponse.debugData.transcripts).toHaveLength(3);
     expect(debugResponse.debugData.segments).toHaveLength(1);
+    expect(debugResponse.debugData.structurerRuns).toHaveLength(1);
+    expect(debugResponse.debugData.traces).toHaveLength(3);
     expect(debugResponse.debugData.traces).toEqual([
       expect.objectContaining({
         sequence: 1,
+        segment: null,
+        structurerRun: null,
+      }),
+      expect.objectContaining({
+        sequence: 2,
+        segment: null,
+        structurerRun: null,
+      }),
+      expect.objectContaining({
+        sequence: 3,
         transcript: expect.objectContaining({
           chunkId: 'chunk_mock',
           text: 'provider transcript',
@@ -559,10 +601,21 @@ describe('Service Worker - 当前主链路', () => {
           expect.objectContaining({
             chunkId: 'chunk_mock',
           }),
+          expect.objectContaining({
+            chunkId: 'chunk_mock',
+          }),
+          expect.objectContaining({
+            chunkId: 'chunk_mock',
+          }),
         ],
         segment: expect.objectContaining({
-          segmentId: 'segment_mock',
+          segmentId: 'segment_30000',
           provider: 'mock-structurer',
+        }),
+        structurerRun: expect.objectContaining({
+          segmentId: 'segment_30000',
+          status: 'success',
+          windowChunkCount: 3,
         }),
         mergedGraphAfter: expect.objectContaining({
           sessionId,
@@ -757,18 +810,7 @@ describe('Service Worker - 当前主链路', () => {
       { tab: { id: 123 } },
     );
 
-    const chunkResponse = await dispatchMessage(
-      {
-        type: 'AUDIO_CHUNK_READY',
-        target: 'service-worker',
-        payload: {
-          audioData: [1, 2, 3, 4],
-          startMs: 0,
-          endMs: 30000,
-        },
-      },
-      { tab: { id: 123 } },
-    );
+    const chunkResponse = await bootstrapStructurerWindow();
 
     const snapshotResponse = await dispatchMessage({
       type: 'GET_RUNTIME_SNAPSHOT',
@@ -796,18 +838,7 @@ describe('Service Worker - 当前主链路', () => {
       new Error('UnknownError Internal error opening backing store for indexedDB.open.'),
     );
 
-    const chunkResponse = await dispatchMessage(
-      {
-        type: 'AUDIO_CHUNK_READY',
-        target: 'service-worker',
-        payload: {
-          audioData: [1, 2, 3, 4],
-          startMs: 0,
-          endMs: 30000,
-        },
-      },
-      { tab: { id: 123 } },
-    );
+    const chunkResponse = await bootstrapStructurerWindow();
     const snapshotResponse = await dispatchMessage({
       type: 'GET_RUNTIME_SNAPSHOT',
       target: 'service-worker',
@@ -830,18 +861,7 @@ describe('Service Worker - 当前主链路', () => {
       { tab: { id: 123 } },
     );
 
-    const chunkResponse = await dispatchMessage(
-      {
-        type: 'AUDIO_CHUNK_READY',
-        target: 'service-worker',
-        payload: {
-          audioData: [1, 2, 3, 4],
-          startMs: 0,
-          endMs: 30000,
-        },
-      },
-      { tab: { id: 123 } },
-    );
+    const chunkResponse = await bootstrapStructurerWindow();
 
     expect(chunkResponse.success).toBe(false);
 
@@ -903,18 +923,7 @@ describe('Service Worker - 当前主链路', () => {
       { tab: { id: 123 } },
     );
 
-    await dispatchMessage(
-      {
-        type: 'AUDIO_CHUNK_READY',
-        target: 'service-worker',
-        payload: {
-          audioData: [1, 2, 3, 4],
-          startMs: 0,
-          endMs: 30000,
-        },
-      },
-      { tab: { id: 123 } },
-    );
+    await bootstrapStructurerWindow();
 
     const snapshotResponse = await dispatchMessage({
       type: 'GET_RUNTIME_SNAPSHOT',
@@ -1045,18 +1054,7 @@ describe('Service Worker - 当前主链路', () => {
       { tab: { id: 123 } },
     );
 
-    await dispatchMessage(
-      {
-        type: 'AUDIO_CHUNK_READY',
-        target: 'service-worker',
-        payload: {
-          audioData: [1, 2, 3, 4],
-          startMs: 0,
-          endMs: 30000,
-        },
-      },
-      { tab: { id: 123 } },
-    );
+    await bootstrapStructurerWindow();
 
     const onSuspendHandler =
       chromeMock.runtime.onSuspend.addListener.mock.calls.at(-1)?.[0];
@@ -1604,18 +1602,7 @@ describe('Service Worker - 当前主链路', () => {
       { tab: { id: 123 } },
     );
 
-    await dispatchMessage(
-      {
-        type: 'AUDIO_CHUNK_READY',
-        target: 'service-worker',
-        payload: {
-          audioData: [1, 2, 3, 4],
-          startMs: 0,
-          endMs: 30000,
-        },
-      },
-      { tab: { id: 123 } },
-    );
+    await bootstrapStructurerWindow();
 
     await dispatchMessage({
       type: 'VIEW_SELECTED',
@@ -1652,18 +1639,7 @@ describe('Service Worker - 当前主链路', () => {
       { tab: { id: 123 } },
     );
 
-    await dispatchMessage(
-      {
-        type: 'AUDIO_CHUNK_READY',
-        target: 'service-worker',
-        payload: {
-          audioData: [1, 2, 3, 4],
-          startMs: 0,
-          endMs: 30000,
-        },
-      },
-      { tab: { id: 123 } },
-    );
+    await bootstrapStructurerWindow();
 
     const onSuspendHandler =
       chromeMock.runtime.onSuspend.addListener.mock.calls.at(-1)?.[0];

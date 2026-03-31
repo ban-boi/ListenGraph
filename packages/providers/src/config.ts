@@ -22,7 +22,7 @@ const DEFAULT_RETRY_POLICY: ProviderRetryPolicy = {
 
 const DEFAULT_STRUCTURER_RETRY_POLICY: ProviderRetryPolicy = {
   ...DEFAULT_RETRY_POLICY,
-  timeoutMs: 60_000,
+  timeoutMs: 90_000,
   retryableStatusCodes: DEFAULT_RETRY_POLICY.retryableStatusCodes.filter((status) => status !== 429),
 };
 

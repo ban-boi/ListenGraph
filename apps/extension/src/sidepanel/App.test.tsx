@@ -1469,6 +1469,28 @@ describe('App 组件', () => {
                     ],
                     edges: [],
                   },
+                  structurerRun: {
+                    sessionId: 'session_debug',
+                    sequence: 1,
+                    mode: 'bootstrap',
+                    transcriptEndMs: 30000,
+                    latestChunkId: 'chunk_1',
+                    windowStartMs: 0,
+                    windowEndMs: 30000,
+                    windowChunkCount: 1,
+                    windowCharCount: 7,
+                    latestChunkCharCount: 7,
+                    recentNodeCount: 0,
+                    recentEdgeCount: 0,
+                    startedAt: 100,
+                    completedAt: 200,
+                    durationMs: 100,
+                    status: 'success',
+                    segmentId: 'segment_1',
+                    nodeCount: 1,
+                    edgeCount: 0,
+                    fallbackUsed: false,
+                  },
                   mergedGraphAfter: {
                     sessionId: 'session_debug',
                     revision: 1,
@@ -1513,6 +1535,30 @@ describe('App 组件', () => {
                 },
                 updatedAt: 200,
               },
+              structurerRuns: [
+                {
+                  sessionId: 'session_debug',
+                  sequence: 1,
+                  mode: 'bootstrap',
+                  transcriptEndMs: 30000,
+                  latestChunkId: 'chunk_1',
+                  windowStartMs: 0,
+                  windowEndMs: 30000,
+                  windowChunkCount: 1,
+                  windowCharCount: 7,
+                  latestChunkCharCount: 7,
+                  recentNodeCount: 0,
+                  recentEdgeCount: 0,
+                  startedAt: 100,
+                  completedAt: 200,
+                  durationMs: 100,
+                  status: 'success',
+                  segmentId: 'segment_1',
+                  nodeCount: 1,
+                  edgeCount: 0,
+                  fallbackUsed: false,
+                },
+              ],
             },
           });
         }
@@ -1537,6 +1583,7 @@ describe('App 组件', () => {
     expect(within(debugPanel).getByText(/transcript chunks: 1/)).toBeInTheDocument();
     expect(within(debugPanel).getByText(/structurer segments: 1/)).toBeInTheDocument();
     expect(within(debugPanel).getByText(/chunk traces: 1/)).toBeInTheDocument();
+    expect(within(debugPanel).getByText(/structurer runs: 1/)).toBeInTheDocument();
     expect(within(debugPanel).getByText(/第一段调试转写/)).toBeInTheDocument();
     expect(within(debugPanel).getByText(/调试图节点/)).toBeInTheDocument();
   });
@@ -1588,6 +1635,16 @@ describe('App 组件', () => {
                   startMs: 0,
                   endMs: 30000,
                   provider: 'mock-asr',
+                  tokens: [
+                    {
+                      text: '导出',
+                      startMs: 0,
+                      endMs: 1000,
+                    },
+                  ],
+                  raw: {
+                    providerPayload: true,
+                  },
                 },
               ],
               segments: [
@@ -1607,6 +1664,9 @@ describe('App 组件', () => {
                     },
                   ],
                   edges: [],
+                  raw: {
+                    topic: '导出原始响应',
+                  },
                 },
               ],
               traces: [],
@@ -1644,14 +1704,27 @@ describe('App 组件', () => {
       await user.click(await screen.findByTestId('debug-export-button'));
     });
 
-    const exportedBlob = createObjectURLSpy.mock.calls.at(-1)?.[0] as Blob;
-    const exportedJson = await exportedBlob.text();
+    const slimBlob = createObjectURLSpy.mock.calls.at(-1)?.[0] as Blob;
+    const slimJson = await slimBlob.text();
 
     expect(anchorClickSpy).toHaveBeenCalled();
-    expect(exportedJson).toContain('"segments"');
-    expect(exportedJson).toContain('"derivedViews"');
-    expect(exportedJson).toContain('"timeline"');
-    expect(exportedJson).toContain('导出调试节点');
+    expect(slimJson).toContain('"segments"');
+    expect(slimJson).toContain('"derivedViews"');
+    expect(slimJson).toContain('"timeline"');
+    expect(slimJson).toContain('导出调试节点');
+    expect(slimJson).not.toContain('"tokens"');
+    expect(slimJson).not.toContain('"raw"');
+    expect(slimJson).toContain('"tokenCount": 1');
+    expect(slimJson).toContain('"hasRaw": true');
+
+    await act(async () => {
+      await user.click(await screen.findByTestId('debug-export-full-button'));
+    });
+
+    const fullBlob = createObjectURLSpy.mock.calls.at(-1)?.[0] as Blob;
+    const fullJson = await fullBlob.text();
+    expect(fullJson).toContain('"tokens"');
+    expect(fullJson).toContain('"raw"');
   });
 
   it('点击回放后会拉取回放资产并显示当前片段', async () => {

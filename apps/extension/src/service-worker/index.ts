@@ -37,6 +37,7 @@ import type {
   ReplaySessionData,
   RuntimeSnapshot,
   SessionState,
+  StructurerRunDebug,
 } from '../shared/messages';
 import { BUILD_INFO } from '../shared/build-info';
 import { buildSessionExport } from './export-formatters';
@@ -65,6 +66,7 @@ type PersistedRuntimeState = {
   pendingSessionFinalize: { sessionId: string; endedAt: number } | null;
   providerSummary: ProviderRuntimeSummary;
   lastProviderError: SerializableProviderError | null;
+  lastStructurerRun: StructurerRunDebug | null;
 };
 
 let currentSession: ActiveSession | null = null;
@@ -84,11 +86,13 @@ let hydrationPromise: Promise<void> | null = null;
 let activeProviderConfig: ProviderConfig = createDefaultProviderConfig();
 let providerSummary = redactProviderConfig(activeProviderConfig);
 let lastProviderError: SerializableProviderError | null = null;
+let lastStructurerRun: StructurerRunDebug | null = null;
 let asrProvider: AsrProvider;
 let structurerProvider: StructurerProvider;
 
 const RUNTIME_STATE_KEY = 'listen-graphic-runtime-state';
 const CONTENT_SCRIPT_FILE = 'content-script/content-script.js';
+const STRUCTURER_BOOTSTRAP_WINDOW_SIZE = 3;
 const providerRegistry = createProviderRegistry();
 const sessionRepository = createSessionRepository({ sessions: db.sessions });
 const transcriptChunkRepository = createTranscriptChunkRepository({
@@ -205,7 +209,8 @@ async function startSession(tabId: number): Promise<ServiceWorkerResponse> {
 
   try {
     await loadProviderRuntimeFromSettings();
-    lastProviderError = null;
+  lastProviderError = null;
+  lastStructurerRun = null;
   } catch (error) {
     const message =
       error instanceof Error ? error.message : '读取 provider 配置失败';
@@ -431,14 +436,53 @@ async function handleAudioChunk(
       payload: { transcript },
     });
 
-    await notifySessionState('structuring');
+    if (!mergedGraph && transcriptWindow.length < STRUCTURER_BOOTSTRAP_WINDOW_SIZE) {
+      await notifyProviderProgress(
+        'structurer',
+        `等待 30 秒上下文 (${transcriptWindow.length}/${STRUCTURER_BOOTSTRAP_WINDOW_SIZE})`,
+      );
+      lastProviderError = null;
+      await notifySessionState('capturing');
+      await persistRuntimeState();
+      return { success: true };
+    }
 
-    const segment = await structurerProvider.extractSegmentGraph({
+    await notifySessionState('structuring');
+    const structurerRun = createStructurerRunDebug({
       sessionId: currentSession.sessionId,
+      sequence: chunkIndex,
+      transcript,
       transcriptWindow,
-      previousGraph: mergedGraph ?? undefined,
-      language: 'zh',
+      previousGraph: mergedGraph,
     });
+
+    let segment: SegmentGraph;
+    try {
+      segment = await structurerProvider.extractSegmentGraph({
+        sessionId: currentSession.sessionId,
+        transcriptWindow,
+        previousGraph: mergedGraph ?? undefined,
+        language: 'zh',
+      });
+    } catch (error) {
+      lastStructurerRun = finalizeStructurerRunDebug(structurerRun, {
+        status: isTimeoutProviderError(error) ? 'timeout' : 'error',
+        errorCode:
+          error instanceof ProviderRequestError ? error.code : 'STRUCTURE_ERROR',
+        errorMessage:
+          error instanceof Error ? error.message : 'Structurer 请求失败',
+      });
+      throw error;
+    }
+    lastStructurerRun = null;
+    segment = attachStructurerRunDebug(segment, finalizeStructurerRunDebug(structurerRun, {
+      status: 'success',
+      segmentId: segment.segmentId,
+      topic: segment.topic,
+      nodeCount: segment.nodes.length,
+      edgeCount: segment.edges.length,
+      fallbackUsed: segment.nodes.some((node) => node.id.endsWith(':fallback')),
+    }));
     try {
       await withIndexedDbRetry(() => segmentGraphRepository.append(segment));
     } catch (error) {
@@ -649,14 +693,19 @@ async function loadDebugSessionData(sessionId: string): Promise<DebugSessionData
   const segments = await segmentGraphRepository.listBySession(sessionId);
   const graph = await mergedGraphRepository.getBySession(sessionId);
 
-  return {
-    session: session ?? null,
-    transcripts,
-    segments,
-    traces: buildDebugChunkTraces(transcripts, segments),
+    return {
+      session: session ?? null,
+      transcripts,
+      segments,
+    traces: buildDebugChunkTraces(
+      transcripts,
+      segments,
+      getStructurerRunsForDebugSession(sessionId, segments),
+    ),
     graph: graph ?? null,
     providerSummary,
     lastProviderError,
+    structurerRuns: getStructurerRunsForDebugSession(sessionId, segments),
   };
 }
 
@@ -759,9 +808,13 @@ function buildMergedGraphFromState(
 function buildDebugChunkTraces(
   transcripts: TranscriptChunk[],
   segments: SegmentGraph[],
+  structurerRuns: StructurerRunDebug[],
 ): DebugSessionData['traces'] {
   const remainingSegments = [...segments].sort(
     (a, b) => a.startMs - b.startMs || a.endMs - b.endMs,
+  );
+  const remainingRuns = [...structurerRuns].sort(
+    (a, b) => a.transcriptEndMs - b.transcriptEndMs || a.startedAt - b.startedAt,
   );
   let mergedAfter: MergedGraph | null = null;
 
@@ -769,11 +822,18 @@ function buildDebugChunkTraces(
     const transcriptWindow = transcripts.slice(Math.max(0, index - 2), index + 1);
     const matchedSegmentIndex = remainingSegments.findIndex(
       (segment) =>
-        segment.startMs === transcript.startMs && segment.endMs === transcript.endMs,
+        segment.endMs === transcript.endMs,
     );
     const segment =
       matchedSegmentIndex >= 0
         ? remainingSegments.splice(matchedSegmentIndex, 1)[0]
+        : null;
+    const matchedRunIndex = remainingRuns.findIndex(
+      (run) => run.transcriptEndMs === transcript.endMs,
+    );
+    const structurerRun =
+      matchedRunIndex >= 0
+        ? remainingRuns.splice(matchedRunIndex, 1)[0]
         : null;
 
     if (segment) {
@@ -785,6 +845,7 @@ function buildDebugChunkTraces(
       transcript,
       transcriptWindow,
       segment,
+      structurerRun,
       mergedGraphAfter: mergedAfter,
     };
   });
@@ -860,6 +921,7 @@ async function ensureHydrated() {
         pendingSessionFinalize = state.pendingSessionFinalize ?? null;
         providerSummary = state.providerSummary ?? providerSummary;
         lastProviderError = state.lastProviderError ?? null;
+        lastStructurerRun = state.lastStructurerRun ?? null;
       } else {
         const latestSession = (await sessionRepository.listRecent()).find(
           (session) => typeof session.endedAt === 'number',
@@ -879,6 +941,7 @@ async function ensureHydrated() {
           currentTimeMs = recoveredChunks[recoveredChunks.length - 1]?.endMs ?? 0;
           currentView = recoveredGraph?.viewHints?.defaultView;
           currentViewPinned = false;
+          lastStructurerRun = null;
         }
       }
       try {
@@ -939,6 +1002,7 @@ async function persistRuntimeState() {
         pendingSessionFinalize,
         providerSummary,
         lastProviderError,
+        lastStructurerRun,
       } satisfies PersistedRuntimeState,
     });
   } catch (error) {
@@ -985,6 +1049,7 @@ async function cleanupSession(payload: {
     currentTimeMs = 0;
     currentView = undefined;
     currentViewPinned = false;
+    lastStructurerRun = null;
     if (pendingSessionFinalize) {
       await persistRuntimeState();
     } else {
@@ -1044,6 +1109,90 @@ function getRuntimeSnapshot(): RuntimeSnapshot {
     lastProviderError,
     workerBuild: BUILD_INFO,
   };
+}
+
+function createStructurerRunDebug(params: {
+  sessionId: string;
+  sequence: number;
+  transcript: TranscriptChunk;
+  transcriptWindow: TranscriptChunk[];
+  previousGraph: MergedGraph | null;
+}): Omit<StructurerRunDebug, 'completedAt' | 'durationMs' | 'status'> {
+  return {
+    sessionId: params.sessionId,
+    sequence: params.sequence,
+    mode: params.previousGraph ? 'incremental' : 'bootstrap',
+    transcriptEndMs: params.transcript.endMs,
+    latestChunkId: params.transcript.chunkId,
+    windowStartMs: params.transcriptWindow[0]?.startMs ?? params.transcript.startMs,
+    windowEndMs:
+      params.transcriptWindow[params.transcriptWindow.length - 1]?.endMs ?? params.transcript.endMs,
+    windowChunkCount: params.transcriptWindow.length,
+    windowCharCount: params.transcriptWindow.reduce((sum, chunk) => sum + chunk.text.length, 0),
+    latestChunkCharCount: params.transcript.text.length,
+    recentNodeCount: params.previousGraph?.nodes.length ?? 0,
+    recentEdgeCount: params.previousGraph?.edges.length ?? 0,
+    startedAt: Date.now(),
+  };
+}
+
+function finalizeStructurerRunDebug(
+  run: Omit<StructurerRunDebug, 'completedAt' | 'durationMs' | 'status'>,
+  result: Pick<
+    StructurerRunDebug,
+    'status' | 'segmentId' | 'topic' | 'nodeCount' | 'edgeCount' | 'fallbackUsed' | 'errorCode' | 'errorMessage'
+  >,
+): StructurerRunDebug {
+  const completedAt = Date.now();
+  return {
+    ...run,
+    ...result,
+    completedAt,
+    durationMs: completedAt - run.startedAt,
+  };
+}
+
+function attachStructurerRunDebug(segment: SegmentGraph, run: StructurerRunDebug): SegmentGraph {
+  return {
+    ...segment,
+    raw: {
+      providerResponse: segment.raw,
+      debug: run,
+    },
+  };
+}
+
+function getStructurerRunsForDebugSession(
+  sessionId: string,
+  segments: SegmentGraph[],
+): StructurerRunDebug[] {
+  const successfulRuns = segments
+    .map((segment) => readStructurerRunDebug(segment))
+    .filter((run): run is StructurerRunDebug => Boolean(run))
+    .filter((run) => run.sessionId === sessionId);
+
+  if (lastStructurerRun && lastStructurerRun.sessionId === sessionId) {
+    return [...successfulRuns, lastStructurerRun].sort(
+      (a, b) => a.transcriptEndMs - b.transcriptEndMs || a.startedAt - b.startedAt,
+    );
+  }
+
+  return successfulRuns.sort(
+    (a, b) => a.transcriptEndMs - b.transcriptEndMs || a.startedAt - b.startedAt,
+  );
+}
+
+function readStructurerRunDebug(segment: SegmentGraph): StructurerRunDebug | null {
+  if (!segment.raw || typeof segment.raw !== 'object') {
+    return null;
+  }
+
+  const debug = (segment.raw as { debug?: StructurerRunDebug }).debug;
+  return debug ?? null;
+}
+
+function isTimeoutProviderError(error: unknown) {
+  return error instanceof ProviderRequestError && error.code === 'TIMEOUT_ERROR';
 }
 
 async function notifyError(code: string, message: string) {

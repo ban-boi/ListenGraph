@@ -41,6 +41,32 @@ export interface RuntimeSnapshot {
 
 export type ExportFormat = 'json' | 'markdown' | 'mermaid';
 
+export interface StructurerRunDebug {
+  sessionId: string;
+  sequence: number;
+  mode: 'bootstrap' | 'incremental';
+  transcriptEndMs: number;
+  latestChunkId: string;
+  windowStartMs: number;
+  windowEndMs: number;
+  windowChunkCount: number;
+  windowCharCount: number;
+  latestChunkCharCount: number;
+  recentNodeCount: number;
+  recentEdgeCount: number;
+  startedAt: number;
+  completedAt: number;
+  durationMs: number;
+  status: 'success' | 'timeout' | 'error';
+  segmentId?: string;
+  topic?: string;
+  nodeCount?: number;
+  edgeCount?: number;
+  fallbackUsed?: boolean;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
 export interface DebugSessionData {
   session: {
     sessionId: string;
@@ -56,11 +82,13 @@ export interface DebugSessionData {
     transcript: TranscriptChunk;
     transcriptWindow: TranscriptChunk[];
     segment: SegmentGraph | null;
+    structurerRun?: StructurerRunDebug | null;
     mergedGraphAfter: MergedGraph | null;
   }>;
   graph: MergedGraph | null;
   providerSummary: ProviderRuntimeSummary;
   lastProviderError?: SerializableProviderError | null;
+  structurerRuns?: StructurerRunDebug[];
 }
 
 export interface ReplaySessionData {

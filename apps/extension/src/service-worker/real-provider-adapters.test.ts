@@ -179,12 +179,138 @@ describe('real provider adapters', () => {
     );
     expect(segment.nodes[0]).toEqual(
       expect.objectContaining({
+        id: expect.stringMatching(/^segment_/),
         type: 'reason',
         text: '这是结构化节点',
         timestampMs: 1_000,
         evidenceChunkIds: ['chunk_1'],
       }),
     );
+  });
+
+  it('OpenAIStructurerProvider 会规范化 answer 包装、content 字段、canonical id 与跨段边', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                answer: {
+                  topic: '增量主题',
+                  nodes: [
+                    {
+                      id: 'n1',
+                      type: 'claim',
+                      content: '最新观点',
+                    },
+                  ],
+                  edges: [
+                    {
+                      source: 'existing_node_1',
+                      target: 'n1',
+                      type: 'supports',
+                    },
+                  ],
+                },
+              }),
+            },
+          },
+        ],
+      }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const provider = new OpenAIStructurerProvider({
+      type: 'openai',
+      mode: 'direct',
+      endpoint: 'https://api.openai.com/v1',
+      apiKey: 'secret',
+      model: 'gpt-4.1-mini',
+      language: 'zh',
+    });
+
+    const segment = await provider.extractSegmentGraph({
+      sessionId: 'session_live',
+      transcriptWindow: [
+        {
+          chunkId: 'chunk_1',
+          sessionId: 'session_live',
+          text: '[0:0.000,0:10.000] 第一段',
+          startMs: 0,
+          endMs: 10_000,
+          provider: 'openai-asr',
+        },
+        {
+          chunkId: 'chunk_2',
+          sessionId: 'session_live',
+          text: '[0:10.000,0:20.000] 第二段',
+          startMs: 10_000,
+          endMs: 20_000,
+          provider: 'openai-asr',
+        },
+        {
+          chunkId: 'chunk_3',
+          sessionId: 'session_live',
+          text: '[0:20.000,0:30.000] 第三段',
+          startMs: 20_000,
+          endMs: 30_000,
+          provider: 'openai-asr',
+        },
+      ],
+      previousGraph: {
+        sessionId: 'session_live',
+        revision: 1,
+        topics: [],
+        nodes: [
+          {
+            id: 'existing_node_1',
+            type: 'claim',
+            text: '既有节点',
+            timestampMs: 0,
+            status: 'confirmed',
+          },
+        ],
+        edges: [],
+        updatedAt: 1,
+      },
+      language: 'zh',
+    });
+
+    const requestCalls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    const requestInit = requestCalls[0]?.[1];
+    const parsedBody = JSON.parse(String(requestInit?.body ?? '{}'));
+    const systemPrompt = String(parsedBody.messages?.[0]?.content ?? '');
+    const userPayload = JSON.parse(String(parsedBody.messages?.[1]?.content ?? '{}'));
+
+    expect(userPayload.mode).toBe('incremental');
+    expect(userPayload.windowTranscript).not.toContain('[0:0.000,0:10.000]');
+    expect(userPayload.latestChunkTranscript).toContain('[20000-30000] 第三段');
+    expect(userPayload.recentGraphContext.nodes).toEqual([
+      expect.objectContaining({
+        id: 'existing_node_1',
+        text: '既有节点',
+      }),
+    ]);
+    expect(userPayload.recentGraphContext.edges).toEqual([]);
+    expect(systemPrompt).toContain('Do not restate, paraphrase, or rename semantics');
+    expect(systemPrompt).toContain('prefer adding an edge instead of repeating the claim');
+
+    expect(segment.startMs).toBe(20_000);
+    expect(segment.endMs).toBe(30_000);
+    expect(segment.nodes).toEqual([
+      expect.objectContaining({
+        id: expect.stringMatching(/^segment_.*:n1$/),
+        text: '最新观点',
+      }),
+    ]);
+    expect(segment.edges).toEqual([
+      expect.objectContaining({
+        source: 'existing_node_1',
+        target: segment.nodes[0]?.id,
+        type: 'supports',
+      }),
+    ]);
   });
 
   it('ZhipuStructurerProvider 会使用智谱默认 endpoint/model 并保留独立 provider 名称', async () => {
@@ -296,6 +422,51 @@ describe('real provider adapters', () => {
     ).rejects.toMatchObject({
       code: 'RATE_LIMIT_ERROR',
       status: 429,
+      attemptCount: 1,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('OpenAIStructurerProvider 遇到超时会直接失败而不重试', async () => {
+    const timeoutError = new Error('aborted');
+    timeoutError.name = 'AbortError';
+    const fetchMock = vi.fn().mockRejectedValue(timeoutError);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const provider = new OpenAIStructurerProvider({
+      type: 'openai',
+      mode: 'direct',
+      endpoint: 'https://api.openai.com/v1',
+      apiKey: 'secret',
+      model: 'gpt-4.1-mini',
+      language: 'zh',
+      retry: {
+        maxAttempts: 3,
+        baseDelayMs: 1,
+        maxDelayMs: 1,
+        timeoutMs: 123,
+      },
+    });
+
+    await expect(
+      provider.extractSegmentGraph({
+        sessionId: 'session_timeout',
+        transcriptWindow: [
+          {
+            chunkId: 'chunk_timeout_1',
+            sessionId: 'session_timeout',
+            text: '超时 transcript',
+            startMs: 0,
+            endMs: 10_000,
+            provider: 'openai-asr',
+          },
+        ],
+        language: 'zh',
+      }),
+    ).rejects.toMatchObject({
+      code: 'TIMEOUT_ERROR',
+      stage: 'structurer',
       attemptCount: 1,
     });
 

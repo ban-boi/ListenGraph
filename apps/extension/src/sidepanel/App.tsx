@@ -42,6 +42,7 @@ import type {
   ReplaySessionData,
   RuntimeSnapshot,
   SessionState,
+  StructurerRunDebug,
 } from '../shared/messages';
 import { BUILD_INFO } from '../shared/build-info';
 
@@ -152,6 +153,8 @@ type DebugViewArtifact = {
   };
 };
 
+type DebugExportMode = 'slim' | 'full';
+
 function getRendererGraph(graph: MergedGraph, view: ViewType): RendererGraph {
   switch (view) {
     case 'timeline':
@@ -260,6 +263,130 @@ function buildDebugViewArtifacts(params: {
     },
     {} as Record<ViewType, DebugViewArtifact>,
   );
+}
+
+function summarizeTranscriptChunk(
+  chunk: DebugSessionData['transcripts'][number],
+  mode: DebugExportMode,
+) {
+  if (mode === 'full') {
+    return chunk;
+  }
+
+  return {
+    chunkId: chunk.chunkId,
+    sessionId: chunk.sessionId,
+    text: chunk.text,
+    startMs: chunk.startMs,
+    endMs: chunk.endMs,
+    provider: chunk.provider,
+    confidence: chunk.confidence,
+    speakerHints: chunk.speakerHints,
+    tokenCount: chunk.tokens?.length ?? 0,
+    hasRaw: chunk.raw !== undefined,
+  };
+}
+
+function summarizeSegment(
+  segment: DebugSessionData['segments'][number],
+  mode: DebugExportMode,
+) {
+  if (mode === 'full') {
+    return segment;
+  }
+
+  return {
+    segmentId: segment.segmentId,
+    sessionId: segment.sessionId,
+    startMs: segment.startMs,
+    endMs: segment.endMs,
+    topic: segment.topic,
+    provider: segment.provider,
+    nodes: segment.nodes,
+    edges: segment.edges,
+    structurerDebug: readStructurerRunDebug(segment),
+    hasRaw: segment.raw !== undefined,
+  };
+}
+
+function summarizeStructurerRun(
+  run: StructurerRunDebug,
+  _mode: DebugExportMode,
+) {
+  return run;
+}
+
+function summarizeDebugData(
+  debugData: DebugSessionData | null,
+  mode: DebugExportMode,
+) {
+  if (!debugData) {
+    return null;
+  }
+
+  if (mode === 'full') {
+    return debugData;
+  }
+
+  return {
+    ...debugData,
+    transcripts: debugData.transcripts.map((chunk) =>
+      summarizeTranscriptChunk(chunk, mode),
+    ),
+    segments: debugData.segments.map((segment) =>
+      summarizeSegment(segment, mode),
+    ),
+    traces: debugData.traces.map((trace) => ({
+      sequence: trace.sequence,
+      transcript: summarizeTranscriptChunk(trace.transcript, mode),
+      transcriptWindow: trace.transcriptWindow.map((chunk) =>
+        summarizeTranscriptChunk(chunk, mode),
+      ),
+      segment: trace.segment ? summarizeSegment(trace.segment, mode) : null,
+      structurerRun: trace.structurerRun
+        ? summarizeStructurerRun(trace.structurerRun, mode)
+        : null,
+      mergedGraphAfter: trace.mergedGraphAfter,
+    })),
+    structurerRuns: (debugData.structurerRuns ?? []).map((run) =>
+      summarizeStructurerRun(run, mode),
+    ),
+  };
+}
+
+function buildDebugExportPayload(params: {
+  mode: DebugExportMode;
+  sessionId: string | null;
+  sessionState: SessionState;
+  currentView: ViewType;
+  workerBuildLabel: string;
+  providerSummary: ProviderRuntimeSummary;
+  logs: string[];
+  debugData: DebugSessionData | null;
+  derivedViews: Record<ViewType, DebugViewArtifact>;
+}) {
+  return {
+    exportedAt: new Date().toISOString(),
+    exportMode: params.mode,
+    sessionId: params.sessionId,
+    sessionState: params.sessionState,
+    currentView: params.currentView,
+    uiBuild: BUILD_INFO,
+    workerBuildLabel: params.workerBuildLabel,
+    providerSummary: params.providerSummary,
+    logCount: params.logs.length,
+    logs: params.mode === 'full' ? params.logs : params.logs.slice(0, 20),
+    debugData: summarizeDebugData(params.debugData, params.mode),
+    derivedViews: params.derivedViews,
+  };
+}
+
+function readStructurerRunDebug(segment: DebugSessionData['segments'][number]) {
+  if (!segment.raw || typeof segment.raw !== 'object') {
+    return null;
+  }
+
+  return (segment.raw as { debug?: StructurerRunDebug }).debug ?? null;
 }
 
 function downloadTextFile(filename: string, content: string, mimeType: string) {
@@ -1257,13 +1384,12 @@ export default function App() {
     [currentView, debugViewArtifacts],
   );
 
-  const debugExportPayload = useMemo(
-    () => ({
-      exportedAt: new Date().toISOString(),
+  const slimDebugExportPayload = useMemo(
+    () => buildDebugExportPayload({
+      mode: 'slim',
       sessionId,
       sessionState,
       currentView,
-      uiBuild: BUILD_INFO,
       workerBuildLabel,
       providerSummary,
       logs,
@@ -1282,17 +1408,48 @@ export default function App() {
     ],
   );
 
-  const handleExportDebug = useCallback(() => {
+  const fullDebugExportPayload = useMemo(
+    () => buildDebugExportPayload({
+      mode: 'full',
+      sessionId,
+      sessionState,
+      currentView,
+      workerBuildLabel,
+      providerSummary,
+      logs,
+      debugData,
+      derivedViews: debugViewArtifacts,
+    }),
+    [
+      currentView,
+      debugData,
+      debugViewArtifacts,
+      logs,
+      providerSummary,
+      sessionId,
+      sessionState,
+      workerBuildLabel,
+    ],
+  );
+
+  const handleExportDebug = useCallback((mode: DebugExportMode) => {
     if (!debugData) {
       addLog('调试数据为空，无法导出');
       return;
     }
 
     const debugSessionId = debugData.session?.sessionId ?? sessionId ?? 'listen-graphic';
-    const filename = `${debugSessionId}-debug.json`;
-    downloadTextFile(filename, JSON.stringify(debugExportPayload, null, 2), 'application/json');
+    const filename =
+      mode === 'full'
+        ? `${debugSessionId}-debug-full.json`
+        : `${debugSessionId}-debug.json`;
+    downloadTextFile(
+      filename,
+      JSON.stringify(mode === 'full' ? fullDebugExportPayload : slimDebugExportPayload, null, 2),
+      'application/json',
+    );
     addLog(`已导出: ${filename}`);
-  }, [addLog, debugData, debugExportPayload, sessionId]);
+  }, [addLog, debugData, fullDebugExportPayload, sessionId, slimDebugExportPayload]);
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -1774,7 +1931,7 @@ export default function App() {
               <button
                 data-testid="debug-export-button"
                 type="button"
-                onClick={handleExportDebug}
+                onClick={() => handleExportDebug('slim')}
                 disabled={!debugData}
                 style={{
                   padding: '2px 8px',
@@ -1787,6 +1944,23 @@ export default function App() {
                 }}
               >
                 导出调试 JSON
+              </button>
+              <button
+                data-testid="debug-export-full-button"
+                type="button"
+                onClick={() => handleExportDebug('full')}
+                disabled={!debugData}
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: debugData ? 'white' : '#e2e8f0',
+                  color: '#334155',
+                  fontSize: 11,
+                  cursor: debugData ? 'pointer' : 'not-allowed',
+                }}
+              >
+                导出完整调试 JSON
               </button>
             </div>
             <div style={{ marginBottom: 6 }}>
@@ -1802,6 +1976,9 @@ export default function App() {
               chunk traces: {debugData?.traces.length ?? 0}
             </div>
             <div style={{ marginBottom: 6 }}>
+              structurer runs: {debugData?.structurerRuns?.length ?? 0}
+            </div>
+            <div style={{ marginBottom: 6 }}>
               merged graph nodes: {debugData?.graph?.nodes.length ?? 0}
             </div>
             <pre
@@ -1813,7 +1990,7 @@ export default function App() {
                 fontFamily: 'monospace',
               }}
             >
-              {JSON.stringify(debugExportPayload, null, 2)}
+              {JSON.stringify(slimDebugExportPayload, null, 2)}
             </pre>
           </div>
         )}
