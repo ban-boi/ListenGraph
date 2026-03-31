@@ -242,6 +242,8 @@ curl https://open.bigmodel.cn/api/paas/v4/chat/completions \
 
 ## 结构化输出（JSON Mode）
 
+> 官方文档：[结构化输出](https://docs.bigmodel.cn/cn/guide/capabilities/struct-output)
+
 ### 启用方式
 
 在请求中添加 `response_format` 参数：
@@ -254,29 +256,61 @@ response = client.chat.completions.create(
 )
 ```
 
-### 指定 JSON 结构
+### ⚠️ 重要约束
 
-在 system message 中定义期望的 JSON 结构：
+1. **必须在 system message 中定义 JSON 结构**——不能只传 `response_format` 而不说明期望的格式，否则模型输出不可控
+2. **输入数据质量直接影响提取效果**——确保输入文本格式清晰、内容完整
+3. **输出不保证严格符合 Schema**——`response_format: json_object` 只保证返回合法 JSON，**不保证字段完整/类型正确**，需在业务层做验证
+4. **流式模式下**——JSON 是逐 token 拼接的，需要等完整接收后再解析
+
+### 模式一：System Prompt 指定结构（推荐）
+
+在 system message 中用示例 JSON 定义期望格式：
 
 ```python
+response = client.chat.completions.create(
+    model="glm-4.7",
+    messages=[
+        {
+            "role": "system",
+            "content": """
+            你是一个情感分析专家。请按照以下 JSON 格式返回分析结果：
+            {
+                "sentiment": "positive/negative/neutral",
+                "confidence": 0.95,
+                "emotions": ["joy", "excitement"],
+                "keywords": ["天气", "心情"],
+                "analysis": "详细分析说明"
+            }
+            """
+        },
+        {
+            "role": "user",
+            "content": "请分析这句话的情感：'今天天气真好，心情很愉快！'"
+        }
+    ],
+    response_format={"type": "json_object"}
+)
+```
+
+### 模式二：JSON Schema 验证
+
+在 system message 中传入 JSON Schema，并在业务层用 `jsonschema` 验证：
+
+```python
+import jsonschema
+from jsonschema import validate
+
 schema = {
     "type": "object",
     "properties": {
-        "sentiment": {
-            "type": "string",
-            "enum": ["positive", "negative", "neutral"]
-        },
-        "confidence": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1
-        },
-        "keywords": {
-            "type": "array",
-            "items": {"type": "string"}
-        }
+        "sentiment": {"type": "string", "enum": ["positive", "negative", "neutral"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "emotions": {"type": "array", "items": {"type": "string"}},
+        "keywords": {"type": "array", "items": {"type": "string"}},
+        "analysis": {"type": "string"}
     },
-    "required": ["sentiment", "confidence"]
+    "required": ["sentiment", "confidence", "analysis"]
 }
 
 response = client.chat.completions.create(
@@ -286,18 +320,56 @@ response = client.chat.completions.create(
             "role": "system",
             "content": f"请按照以下 JSON Schema 格式返回：\n{json.dumps(schema, indent=2, ensure_ascii=False)}"
         },
-        {
-            "role": "user",
-            "content": "分析这段文字的情感..."
-        }
+        {"role": "user", "content": "分析这段文字的情感..."}
     ],
     response_format={"type": "json_object"}
 )
 
-result = json.loads(response.choices[0].message.content)
+try:
+    result = json.loads(response.choices[0].message.content)
+    validate(instance=result, schema=schema)  # 业务层验证
+except json.JSONDecodeError:
+    # JSON 解析失败 → 重试或降级
+    pass
+except jsonschema.exceptions.ValidationError:
+    # 字段缺失/类型错误 → 重试或降级
+    pass
 ```
 
-### Structurer 场景示例
+### 错误处理最佳实践
+
+```typescript
+// TypeScript 示例：带重试的结构化提取
+async function extractWithRetry(prompt: string, maxRetries = 2): Promise<any> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await client.chat.completions.create({
+      model: 'glm-4.7-flash',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: prompt }
+      ],
+      response_format: { type: 'json_object' },
+      thinking: { type: 'disabled' }  // 关闭思考，降低延迟
+    });
+
+    try {
+      const raw = response.choices[0].message.content;
+      const parsed = JSON.parse(raw!);
+      // 业务层验证
+      if (!parsed.topic || !Array.isArray(parsed.nodes)) {
+        throw new Error('Missing required fields');
+      }
+      return parsed;
+    } catch (e) {
+      if (attempt === maxRetries) throw e;
+      // 指数退避重试
+      await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+    }
+  }
+}
+```
+
+### ListenGraph Structurer 场景示例
 
 ```typescript
 const response = await client.chat.completions.create({
@@ -307,20 +379,24 @@ const response = await client.chat.completions.create({
       role: 'system',
       content: `你是知识图谱提取专家。从文本中提取结构化信息，返回以下 JSON 格式：
 {
+  "topic": "string - 对话主题",
   "nodes": [
-    {"id": "string", "label": "string", "type": "string"}
+    {"id": "string", "type": "claim|reason|example|question|conclusion", "text": "string"}
   ],
   "edges": [
-    {"source": "string", "target": "string", "label": "string"}
+    {"source": "node_id", "target": "node_id", "type": "supports|opposes|causes|follows|example_of"}
   ]
-}`
+}
+
+只返回 JSON，不要返回其他内容。`
     },
     {
       role: 'user',
       content: `文本内容：${transcriptText}`
     }
   ],
-  response_format: { type: 'json_object' }
+  response_format: { type: 'json_object' },
+  thinking: { type: 'disabled' }  // 关闭思考以降低延迟
 });
 
 const graph = JSON.parse(response.choices[0].message.content);
@@ -397,26 +473,145 @@ if message.tool_calls:
 
 ## 推理模式（Thinking）
 
-GLM-4.7 支持深度思考模式，适合复杂推理任务：
+> 官方文档：
+> - [思考模式](https://docs.bigmodel.cn/cn/guide/capabilities/thinking-mode)
+> - [深度思考](https://docs.bigmodel.cn/cn/guide/capabilities/thinking)
 
+### 默认行为
+
+| 模型系列 | 默认 thinking 行为 |
+|---------|-------------------|
+| `glm-5`、`glm-4.7`、`glm-4.5v` | **强制开启** thinking，无法关闭 |
+| `glm-4.6` | 混合 thinking（模型自动判断是否需要） |
+| `glm-4.7-flash`、`glm-4.7-flashx` | 支持 `thinking.type=disabled` 关闭（实测验证） |
+
+> ⚠️ 官方文档将 `glm-4.7-flash` 列在强制思考列表之外。实测 `glm-4.7-flash` 可以通过 `thinking.type=disabled` 关闭思考，且关闭后 reasoning_tokens=0。
+
+### 控制参数
+
+```json
+{
+  "thinking": {
+    "type": "enabled"  // 或 "disabled"
+  }
+}
+```
+
+- `enabled`（默认）：启用思考
+- `disabled`：禁用思考，直接输出，显著降低延迟和 token 消耗
+
+### 三种思考模式
+
+**1. 交错式思考（Interleaved Thinking）**
+
+支持工具调用之间、收到工具结果之后继续思考。从 GLM-4.5 开始支持。
+
+适用场景：Agent / 工具调用，需要多步推理+工具调用的复杂任务。
+
+注意事项：使用"交错思考 + 工具"时，**必须显式保留 `reasoning_content`**，并在返回工具结果时一并传回。
+
+**2. 保留式思考（Preserved Thinking）**
+
+GLM-5 / GLM-4.7 新能力：模型可在上下文中保留先前 assistant 回合的 `reasoning_content`，保持推理连续性，提高缓存命中率。
+
+- Coding Plan 端点：默认开启
+- 标准 API 端点：默认关闭
+- 开启方式：`"clear_thinking": false`
+- ⚠️ 必须将完整、未修改的 `reasoning_content` 传回 API，不可重新排序或修改
+
+**3. 轮级思考（Turn-level Thinking）**
+
+GLM-4.7 新引入：同一会话中，每轮请求可独立选择开启/关闭思考。
+
+优势：
+- 轻量轮次（事实查询）关闭思考 → 快速响应
+- 重量轮次（复杂推理/代码调试）开启思考 → 高准确率
+- Agent 场景下动态平衡效率与质量
+
+### 代码示例
+
+**启用思考：**
+```python
+response = client.chat.completions.create(
+    model="glm-4.7-flash",
+    messages=[...],
+    extra_body={
+        "thinking": {"type": "enabled"}
+    }
+)
+```
+
+**关闭思考（ListenGraph Structurer 推荐配置）：**
+```python
+response = client.chat.completions.create(
+    model="glm-4.7-flash",
+    messages=[...],
+    extra_body={
+        "thinking": {"type": "disabled"}
+    }
+)
+```
+
+**流式 + 思考：**
 ```python
 response = client.chat.completions.create(
     model="glm-4.7",
     messages=[...],
     stream=True,
     extra_body={
-        "thinking": {
-            "type": "enabled"
-        }
+        "thinking": {"type": "enabled"}
     }
 )
-
 for chunk in response:
-    if chunk.choices[0].delta.reasoning_content:
-        print(chunk.choices[0].delta.reasoning_content, end='')  # 思考过程
-    if chunk.choices[0].delta.content:
-        print(chunk.choices[0].delta.content, end='')  # 最终回答
+    delta = chunk.choices[0].delta
+    if hasattr(delta, 'reasoning_content') and delta.reasoning_content:
+        print(delta.reasoning_content, end='')  # 思考过程
+    if hasattr(delta, 'content') and delta.content:
+        print(delta.content, end='')  # 最终回答
 ```
+
+### 响应格式（开启思考时）
+
+```json
+{
+  "choices": [{
+    "message": {
+      "role": "assistant",
+      "content": "最终回答...",
+      "reasoning_content": "让我从多个角度分析...（思考过程）"
+    }
+  }],
+  "usage": {
+    "completion_tokens": 239,
+    "completion_tokens_details": {
+      "reasoning_tokens": 150  // 思考消耗的 token
+    },
+    "total_tokens": 247
+  }
+}
+```
+
+### 性能影响
+
+根据 2026-03-31 基准测试（详见 [zhipu-glm-benchmark-2026-03-31.md](./zhipu-glm-benchmark-2026-03-31.md)）：
+
+| 指标 | 开启 thinking | 关闭 thinking | 变化 |
+|------|-------------|-------------|------|
+| 中位耗时 | ~44 秒 | ~7 秒 | **快 6 倍** |
+| reasoning_tokens | 1408-2670 | 0 | 完全消除 |
+| total_tokens | 1860-3079 | 166-814 | 减少 50-90% |
+
+### 最佳实践
+
+**推荐开启思考的场景：**
+- 复杂问题分析和多步推理
+- 技术方案设计和策略规划
+- 代码调试和架构评估
+
+**推荐关闭思考的场景（ListenGraph Structurer 适用）：**
+- 简单的结构化 JSON 提取
+- 事实查询和基础分类
+- 需要快速响应的实时处理
 
 ---
 
@@ -554,5 +749,6 @@ if (config.type === 'zhipu') {
 
 ## 更新日志
 
+- **2026-03-31**: 重写推理模式章节，补充交错式/保留式/轮级三种思考模式详解、性能影响数据、最佳实践；重写结构化输出章节，补充约束说明、Schema 验证模式、错误处理最佳实践、ListenGraph Structurer 示例（含 thinking 关闭）；新增基准测试文档
 - **2026-03-30**: 补充 Base URL 与完整 URL 的区别说明，新增同步/异步接口对比
 - **2026-03-25**: 初版创建，基于智谱 AI 官方文档整理
