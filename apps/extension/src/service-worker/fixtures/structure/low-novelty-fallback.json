@@ -1,0 +1,58 @@
+{
+  "name": "low-novelty-fallback",
+  "seed": {
+    "transcriptWindow": [
+      {
+        "chunkId": "chunk_seed_1",
+        "text": "我们需要一个明确的旧结论作为对照。",
+        "startMs": 0,
+        "endMs": 10000
+      },
+      {
+        "chunkId": "chunk_seed_2",
+        "text": "旧结论是 Structure-focused 测试应该绕过 ASR，只保留真实 structurer。",
+        "startMs": 10000,
+        "endMs": 20000
+      },
+      {
+        "chunkId": "chunk_seed_3",
+        "text": "接下来我们故意重复这句结论，观察 structurer 是否走空增量或 fallback。",
+        "startMs": 20000,
+        "endMs": 30000
+      }
+    ],
+    "mergedGraph": {
+      "sessionId": "__SESSION_ID__",
+      "revision": 1,
+      "topics": [],
+      "nodes": [
+        {
+          "id": "existing_node_1",
+          "type": "claim",
+          "text": "Structure-focused 测试应该绕过 ASR，只保留真实 structurer。",
+          "timestampMs": 10000,
+          "status": "confirmed"
+        }
+      ],
+      "edges": [],
+      "updatedAt": 1
+    },
+    "currentTimeMs": 30000,
+    "chunkIndex": 3
+  },
+  "transcripts": [
+    {
+      "chunkId": "chunk_low_novelty_4",
+      "text": "Structure-focused 测试应该绕过 ASR，只保留真实 structurer。",
+      "startMs": 30000,
+      "endMs": 40000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "expectFallbackUsed": true
+  }
+}

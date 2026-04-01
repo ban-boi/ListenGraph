@@ -120,7 +120,7 @@ function isRetriableProviderError(
   error: unknown,
   retryPolicy: { retryableStatusCodes: number[] },
 ) {
-  if (error instanceof Error && error.name === 'AbortError') {
+  if (isAbortError(error)) {
     return true;
   }
 
@@ -130,6 +130,15 @@ function isRetriableProviderError(
   }
 
   return error instanceof TypeError;
+}
+
+function isAbortError(error: unknown) {
+  return (
+    (error instanceof Error && error.name === 'AbortError') ||
+    (typeof DOMException !== 'undefined' &&
+      error instanceof DOMException &&
+      error.name === 'AbortError')
+  );
 }
 
 function buildTokens(

@@ -1,0 +1,59 @@
+{
+  "name": "incremental-cross-edge",
+  "seed": {
+    "transcriptWindow": [
+      {
+        "chunkId": "chunk_seed_1",
+        "text": "我们先建立一个结构化测试的基础结论。",
+        "startMs": 0,
+        "endMs": 10000
+      },
+      {
+        "chunkId": "chunk_seed_2",
+        "text": "这个结论是 Structure-focused 测试应该绕过 ASR，只保留真实 structurer。",
+        "startMs": 10000,
+        "endMs": 20000
+      },
+      {
+        "chunkId": "chunk_seed_3",
+        "text": "这样可以让回归更快，也更容易集中调试 prompt 和增量策略。",
+        "startMs": 20000,
+        "endMs": 30000
+      }
+    ],
+    "mergedGraph": {
+      "sessionId": "__SESSION_ID__",
+      "revision": 1,
+      "topics": [],
+      "nodes": [
+        {
+          "id": "existing_node_1",
+          "type": "claim",
+          "text": "Structure-focused 测试应该绕过 ASR，只保留真实 structurer。",
+          "timestampMs": 10000,
+          "status": "confirmed"
+        }
+      ],
+      "edges": [],
+      "updatedAt": 1
+    },
+    "currentTimeMs": 30000,
+    "chunkIndex": 3
+  },
+  "transcripts": [
+    {
+      "chunkId": "chunk_incremental_4",
+      "text": "这样做的直接好处是节省 ASR 额度，而且回归会更轻量。",
+      "startMs": 30000,
+      "endMs": 40000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "disallowDuplicatePreviousTexts": true,
+    "expectCrossGraphEdges": true
+  }
+}

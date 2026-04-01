@@ -272,6 +272,55 @@ describe('Service Worker - 当前主链路', () => {
     return sendAudioChunk({ startMs: 20000, endMs: 30000 });
   }
 
+  async function runInjectedStructurerSession(params: {
+    transcripts: Array<{
+      chunkId: string;
+      text: string;
+      startMs: number;
+      endMs: number;
+      provider?: string;
+    }>;
+    seed?: {
+      sessionId?: string;
+      sourceType?: 'tab' | 'file';
+      transcriptWindow?: Array<{
+        chunkId: string;
+        sessionId?: string;
+        text: string;
+        startMs: number;
+        endMs: number;
+        provider?: string;
+      }>;
+      mergedGraph?: any;
+      currentTimeMs?: number;
+      chunkIndex?: number;
+    };
+    finalizeSession?: boolean;
+  }) {
+    return await dispatchMessage({
+      type: 'TEST_STRUCTURER_SESSION_RUN',
+      target: 'service-worker',
+      payload: {
+        transcripts: params.transcripts.map((transcript) => ({
+          sessionId: 'session_injected',
+          provider: 'fixture-asr',
+          ...transcript,
+        })),
+        seed: params.seed
+          ? {
+              ...params.seed,
+              transcriptWindow: params.seed.transcriptWindow?.map((transcript) => ({
+                sessionId: 'session_injected',
+                provider: 'fixture-asr',
+                ...transcript,
+              })),
+            }
+          : undefined,
+        finalizeSession: params.finalizeSession,
+      },
+    });
+  }
+
   it('注册扩展生命周期监听器', () => {
     const chromeMock = (globalThis as any).chrome;
     expect(chromeMock.runtime.onInstalled.addListener).toHaveBeenCalled();
@@ -463,6 +512,124 @@ describe('Service Worker - 当前主链路', () => {
       }),
     );
     expect(extractSegmentGraphMock.mock.calls[0]?.[0].transcriptWindow).toHaveLength(3);
+  });
+
+  it('structure-focused 注入链路会绕过 ASR，直接驱动真实 structurer 挂点', async () => {
+    const response = await runInjectedStructurerSession({
+      transcripts: [
+        {
+          chunkId: 'chunk_1',
+          text: '第一段结构化输入',
+          startMs: 0,
+          endMs: 10000,
+        },
+        {
+          chunkId: 'chunk_2',
+          text: '第二段结构化输入',
+          startMs: 10000,
+          endMs: 20000,
+        },
+        {
+          chunkId: 'chunk_3',
+          text: '第三段结构化输入',
+          startMs: 20000,
+          endMs: 30000,
+        },
+      ],
+      finalizeSession: false,
+    });
+
+    expect(response.success).toBe(true);
+    expect(transcribeChunkMock).not.toHaveBeenCalled();
+    expect(extractSegmentGraphMock).toHaveBeenCalledTimes(1);
+    expect(extractSegmentGraphMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transcriptWindow: [
+          expect.objectContaining({ text: '第一段结构化输入' }),
+          expect.objectContaining({ text: '第二段结构化输入' }),
+          expect.objectContaining({ text: '第三段结构化输入' }),
+        ],
+      }),
+    );
+
+    const snapshotResponse = await dispatchMessage({
+      type: 'GET_RUNTIME_SNAPSHOT',
+      target: 'service-worker',
+      payload: {},
+    });
+    expect(snapshotResponse.snapshot.sessionId).toBeTruthy();
+    expect(snapshotResponse.snapshot.graph?.nodes.length).toBeGreaterThan(0);
+  });
+
+  it('structure-focused 注入链路支持以现有 graph 作为增量上下文', async () => {
+    const previousGraph = {
+      sessionId: 'session_injected',
+      revision: 1,
+      topics: [],
+      nodes: [
+        {
+          id: 'existing_node_1',
+          type: 'claim',
+          text: '已有观点',
+          timestampMs: 0,
+          status: 'confirmed',
+        },
+      ],
+      edges: [],
+      updatedAt: 1,
+    };
+
+    const response = await runInjectedStructurerSession({
+      seed: {
+        sessionId: 'session_injected',
+        transcriptWindow: [
+          {
+            chunkId: 'chunk_seed_1',
+            text: '已有上下文一',
+            startMs: 0,
+            endMs: 10000,
+          },
+          {
+            chunkId: 'chunk_seed_2',
+            text: '已有上下文二',
+            startMs: 10000,
+            endMs: 20000,
+          },
+          {
+            chunkId: 'chunk_seed_3',
+            text: '已有上下文三',
+            startMs: 20000,
+            endMs: 30000,
+          },
+        ],
+        mergedGraph: previousGraph,
+        currentTimeMs: 30000,
+        chunkIndex: 3,
+      },
+      transcripts: [
+        {
+          chunkId: 'chunk_4',
+          text: '新的增量信息',
+          startMs: 30000,
+          endMs: 40000,
+        },
+      ],
+    });
+
+    expect(response.success).toBe(true);
+    expect(transcribeChunkMock).not.toHaveBeenCalled();
+    expect(extractSegmentGraphMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        previousGraph: expect.objectContaining({
+          nodes: [expect.objectContaining({ id: 'existing_node_1' })],
+        }),
+        transcriptWindow: [
+          expect.objectContaining({ text: '已有上下文二' }),
+          expect.objectContaining({ text: '已有上下文三' }),
+          expect.objectContaining({ text: '新的增量信息' }),
+        ],
+      }),
+    );
   });
 
   it('前两个 10 秒 chunk 只累计上下文，不会提前触发 structurer', async () => {

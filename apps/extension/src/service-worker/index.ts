@@ -37,6 +37,7 @@ import type {
   ReplaySessionData,
   RuntimeSnapshot,
   SessionState,
+  StructurerInjectionSeed,
   StructurerRunDebug,
 } from '../shared/messages';
 import { BUILD_INFO } from '../shared/build-info';
@@ -47,6 +48,7 @@ type ServiceWorkerResponse = {
   error?: string;
   sessionId?: string;
   alreadyRunning?: boolean;
+  providerError?: SerializableProviderError;
 };
 
 type ActiveSession = {
@@ -187,6 +189,8 @@ async function handleMessage(
       return handleGetReplaySession(message.payload.sessionId);
     case 'AUDIO_CHUNK_READY':
       return enqueueAudioChunk(message.payload);
+    case 'TEST_STRUCTURER_SESSION_RUN':
+      return handleTestStructurerSessionRun(message.payload);
     case 'NODE_CLICKED':
       return handleNodeClicked(message.payload);
     case 'CAPTURE_ENDED':
@@ -419,6 +423,26 @@ async function handleAudioChunk(
       startMs: payload.startMs,
       endMs: payload.endMs,
     });
+    return await processTranscriptChunk(transcript);
+  } catch (error) {
+    if (currentSession && stoppingSessionId === currentSession.sessionId) {
+      return { success: false, error: '会话停止中' };
+    }
+
+    lastProviderError = serializeProviderError(error);
+    const message = lastProviderError.message;
+    currentSession.state = 'error';
+    await notifySessionState('error');
+    await persistRuntimeState();
+    await notifyError(lastProviderError?.code ?? 'CHUNK_PROCESS_ERROR', message);
+    return { success: false, error: message, providerError: lastProviderError };
+  }
+}
+
+async function processTranscriptChunk(
+  transcript: TranscriptChunk,
+): Promise<ServiceWorkerResponse> {
+  try {
     try {
       await withIndexedDbRetry(() => transcriptChunkRepository.append(transcript));
     } catch (error) {
@@ -449,7 +473,7 @@ async function handleAudioChunk(
 
     await notifySessionState('structuring');
     const structurerRun = createStructurerRunDebug({
-      sessionId: currentSession.sessionId,
+      sessionId: currentSession!.sessionId,
       sequence: chunkIndex,
       transcript,
       transcriptWindow,
@@ -459,7 +483,7 @@ async function handleAudioChunk(
     let segment: SegmentGraph;
     try {
       segment = await structurerProvider.extractSegmentGraph({
-        sessionId: currentSession.sessionId,
+        sessionId: currentSession!.sessionId,
         transcriptWindow,
         previousGraph: mergedGraph ?? undefined,
         language: 'zh',
@@ -522,11 +546,119 @@ async function handleAudioChunk(
 
     lastProviderError = serializeProviderError(error);
     const message = lastProviderError.message;
-    currentSession.state = 'error';
+    currentSession!.state = 'error';
     await notifySessionState('error');
     await persistRuntimeState();
     await notifyError(lastProviderError?.code ?? 'CHUNK_PROCESS_ERROR', message);
+    return { success: false, error: message, providerError: lastProviderError };
+  }
+}
+
+async function handleTestStructurerSessionRun(payload: {
+  seed?: StructurerInjectionSeed;
+  transcripts: TranscriptChunk[];
+  finalizeSession?: boolean;
+}): Promise<ServiceWorkerResponse> {
+  if (!payload.transcripts.length) {
+    return { success: false, error: '缺少 transcripts，无法执行 structure-focused 测试' };
+  }
+
+  try {
+    await loadProviderRuntimeFromSettings();
+  lastProviderError = null;
+  lastStructurerRun = null;
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : '读取 provider 配置失败';
+    await notifyError('PROVIDER_CONFIG_ERROR', message);
     return { success: false, error: message };
+  }
+
+  const sessionId = payload.seed?.sessionId ?? generateId('session');
+  const sourceType = payload.seed?.sourceType ?? 'file';
+
+  currentSession = {
+    sessionId,
+    tabId: -1,
+    state: 'capturing',
+  };
+  recoveredSessionId = null;
+  transcriptWindow = [...(payload.seed?.transcriptWindow ?? [])];
+  mergedGraph = payload.seed?.mergedGraph ?? null;
+  chunkIndex = payload.seed?.chunkIndex ?? transcriptWindow.length;
+  currentTimeMs =
+    payload.seed?.currentTimeMs ??
+    transcriptWindow[transcriptWindow.length - 1]?.endMs ??
+    0;
+  currentView = mergedGraph?.viewHints?.defaultView;
+  currentViewPinned = false;
+  pendingSessionFinalize = null;
+  stoppingSessionId = null;
+  asrProvider.reset?.();
+  structurerProvider.reset?.();
+
+  await withIndexedDbRetry(() =>
+    sessionRepository.save({
+      sessionId,
+      sourceType,
+      createdAt: Date.now(),
+    }),
+  );
+  await persistInjectedStructurerSeed({
+    sessionId,
+    transcriptWindow,
+    mergedGraph,
+  });
+  await notifySessionState('capturing');
+
+  for (const nextTranscript of payload.transcripts) {
+    const transcript: TranscriptChunk = {
+      ...nextTranscript,
+      sessionId,
+    };
+    const response = await processTranscriptChunk(transcript);
+    if (!response.success) {
+      return response;
+    }
+  }
+
+  if (payload.finalizeSession ?? true) {
+    await cleanupSession({
+      sessionId,
+      state: 'stopped',
+    });
+  }
+
+  return { success: true, sessionId };
+}
+
+async function persistInjectedStructurerSeed(params: {
+  sessionId: string;
+  transcriptWindow: TranscriptChunk[];
+  mergedGraph: MergedGraph | null;
+}) {
+  for (const transcript of params.transcriptWindow) {
+    try {
+      await withIndexedDbRetry(() => transcriptChunkRepository.append(transcript));
+    } catch (error) {
+      if (!isIndexedDbBackingStoreError(error)) {
+        throw error;
+      }
+      console.warn('[Service Worker] seed transcript 持久化暂不可用，保留内存态结果:', error);
+    }
+  }
+
+  if (!params.mergedGraph) {
+    return;
+  }
+
+  try {
+    await withIndexedDbRetry(() => mergedGraphRepository.save(params.mergedGraph!));
+  } catch (error) {
+    if (!isIndexedDbBackingStoreError(error)) {
+      throw error;
+    }
+    console.warn('[Service Worker] seed merged graph 持久化暂不可用，保留内存态结果:', error);
   }
 }
 
@@ -1267,12 +1399,20 @@ function serializeProviderError(error: unknown): SerializableProviderError {
     return sanitizeProviderError(error.toJSON());
   }
 
+  const stage =
+    currentSession?.state === 'structuring' || lastStructurerRun ? 'structurer' : 'asr';
+  const provider =
+    stage === 'structurer'
+      ? structurerProvider?.name ?? 'unknown-provider'
+      : asrProvider?.name ?? 'unknown-provider';
+  const code = stage === 'structurer' ? 'STRUCTURE_ERROR' : 'TRANSCRIBE_ERROR';
+
   return sanitizeProviderError({
-    code: 'TRANSCRIBE_ERROR',
+    code,
     message:
       error instanceof Error ? error.message : 'Provider 请求发生未知错误',
-    provider: asrProvider?.name ?? 'unknown-provider',
-    stage: currentSession?.state === 'structuring' ? 'structurer' : 'asr',
+    provider,
+    stage,
     retriable: false,
   });
 }

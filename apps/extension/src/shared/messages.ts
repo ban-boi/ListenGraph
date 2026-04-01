@@ -104,6 +104,15 @@ export interface ReplaySessionData {
   durationMs: number;
 }
 
+export interface StructurerInjectionSeed {
+  sessionId?: string;
+  sourceType?: 'tab' | 'file';
+  transcriptWindow?: TranscriptChunk[];
+  mergedGraph?: MergedGraph | null;
+  currentTimeMs?: number;
+  chunkIndex?: number;
+}
+
 export type AppMessage =
   | {
       type: 'SESSION_START';
@@ -164,6 +173,15 @@ export type AppMessage =
       type: 'AUDIO_CHUNK_READY';
       target: 'service-worker';
       payload: AudioChunkPayload;
+    }
+  | {
+      type: 'TEST_STRUCTURER_SESSION_RUN';
+      target: 'service-worker';
+      payload: {
+        seed?: StructurerInjectionSeed;
+        transcripts: TranscriptChunk[];
+        finalizeSession?: boolean;
+      };
     }
   | {
       type: 'TRANSCRIPT_READY';

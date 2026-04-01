@@ -516,6 +516,10 @@ function isRetriableProviderError(
   error: unknown,
   retryPolicy: { retryableStatusCodes: number[] },
 ) {
+  if (isAbortError(error)) {
+    return true;
+  }
+
   if (typeof error === 'object' && error && 'status' in error) {
     const status = (error as ProviderRequestError).status;
     return typeof status === 'number' && retryPolicy.retryableStatusCodes.includes(status);
@@ -525,5 +529,10 @@ function isRetriableProviderError(
 }
 
 function isAbortError(error: unknown) {
-  return error instanceof Error && error.name === 'AbortError';
+  return (
+    (error instanceof Error && error.name === 'AbortError') ||
+    (typeof DOMException !== 'undefined' &&
+      error instanceof DOMException &&
+      error.name === 'AbortError')
+  );
 }

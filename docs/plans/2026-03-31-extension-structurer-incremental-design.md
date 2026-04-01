@@ -1,269 +1,269 @@
-# Extension Structurer Incremental Design
+# 扩展 Structurer 增量设计
 
-## Purpose
-This note records the current structurer pipeline decisions that were made after the original real-provider baseline.
-It is the source of truth for the current `ASR -> structurer -> merge -> debug` behavior in the extension mainline.
+## 目的
+本文记录在「原始真实 provider 基线」之后、对 **structurer（结构化）** 管线所做决策的当前版本。
+它是扩展主链路中 **`ASR -> structurer -> merge -> debug`** 行为的权威说明。
 
-## Scope
-This document covers the current production-shaped path for:
+## 范围
+本文档覆盖当前**面向生产形态**的路径，包括：
 
-- transcript windowing and bootstrap behavior
-- structurer prompt contract
-- provider output normalization
-- canonical node id rules
-- merge and de-duplication rules
-- timeout / retry policy
-- debug export shape
+- 转写窗口与 bootstrap（冷启动）行为
+- structurer 提示词合约
+- provider 输出归一化
+- 规范节点 id 规则
+- 合并与去重规则
+- 超时 / 重试策略
+- 调试导出的数据结构
 
-It does not redefine the extension capture pipeline or the provider settings UI.
+**不**重新定义扩展采集管线或 provider 设置 UI。
 
-## Source Of Truth
-- Runtime orchestration: `apps/extension/src/service-worker/index.ts`
-- Structurer provider: `packages/providers/src/structurer/openai-structurer.ts`
-- Provider defaults: `packages/providers/src/config.ts`
-- Graph merge rules: `packages/domain/src/merge.ts`
-- Text normalization helpers: `packages/domain/src/normalize.ts`
-- Debug message contracts: `apps/extension/src/shared/messages.ts`
+## 权威来源
+- 运行时编排：`apps/extension/src/service-worker/index.ts`
+- Structurer provider：`packages/providers/src/structurer/openai-structurer.ts`
+- Provider 默认值：`packages/providers/src/config.ts`
+- 图合并规则：`packages/domain/src/merge.ts`
+- 文本规范化辅助：`packages/domain/src/normalize.ts`
+- 调试消息合约：`apps/extension/src/shared/messages.ts`
 
-## Current Pipeline
-The active runtime path remains:
+## 当前管线
+活跃的运行时路径仍为：
 
-`Audio chunk -> ASR transcript chunk -> transcript window -> structurer segment -> merged graph -> sidepanel`
+`音频块 -> ASR 转写块 -> 转写窗口 -> structurer 片段 -> 合并图 -> sidepanel`
 
-Current chunking and structuring behavior is:
+当前分块与结构化行为为：
 
-- audio capture still produces `10s` ASR chunks
-- the first structurer call waits until there are `3` transcript chunks
-- after bootstrap, structurer still receives the most recent `3` chunks as context
-- incremental extraction only asks for net-new semantics implied by the latest chunk
+- 音频采集仍产出 **`10s`** 长度的 ASR 块
+- **首次** structurer 调用会等到有 **`3`** 条转写块
+- bootstrap 之后，structurer 仍接收最近 **`3`** 条块作为上下文
+- 增量抽取**只**要求模型输出由**最新块**所暗示的**净新增**语义
 
-This means the current mode is:
+因此当前模式可概括为：
 
 `带最近 3 个 chunk 做上下文，但只抽最新 chunk 的净新增`
 
-## Windowing And Bootstrap Rules
-The service worker keeps a bounded transcript window in memory.
+## 窗口与 Bootstrap 规则
+Service worker 在内存中维护**有界**转写窗口。
 
-Current rules:
+当前规则：
 
 - `STRUCTURER_BOOTSTRAP_WINDOW_SIZE = 3`
-- before the first merged graph exists, the first `2` chunks only update transcript/debug state
-- the first structurer run uses the full `0-30s` bootstrap window
-- every later run keeps a rolling `30s` context window
-- the latest chunk is still the semantic focus for incremental extraction
+- 在**首次**合并图出现之前，前 **`2`** 条块只更新转写/调试状态
+- **首次** structurer 运行使用完整的 **`0-30s`** bootstrap 窗口
+- 之后每次运行保持滚动的 **`30s`** 上下文窗口
+- **最新块**仍是增量抽取的语义焦点
 
-Why this exists:
+这样做的原因：
 
-- `10s` alone was too small and forced premature node splitting
-- a rolling `30s` context gives the model enough local continuity without letting prompt size grow unbounded
+- 仅 **`10s`** 过短，容易导致节点过早切分
+- 滚动 **`30s`** 上下文在控制提示长度的同时，给模型足够的局部连续性
 
-## Structurer Prompt Contract
-The structurer prompt is intentionally strict and optimized for incremental extraction.
+## Structurer 提示词合约
+Structurer 提示词刻意写得**严格**，并针对增量抽取优化。
 
-Current request characteristics:
+当前请求特征：
 
 - `response_format: { type: "json_object" }`
-- for Zhipu, `thinking: { type: "disabled" }`
-- user payload includes:
+- 对智谱（Zhipu），`thinking: { type: "disabled" }`
+- 用户 payload 包含：
   - `mode`
   - `windowTranscript`
   - `latestChunkTranscript`
   - `recentGraphContext`
   - `previousGraphSummary`
 
-Current prompt decisions:
+当前提示词策略：
 
-- bootstrap mode may summarize the full `30s` window
-- incremental mode must only output net-new nodes implied by `latestChunkTranscript`
-- if the latest chunk only adds support/detail/example, prefer edges instead of repeating claims
-- if there is no net-new semantic contribution, return empty `nodes` and `edges`
-- recent graph semantics must not be restated, paraphrased, or renamed
-- edges may point either to returned node ids or to recent graph node ids
+- bootstrap 模式可对完整 **`30s`** 窗口做摘要
+- 增量模式**只应**输出由 `latestChunkTranscript` 暗示的**净新增**节点
+- 若最新块仅增加支撑/细节/例证，优先用**边**表达，而非重复 claim
+- 若无净新增语义贡献，返回空的 `nodes` 与 `edges`
+- **不得**重述、转述或重命名近期图中已有语义
+- 边可以指向返回的节点 id，或近期图中的节点 id
 
-`recentGraphContext` currently contains:
+`recentGraphContext` 当前包含：
 
-- the most recent `8` graph nodes
-- the most recent `4` graph edges
+- 最近 **`8`** 个图节点
+- 最近 **`4`** 条图边
 
-This is a deliberate tradeoff:
+这是有意权衡：
 
-- enough recent structure to suppress repetition
-- small enough to keep prompt size stable
+- 足够抑制重复
+- 又足够小，使提示规模稳定
 
-## Transcript Cleaning Rules
-Structurer input does not use raw Tencent transcript text verbatim.
+## 转写清洗规则
+Structurer **不会**原样使用腾讯 ASR 原始转写文本。
 
-Current cleaning behavior:
+当前清洗行为：
 
-- remove Tencent-prefixed transcript timestamps such as `[0:0.000,0:10.000]`
-- keep the outer runtime range wrapper `[startMs-endMs]`
-- use cleaned text for fallback nodes as well
+- 去掉腾讯风格的前缀时间戳，例如 `[0:0.000,0:10.000]`
+- 保留外层运行时区间包裹 `[startMs-endMs]`
+- fallback 节点同样使用清洗后的文本
 
-This avoids double-wrapped timestamps such as:
+从而避免出现双重包裹的时间戳，例如：
 
 `[0-10000] [0:0.000,0:10.000] ...`
 
-Raw ASR payload is still preserved in storage/debug, but it is not used as-is in the structurer prompt.
+原始 ASR payload 仍保存在存储/调试中，但**不会**原样进入 structurer 提示词。
 
-## Provider Output Normalization
-The model is instructed to return one strict JSON object, but the runtime still normalizes common drift before building a segment graph.
+## Provider 输出归一化
+模型被要求返回一个严格的 JSON 对象，但运行时在构建 segment 图之前仍会对常见「漂移」做归一化。
 
-Currently accepted shapes:
+当前接受的形状：
 
-- top-level `{ topic, nodes, edges }`
-- wrapped `{ answer: { topic, nodes, edges } }`
+- 顶层 `{ topic, nodes, edges }`
+- 包装形态 `{ answer: { topic, nodes, edges } }`
 
-Currently accepted node text fields:
+当前接受的节点文本字段：
 
 - `text`
 - `content`
 - `label`
 
-Current normalization behavior:
+当前归一化行为：
 
-- invalid node types are dropped
-- invalid edge types are dropped
-- empty node text is dropped
-- edges that cannot be resolved to either returned nodes or recent graph nodes are dropped
-- if normalization leaves zero valid nodes, the runtime falls back to one draft claim node from the latest cleaned transcript text
+- 丢弃非法节点类型
+- 丢弃非法边类型
+- 丢弃空文本节点
+- 丢弃无法解析到「返回节点」或「近期图节点」任一端点的边
+- 若归一化后没有有效节点，运行时回退为：用**最新**清洗后的转写文本生成一条 draft claim 节点
 
-The intent is:
+意图：
 
-- prompt should keep the happy path strict
-- runtime should absorb known provider drift instead of corrupting the graph
+- 提示词保持 happy path 严格
+- 运行时应吸收已知 provider 漂移，而不是污染图
 
-## Canonical Node Id Rules
-Model-supplied node ids are never trusted as final graph ids.
+## 规范节点 Id 规则
+**从不**将模型给出的节点 id 当作最终图 id。
 
-Current rule:
+当前规则：
 
-- each segment gets its own `segmentId`
-- each normalized node gets a canonical id of `segmentId:providerLocalId`
-- if the provider did not return an id, runtime uses a generated local fallback such as `node_1`
+- 每个 segment 有独立的 `segmentId`
+- 每个归一化节点的规范 id 为 `segmentId:providerLocalId`
+- 若 provider 未返回 id，运行时使用生成的本地 fallback，例如 `node_1`
 
-Why this exists:
+原因：
 
-- models frequently reuse ids like `n1`, `n2`, `1`
-- React Flow and the merged graph both require globally unique node ids
-- edge rewriting becomes deterministic only after canonicalization
+- 模型经常重复使用 `n1`、`n2`、`1` 等 id
+- React Flow 与合并图都需要**全局唯一**节点 id
+- 边重写只有在规范化之后才确定
 
-Cross-segment edges are allowed, but they must point to:
+允许跨 segment 的边，但必须指向：
 
-- canonical ids generated in the current segment
-- or recent graph node ids explicitly surfaced in `recentGraphContext`
+- 当前 segment 中生成的规范 id，或
+- 在 `recentGraphContext` 中明确出现的近期图节点 id
 
-## Merge And De-Duplication Rules
-`mergeSegmentGraph()` now treats graph correctness as the first priority.
+## 合并与去重规则
+`mergeSegmentGraph()` 现在将**图正确性**作为第一优先级。
 
-### Node merge
-Current node fold rules:
+### 节点合并
+当前节点折叠规则：
 
-- exact merge:
-  - same `type`
-  - no speaker conflict
-  - normalized text exactly equal
-- conservative near-duplicate merge:
-  - same `type`
-  - no speaker conflict
-  - not a `question`
-  - timestamp distance within `30s`
-  - both normalized texts are long enough
-  - and either:
-    - one normalized text contains the other
-    - or bigram overlap is at least `0.68`
+- 精确合并：
+  - `type` 相同
+  - 无 speaker 冲突
+  - 规范化文本**完全相同**
+- 保守的近重复合并：
+  - `type` 相同
+  - 无 speaker 冲突
+  - 非 `question`
+  - 时间戳距离在 **`30s`** 内
+  - 两段规范化文本都足够长
+  - 且满足下列**之一**：
+    - 一段包含另一段，或
+    - bigram 重叠度至少 **`0.68`**
 
-When nodes merge:
+节点合并时：
 
-- `confidence` keeps the max value
-- `evidenceChunkIds` are unioned
-- `timestampMs` keeps the earlier time
-- `status` upgrades to `confirmed` if any merged node is confirmed
+- `confidence` 取**较大值**
+- `evidenceChunkIds` **取并集**
+- `timestampMs` 取**较早**时间
+- 若任一被合并节点为 `confirmed`，`status` **升级为** `confirmed`
 
-### Edge merge
-Current edge rules:
+### 边合并
+当前边规则：
 
-- edge endpoints are rewritten through the node remap generated by node merge
-- self-loop edges are dropped
-- edges pointing to non-existent nodes are dropped
-- duplicate edges with the same `source + target + type` are folded
-- folded edges keep max confidence and unioned evidence chunk ids
+- 边端点经节点合并产生的 remap 重写
+- 丢弃自环边
+- 丢弃指向不存在节点的边
+- `source + target + type` 相同的重复边折叠为一条
+- 折叠后边保留最大 confidence，evidence chunk id 取并集
 
-This was introduced to eliminate dangling edges after node folding.
+用于在节点折叠后消除悬空边。
 
-## Timeout And Retry Policy
-The current structurer policy is intentionally more conservative than the generic provider default.
+## 超时与重试策略
+当前 structurer 策略**刻意**比通用 provider 默认更保守。
 
-Current structurer defaults:
+当前 structurer 默认值：
 
-- timeout: `90s`
-- `429` is not retried
-- timeout / abort is not retried
-- transient network and selected `5xx` responses remain retryable through the shared retry helper
+- 超时：`90s`
+- **`429` 不重试**
+- **超时 / abort 不重试**
+- 瞬时网络与部分 **`5xx`** 仍可通过共享重试辅助重试
 
-Reasoning:
+理由：
 
-- earlier `15s` timeout caused local cancellation followed by duplicate follow-up requests
-- `429` retry amplified rate-limit failures instead of helping
-- timeout should surface as a terminal error for the current run instead of silently spraying retries
+- 先前 **`15s`** 超时导致本机取消，继而出现重复的后续请求
+- 对 **`429` 重试**会放大限流问题而非缓解
+- 超时应对当前这次运行表现为**终结性错误**，而不是默默连打重试
 
-## Debug Data Contract
-Debug export now distinguishes between operational observability and raw payload retention.
+## 调试数据合约
+调试导出现在区分**运行时可观测性**与**原始 payload 留存**。
 
-Current debug layers:
+当前调试层级：
 
-- transcripts
-- structurer segments
-- chunk traces
-- merged graph
-- derived renderer views
-- structured `structurerRuns`
+- transcripts（转写）
+- structurer segments（结构化片段）
+- chunk traces（块级轨迹）
+- merged graph（合并图）
+- 派生的渲染器视图
+- 结构化 `structurerRuns`
 
-`structurerRuns` exists to summarize each structurer attempt with:
+`structurerRuns` 用于汇总每次 structurer 尝试，包括：
 
 - mode
-- window range and chunk count
-- transcript character counts
-- recent graph counts
-- start/end timestamps
-- duration
-- success / timeout / error
+- 窗口范围与块数量
+- 转写字符数
+- 近期图数量
+- 开始/结束时间戳
+- 耗时
+- 成功 / 超时 / 错误
 - segment id
-- node/edge count
-- fallback usage
+- 节点/边数量
+- 是否使用 fallback
 
-Export policy:
+导出策略：
 
-- default debug export is slim
-- slim export does not inline all `tokens` and large `raw` blobs
-- full export keeps the raw payloads for deep diagnosis
+- 默认调试导出为 **slim（精简）**
+- slim 导出**不**内联全部 `tokens` 与大型 `raw` blob
+- **full（完整）** 导出保留原始 payload，便于深度诊断
 
-This keeps ordinary debug files usable while preserving a full-fidelity path when needed.
+使日常调试文件可读，同时在需要时保留全保真路径。
 
-## Known Tradeoffs
-The current design is intentionally biased toward pipeline stability, not final graph quality.
+## 已知权衡
+当前设计**刻意**偏向管线稳定性，而非**最终图质量**。
 
-Known tradeoffs:
+已知权衡：
 
-- cross-segment linking is currently allowed and may still be too aggressive
-- fallback nodes still protect continuity, but they can inject low-quality raw sentences into the graph
-- provider latency is still highly variable even when prompt size is stable
-- prompt-side suppression reduces repetition, but merge still needs to carry part of the de-duplication load
+- 当前允许跨 segment 连接，可能仍**偏激进**
+- fallback 节点保护连续性，但也可能把低质量原句灌进图
+- 即使提示规模稳定，provider 延迟方差仍很大
+- 提示侧抑制重复，合并仍要承担一部分去重负担
 
-## Open Issues
-These items are not yet considered settled:
+## 未决问题
+下列事项**尚未**视为定案：
 
-1. Cross-segment edge policy is likely too permissive.
-2. Structurer latency still shows high variance even with small rolling windows.
-3. Failed structurer attempts should always be visible in exported `structurerRuns`, not only in `lastProviderError`.
-4. Fallback behavior may need to become stricter so a weak response does not pollute the graph.
+1. 跨 segment 边策略可能仍过于宽松。
+2. 即使滚动窗口很小，structurer 延迟方差仍然很高。
+3. 失败的 structurer 尝试应**始终**出现在导出的 `structurerRuns` 中，而非仅依赖 `lastProviderError`。
+4. fallback 行为可能需要更严格，避免弱响应污染图。
 
-## Change Rule
-If the implementation changes any of the following, this document should be updated in the same change:
+## 变更规则
+若实现对下列任一项做出修改，应在**同一变更**中同步更新本文档：
 
-- transcript window size or bootstrap threshold
-- incremental prompt contract
-- recent graph context shape
-- canonical id strategy
-- merge thresholds
-- timeout / retry behavior
-- debug export semantics
+- 转写窗口大小或 bootstrap 阈值
+- 增量提示词合约
+- 近期图上下文形状
+- 规范 id 策略
+- 合并阈值
+- 超时 / 重试行为
+- 调试导出语义

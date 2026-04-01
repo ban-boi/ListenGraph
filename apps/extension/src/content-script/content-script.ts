@@ -1,6 +1,7 @@
 import type { AppMessage } from '../shared/messages';
 import {
   CAPTURE_CHANNELS,
+  CAPTURE_AUDIO_MIME_TYPE,
   CAPTURE_SAMPLE_RATE,
   encodeAudioChunkAsWav,
 } from '../shared/audio';
@@ -11,8 +12,23 @@ let sourceNode: MediaStreamAudioSourceNode | null = null;
 let processorNode: AudioWorkletNode | null = null;
 let isCapturing = false;
 let hasReportedCaptureEnd = false;
+let activeFixtureCaptureRun = 0;
 
 const SAMPLE_RATE = CAPTURE_SAMPLE_RATE;
+
+type FixtureCaptureChunk = {
+  url: string;
+  startMs: number;
+  endMs: number;
+  audioMimeType?: string;
+  delayAfterMs?: number;
+};
+
+type FixtureCaptureManifest = {
+  captureMode: 'fixture-chunks';
+  chunkDelayMs?: number;
+  chunks: FixtureCaptureChunk[];
+};
 
 chrome.runtime.onMessage.addListener((message: AppMessage | any, _sender, sendResponse) => {
   if (message.target && message.target !== 'content-script') return false;
@@ -51,6 +67,11 @@ async function startTabCapture() {
 
   try {
     hasReportedCaptureEnd = false;
+    const fixtureManifestUrl = readFixtureManifestUrl(document);
+    if (fixtureManifestUrl) {
+      await startFixtureCapture(fixtureManifestUrl);
+      return;
+    }
 
     // 真实浏览器里通常需要同时请求 tab 视频，音频轨道才会稳定返回。
     const constraints = {
@@ -119,6 +140,7 @@ async function startTabCapture() {
 
 async function stopCapture() {
   isCapturing = false;
+  activeFixtureCaptureRun += 1;
 
   if (processorNode) {
     processorNode.port.onmessage = null;
@@ -166,6 +188,52 @@ async function seekToTimestamp(timestampMs: number) {
   mediaElement.currentTime = timestampMs / 1000;
 }
 
+async function startFixtureCapture(manifestUrl: string) {
+  const manifest = await loadFixtureCaptureManifest(manifestUrl);
+  const runId = ++activeFixtureCaptureRun;
+  isCapturing = true;
+
+  for (const chunk of manifest.chunks) {
+    if (!isFixtureCaptureRunActive(runId)) {
+      return;
+    }
+
+    const chunkUrl = new URL(chunk.url, window.location.href).toString();
+    const response = await fetch(chunkUrl);
+    if (!response.ok) {
+      throw new Error(`读取测试音频失败: ${chunkUrl}`);
+    }
+
+    const audioBuffer = await response.arrayBuffer();
+    if (!isFixtureCaptureRunActive(runId)) {
+      return;
+    }
+
+    const chunkResponse = await chrome.runtime.sendMessage({
+      type: 'AUDIO_CHUNK_READY',
+      target: 'service-worker',
+      payload: {
+        audioData: Array.from(new Uint8Array(audioBuffer)),
+        audioMimeType:
+          chunk.audioMimeType ??
+          response.headers.get('content-type') ??
+          CAPTURE_AUDIO_MIME_TYPE,
+        startMs: chunk.startMs,
+        endMs: chunk.endMs,
+      },
+    } as AppMessage);
+
+    if (!chunkResponse?.success) {
+      throw new Error(chunkResponse?.error ?? `处理测试音频块失败: ${chunkUrl}`);
+    }
+
+    const delayMs = chunk.delayAfterMs ?? manifest.chunkDelayMs ?? 0;
+    if (delayMs > 0) {
+      await delay(delayMs);
+    }
+  }
+}
+
 function findMediaElement(root: Document | ShadowRoot): HTMLMediaElement | null {
   const directMatch = root.querySelector('audio, video');
   if (directMatch instanceof HTMLMediaElement) {
@@ -183,6 +251,61 @@ function findMediaElement(root: Document | ShadowRoot): HTMLMediaElement | null 
   }
 
   return null;
+}
+
+function readFixtureManifestUrl(root: Document | ShadowRoot) {
+  const meta = root.querySelector('meta[name="listen-graphic-test-manifest"]');
+  if (!(meta instanceof HTMLMetaElement)) {
+    return null;
+  }
+
+  const content = meta.content?.trim();
+  return content || null;
+}
+
+async function loadFixtureCaptureManifest(manifestUrl: string): Promise<FixtureCaptureManifest> {
+  const response = await fetch(new URL(manifestUrl, window.location.href).toString());
+  if (!response.ok) {
+    throw new Error(`读取测试 manifest 失败: ${manifestUrl}`);
+  }
+
+  const payload = await response.json();
+  if (!isFixtureCaptureManifest(payload)) {
+    throw new Error(`测试 manifest 格式无效: ${manifestUrl}`);
+  }
+
+  return payload;
+}
+
+function isFixtureCaptureManifest(value: unknown): value is FixtureCaptureManifest {
+  if (!isRecord(value) || value.captureMode !== 'fixture-chunks' || !Array.isArray(value.chunks)) {
+    return false;
+  }
+
+  return value.chunks.every(isFixtureCaptureChunk);
+}
+
+function isFixtureCaptureChunk(value: unknown): value is FixtureCaptureChunk {
+  return (
+    isRecord(value) &&
+    typeof value.url === 'string' &&
+    Number.isFinite(value.startMs) &&
+    Number.isFinite(value.endMs) &&
+    (value.audioMimeType === undefined || typeof value.audioMimeType === 'string') &&
+    (value.delayAfterMs === undefined || Number.isFinite(value.delayAfterMs))
+  );
+}
+
+function isFixtureCaptureRunActive(runId: number) {
+  return isCapturing && activeFixtureCaptureRun === runId;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 window.addEventListener('beforeunload', () => {

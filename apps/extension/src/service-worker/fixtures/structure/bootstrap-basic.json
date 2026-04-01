@@ -1,0 +1,29 @@
+{
+  "name": "bootstrap-basic",
+  "transcripts": [
+    {
+      "chunkId": "chunk_bootstrap_1",
+      "text": "我们已经确认 ASR 基本稳定，接下来要把调试重点切到 Structure。",
+      "startMs": 0,
+      "endMs": 10000
+    },
+    {
+      "chunkId": "chunk_bootstrap_2",
+      "text": "新的测试层不需要播放真实音频，也不需要打开 HTML 页面。",
+      "startMs": 10000,
+      "endMs": 20000
+    },
+    {
+      "chunkId": "chunk_bootstrap_3",
+      "text": "我们只要把带时间戳的 transcript chunks 直接送进 service worker，再调用真实 structurer 即可。",
+      "startMs": 20000,
+      "endMs": 30000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 1,
+    "minMergedEdges": 0,
+    "allowFallback": false
+  }
+}

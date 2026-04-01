@@ -107,8 +107,15 @@ class IntersectionObserverMock {
 }
 (globalThis as any).IntersectionObserver = IntersectionObserverMock;
 
-// Mock URL.createObjectURL
-(globalThis as any).URL = {
-  createObjectURL: vi.fn(() => 'blob:test-url'),
-  revokeObjectURL: vi.fn(),
-};
+// Preserve the native URL constructor so code that relies on URL parsing
+// (for example real fetch requests in provider tests) keeps working.
+Object.defineProperty(globalThis.URL, 'createObjectURL', {
+  configurable: true,
+  writable: true,
+  value: vi.fn(() => 'blob:test-url'),
+});
+Object.defineProperty(globalThis.URL, 'revokeObjectURL', {
+  configurable: true,
+  writable: true,
+  value: vi.fn(),
+});

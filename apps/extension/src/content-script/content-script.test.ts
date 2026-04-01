@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { URL as NodeURL } from 'node:url';
 
 describe('content-script 主链路', () => {
   let messageListener:
@@ -18,11 +19,16 @@ describe('content-script 主链路', () => {
     getTracks: () => Array<typeof audioTrack | typeof videoTrack>;
   };
   let getDisplayMediaMock: ReturnType<typeof vi.fn>;
+  let fetchMock: ReturnType<typeof vi.fn>;
   let processorNodeInstance: { port: { onmessage: ((event: MessageEvent) => void) | null } } | null;
 
   beforeEach(async () => {
     vi.clearAllMocks();
     vi.resetModules();
+    (globalThis as any).URL = NodeURL;
+    document.head.innerHTML = '';
+    document.body.innerHTML = '';
+    window.history.replaceState({}, '', 'http://localhost:3000/');
 
     messageListener = null;
     (globalThis as any).chrome.runtime.onMessage.addListener.mockImplementation(
@@ -48,6 +54,8 @@ describe('content-script 主链路', () => {
     };
 
     getDisplayMediaMock = vi.fn().mockResolvedValue(mediaStreamMock);
+    fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
     processorNodeInstance = null;
     Object.defineProperty(globalThis.navigator, 'mediaDevices', {
       configurable: true,
@@ -104,6 +112,78 @@ describe('content-script 主链路', () => {
       }),
     );
     expect(videoTrack.enabled).toBe(false);
+  });
+
+  it('fixture 页面会按 manifest 顺序发送测试音频块，而不走 getDisplayMedia', async () => {
+    window.history.replaceState({}, '', 'http://localhost:3000/fixture.html');
+    document.head.innerHTML = '<meta name="listen-graphic-test-manifest" content="/fixture-manifest.json">';
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          captureMode: 'fixture-chunks',
+          chunks: [
+            {
+              url: '/audio/chunk-1.wav',
+              startMs: 0,
+              endMs: 1000,
+            },
+            {
+              url: '/audio/chunk-2.wav',
+              startMs: 1000,
+              endMs: 2000,
+              delayAfterMs: 0,
+            },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: {
+          get: () => 'audio/wav',
+        },
+        arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: {
+          get: () => 'audio/wav',
+        },
+        arrayBuffer: async () => new Uint8Array([4, 5, 6]).buffer,
+      });
+
+    await dispatchMessage({
+      type: 'START_CAPTURE',
+      target: 'content-script',
+      payload: {},
+    });
+
+    expect(getDisplayMediaMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'http://localhost:3000/fixture-manifest.json');
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:3000/audio/chunk-1.wav');
+    expect(fetchMock).toHaveBeenNthCalledWith(3, 'http://localhost:3000/audio/chunk-2.wav');
+    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'AUDIO_CHUNK_READY',
+        payload: expect.objectContaining({
+          audioData: [1, 2, 3],
+          audioMimeType: 'audio/wav',
+          startMs: 0,
+          endMs: 1000,
+        }),
+      }),
+    );
+    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'AUDIO_CHUNK_READY',
+        payload: expect.objectContaining({
+          audioData: [4, 5, 6],
+          audioMimeType: 'audio/wav',
+          startMs: 1000,
+          endMs: 2000,
+        }),
+      }),
+    );
   });
 
   it('如果用户分享的是窗口或屏幕而不是浏览器标签页，会直接失败', async () => {

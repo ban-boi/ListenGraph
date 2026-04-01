@@ -1,0 +1,50 @@
+{
+  "captureMode": "fixture-chunks",
+  "language": "en",
+  "chunkDelayMs": 25,
+  "chunks": [
+    {
+      "url": "/audio/chunk-1.wav",
+      "startMs": 0,
+      "endMs": 4000,
+      "audioMimeType": "audio/wav"
+    },
+    {
+      "url": "/audio/chunk-2.wav",
+      "startMs": 4000,
+      "endMs": 8000,
+      "audioMimeType": "audio/wav"
+    },
+    {
+      "url": "/audio/chunk-3.wav",
+      "startMs": 8000,
+      "endMs": 12000,
+      "audioMimeType": "audio/wav"
+    },
+    {
+      "url": "/audio/chunk-4.wav",
+      "startMs": 12000,
+      "endMs": 16000,
+      "audioMimeType": "audio/wav"
+    }
+  ],
+  "localAcceptance": {
+    "minTranscriptChunks": 4,
+    "minGraphNodes": 2,
+    "minGraphEdges": 1
+  },
+  "realAcceptance": {
+    "minTranscriptChunks": 4,
+    "minGraphNodes": 1,
+    "minGraphEdges": 0,
+    "minKeywordGroupHits": 4,
+    "keywordGroups": [
+      ["reliable", "reliably"],
+      ["evaluation", "evaluate"],
+      ["fixtures", "fixture"],
+      ["stable", "stability"],
+      ["regression", "regressions"],
+      ["thresholds", "threshold"]
+    ]
+  }
+}

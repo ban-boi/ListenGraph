@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="listen-graphic-test-manifest" content="/fixture-manifest.json" />
+    <title>ListenGraph E2E Fixture</title>
+    <style>
+      body {
+        font-family: Georgia, "Times New Roman", serif;
+        margin: 0;
+        padding: 32px;
+        background: linear-gradient(135deg, #f7f4ea, #d9e5ec);
+        color: #1f2937;
+      }
+
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+      }
+
+      h1 {
+        margin-top: 0;
+        font-size: 28px;
+      }
+
+      ol {
+        line-height: 1.7;
+      }
+
+      audio {
+        width: 100%;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>ListenGraph Automated Fixture</h1>
+      <p>
+        This page is used by extension E2E tests. The content script reads
+        <code>/fixture-manifest.json</code> and streams fixed audio chunks into the
+        real extension pipeline.
+      </p>
+      <ol>
+        <li>AI products need reliable evaluation.</li>
+        <li>Fixed fixtures keep automated tests stable.</li>
+        <li>Real provider checks run after local regression.</li>
+        <li>Acceptance rules use keywords and thresholds.</li>
+      </ol>
+      <audio controls preload="metadata" src="/audio/chunk-1.wav"></audio>
+    </main>
+  </body>
+</html>

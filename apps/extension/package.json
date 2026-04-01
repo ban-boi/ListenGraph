@@ -11,8 +11,13 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed"
+    "test:structure:mock": "vitest run src/service-worker/index.test.ts -t structure-focused",
+    "test:structure:real": "vitest run src/service-worker/structure-focused.real.test.ts",
+    "test:structure": "pnpm run test:structure:mock && pnpm run test:structure:real",
+    "test:e2e": "playwright test e2e/extension.local.spec.ts",
+    "test:e2e:headed": "playwright test e2e/extension.local.spec.ts --headed",
+    "test:e2e:real": "playwright test e2e/extension.real.spec.ts",
+    "test:e2e:full": "playwright test e2e/extension.local.spec.ts e2e/extension.real.spec.ts"
   },
   "dependencies": {
     "@listen-graphic/domain": "workspace:*",
