@@ -1,0 +1,73 @@
+{
+  "name": "incremental-career-regret",
+  "seed": {
+    "transcriptWindow": [
+      {
+        "chunkId": "chunk_seed_regret_1",
+        "text": "先固定一个旧结论，作为增量结构化的基线。",
+        "startMs": 0,
+        "endMs": 10000
+      },
+      {
+        "chunkId": "chunk_seed_regret_2",
+        "text": "旧结论是她会为没有更早去做社会影响诉讼而感到伤感。",
+        "startMs": 10000,
+        "endMs": 20000
+      },
+      {
+        "chunkId": "chunk_seed_regret_3",
+        "text": "后面的新片段只补充这种后悔为什么会发生，不应该重复旧结论本身。",
+        "startMs": 20000,
+        "endMs": 30000
+      }
+    ],
+    "mergedGraph": {
+      "sessionId": "__SESSION_ID__",
+      "revision": 1,
+      "topics": [],
+      "nodes": [
+        {
+          "id": "existing_node_regret_1",
+          "type": "claim",
+          "text": "她会为没有更早去做社会影响诉讼而感到伤感。",
+          "timestampMs": 10000,
+          "status": "confirmed"
+        }
+      ],
+      "edges": [],
+      "updatedAt": 1
+    },
+    "currentTimeMs": 30000,
+    "chunkIndex": 3
+  },
+  "transcripts": [
+    {
+      "chunkId": "chunk_incremental_regret_4",
+      "text": "支持前面那个旧结论的原因是，她先去做公司律师、也想先多赚点钱，这条路把选择越走越窄，后来再切去社会影响诉讼就越来越难。",
+      "startMs": 30000,
+      "endMs": 40000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "expectCrossGraphEdges": true,
+    "mustContainOneOfTexts": [
+      [
+        "公司律师",
+        "corporate lawyer"
+      ],
+      [
+        "选择越窄",
+        "变窄",
+        "越走越窄",
+        "narrow",
+        "harder",
+        "越来越难",
+        "变难"
+      ]
+    ]
+  }
+}

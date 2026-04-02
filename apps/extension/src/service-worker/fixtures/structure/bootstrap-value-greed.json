@@ -1,0 +1,43 @@
+{
+  "name": "bootstrap-value-greed",
+  "transcripts": [
+    {
+      "chunkId": "chunk_bootstrap_value_1",
+      "text": "她既想要公众当中的价值感和关注，也想看到自己在商业世界里的成功，这是一种很难取舍的既要又要。",
+      "startMs": 0,
+      "endMs": 10000
+    },
+    {
+      "chunkId": "chunk_bootstrap_value_2",
+      "text": "她会反省自己这种既要又要有一点贪婪，因为两种收获都不愿意放下。",
+      "startMs": 10000,
+      "endMs": 20000
+    },
+    {
+      "chunkId": "chunk_bootstrap_value_3",
+      "text": "但她又认为真正重要的是事业里的意义感，因为意义感会让人不只是赚钱和虚无，而是能够真正落到实处。",
+      "startMs": 20000,
+      "endMs": 30000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "mustContainOneOfTexts": [
+      [
+        "价值感",
+        "value"
+      ],
+      [
+        "既要又要",
+        "既想要"
+      ],
+      [
+        "意义感",
+        "meaning"
+      ]
+    ]
+  }
+}

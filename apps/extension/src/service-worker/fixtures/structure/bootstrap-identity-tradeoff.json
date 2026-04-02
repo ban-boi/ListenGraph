@@ -1,0 +1,33 @@
+{
+  "name": "bootstrap-identity-tradeoff",
+  "transcripts": [
+    {
+      "chunkId": "chunk_bootstrap_identity_1",
+      "text": "做自媒体和做律师会满足人不同的好奇心与成就感，所以两个身份都很难割舍。",
+      "startMs": 0,
+      "endMs": 10000
+    },
+    {
+      "chunkId": "chunk_bootstrap_identity_2",
+      "text": "但如果想把其中任何一个身份做得更好，都需要更全情的投入，所以长期兼顾并不容易。",
+      "startMs": 10000,
+      "endMs": 20000
+    },
+    {
+      "chunkId": "chunk_bootstrap_identity_3",
+      "text": "多一种身份也意味着给自己留了退路，一个方向不顺的时候，另一个方向还能托住自己。",
+      "startMs": 20000,
+      "endMs": 30000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "mustContainTexts": [
+      "律师",
+      "身份"
+    ]
+  }
+}

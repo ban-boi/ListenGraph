@@ -1,0 +1,33 @@
+{
+  "name": "bootstrap-decision-reason",
+  "transcripts": [
+    {
+      "chunkId": "chunk_bootstrap_decision_1",
+      "text": "我们已经决定，日常调试默认先跑 Structure-focused 测试。",
+      "startMs": 0,
+      "endMs": 10000
+    },
+    {
+      "chunkId": "chunk_bootstrap_decision_2",
+      "text": "主要原因是 ASR 额度有限，不能把真实音频链路当成每次修改后的默认回归。",
+      "startMs": 10000,
+      "endMs": 20000
+    },
+    {
+      "chunkId": "chunk_bootstrap_decision_3",
+      "text": "全流程 E2E 依然要保留，但应该作为低频验收层，而不是日常高频调试入口。",
+      "startMs": 20000,
+      "endMs": 30000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "mustContainTexts": [
+      "Structure-focused",
+      "ASR"
+    ]
+  }
+}

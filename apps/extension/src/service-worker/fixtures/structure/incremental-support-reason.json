@@ -1,22 +1,22 @@
 {
-  "name": "incremental-cross-edge",
+  "name": "incremental-support-reason",
   "seed": {
     "transcriptWindow": [
       {
-        "chunkId": "chunk_seed_1",
-        "text": "我们先建立一个结构化测试的基础结论。",
+        "chunkId": "chunk_seed_support_1",
+        "text": "我们先固定一个旧结论，作为增量结构化的基线。",
         "startMs": 0,
         "endMs": 10000
       },
       {
-        "chunkId": "chunk_seed_2",
-        "text": "这个结论是 Structure-focused 测试应该绕过 ASR，只保留真实 structurer。",
+        "chunkId": "chunk_seed_support_2",
+        "text": "旧结论是日常调试默认要跑 Structure-focused 测试。",
         "startMs": 10000,
         "endMs": 20000
       },
       {
-        "chunkId": "chunk_seed_3",
-        "text": "这样可以让回归更快，也更容易集中调试 prompt 和增量策略。",
+        "chunkId": "chunk_seed_support_3",
+        "text": "后面的新片段只补充理由，不应该重复这条旧结论本身。",
         "startMs": 20000,
         "endMs": 30000
       }
@@ -29,7 +29,7 @@
         {
           "id": "existing_node_1",
           "type": "claim",
-          "text": "Structure-focused 测试应该绕过 ASR，只保留真实 structurer。",
+          "text": "日常调试默认要跑 Structure-focused 测试。",
           "timestampMs": 10000,
           "status": "confirmed"
         }
@@ -42,8 +42,8 @@
   },
   "transcripts": [
     {
-      "chunkId": "chunk_incremental_4",
-      "text": "这样做的直接好处是节省 ASR 额度，而且回归会更轻量。",
+      "chunkId": "chunk_incremental_support_4",
+      "text": "支持前面那个旧结论的理由是，这样可以节省 ASR 额度，而且更容易发现结构化 prompt 的回归。",
       "startMs": 30000,
       "endMs": 40000
     }
@@ -54,6 +54,12 @@
     "minMergedEdges": 1,
     "allowFallback": false,
     "disallowDuplicatePreviousTexts": true,
-    "expectCrossGraphEdges": true
+    "expectCrossGraphEdges": true,
+    "mustContainTexts": [
+      "ASR"
+    ],
+    "requiredEdgeTypes": [
+      "supports"
+    ]
   }
 }

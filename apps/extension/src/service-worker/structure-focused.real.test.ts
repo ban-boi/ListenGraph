@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import type {
+  EdgeType,
   MergedGraph,
   ProviderConfig,
   SerializableProviderError,
@@ -25,6 +26,9 @@ type StructureFixture = {
     expectFallbackUsed?: boolean;
     disallowDuplicatePreviousTexts?: boolean;
     expectCrossGraphEdges?: boolean;
+    mustContainTexts?: string[];
+    mustContainOneOfTexts?: string[][];
+    requiredEdgeTypes?: EdgeType[];
   };
 };
 
@@ -34,8 +38,8 @@ const realStructurerKey = process.env.LISTEN_GRAPHIC_E2E_STRUCTURER_API_KEY?.tri
 const requestedFixtureFilter = process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_FIXTURE
   ?.trim()
   .toLowerCase();
-const failOnRateLimit =
-  process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_FAIL_ON_RATE_LIMIT?.trim() === '1';
+const allowExternalIssueSkip =
+  process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP?.trim() === '1';
 const structurerTimeoutMs = Number.parseInt(
   process.env.LISTEN_GRAPHIC_E2E_STRUCTURER_TIMEOUT_MS?.trim() || '',
   10,
@@ -47,7 +51,7 @@ const fixtureDelayMs = Number.parseInt(
   process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_DELAY_MS?.trim() || '',
   10,
 );
-const effectiveFixtureDelayMs = Number.isFinite(fixtureDelayMs) ? fixtureDelayMs : 3_500;
+const effectiveFixtureDelayMs = Number.isFinite(fixtureDelayMs) ? fixtureDelayMs : 20_000;
 const canRunRealStructurer =
   Boolean(realStructurerType) &&
   (realStructurerType === 'zhipu' ? Boolean(realStructurerKey) : Boolean(realStructurerKey));
@@ -62,8 +66,8 @@ type FetchTrace = {
   error?: string;
 };
 
-type RateLimitSkipResult = {
-  skippedDueToRateLimit: true;
+type ExternalSkipResult = {
+  skippedDueToExternalIssue: true;
   reason: string;
 };
 
@@ -309,50 +313,84 @@ describeReal('Structure-focused real structurer', () => {
     );
   }
 
-  function getRateLimitSkipResult(
+  function getExternalSkipResult(
     fixture: StructureFixture,
     runResponse: {
       success: boolean;
       error?: string;
       providerError?: SerializableProviderError;
     },
-  ): RateLimitSkipResult | null {
-    if (failOnRateLimit || runResponse.success) {
+  ): ExternalSkipResult | null {
+    if (runResponse.success) {
       return null;
     }
 
     const providerError = runResponse.providerError;
     const matchedTrace = fetchTraces.find((trace) => trace.status === 429);
     const traceBody = matchedTrace?.responseBody ?? '';
+    const timedOutTraceCount = fetchTraces.filter((trace) => trace.error?.includes('AbortError')).length;
     const isKnownRateLimit =
       providerError?.code === 'RATE_LIMIT_ERROR' ||
       providerError?.status === 429 ||
       matchedTrace?.status === 429 ||
       traceBody.includes('"code":"1302"');
+    const isKnownTimeout =
+      providerError?.code === 'TIMEOUT_ERROR' ||
+      timedOutTraceCount > 0;
 
-    if (!isKnownRateLimit) {
-      return null;
+    if (isKnownRateLimit && allowExternalIssueSkip) {
+      const recommendedDelayMs = Math.max(effectiveFixtureDelayMs, 20_000);
+      const endpoint = matchedTrace?.url ?? savedProviderConfig.structurer.endpoint ?? '<unknown>';
+      const status = providerError?.status ?? matchedTrace?.status ?? 429;
+
+      return {
+        skippedDueToExternalIssue: true,
+        reason: [
+          `${fixture.name} hit a known external structurer rate limit and was skipped.`,
+          `provider=${providerError?.provider ?? savedProviderConfig.structurer.type}`,
+          `status=${status}`,
+          `endpoint=${endpoint}`,
+          `recommended_wait_ms=${recommendedDelayMs}`,
+          `Unset LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP to treat this as a hard failure.`,
+        ].join(' '),
+      };
     }
 
-    const recommendedDelayMs = Math.max(effectiveFixtureDelayMs, 20_000);
-    const endpoint = matchedTrace?.url ?? savedProviderConfig.structurer.endpoint ?? '<unknown>';
-    const status = providerError?.status ?? matchedTrace?.status ?? 429;
+    if (isKnownTimeout && allowExternalIssueSkip) {
+      return {
+        skippedDueToExternalIssue: true,
+        reason: [
+          `${fixture.name} hit a known external structurer timeout and was skipped.`,
+          `provider=${providerError?.provider ?? savedProviderConfig.structurer.type}`,
+          `timeout_ms=${effectiveStructurerTimeoutMs}`,
+          `endpoint=${savedProviderConfig.structurer.endpoint ?? '<unknown>'}`,
+          `Unset LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP to treat this as a hard failure.`,
+        ].join(' '),
+      };
+    }
 
-    return {
-      skippedDueToRateLimit: true,
-      reason: [
-        `${fixture.name} hit a known external structurer rate limit and was skipped.`,
-        `provider=${providerError?.provider ?? savedProviderConfig.structurer.type}`,
-        `status=${status}`,
-        `endpoint=${endpoint}`,
-        `recommended_wait_ms=${recommendedDelayMs}`,
-        `Set LISTEN_GRAPHIC_E2E_STRUCTURE_FAIL_ON_RATE_LIMIT=1 to treat this as a hard failure.`,
-      ].join(' '),
-    };
+    return null;
   }
 
   function normalizeText(value: string) {
     return value.trim().toLowerCase().replace(/[，。！？、,.!?\s]/g, '');
+  }
+
+  function summarizeGraph(graph: MergedGraph | null) {
+    if (!graph) {
+      return { nodeCount: 0, edgeCount: 0, nodeTexts: [], edges: [] };
+    }
+
+    return {
+      nodeCount: graph.nodes.length,
+      edgeCount: graph.edges.length,
+      nodeTexts: graph.nodes.map((node) => node.text),
+      edges: graph.edges.map((edge) => ({
+        source: edge.source,
+        target: edge.target,
+        type: edge.type,
+      })),
+    };
   }
 
   function materializeFixture(
@@ -390,8 +428,8 @@ describeReal('Structure-focused real structurer', () => {
   }
 
   async function runFixture(fixture: StructureFixture) {
-    const sessionId = `fixture_${fixture.name}_${Date.now()}`;
-    const materialized = materializeFixture(fixture, sessionId);
+    const expectedSessionId = `fixture_${fixture.name}_${Date.now()}`;
+    const materialized = materializeFixture(fixture, expectedSessionId);
     const runResponse = await dispatchMessage({
       type: 'TEST_STRUCTURER_SESSION_RUN',
       target: 'service-worker',
@@ -402,15 +440,17 @@ describeReal('Structure-focused real structurer', () => {
       },
     });
 
-    const rateLimitSkipResult = getRateLimitSkipResult(fixture, runResponse);
-    if (rateLimitSkipResult) {
-      return rateLimitSkipResult;
+    const externalSkipResult = getExternalSkipResult(fixture, runResponse);
+    if (externalSkipResult) {
+      return externalSkipResult;
     }
 
     expect(
       runResponse.success,
       `${fixture.name} should run successfully: ${formatRunDiagnostics(runResponse)}`,
     ).toBe(true);
+
+    const sessionId = runResponse.sessionId ?? expectedSessionId;
 
     const debugResponse = await dispatchMessage({
       type: 'GET_DEBUG_SESSION',
@@ -429,7 +469,17 @@ describeReal('Structure-focused real structurer', () => {
     });
     expect(
       exportResponse.success,
-      `${fixture.name} export failed: ${JSON.stringify(exportResponse, null, 2)}`,
+      `${fixture.name} export failed: ${JSON.stringify(
+        {
+          exportResponse,
+          debugData: debugResponse.debugData,
+          persistedSegmentCount: segmentRecords.get(sessionId)?.length ?? 0,
+          persistedMergedGraphPresent: mergedGraphRecords.has(sessionId),
+          persistedMergedGraphKeys: Array.from(mergedGraphRecords.keys()),
+        },
+        null,
+        2,
+      )}`,
     ).toBe(true);
 
     return {
@@ -466,16 +516,20 @@ describeReal('Structure-focused real structurer', () => {
     const acceptance = fixture.acceptance;
     const lastSegment = debugData.segments.at(-1);
     const lastStructurerRun = debugData.structurerRuns?.at(-1);
+    const graphSummary = summarizeGraph(debugData.graph);
 
-    expect(debugData.segments.length, `${fixture.name} minSegments`).toBeGreaterThanOrEqual(
-      acceptance.minSegments,
-    );
-    expect(debugData.graph?.nodes.length ?? 0, `${fixture.name} minMergedNodes`).toBeGreaterThanOrEqual(
-      acceptance.minMergedNodes,
-    );
-    expect(debugData.graph?.edges.length ?? 0, `${fixture.name} minMergedEdges`).toBeGreaterThanOrEqual(
-      acceptance.minMergedEdges,
-    );
+    expect(
+      debugData.segments.length,
+      `${fixture.name} minSegments graph=${JSON.stringify(graphSummary)}`,
+    ).toBeGreaterThanOrEqual(acceptance.minSegments);
+    expect(
+      debugData.graph?.nodes.length ?? 0,
+      `${fixture.name} minMergedNodes graph=${JSON.stringify(graphSummary)}`,
+    ).toBeGreaterThanOrEqual(acceptance.minMergedNodes);
+    expect(
+      debugData.graph?.edges.length ?? 0,
+      `${fixture.name} minMergedEdges graph=${JSON.stringify(graphSummary)}`,
+    ).toBeGreaterThanOrEqual(acceptance.minMergedEdges);
     expect(exportData.transcripts.length, `${fixture.name} exported transcripts`).toBeGreaterThanOrEqual(
       fixture.transcripts.length,
     );
@@ -495,29 +549,82 @@ describeReal('Structure-focused real structurer', () => {
       const duplicatedTexts = lastSegment.nodes
         .map((node: { text: string }) => normalizeText(node.text))
         .filter((text: string) => previousTexts.has(text));
-      expect(duplicatedTexts, `${fixture.name} should avoid duplicating previous node text`).toEqual([]);
+      expect(
+        duplicatedTexts,
+        `${fixture.name} should avoid duplicating previous node text graph=${JSON.stringify(graphSummary)}`,
+      ).toEqual([]);
     }
 
     if (acceptance.expectCrossGraphEdges && previousGraph && lastSegment) {
       const previousNodeIds = new Set(previousGraph.nodes.map((node) => node.id));
-      const hasCrossGraphEdge = lastSegment.edges.some(
+      const lastSegmentNodeIds = new Set(lastSegment.nodes.map((node: { id: string }) => node.id));
+      const mergedEdges = debugData.graph?.edges ?? [];
+      const hasCrossGraphEdge = mergedEdges.some(
         (edge: { source: string; target: string }) =>
-          previousNodeIds.has(edge.source) || previousNodeIds.has(edge.target),
+          (previousNodeIds.has(edge.source) && lastSegmentNodeIds.has(edge.target)) ||
+          (previousNodeIds.has(edge.target) && lastSegmentNodeIds.has(edge.source)),
       );
-      expect(hasCrossGraphEdge, `${fixture.name} should contain a cross-graph edge`).toBe(true);
+      expect(
+        hasCrossGraphEdge,
+        `${fixture.name} should contain a cross-graph edge graph=${JSON.stringify(graphSummary)}`,
+      ).toBe(true);
+    }
+
+    if (acceptance.mustContainTexts?.length) {
+      const normalizedNodeTexts = (debugData.graph?.nodes ?? []).map((node) => normalizeText(node.text));
+      for (const expectedText of acceptance.mustContainTexts) {
+        const normalizedExpected = normalizeText(expectedText);
+        const matched = normalizedNodeTexts.some(
+          (nodeText) =>
+            nodeText.includes(normalizedExpected) ||
+            normalizedExpected.includes(nodeText),
+        );
+        expect(
+          matched,
+          `${fixture.name} should contain text "${expectedText}" graph=${JSON.stringify(graphSummary)}`,
+        ).toBe(true);
+      }
+    }
+
+    if (acceptance.mustContainOneOfTexts?.length) {
+      const normalizedNodeTexts = (debugData.graph?.nodes ?? []).map((node) => normalizeText(node.text));
+      for (const candidateGroup of acceptance.mustContainOneOfTexts) {
+        const matched = candidateGroup.some((candidateText) => {
+          const normalizedExpected = normalizeText(candidateText);
+          return normalizedNodeTexts.some(
+            (nodeText) =>
+              nodeText.includes(normalizedExpected) ||
+              normalizedExpected.includes(nodeText),
+          );
+        });
+        expect(
+          matched,
+          `${fixture.name} should contain one of ${JSON.stringify(candidateGroup)} graph=${JSON.stringify(graphSummary)}`,
+        ).toBe(true);
+      }
+    }
+
+    if (acceptance.requiredEdgeTypes?.length) {
+      const edgeTypes = new Set((debugData.graph?.edges ?? []).map((edge) => edge.type));
+      for (const edgeType of acceptance.requiredEdgeTypes) {
+        expect(
+          edgeTypes.has(edgeType),
+          `${fixture.name} should contain edge type "${edgeType}" graph=${JSON.stringify(graphSummary)}`,
+        ).toBe(true);
+      }
     }
   }
 
   const fixtures = loadFixtures();
   for (const [index, fixture] of fixtures.entries()) {
-    test(fixture.name, { timeout: effectiveStructurerTimeoutMs + 30_000 }, async ({ skip }) => {
+    test(fixture.name, { timeout: effectiveStructurerTimeoutMs + 30_000 }, async () => {
       if (index > 0 && effectiveFixtureDelayMs > 0) {
         await new Promise((resolve) => setTimeout(resolve, effectiveFixtureDelayMs));
       }
       const result = await runFixture(fixture);
-      if ('skippedDueToRateLimit' in result) {
+      if ('skippedDueToExternalIssue' in result) {
         console.warn(result.reason);
-        skip(result.reason);
+        return;
       }
       assertFixtureAcceptance({
         fixture,

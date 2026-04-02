@@ -1,0 +1,47 @@
+{
+  "name": "bootstrap-meaning-path",
+  "transcripts": [
+    {
+      "chunkId": "chunk_bootstrap_meaning_1",
+      "text": "她一开始并不是先想清楚意义，而是先沿着现实中的路径一直做下去，坚持把访谈这件事往前推进。",
+      "startMs": 0,
+      "endMs": 10000
+    },
+    {
+      "chunkId": "chunk_bootstrap_meaning_2",
+      "text": "后来她才慢慢意识到，当一件事不仅让自己开心，还真实帮助到别人时，这件事就有了意义感。",
+      "startMs": 10000,
+      "endMs": 20000
+    },
+    {
+      "chunkId": "chunk_bootstrap_meaning_3",
+      "text": "另一种路径则是从一开始就想对世界产生正向价值，但现实里仍然要在政策工作、咨询和公众表达之间不断调整方式。",
+      "startMs": 20000,
+      "endMs": 30000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "mustContainOneOfTexts": [
+      [
+        "意义感",
+        "意义",
+        "meaning"
+      ],
+      [
+        "帮助到别人",
+        "帮助别人",
+        "help",
+        "价值"
+      ],
+      [
+        "正向价值",
+        "价值",
+        "value"
+      ]
+    ]
+  }
+}

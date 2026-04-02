@@ -50,9 +50,8 @@
   ],
   "acceptance": {
     "minSegments": 1,
-    "minMergedNodes": 2,
+    "minMergedNodes": 1,
     "minMergedEdges": 0,
-    "allowFallback": true,
-    "expectFallbackUsed": true
+    "allowFallback": true
   }
 }

@@ -632,6 +632,74 @@ describe('Service Worker - 当前主链路', () => {
     );
   });
 
+  it('structure-focused 导出会在 merged graph 缺失时从 segments 重建 graph', async () => {
+    const transcriptRecords = new Map<string, any[]>();
+    const segmentRecords = new Map<string, any[]>();
+
+    appendTranscriptChunkMock.mockImplementation(async (chunk: any) => {
+      const current = transcriptRecords.get(chunk.sessionId) ?? [];
+      transcriptRecords.set(chunk.sessionId, [...current, chunk]);
+    });
+    listTranscriptChunksBySessionMock.mockImplementation(
+      async (sessionId: string) => transcriptRecords.get(sessionId) ?? [],
+    );
+    appendSegmentGraphMock.mockImplementation(async (segment: any) => {
+      const current = segmentRecords.get(segment.sessionId) ?? [];
+      segmentRecords.set(segment.sessionId, [...current, segment]);
+    });
+    listSegmentGraphsBySessionMock.mockImplementation(
+      async (sessionId: string) => segmentRecords.get(sessionId) ?? [],
+    );
+    getMergedGraphBySessionMock.mockResolvedValue(undefined);
+
+    const response = await runInjectedStructurerSession({
+      transcripts: [
+        {
+          chunkId: 'chunk_1',
+          text: '第一段结构化输入',
+          startMs: 0,
+          endMs: 10000,
+        },
+        {
+          chunkId: 'chunk_2',
+          text: '第二段结构化输入',
+          startMs: 10000,
+          endMs: 20000,
+        },
+        {
+          chunkId: 'chunk_3',
+          text: '第三段结构化输入',
+          startMs: 20000,
+          endMs: 30000,
+        },
+      ],
+    });
+
+    expect(response.success).toBe(true);
+    getSessionMock.mockResolvedValue({
+      sessionId: response.sessionId,
+      sourceType: 'file',
+      createdAt: 100,
+      endedAt: 200,
+    });
+
+    const exportResponse = await dispatchMessage({
+      type: 'EXPORT_SESSION',
+      target: 'service-worker',
+      payload: { sessionId: response.sessionId, format: 'json' },
+    });
+    const debugResponse = await dispatchMessage({
+      type: 'GET_DEBUG_SESSION',
+      target: 'service-worker',
+      payload: { sessionId: response.sessionId },
+    });
+
+    expect(exportResponse.success).toBe(true);
+    expect(exportResponse.exportData.content).toContain('第三段结构化输入');
+    expect(debugResponse.success).toBe(true);
+    expect(debugResponse.debugData.graph?.nodes.length).toBeGreaterThan(0);
+  });
+
   it('前两个 10 秒 chunk 只累计上下文，不会提前触发 structurer', async () => {
     const chromeMock = (globalThis as any).chrome;
 

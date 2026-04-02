@@ -1,0 +1,43 @@
+{
+  "name": "bootstrap-weird-interesting",
+  "transcripts": [
+    {
+      "chunkId": "chunk_bootstrap_weird_1",
+      "text": "一个人可以奇怪，但关键在于别人是不是觉得他有意思，而不是把他当成无趣的怪人。",
+      "startMs": 0,
+      "endMs": 10000
+    },
+    {
+      "chunkId": "chunk_bootstrap_weird_2",
+      "text": "发现自己长板在生长的过程，其实就是从无趣的怪人变成有趣的怪人的过程。",
+      "startMs": 10000,
+      "endMs": 20000
+    },
+    {
+      "chunkId": "chunk_bootstrap_weird_3",
+      "text": "当有人开始觉得你有意思、开始看见你，人也会更早建立起自信。",
+      "startMs": 20000,
+      "endMs": 30000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "mustContainOneOfTexts": [
+      [
+        "怪人",
+        "weird"
+      ],
+      [
+        "有意思",
+        "interesting"
+      ],
+      [
+        "自信",
+        "confidence"
+      ]
+    ]
+  }
+}

@@ -738,7 +738,7 @@ async function handleExportSession(payload: {
     | SessionRecord
     | undefined;
   const transcripts = await transcriptChunkRepository.listBySession(payload.sessionId);
-  const graph = await mergedGraphRepository.getBySession(payload.sessionId);
+  const graph = await loadMergedGraphAsset(payload.sessionId);
 
   if (!graph) {
     return { success: false, error: '缺少 graph 资产，无法导出' };
@@ -823,12 +823,12 @@ async function loadDebugSessionData(sessionId: string): Promise<DebugSessionData
   const session = (await sessionRepository.get(sessionId)) as SessionRecord | undefined;
   const transcripts = await transcriptChunkRepository.listBySession(sessionId);
   const segments = await segmentGraphRepository.listBySession(sessionId);
-  const graph = await mergedGraphRepository.getBySession(sessionId);
+  const graph = await loadMergedGraphAsset(sessionId, segments);
 
-    return {
-      session: session ?? null,
-      transcripts,
-      segments,
+  return {
+    session: session ?? null,
+    transcripts,
+    segments,
     traces: buildDebugChunkTraces(
       transcripts,
       segments,
@@ -854,7 +854,7 @@ async function handleGetReplaySession(sessionId: string): Promise<ServiceWorkerR
 async function loadReplaySessionData(sessionId: string): Promise<ReplaySessionData> {
   const session = (await sessionRepository.get(sessionId)) as SessionRecord | undefined;
   const transcripts = await transcriptChunkRepository.listBySession(sessionId);
-  const graph = await mergedGraphRepository.getBySession(sessionId);
+  const graph = await loadMergedGraphAsset(sessionId);
   const transcriptDuration = transcripts[transcripts.length - 1]?.endMs ?? 0;
   const graphDuration = Math.max(...(graph?.nodes.map((node) => node.timestampMs) ?? [0]));
 
@@ -891,6 +891,41 @@ async function handleCaptureEnded(
 function pushTranscript(transcript: TranscriptChunk) {
   chunkIndex += 1;
   transcriptWindow = [...transcriptWindow, transcript].slice(-3);
+}
+
+async function loadMergedGraphAsset(
+  sessionId: string,
+  preloadedSegments?: SegmentGraph[],
+): Promise<MergedGraph | null> {
+  const storedGraph = await mergedGraphRepository.getBySession(sessionId);
+  if (storedGraph) {
+    return storedGraph;
+  }
+
+  const segments = [...(preloadedSegments ?? await segmentGraphRepository.listBySession(sessionId))]
+    .sort((a, b) => a.startMs - b.startMs || a.endMs - b.endMs);
+  if (segments.length === 0) {
+    return null;
+  }
+
+  const rebuiltGraph = segments.reduce<MergedGraph | null>(
+    (currentGraph, segment) => buildMergedGraphFromState(currentGraph, segment),
+    null,
+  );
+  if (!rebuiltGraph) {
+    return null;
+  }
+
+  try {
+    await withIndexedDbRetry(() => mergedGraphRepository.save(rebuiltGraph));
+  } catch (error) {
+    if (!isIndexedDbBackingStoreError(error)) {
+      throw error;
+    }
+    console.warn('[Service Worker] rebuilt merged graph 持久化暂不可用，保留重建结果:', error);
+  }
+
+  return rebuiltGraph;
 }
 
 function buildMergedGraph(segment: SegmentGraph): MergedGraph {
@@ -1062,9 +1097,7 @@ async function ensureHydrated() {
           const recoveredChunks = await transcriptChunkRepository.listBySession(
             latestSession.sessionId,
           );
-          const recoveredGraph = await mergedGraphRepository.getBySession(
-            latestSession.sessionId,
-          );
+          const recoveredGraph = await loadMergedGraphAsset(latestSession.sessionId);
 
           recoveredSessionId = latestSession.sessionId;
           transcriptWindow = recoveredChunks.slice(-3);

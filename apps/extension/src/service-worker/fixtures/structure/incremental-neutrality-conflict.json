@@ -1,0 +1,70 @@
+{
+  "name": "incremental-neutrality-conflict",
+  "seed": {
+    "transcriptWindow": [
+      {
+        "chunkId": "chunk_seed_neutrality_1",
+        "text": "先固定一个旧结论，作为增量结构化的基线。",
+        "startMs": 0,
+        "endMs": 10000
+      },
+      {
+        "chunkId": "chunk_seed_neutrality_2",
+        "text": "旧结论是处理别人的情绪时，保持价值中立会更好。",
+        "startMs": 10000,
+        "endMs": 20000
+      },
+      {
+        "chunkId": "chunk_seed_neutrality_3",
+        "text": "后面的新片段只补充冲突性的反驳理由，不应该重复旧结论本身。",
+        "startMs": 20000,
+        "endMs": 30000
+      }
+    ],
+    "mergedGraph": {
+      "sessionId": "__SESSION_ID__",
+      "revision": 1,
+      "topics": [],
+      "nodes": [
+        {
+          "id": "existing_node_neutrality_1",
+          "type": "claim",
+          "text": "处理别人的情绪时，保持价值中立会更好。",
+          "timestampMs": 10000,
+          "status": "confirmed"
+        }
+      ],
+      "edges": [],
+      "updatedAt": 1
+    },
+    "currentTimeMs": 30000,
+    "chunkIndex": 3
+  },
+  "transcripts": [
+    {
+      "chunkId": "chunk_incremental_neutrality_4",
+      "text": "这恰恰说明前面那个旧结论并不好：处理别人的情绪时，不能只讲价值中立，而要先和对方站在一边，否则情绪缺口不会被满足，过于中立反而会显得冷漠。",
+      "startMs": 30000,
+      "endMs": 40000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "mustContainOneOfTexts": [
+      [
+        "中立",
+        "neutral"
+      ],
+      [
+        "情绪",
+        "emotion"
+      ]
+    ],
+    "requiredEdgeTypes": [
+      "opposes"
+    ]
+  }
+}

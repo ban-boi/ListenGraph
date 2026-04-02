@@ -1,0 +1,61 @@
+{
+  "name": "incremental-role-self",
+  "seed": {
+    "transcriptWindow": [
+      {
+        "chunkId": "chunk_seed_role_self_1",
+        "text": "先固定一个旧结论，作为增量结构化的基线。",
+        "startMs": 0,
+        "endMs": 10000
+      },
+      {
+        "chunkId": "chunk_seed_role_self_2",
+        "text": "旧结论是工作里的詹律师更像一种专业角色，而不是完全本真的自己。",
+        "startMs": 10000,
+        "endMs": 20000
+      },
+      {
+        "chunkId": "chunk_seed_role_self_3",
+        "text": "后面的新片段只补充为什么会这样，不应该重复旧结论本身。",
+        "startMs": 20000,
+        "endMs": 30000
+      }
+    ],
+    "mergedGraph": {
+      "sessionId": "__SESSION_ID__",
+      "revision": 1,
+      "topics": [],
+      "nodes": [
+        {
+          "id": "existing_node_role_self_1",
+          "type": "claim",
+          "text": "工作里的詹律师更像一种专业角色，而不是完全本真的自己。",
+          "timestampMs": 10000,
+          "status": "confirmed"
+        }
+      ],
+      "edges": [],
+      "updatedAt": 1
+    },
+    "currentTimeMs": 30000,
+    "chunkIndex": 3
+  },
+  "transcripts": [
+    {
+      "chunkId": "chunk_incremental_role_self_4",
+      "text": "这是因为工作时需要保持严肃和专业的状态，而真正放松的时候才更接近她本真的样子。",
+      "startMs": 30000,
+      "endMs": 40000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "expectCrossGraphEdges": true,
+    "mustContainTexts": [
+      "专业的状态"
+    ]
+  }
+}

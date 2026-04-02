@@ -1,0 +1,46 @@
+{
+  "name": "bootstrap-style-complement",
+  "transcripts": [
+    {
+      "chunkId": "chunk_bootstrap_style_1",
+      "text": "他们在辩论里的表达风格处在光谱两端，一个更偏逻辑、数据和论据，另一个更擅长语言、气势和总结升华。",
+      "startMs": 0,
+      "endMs": 10000
+    },
+    {
+      "chunkId": "chunk_bootstrap_style_2",
+      "text": "以前她对这种风格差异有偏见，但后来意识到那种调动观众情绪和价值表达的能力也是一种很难学来的天赋。",
+      "startMs": 10000,
+      "endMs": 20000
+    },
+    {
+      "chunkId": "chunk_bootstrap_style_3",
+      "text": "所以两个人组队反而互补，一个负责数据逻辑铺垫，另一个负责总结升华和带动现场情绪。",
+      "startMs": 20000,
+      "endMs": 30000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 1,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "mustContainOneOfTexts": [
+      [
+        "逻辑",
+        "data",
+        "论据"
+      ],
+      [
+        "情绪",
+        "天赋",
+        "气势"
+      ],
+      [
+        "互补",
+        "complement",
+        "一理一情"
+      ]
+    ]
+  }
+}
