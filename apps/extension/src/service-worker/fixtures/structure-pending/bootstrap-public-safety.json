@@ -1,0 +1,46 @@
+{
+  "name": "bootstrap-public-safety",
+  "transcripts": [
+    {
+      "chunkId": "chunk_bootstrap_public_1",
+      "text": "一个人在私下和在公众场合的状态可能完全不同，真正的差别常常来自内心有没有足够的安全感。",
+      "startMs": 0,
+      "endMs": 10000
+    },
+    {
+      "chunkId": "chunk_bootstrap_public_2",
+      "text": "如果一个人长期欠缺安全感，他在公众面前就更难表达脆弱，比如哭出来这件事本身都会变成障碍。",
+      "startMs": 10000,
+      "endMs": 20000
+    },
+    {
+      "chunkId": "chunk_bootstrap_public_3",
+      "text": "所以公众表达并不只是技巧问题，它也取决于一个人能不能在他人面前感到足够安全和放松。",
+      "startMs": 20000,
+      "endMs": 30000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "mustContainOneOfTexts": [
+      [
+        "公众场合",
+        "公众",
+        "public"
+      ],
+      [
+        "安全感",
+        "safe",
+        "security"
+      ],
+      [
+        "脆弱",
+        "哭",
+        "vulnerable"
+      ]
+    ]
+  }
+}

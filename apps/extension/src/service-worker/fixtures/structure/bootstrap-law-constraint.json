@@ -1,0 +1,44 @@
+{
+  "name": "bootstrap-law-constraint",
+  "transcripts": [
+    {
+      "chunkId": "chunk_bootstrap_law_1",
+      "text": "讨论法治之前，首先要追问这个世界最大的问题到底来自外部环境，还是来自每个人内心的幽暗。",
+      "startMs": 0,
+      "endMs": 10000
+    },
+    {
+      "chunkId": "chunk_bootstrap_law_2",
+      "text": "人性不是一张白纸，每个人心里都有张三一样的黑暗成分，所以社会秩序不能只靠乐观假设。",
+      "startMs": 10000,
+      "endMs": 20000
+    },
+    {
+      "chunkId": "chunk_bootstrap_law_3",
+      "text": "法律最重要的作用，就是约束人性中的幽暗，激活底线道德，避免这种黑暗真的演变成现实中的罪恶。",
+      "startMs": 20000,
+      "endMs": 30000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "mustContainOneOfTexts": [
+      [
+        "法律",
+        "law"
+      ],
+      [
+        "人性",
+        "human nature"
+      ],
+      [
+        "幽暗",
+        "黑暗",
+        "dark"
+      ]
+    ]
+  }
+}

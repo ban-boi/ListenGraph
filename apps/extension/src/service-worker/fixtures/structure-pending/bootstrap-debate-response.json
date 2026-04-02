@@ -1,0 +1,44 @@
+{
+  "name": "bootstrap-debate-response",
+  "transcripts": [
+    {
+      "chunkId": "chunk_bootstrap_debate_1",
+      "text": "一方认为脱口秀更能回应世界，因为它更贴近真实痛苦和现实困境。",
+      "startMs": 0,
+      "endMs": 10000
+    },
+    {
+      "chunkId": "chunk_bootstrap_debate_2",
+      "text": "另一方认为脱口秀只能把问题点醒，真正面对中立者、把争点讲清的时候，还是要靠辩论。",
+      "startMs": 10000,
+      "endMs": 20000
+    },
+    {
+      "chunkId": "chunk_bootstrap_debate_3",
+      "text": "所以争论的关键不是哪个好笑，而是哪种表达方式更适合回应公共问题。",
+      "startMs": 20000,
+      "endMs": 30000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "mustContainOneOfTexts": [
+      [
+        "脱口秀",
+        "comedy"
+      ],
+      [
+        "辩论",
+        "debate"
+      ],
+      [
+        "回应世界",
+        "回应",
+        "world"
+      ]
+    ]
+  }
+}

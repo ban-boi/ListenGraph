@@ -35,6 +35,7 @@ type StructureFixture = {
 const FIXTURE_DIR = path.resolve(__dirname, './fixtures/structure');
 const realStructurerType = process.env.LISTEN_GRAPHIC_E2E_STRUCTURER_TYPE?.trim();
 const realStructurerKey = process.env.LISTEN_GRAPHIC_E2E_STRUCTURER_API_KEY?.trim();
+const structureProfile = process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_PROFILE?.trim().toLowerCase() || 'full';
 const requestedFixtureFilter = process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_FIXTURE
   ?.trim()
   .toLowerCase();
@@ -56,6 +57,13 @@ const canRunRealStructurer =
   Boolean(realStructurerType) &&
   (realStructurerType === 'zhipu' ? Boolean(realStructurerKey) : Boolean(realStructurerKey));
 const describeReal = canRunRealStructurer ? describe : describe.skip;
+const SMOKE_FIXTURE_NAMES = new Set([
+  'bootstrap-basic',
+  'bootstrap-law-constraint',
+  'incremental-support-reason',
+  'incremental-role-self',
+]);
+const REPLAY_FIXTURE_PREFIX = 'replay-realtime-';
 
 type FetchTrace = {
   url: string;
@@ -268,7 +276,7 @@ describeReal('Structure-focused real structurer', () => {
   }
 
   function loadFixtures() {
-    const fixtures = fs
+    let fixtures = fs
       .readdirSync(FIXTURE_DIR)
       .filter((name) => name.endsWith('.json'))
       .sort()
@@ -276,6 +284,22 @@ describeReal('Structure-focused real structurer', () => {
         const raw = fs.readFileSync(path.join(FIXTURE_DIR, name), 'utf-8');
         return JSON.parse(raw) as StructureFixture;
       });
+
+    if (structureProfile === 'smoke') {
+      fixtures = fixtures.filter(
+        (fixture) =>
+          !fixture.name.startsWith(REPLAY_FIXTURE_PREFIX) &&
+          SMOKE_FIXTURE_NAMES.has(fixture.name),
+      );
+    } else if (structureProfile === 'replay') {
+      fixtures = fixtures.filter((fixture) => fixture.name.startsWith(REPLAY_FIXTURE_PREFIX));
+    } else if (structureProfile !== 'full') {
+      throw new Error(
+        `Unsupported LISTEN_GRAPHIC_E2E_STRUCTURE_PROFILE=${structureProfile}. Expected smoke, full, or replay.`,
+      );
+    } else {
+      fixtures = fixtures.filter((fixture) => !fixture.name.startsWith(REPLAY_FIXTURE_PREFIX));
+    }
 
     if (!requestedFixtureFilter) {
       return fixtures;
