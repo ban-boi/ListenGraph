@@ -21,3 +21,19 @@ test-results/
 
 # 本地配置文件
 *.local.json
+
+# 合并/手工暂存产生的备份（避免挡住 git pull）
+*.wip-local
+
+# 原始音频与配套文本：体积大、可经 prepare 脚本再生成（见 fixtures/asr-realtime/README.md）
+/raw_audio&text/
+
+# ASR realtime：ffmpeg / 准备脚本写入的波形（勿与 e2e/fixtures/audio 下的小型样本混淆）
+apps/extension/src/service-worker/fixtures/asr-realtime/audio/generated/
+
+# ASR realtime：一次运行生成的 utterances / 对比快照等
+apps/extension/src/service-worker/fixtures/asr-realtime/artifacts/
+apps/extension/src/service-worker/fixtures/asr-realtime/compare-artifacts/
+
+# Structure strict / provider 不稳定时的诊断与汇总（可再跑脚本生成）
+apps/extension/src/service-worker/fixtures/structure/artifacts/
