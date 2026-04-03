@@ -29,6 +29,7 @@ const DEFAULT_STRUCTURER_RETRY_POLICY: ProviderRetryPolicy = {
 const DEFAULT_ASR_CONFIG: AsrProviderConfig = {
   type: 'mock',
   mode: 'direct',
+  transport: 'batch',
   model: 'mock-asr',
   language: 'zh',
   retry: DEFAULT_RETRY_POLICY,
@@ -106,6 +107,10 @@ function normalizeEntry<T extends AsrProviderConfig | StructurerProviderConfig>(
 
   merged.language = merged.language ?? params.defaults.language ?? 'zh';
   merged.mode = merged.mode ?? 'direct';
+  if (isAsrConfig(merged)) {
+    const defaultTransport = isAsrConfig(params.defaults) ? params.defaults.transport : undefined;
+    merged.transport = merged.transport ?? defaultTransport ?? 'batch';
+  }
   merged.retry = {
     ...DEFAULT_RETRY_POLICY,
     ...params.defaults.retry,
@@ -140,6 +145,7 @@ function summarizeEntry(
   return {
     type: config.type,
     mode: config.mode,
+    transport: isAsrConfig(config) ? config.transport : undefined,
     endpoint: config.endpoint,
     model: config.model,
     language: config.language,
@@ -183,6 +189,9 @@ export function requireProviderCredential(
       if (!hasPair && !hasLegacyPair) {
         throw new Error(`${label} requires secretId and secretKey (or apiKey) for direct mode`);
       }
+      if (config.transport === 'ws' && !config.appId) {
+        throw new Error(`${label} requires appId for realtime websocket transport`);
+      }
     }
     if (config.mode === 'relay' && !config.sessionToken) {
       throw new Error(`${label} requires a session token for relay mode`);
@@ -198,6 +207,12 @@ export function requireProviderCredential(
   if (config.mode === 'relay' && !config.sessionToken) {
     throw new Error(`${label} requires a session token for relay mode`);
   }
+}
+
+function isAsrConfig(
+  config: AsrProviderConfig | StructurerProviderConfig,
+): config is AsrProviderConfig {
+  return 'transport' in config || 'secretId' in config || 'secretKey' in config;
 }
 
 export { DEFAULT_RETRY_POLICY, DEFAULT_STRUCTURER_RETRY_POLICY };

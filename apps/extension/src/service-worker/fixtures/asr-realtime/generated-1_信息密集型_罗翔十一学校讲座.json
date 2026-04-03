@@ -1,0 +1,42 @@
+{
+  "name": "generated:1_信息密集型_罗翔十一学校讲座",
+  "audioFile": "audio/generated/1_信息密集型_罗翔十一学校讲座.wav",
+  "audioClipDurationMs": 120000,
+  "generatedFrom": {
+    "sourceAudioFile": "raw_audio&text/1_信息密集型_罗翔十一学校讲座.mp3",
+    "sourceTextFile": "raw_audio&text/1_信息密集型_罗翔十一学校讲座.txt"
+  },
+  "acceptance": {
+    "minStableUtterances": 2,
+    "mustContainTexts": [
+      "在本次名家大师海报张贴处时有许多",
+      "非常高兴也非常荣幸今天跟各位年轻"
+    ]
+  },
+  "structureReplay": {
+    "name": "replay-realtime-law-constraint",
+    "acceptance": {
+      "minSegments": 1,
+      "minMergedNodes": 2,
+      "minMergedEdges": 1,
+      "allowFallback": false,
+      "mustContainOneOfTexts": [
+        [
+          "法治",
+          "法律"
+        ],
+        [
+          "人性"
+        ],
+        [
+          "幽暗",
+          "黑暗"
+        ]
+      ]
+    }
+  },
+  "notes": [
+    "Generated from raw_audio&text by prepare-asr-realtime-fixtures.mjs.",
+    "Review generated anchors after the first real ASR run and tighten them if needed."
+  ]
+}

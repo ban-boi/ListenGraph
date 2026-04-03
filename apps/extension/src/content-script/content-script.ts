@@ -1,20 +1,28 @@
-import type { AppMessage } from '../shared/messages';
+import type {
+  AppMessage,
+  AsrStreamPartialPayload,
+  AsrStreamStartPayload,
+  AsrStreamUtterancePayload,
+} from '../shared/messages';
 import {
   CAPTURE_CHANNELS,
   CAPTURE_AUDIO_MIME_TYPE,
   CAPTURE_SAMPLE_RATE,
   encodeAudioChunkAsWav,
+  float32ToPcm16,
 } from '../shared/audio';
 
 let audioContext: AudioContext | null = null;
 let mediaStream: MediaStream | null = null;
 let sourceNode: MediaStreamAudioSourceNode | null = null;
 let processorNode: AudioWorkletNode | null = null;
+let realtimeSocket: WebSocket | null = null;
 let isCapturing = false;
 let hasReportedCaptureEnd = false;
-let activeFixtureCaptureRun = 0;
+let activeCaptureRun = 0;
 
 const SAMPLE_RATE = CAPTURE_SAMPLE_RATE;
+const DEFAULT_REALTIME_FRAME_DURATION_MS = 40;
 
 type FixtureCaptureChunk = {
   url: string;
@@ -30,12 +38,32 @@ type FixtureCaptureManifest = {
   chunks: FixtureCaptureChunk[];
 };
 
+type TencentRealtimeCaptureConfig = {
+  signedUrl: string;
+  sampleRate: number;
+  frameDurationMs: number;
+};
+
+type TencentRealtimeServerMessage = {
+  code?: number;
+  message?: string;
+  voice_id?: string;
+  message_id?: string;
+  result?: {
+    slice_type?: number;
+    voice_text_str?: string;
+    start_time?: number;
+    end_time?: number;
+    word_size?: number;
+  };
+};
+
 chrome.runtime.onMessage.addListener((message: AppMessage | any, _sender, sendResponse) => {
   if (message.target && message.target !== 'content-script') return false;
 
   switch (message.type) {
     case 'START_CAPTURE':
-      startTabCapture()
+      startTabCapture(message.payload)
         .then(() => sendResponse({ success: true }))
         .catch((error: Error) =>
           sendResponse({ success: false, error: error.message }),
@@ -60,7 +88,7 @@ chrome.runtime.onMessage.addListener((message: AppMessage | any, _sender, sendRe
   }
 });
 
-async function startTabCapture() {
+async function startTabCapture(payload?: AsrStreamStartPayload) {
   if (isCapturing) {
     return;
   }
@@ -111,24 +139,51 @@ async function startTabCapture() {
     const workletUrl = chrome.runtime.getURL('offscreen/audio-processor.worklet.js');
     await audioContext.audioWorklet.addModule(workletUrl);
 
-    processorNode = new AudioWorkletNode(audioContext, 'audio-chunk-processor');
-    processorNode.port.onmessage = (event: MessageEvent) => {
-      if (event.data?.type !== 'AUDIO_CHUNK') return;
-      const wavChunk = encodeAudioChunkAsWav(new Float32Array(event.data.audioData), {
-        sampleRate: SAMPLE_RATE,
-        channels: CAPTURE_CHANNELS,
-      });
+    const realtimeConfig =
+      payload?.transport === 'ws' ? payload.tencentRealtime : undefined;
+    if (payload?.transport === 'ws' && !realtimeConfig) {
+      throw new Error('缺少腾讯实时 ASR WebSocket 连接参数');
+    }
 
-      void chrome.runtime.sendMessage({
-        type: 'AUDIO_CHUNK_READY',
-        target: 'service-worker',
-        payload: {
-          ...wavChunk,
-          startMs: event.data.startMs,
-          endMs: event.data.endMs,
-        },
-      } as AppMessage);
+    processorNode = new AudioWorkletNode(audioContext, 'audio-chunk-processor', {
+      processorOptions: realtimeConfig
+        ? {
+            mode: 'frame',
+            frameDurationMs:
+              realtimeConfig.frameDurationMs ?? DEFAULT_REALTIME_FRAME_DURATION_MS,
+          }
+        : {
+            mode: 'chunk',
+            chunkDurationMs: 10_000,
+          },
+    });
+    processorNode.port.onmessage = (event: MessageEvent) => {
+      if (event.data?.type === 'AUDIO_CHUNK') {
+        const wavChunk = encodeAudioChunkAsWav(new Float32Array(event.data.audioData), {
+          sampleRate: SAMPLE_RATE,
+          channels: CAPTURE_CHANNELS,
+        });
+
+        void chrome.runtime.sendMessage({
+          type: 'AUDIO_CHUNK_READY',
+          target: 'service-worker',
+          payload: {
+            ...wavChunk,
+            startMs: event.data.startMs,
+            endMs: event.data.endMs,
+          },
+        } as AppMessage);
+        return;
+      }
+
+      if (event.data?.type === 'AUDIO_FRAME') {
+        sendRealtimeAudioFrame(new Float32Array(event.data.audioData));
+      }
     };
+
+    if (realtimeConfig) {
+      await openTencentRealtimeSocket(realtimeConfig);
+    }
 
     sourceNode.connect(processorNode);
     isCapturing = true;
@@ -140,7 +195,9 @@ async function startTabCapture() {
 
 async function stopCapture() {
   isCapturing = false;
-  activeFixtureCaptureRun += 1;
+  activeCaptureRun += 1;
+
+  closeRealtimeSocket();
 
   if (processorNode) {
     processorNode.port.onmessage = null;
@@ -190,7 +247,7 @@ async function seekToTimestamp(timestampMs: number) {
 
 async function startFixtureCapture(manifestUrl: string) {
   const manifest = await loadFixtureCaptureManifest(manifestUrl);
-  const runId = ++activeFixtureCaptureRun;
+  const runId = ++activeCaptureRun;
   isCapturing = true;
 
   for (const chunk of manifest.chunks) {
@@ -297,7 +354,7 @@ function isFixtureCaptureChunk(value: unknown): value is FixtureCaptureChunk {
 }
 
 function isFixtureCaptureRunActive(runId: number) {
-  return isCapturing && activeFixtureCaptureRun === runId;
+  return isCapturing && activeCaptureRun === runId;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -306,6 +363,191 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function openTencentRealtimeSocket(config: TencentRealtimeCaptureConfig) {
+  await chrome.runtime.sendMessage({
+    type: 'ASR_STREAM_STATUS',
+    target: 'service-worker',
+    payload: {
+      status: 'connecting',
+      provider: 'tencent-asr',
+      detail: '腾讯实时 ASR 连接中',
+    },
+  } as AppMessage);
+
+  realtimeSocket = await new Promise<WebSocket>((resolve, reject) => {
+    const ws = new WebSocket(config.signedUrl);
+    ws.binaryType = 'arraybuffer';
+
+    const cleanup = () => {
+      ws.removeEventListener('open', handleOpen);
+      ws.removeEventListener('error', handleError);
+    };
+
+    const handleOpen = () => {
+      cleanup();
+      resolve(ws);
+    };
+
+    const handleError = () => {
+      cleanup();
+      reject(new Error('腾讯实时 ASR WebSocket 连接失败'));
+    };
+
+    ws.addEventListener('open', handleOpen, { once: true });
+    ws.addEventListener('error', handleError, { once: true });
+  });
+
+  realtimeSocket.onmessage = (event) => {
+    void handleTencentRealtimeMessage(event.data);
+  };
+  realtimeSocket.onerror = () => {
+    void chrome.runtime.sendMessage({
+      type: 'ASR_STREAM_ERROR',
+      target: 'service-worker',
+      payload: {
+        provider: 'tencent-asr',
+        code: 'NETWORK_ERROR',
+        message: '腾讯实时 ASR WebSocket 连接异常',
+      },
+    } as AppMessage);
+  };
+  realtimeSocket.onclose = () => {
+    void chrome.runtime.sendMessage({
+      type: 'ASR_STREAM_STATUS',
+      target: 'service-worker',
+      payload: {
+        status: 'closed',
+        provider: 'tencent-asr',
+        detail: '腾讯实时 ASR 已断开',
+      },
+    } as AppMessage);
+  };
+
+  await chrome.runtime.sendMessage({
+    type: 'ASR_STREAM_STATUS',
+    target: 'service-worker',
+    payload: {
+      status: 'connected',
+      provider: 'tencent-asr',
+      detail: '腾讯实时 ASR 已连接',
+    },
+  } as AppMessage);
+}
+
+function sendRealtimeAudioFrame(floatSamples: Float32Array) {
+  if (!realtimeSocket || realtimeSocket.readyState !== WebSocket.OPEN) {
+    return;
+  }
+
+  const pcm16 = float32ToPcm16(floatSamples);
+  realtimeSocket.send(new Uint8Array(pcm16.buffer.slice(0)));
+}
+
+async function handleTencentRealtimeMessage(data: unknown) {
+  const payload = parseTencentRealtimeServerMessage(data);
+  if (!payload) {
+    return;
+  }
+
+  if ((payload.code ?? 0) !== 0) {
+    await chrome.runtime.sendMessage({
+      type: 'ASR_STREAM_ERROR',
+      target: 'service-worker',
+      payload: {
+        provider: 'tencent-asr',
+        code: String(payload.code ?? 'ASR_STREAM_ERROR'),
+        message: payload.message ?? '腾讯实时 ASR 返回错误',
+      },
+    } as AppMessage);
+    return;
+  }
+
+  const result = payload.result;
+  if (!result) {
+    return;
+  }
+
+  const text = result.voice_text_str?.trim() ?? '';
+  const sliceType =
+    result.slice_type === 0 || result.slice_type === 1 || result.slice_type === 2
+      ? result.slice_type
+      : null;
+  if (sliceType === null) {
+    return;
+  }
+
+  if (sliceType === 0 || sliceType === 1) {
+    const partialPayload: AsrStreamPartialPayload = {
+      text,
+      sliceType,
+      startMs: result.start_time,
+      endMs: result.end_time,
+      voiceId: payload.voice_id,
+      messageId: payload.message_id,
+      raw: payload,
+    };
+    await chrome.runtime.sendMessage({
+      type: 'ASR_STREAM_PARTIAL_UPDATED',
+      target: 'service-worker',
+      payload: partialPayload,
+    } as AppMessage);
+    return;
+  }
+
+  if (!text) {
+    return;
+  }
+
+  const utterancePayload: AsrStreamUtterancePayload = {
+    text,
+    startMs: result.start_time ?? 0,
+    endMs: result.end_time ?? result.start_time ?? 0,
+    provider: 'tencent-asr',
+    voiceId: payload.voice_id,
+    messageId: payload.message_id,
+    wordSize: result.word_size,
+    raw: payload,
+  };
+  await chrome.runtime.sendMessage({
+    type: 'ASR_STREAM_UTTERANCE_READY',
+    target: 'service-worker',
+    payload: utterancePayload,
+  } as AppMessage);
+}
+
+function closeRealtimeSocket() {
+  if (!realtimeSocket) {
+    return;
+  }
+
+  const socket = realtimeSocket;
+  realtimeSocket = null;
+
+  if (socket.readyState === WebSocket.OPEN) {
+    try {
+      socket.send('{"type": "end"}');
+    } catch (error) {
+      console.warn('[content-script] 腾讯实时 ASR 结束标记发送失败:', error);
+    }
+  }
+
+  if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+    socket.close();
+  }
+}
+
+function parseTencentRealtimeServerMessage(data: unknown): TencentRealtimeServerMessage | null {
+  if (typeof data !== 'string') {
+    return null;
+  }
+
+  try {
+    return JSON.parse(data) as TencentRealtimeServerMessage;
+  } catch {
+    return null;
+  }
 }
 
 window.addEventListener('beforeunload', () => {

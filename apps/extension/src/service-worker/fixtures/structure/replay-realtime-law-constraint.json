@@ -1,0 +1,49 @@
+{
+  "name": "replay-realtime-law-constraint",
+  "transcripts": [
+    {
+      "chunkId": "replay-realtime-law-constraint_01",
+      "text": "这哇帅，录一圈先录一圈，不清楚啊，这猴子有点过了，胡子有点过头了。教授博士生导师在本次名家大师海报张贴出时，有许多同学都按耐不住自己狂喜的心情，期待这次讲课。下面让我们把话筒交给罗翔老师，期待他的精彩演讲。",
+      "startMs": 2240,
+      "endMs": 62520,
+      "raw": {
+        "source": "tencent-realtime-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "messageId": "cdcc065a-dd4f-4a3c-9cff-a47f9ac8e04a_785_0",
+        "voiceId": "cdcc065a-dd4f-4a3c-9cff-a47f9ac8e04a"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-law-constraint_02",
+      "text": "好喂好，非常高兴啊，来到我们的呃非常高兴也非常荣幸啊，今天呢，跟各位年轻的小朋友们一起来分享分享什么叫做法治，如何培育我们的法治信念。大家知道，在人类最古老的学科中就有法学。当社会出现问题，我们需要把当人的身体出现问题，我们需要医学。所以法学毫无疑问是人类最古老的一个选择。",
+      "startMs": 62520,
+      "endMs": 120000,
+      "raw": {
+        "source": "tencent-realtime-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "messageId": "cdcc065a-dd4f-4a3c-9cff-a47f9ac8e04a_1500_0",
+        "voiceId": "cdcc065a-dd4f-4a3c-9cff-a47f9ac8e04a"
+      }
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "mustContainOneOfTexts": [
+      [
+        "法治",
+        "法律",
+        "法学"
+      ],
+      [
+        "最古老",
+        "学科"
+      ],
+      [
+        "医学"
+      ]
+    ]
+  }
+}

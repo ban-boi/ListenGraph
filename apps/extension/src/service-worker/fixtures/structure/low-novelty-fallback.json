@@ -52,6 +52,7 @@
     "minSegments": 1,
     "minMergedNodes": 1,
     "minMergedEdges": 0,
-    "allowFallback": true
+    "allowFallback": false,
+    "expectFallbackUsed": false
   }
 }

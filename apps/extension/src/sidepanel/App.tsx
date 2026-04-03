@@ -480,6 +480,14 @@ function resetProviderEntryForTypeChange(
       sessionToken: undefined,
       model: undefined,
       region: undefined,
+      transport: undefined,
+      appId: undefined,
+      needVad: undefined,
+      vadSilenceTimeMs: undefined,
+      maxSpeakTimeMs: undefined,
+      hotwordId: undefined,
+      hotwordList: undefined,
+      wordInfo: undefined,
       secretId: undefined,
       secretKey: undefined,
     },
@@ -910,11 +918,23 @@ export default function App() {
       field: keyof ProviderConfig['asr'],
       value: string,
     ) => {
+      let normalizedValue: unknown = value === '' ? undefined : value;
+      if (field === 'needVad') {
+        normalizedValue = value === '' ? undefined : value === 'true';
+      } else if (
+        field === 'vadSilenceTimeMs' ||
+        field === 'maxSpeakTimeMs' ||
+        field === 'wordInfo'
+      ) {
+        normalizedValue =
+          value === '' ? undefined : Number.isFinite(Number(value)) ? Number(value) : undefined;
+      }
+
       setProviderConfig((prev) => ({
         ...prev,
         [stage]: {
           ...prev[stage],
-          [field]: value === '' ? undefined : value,
+          [field]: normalizedValue,
         },
       }));
     },
@@ -1693,6 +1713,21 @@ export default function App() {
                   </div>
                 </div>
               )}
+              {providerConfig[stageKey].type === 'tencent' && stageKey === 'asr' && (
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span>Tencent Transport</span>
+                  <select
+                    aria-label="Tencent Transport"
+                    value={providerConfig.asr.transport ?? 'batch'}
+                    onChange={(event) =>
+                      updateProviderEntry(stageKey, 'transport', event.target.value)
+                    }
+                  >
+                    <option value="batch">Batch</option>
+                    <option value="ws">Realtime WebSocket</option>
+                  </select>
+                </label>
+              )}
               {!(stageKey === 'asr' && providerConfig[stageKey].type === 'tencent') && (
                 <label style={{ display: 'grid', gap: 4 }}>
                   <span>{label} Endpoint</span>
@@ -1706,9 +1741,9 @@ export default function App() {
                 </label>
               )}
               <label style={{ display: 'grid', gap: 4 }}>
-                <span>{label} Model</span>
+                <span>{stageKey === 'asr' && providerConfig[stageKey].type === 'tencent' ? 'Engine Model' : `${label} Model`}</span>
                 <input
-                  aria-label={`${label} Model`}
+                  aria-label={stageKey === 'asr' && providerConfig[stageKey].type === 'tencent' ? 'Tencent Engine Model' : `${label} Model`}
                   value={providerConfig[stageKey].model ?? ''}
                   onChange={(event) =>
                     updateProviderEntry(stageKey, 'model', event.target.value)
@@ -1718,6 +1753,17 @@ export default function App() {
               {/* 腾讯云：独立的 Secret ID 和 Secret Key 输入框 */}
               {providerConfig[stageKey].type === 'tencent' && stageKey === 'asr' ? (
                 <>
+                  <label style={{ display: 'grid', gap: 4 }}>
+                    <span>Tencent App ID</span>
+                    <input
+                      aria-label="Tencent App ID"
+                      value={providerConfig[stageKey].appId ?? ''}
+                      onChange={(event) =>
+                        updateProviderEntry(stageKey, 'appId', event.target.value)
+                      }
+                      placeholder="例如 1250000000"
+                    />
+                  </label>
                   <label style={{ display: 'grid', gap: 4 }}>
                     <span>Secret ID</span>
                     <input
@@ -1769,6 +1815,80 @@ export default function App() {
                       <option value="ap-chengdu">西南地区(成都)</option>
                     </select>
                   </label>
+                  {providerConfig.asr.transport === 'ws' && (
+                    <>
+                      <label style={{ display: 'grid', gap: 4 }}>
+                        <span>Need VAD</span>
+                        <select
+                          aria-label="Tencent Need VAD"
+                          value={String(providerConfig.asr.needVad ?? true)}
+                          onChange={(event) =>
+                            updateProviderEntry(stageKey, 'needVad', event.target.value)
+                          }
+                        >
+                          <option value="true">开启</option>
+                          <option value="false">关闭</option>
+                        </select>
+                      </label>
+                      <label style={{ display: 'grid', gap: 4 }}>
+                        <span>VAD Silence Time (ms)</span>
+                        <input
+                          aria-label="Tencent VAD Silence Time"
+                          type="number"
+                          value={providerConfig.asr.vadSilenceTimeMs ?? ''}
+                          onChange={(event) =>
+                            updateProviderEntry(stageKey, 'vadSilenceTimeMs', event.target.value)
+                          }
+                          placeholder="1000"
+                        />
+                      </label>
+                      <label style={{ display: 'grid', gap: 4 }}>
+                        <span>Max Speak Time (ms)</span>
+                        <input
+                          aria-label="Tencent Max Speak Time"
+                          type="number"
+                          value={providerConfig.asr.maxSpeakTimeMs ?? ''}
+                          onChange={(event) =>
+                            updateProviderEntry(stageKey, 'maxSpeakTimeMs', event.target.value)
+                          }
+                          placeholder="60000"
+                        />
+                      </label>
+                      <label style={{ display: 'grid', gap: 4 }}>
+                        <span>Hotword ID</span>
+                        <input
+                          aria-label="Tencent Hotword ID"
+                          value={providerConfig.asr.hotwordId ?? ''}
+                          onChange={(event) =>
+                            updateProviderEntry(stageKey, 'hotwordId', event.target.value)
+                          }
+                        />
+                      </label>
+                      <label style={{ display: 'grid', gap: 4 }}>
+                        <span>Hotword List</span>
+                        <input
+                          aria-label="Tencent Hotword List"
+                          value={providerConfig.asr.hotwordList ?? ''}
+                          onChange={(event) =>
+                            updateProviderEntry(stageKey, 'hotwordList', event.target.value)
+                          }
+                          placeholder="腾讯云|10,语音识别|5"
+                        />
+                      </label>
+                      <label style={{ display: 'grid', gap: 4 }}>
+                        <span>Word Info</span>
+                        <input
+                          aria-label="Tencent Word Info"
+                          type="number"
+                          value={providerConfig.asr.wordInfo ?? ''}
+                          onChange={(event) =>
+                            updateProviderEntry(stageKey, 'wordInfo', event.target.value)
+                          }
+                          placeholder="0"
+                        />
+                      </label>
+                    </>
+                  )}
                 </>
               ) : (
                 /* 其他 provider：通用的 API Key 输入框 */

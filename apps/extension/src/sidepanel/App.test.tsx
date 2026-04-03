@@ -759,6 +759,98 @@ describe('App 组件', () => {
     );
   });
 
+  it('腾讯 realtime 设置会连同 transport 和 appId 一起保存', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: null,
+              state: 'idle',
+              graph: null,
+              currentTimeMs: 0,
+              providerSummary: {
+                asr: {
+                  type: 'tencent',
+                  mode: 'direct',
+                  transport: 'batch',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                  secretConfigured: false,
+                },
+                structurer: {
+                  type: 'mock',
+                  mode: 'direct',
+                  model: 'mock-structurer',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                },
+              },
+              lastProviderError: null,
+            },
+          });
+        }
+        if (message?.type === 'GET_PROVIDER_SETTINGS') {
+          return Promise.resolve({
+            success: true,
+            config: {
+              asr: {
+                type: 'tencent',
+                mode: 'direct',
+                transport: 'batch',
+                region: 'ap-shanghai',
+                language: 'zh',
+              },
+              structurer: {
+                type: 'mock',
+                mode: 'direct',
+                model: 'mock-structurer',
+                language: 'zh',
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    const user = userEvent.setup();
+    await renderApp();
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^设置$/ }));
+    });
+
+    const settingsPanel = await screen.findByTestId('settings-panel');
+
+    await act(async () => {
+      await user.selectOptions(within(settingsPanel).getByLabelText('Tencent Transport'), 'ws');
+      await user.type(within(settingsPanel).getByLabelText('Tencent App ID'), '1250000000');
+      await user.selectOptions(within(settingsPanel).getByLabelText('Tencent Need VAD'), 'true');
+      await user.type(within(settingsPanel).getByLabelText('Tencent VAD Silence Time'), '1200');
+      await user.click(within(settingsPanel).getByRole('button', { name: /保存设置/i }));
+    });
+
+    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'SAVE_PROVIDER_SETTINGS',
+        payload: {
+          config: expect.objectContaining({
+            asr: expect.objectContaining({
+              type: 'tencent',
+              transport: 'ws',
+              appId: '1250000000',
+              needVad: true,
+              vadSilenceTimeMs: 1200,
+            }),
+          }),
+        },
+      }),
+    );
+  });
+
   it('已保存的腾讯密钥不会回显明文，但会显示留空保持不变的提示', async () => {
     (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
       (message: { type?: string }) => {

@@ -416,7 +416,7 @@ describe('Service Worker - provider settings', () => {
     expect(getResponse.config.asr.region).toBe('ap-shanghai');
   });
 
-  it('读取旧 provider 设置时会清掉持久化的 retry 覆盖值，避免旧 15 秒超时继续生效', async () => {
+  it('读取 provider 设置时不会把 retry 覆盖值暴露给 sidepanel，但运行时仍保留它们', async () => {
     getProviderConfigMock.mockResolvedValue({
       asr: {
         type: 'openai',
@@ -464,23 +464,18 @@ describe('Service Worker - provider settings', () => {
     expect(createRuntimeProvidersMock).toHaveBeenCalledWith(
       expect.objectContaining({
         asr: expect.objectContaining({
-          retry: undefined,
+          retry: expect.objectContaining({
+            timeoutMs: 15_000,
+          }),
         }),
         structurer: expect.objectContaining({
-          retry: undefined,
+          retry: expect.objectContaining({
+            timeoutMs: 15_000,
+          }),
         }),
       }),
     );
-    expect(saveProviderConfigMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        asr: expect.objectContaining({
-          retry: undefined,
-        }),
-        structurer: expect.objectContaining({
-          retry: undefined,
-        }),
-      }),
-    );
+    expect(saveProviderConfigMock).not.toHaveBeenCalled();
   });
 
   it('保存设置时若密钥字段为空，会沿用本地已保存的密钥', async () => {

@@ -3,17 +3,34 @@
 // 负责：收集 PCM 数据、按时间分帧、发送到主线程
 // 注意：此文件使用 Web Audio API 的 AudioWorklet 类型，TypeScript 无法完全检查
 
-const CHUNK_DURATION_MS = 10_000;
-const CHUNK_DURATION_SAMPLES = 16000 * 10; // 10 秒 @ 16kHz
+const SAMPLE_RATE = 16000;
+const DEFAULT_CHUNK_DURATION_MS = 10_000;
+const DEFAULT_FRAME_DURATION_MS = 40;
 
 class AudioChunkProcessor extends AudioWorkletProcessor {
   private buffer: Float32Array = new Float32Array(0);
   private startTimeMs: number = 0;
   private chunkIndex: number = 0;
+  private readonly mode: 'chunk' | 'frame';
+  private readonly emitSampleCount: number;
+  private readonly emitDurationMs: number;
 
-  constructor() {
+  constructor(options?: AudioWorkletNodeOptions) {
     super();
     this.startTimeMs = Date.now();
+    const processorOptions = options?.processorOptions ?? {};
+    const mode = processorOptions.mode === 'frame' ? 'frame' : 'chunk';
+    const emitDurationMs =
+      mode === 'frame'
+        ? Number(processorOptions.frameDurationMs ?? DEFAULT_FRAME_DURATION_MS)
+        : Number(processorOptions.chunkDurationMs ?? DEFAULT_CHUNK_DURATION_MS);
+
+    this.mode = mode;
+    this.emitDurationMs = Math.max(1, emitDurationMs);
+    this.emitSampleCount = Math.max(
+      1,
+      Math.round((SAMPLE_RATE * this.emitDurationMs) / 1000),
+    );
   }
 
   process(
@@ -36,17 +53,14 @@ class AudioChunkProcessor extends AudioWorkletProcessor {
     newBuffer.set(inputData, this.buffer.length);
     this.buffer = newBuffer;
 
-    // 检查是否达到 chunk 大小
-    while (this.buffer.length >= CHUNK_DURATION_SAMPLES) {
-      const chunk = this.buffer.slice(0, CHUNK_DURATION_SAMPLES);
-      this.buffer = this.buffer.slice(CHUNK_DURATION_SAMPLES);
+    while (this.buffer.length >= this.emitSampleCount) {
+      const chunk = this.buffer.slice(0, this.emitSampleCount);
+      this.buffer = this.buffer.slice(this.emitSampleCount);
+      const chunkStartMs = this.startTimeMs + this.chunkIndex * this.emitDurationMs;
+      const chunkEndMs = chunkStartMs + this.emitDurationMs;
 
-      const chunkStartMs = this.startTimeMs + this.chunkIndex * CHUNK_DURATION_MS;
-      const chunkEndMs = chunkStartMs + CHUNK_DURATION_MS;
-
-      // 发送 chunk 到主线程
       this.port.postMessage({
-        type: 'AUDIO_CHUNK',
+        type: this.mode === 'frame' ? 'AUDIO_FRAME' : 'AUDIO_CHUNK',
         audioData: chunk.buffer,
         startMs: chunkStartMs,
         endMs: chunkEndMs,

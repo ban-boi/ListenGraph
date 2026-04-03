@@ -1,0 +1,61 @@
+{
+  "name": "replay-realtime-roundtable-opening",
+  "transcripts": [
+    {
+      "chunkId": "replay-realtime-roundtable-opening_01",
+      "text": "呃，非常高兴啊，看见这么多位朋友啊，今天呢，也是我们鲁豫大喜的日子啊，咱咱俩对我和那个鲁义跟我在学的日子，这个鲁豫出书啊，看到了这么多朋友给他来捧场，我真是特别替他高兴。因为呢，之前的这个朋友圈儿，你就想不到他这个做了17年啊，3000期节目的主持人，我说出本书，哎，竟然夸他说到那天没人来说文涛啊，要是那天就剩咱们俩人该怎么办呢？非常的焦虑，这是为什么呀？我伤死AB今天其实不可怕，好歹有你明天要是就我一个人更可怕诶。那这个咱们我我我觉得你得。",
+      "startMs": 0,
+      "endMs": 60200,
+      "raw": {
+        "source": "tencent-realtime-replay",
+        "artifactFixtureName": "generated:2_口语跳跃型_圆桌派朋友越来越少",
+        "messageId": "a07b272a-4deb-4894-8fa8-89d5fc9f43e6_756_0",
+        "voiceId": "a07b272a-4deb-4894-8fa8-89d5fc9f43e6"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-roundtable-opening_02",
+      "text": "跟大家先打个招呼，现在欢迎我们领导讲话啊，我其实真的特别，因为今天你是主持，我是跟着你，你问什么我说什么，我是真的每个人都是冲着你来的，你看，连我都拿着你的书来了。哎嗯，我做电视这么多年，其实我到现在都觉得，当有人跟我说他看我的节目，他看我的书，或者听我的语音，我都觉得是一件很神奇的事儿，嗯，内心很多的感动。我其实现在眼睛有点儿肿，因为昨天是鲁豫有约开播，第进完成16年，进入第17年，所以昨天晚上团队在朋友圈里发了好多好多充满了回忆山的照片。我昨天晚上家里面已经哭的稀里哗啦的，所以今天眼睛其实是肿的，对接着茬哭啊，呃，现在咱们欢迎领导入座啊。",
+      "startMs": 60200,
+      "endMs": 118660,
+      "raw": {
+        "source": "tencent-realtime-replay",
+        "artifactFixtureName": "generated:2_口语跳跃型_圆桌派朋友越来越少",
+        "messageId": "a07b272a-4deb-4894-8fa8-89d5fc9f43e6_1487_0",
+        "voiceId": "a07b272a-4deb-4894-8fa8-89d5fc9f43e6"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-roundtable-opening_03",
+      "text": "文涛声音。",
+      "startMs": 119020,
+      "endMs": 120000,
+      "raw": {
+        "source": "tencent-realtime-replay",
+        "artifactFixtureName": "generated:2_口语跳跃型_圆桌派朋友越来越少",
+        "messageId": "a07b272a-4deb-4894-8fa8-89d5fc9f43e6_1500_0",
+        "voiceId": "a07b272a-4deb-4894-8fa8-89d5fc9f43e6"
+      }
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "mustContainOneOfTexts": [
+      [
+        "鲁豫",
+        "鲁豫有约"
+      ],
+      [
+        "发布会",
+        "开播"
+      ],
+      [
+        "朋友",
+        "团队"
+      ]
+    ]
+  }
+}

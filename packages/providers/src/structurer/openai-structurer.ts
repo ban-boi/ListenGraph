@@ -197,6 +197,7 @@ export class OpenAIStructurerProvider implements StructurerProvider {
       latestTranscript,
       latestTranscriptText: cleanTranscriptText(latestTranscript.text),
       segmentId,
+      allowFallback: !input.previousGraph,
     });
 
     return {
@@ -250,12 +251,15 @@ function buildMessages(input: {
         'If there is not enough new information, return {"topic":"","nodes":[],"edges":[]}.',
         'When mode is bootstrap, summarize the full window into useful nodes.',
         'When mode is incremental, only output net-new nodes implied by latestChunkTranscript.',
+        'Preserve explicit names, titles, and concrete quoted terms from the transcript when they matter, especially person names, show names, and debate/topic labels.',
+        'Do not replace explicit names or concrete terms with vague abstractions when the literal wording carries meaning.',
         'Do not restate, paraphrase, or rename semantics that already exist in recentGraphContext.',
         'If latestChunkTranscript mainly adds detail, support, or an example for an existing node, prefer adding an edge instead of repeating the claim as a new node.',
         'If latestChunkTranscript describes a benefit, reason, consequence, or clarification of a recentGraphContext node, output a new reason/example node and connect it to the matching recentGraphContext node id.',
         'When recentGraphContext already contains the main claim and latestChunkTranscript gives a supporting benefit, rationale, or concrete implication, do not leave the new node disconnected.',
         'If you return multiple new nodes in incremental mode, at least one returned edge must directly connect a new node to the matching recentGraphContext node id whenever the latestChunkTranscript explains or evaluates that existing claim.',
         'Do not keep all returned edges only between newly created nodes when the latestChunkTranscript is clearly providing reasons, consequences, or objections about a recentGraphContext node.',
+        'If latestChunkTranscript is only a stage direction, sponsor read, greeting, applause cue, host transition, seating instruction, or a fragment with no stable proposition, return empty nodes and edges.',
         'If latestChunkTranscript does not introduce net-new semantics, return empty nodes and edges.',
         'Edges may connect returned node ids to other returned node ids or to recentGraphContext node ids.',
         'Avoid repeating the same event, debate topic, example, or claim with different wording.',
@@ -287,10 +291,17 @@ function materializeNodes(params: {
   latestTranscript: TranscriptChunk;
   latestTranscriptText: string;
   segmentId: string;
+  allowFallback: boolean;
 }) {
   const providerLocalToCanonicalId = new Map<string, string>();
 
   if (params.nodes.length === 0) {
+    if (!params.allowFallback) {
+      return {
+        providerLocalToCanonicalId,
+        nodes: [],
+      };
+    }
     const fallbackId = `${params.segmentId}:fallback`;
     providerLocalToCanonicalId.set('fallback', fallbackId);
     return {

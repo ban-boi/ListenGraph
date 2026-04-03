@@ -21,6 +21,7 @@ describe('content-script 主链路', () => {
   let getDisplayMediaMock: ReturnType<typeof vi.fn>;
   let fetchMock: ReturnType<typeof vi.fn>;
   let processorNodeInstance: { port: { onmessage: ((event: MessageEvent) => void) | null } } | null;
+  let webSocketInstances: any[] = [];
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -56,6 +57,7 @@ describe('content-script 主链路', () => {
     getDisplayMediaMock = vi.fn().mockResolvedValue(mediaStreamMock);
     fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
+    webSocketInstances = [];
     processorNodeInstance = null;
     Object.defineProperty(globalThis.navigator, 'mediaDevices', {
       configurable: true,
@@ -86,6 +88,47 @@ describe('content-script 主链路', () => {
 
     (globalThis as any).AudioContext = AudioContextMock;
     (globalThis as any).AudioWorkletNode = AudioWorkletNodeMock;
+    (globalThis as any).WebSocket = class {
+      static OPEN = 1;
+      static CONNECTING = 0;
+      url: string;
+      readyState = 0;
+      binaryType = 'blob';
+      sent: unknown[] = [];
+      onmessage: ((event: { data: unknown }) => void) | null = null;
+      onerror: (() => void) | null = null;
+      onclose: (() => void) | null = null;
+      private listeners = new Map<string, Set<(...args: any[]) => void>>();
+
+      constructor(url: string) {
+        this.url = url;
+        this.addEventListener = vi.fn((type: string, handler: (...args: any[]) => void) => {
+          const current = this.listeners.get(type) ?? new Set();
+          current.add(handler);
+          this.listeners.set(type, current);
+        });
+        this.removeEventListener = vi.fn((type: string, handler: (...args: any[]) => void) => {
+          this.listeners.get(type)?.delete(handler);
+        });
+        this.close = vi.fn(() => {
+          this.readyState = 3;
+          this.onclose?.();
+        });
+        webSocketInstances.push(this);
+      }
+
+      addEventListener: any;
+      removeEventListener: any;
+      close: any;
+      dispatchOpen = () => {
+        this.readyState = 1;
+        this.listeners.get('open')?.forEach((handler) => handler());
+      };
+
+      send(data: unknown) {
+        this.sent.push(data);
+      }
+    };
 
     await import('./content-script');
   });
@@ -271,5 +314,68 @@ describe('content-script 主链路', () => {
     const payload = (globalThis as any).chrome.runtime.sendMessage.mock.calls.at(-1)?.[0]?.payload;
     const riff = String.fromCharCode(...payload.audioData.slice(0, 4));
     expect(riff).toBe('RIFF');
+  });
+
+  it('腾讯实时模式会建立 WebSocket，并把稳定句段回传给 service worker', async () => {
+    const startPromise = dispatchMessage({
+      type: 'START_CAPTURE',
+      target: 'content-script',
+      payload: {
+        transport: 'ws',
+        tencentRealtime: {
+          signedUrl: 'wss://asr.cloud.tencent.com/asr/v2/appid?signature=abc',
+          sampleRate: 16000,
+          frameDurationMs: 40,
+        },
+      },
+    });
+
+    for (let attempt = 0; attempt < 10 && webSocketInstances.length === 0; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    expect(webSocketInstances).toHaveLength(1);
+    webSocketInstances[0].dispatchOpen();
+    await startPromise;
+
+    processorNodeInstance?.port.onmessage?.({
+      data: {
+        type: 'AUDIO_FRAME',
+        audioData: new Float32Array([0, 0.5, -0.5, 1]).buffer,
+        startMs: 0,
+        endMs: 40,
+      },
+    } as MessageEvent);
+
+    const socketInstance = webSocketInstances[0];
+    expect(socketInstance.sent.length).toBeGreaterThan(0);
+
+    socketInstance.onmessage?.({
+      data: JSON.stringify({
+        code: 0,
+        voice_id: 'voice_1',
+        message_id: 'voice_1_1',
+        result: {
+          slice_type: 2,
+          voice_text_str: '今天天气不错。',
+          start_time: 0,
+          end_time: 1200,
+          word_size: 6,
+        },
+      }),
+    });
+    await Promise.resolve();
+
+    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'ASR_STREAM_UTTERANCE_READY',
+        target: 'service-worker',
+        payload: expect.objectContaining({
+          text: '今天天气不错。',
+          startMs: 0,
+          endMs: 1200,
+          provider: 'tencent-asr',
+        }),
+      }),
+    );
   });
 });

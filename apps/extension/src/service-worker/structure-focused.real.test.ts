@@ -53,6 +53,28 @@ const fixtureDelayMs = Number.parseInt(
   10,
 );
 const effectiveFixtureDelayMs = Number.isFinite(fixtureDelayMs) ? fixtureDelayMs : 20_000;
+const timeoutCooldownMs = Number.parseInt(
+  process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_TIMEOUT_COOLDOWN_MS?.trim() || '',
+  10,
+);
+const effectiveTimeoutCooldownMs = Number.isFinite(timeoutCooldownMs)
+  ? timeoutCooldownMs
+  : Math.max(effectiveFixtureDelayMs, effectiveStructurerTimeoutMs);
+const rateLimitCooldownMs = Number.parseInt(
+  process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_RATE_LIMIT_COOLDOWN_MS?.trim() || '',
+  10,
+);
+const effectiveRateLimitCooldownMs = Number.isFinite(rateLimitCooldownMs)
+  ? rateLimitCooldownMs
+  : Math.max(effectiveFixtureDelayMs, 60_000);
+const externalRetryLimit = Number.parseInt(
+  process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_EXTERNAL_RETRY_LIMIT?.trim() || '',
+  10,
+);
+const effectiveExternalRetryLimit = Number.isFinite(externalRetryLimit)
+  ? Math.max(externalRetryLimit, 0)
+  : 1;
+const diagnosticArtifactDir = process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_DIAGNOSTIC_DIR?.trim();
 const canRunRealStructurer =
   Boolean(realStructurerType) &&
   (realStructurerType === 'zhipu' ? Boolean(realStructurerKey) : Boolean(realStructurerKey));
@@ -68,16 +90,75 @@ const REPLAY_FIXTURE_PREFIX = 'replay-realtime-';
 type FetchTrace = {
   url: string;
   method: string;
+  fixtureName?: string;
+  fixtureAttempt?: number;
+  callSequence?: number;
+  callKey?: string;
+  structurerMode?: 'bootstrap' | 'incremental' | string;
+  latestChunkTranscript?: string;
+  latestChunkRange?: {
+    startMs: number;
+    endMs: number;
+  };
   status?: number;
   ok?: boolean;
   responseBody?: string;
   error?: string;
 };
 
+type StructurerCallSummary = {
+  fixtureName?: string;
+  fixtureAttempt?: number;
+  callSequence: number;
+  mode: string;
+  latestChunkTranscript: string;
+  latestChunkRange?: {
+    startMs: number;
+    endMs: number;
+  };
+  requestCount: number;
+  outcomes: string[];
+  sawSuccess: boolean;
+  sawAbort: boolean;
+  finalOutcome: string;
+};
+
+type FixtureRunContext = {
+  fixtureName: string;
+  fixtureAttempt: number;
+  nextCallSequence: number;
+  callSequenceByKey: Map<string, number>;
+};
+
 type ExternalSkipResult = {
   skippedDueToExternalIssue: true;
   reason: string;
 };
+
+type ExternalIssueMetadata = {
+  kind: 'rate_limit' | 'timeout';
+  endpoint: string;
+  status?: number;
+};
+
+class ExternalProviderIssueError extends Error {
+  constructor(
+    readonly metadata: ExternalIssueMetadata,
+    readonly diagnostics: string,
+    readonly runResponse: {
+      success: boolean;
+      error?: string;
+      providerError?: SerializableProviderError;
+    },
+  ) {
+    super(
+      metadata.kind === 'timeout'
+        ? `External structurer timeout at ${metadata.endpoint}`
+        : `External structurer rate limit at ${metadata.endpoint}`,
+    );
+    this.name = 'ExternalProviderIssueError';
+  }
+}
 
 describeReal('Structure-focused real structurer', () => {
   let messageListeners: Array<
@@ -91,6 +172,7 @@ describeReal('Structure-focused real structurer', () => {
   let mergedGraphRecords = new Map<string, any>();
   let savedProviderConfig: ProviderConfig;
   let fetchTraces: FetchTrace[] = [];
+  let currentFixtureRunContext: FixtureRunContext | null = null;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -224,6 +306,7 @@ describeReal('Structure-focused real structurer', () => {
             init?.method ??
             (typeof input === 'string' || input instanceof URL ? 'GET' : input.method || 'GET'),
         };
+        attachStructurerTraceContext(trace, init?.body);
         fetchTraces.push(trace);
 
         try {
@@ -322,15 +405,179 @@ describeReal('Structure-focused real structurer', () => {
     return filtered;
   }
 
+  function attachStructurerTraceContext(trace: FetchTrace, requestBody: RequestInit['body']) {
+    if (!currentFixtureRunContext || typeof requestBody !== 'string') {
+      return;
+    }
+
+    const parsed = parseStructurerRequestBody(requestBody);
+    if (!parsed) {
+      return;
+    }
+
+    const key = `${parsed.mode}|${parsed.latestChunkTranscript}`;
+    let callSequence = currentFixtureRunContext.callSequenceByKey.get(key);
+    if (!callSequence) {
+      callSequence = currentFixtureRunContext.nextCallSequence++;
+      currentFixtureRunContext.callSequenceByKey.set(key, callSequence);
+    }
+
+    trace.fixtureName = currentFixtureRunContext.fixtureName;
+    trace.fixtureAttempt = currentFixtureRunContext.fixtureAttempt;
+    trace.callSequence = callSequence;
+    trace.callKey = key;
+    trace.structurerMode = parsed.mode;
+    trace.latestChunkTranscript = parsed.latestChunkTranscript;
+    trace.latestChunkRange = parsed.latestChunkRange;
+  }
+
+  function parseStructurerRequestBody(body: string) {
+    try {
+      const parsed = JSON.parse(body) as {
+        messages?: Array<{ role?: string; content?: string }>;
+      };
+      const userMessage = parsed.messages?.find((message) => message.role === 'user')?.content;
+      if (!userMessage) {
+        return null;
+      }
+      const content = JSON.parse(userMessage) as {
+        mode?: string;
+        latestChunkTranscript?: string;
+      };
+      const latestChunkTranscript = typeof content.latestChunkTranscript === 'string'
+        ? content.latestChunkTranscript
+        : '';
+      return {
+        mode: typeof content.mode === 'string' ? content.mode : 'unknown',
+        latestChunkTranscript,
+        latestChunkRange: extractTranscriptRange(latestChunkTranscript),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  function extractTranscriptRange(transcript: string) {
+    const match = transcript.match(/^\[(\d+)-(\d+)\]/);
+    if (!match) {
+      return undefined;
+    }
+
+    return {
+      startMs: Number.parseInt(match[1], 10),
+      endMs: Number.parseInt(match[2], 10),
+    };
+  }
+
+  function summarizeStructurerCalls(traces: FetchTrace[]): StructurerCallSummary[] {
+    const grouped = new Map<string, StructurerCallSummary>();
+
+    for (const trace of traces) {
+      if (!trace.callSequence) {
+        continue;
+      }
+
+      const key = `${trace.fixtureAttempt ?? 0}:${trace.callSequence}`;
+      const current = grouped.get(key) ?? {
+        fixtureName: trace.fixtureName,
+        fixtureAttempt: trace.fixtureAttempt,
+        callSequence: trace.callSequence,
+        mode: trace.structurerMode ?? 'unknown',
+        latestChunkTranscript: trace.latestChunkTranscript ?? '',
+        latestChunkRange: trace.latestChunkRange,
+        requestCount: 0,
+        outcomes: [],
+        sawSuccess: false,
+        sawAbort: false,
+        finalOutcome: 'unknown',
+      };
+
+      current.requestCount += 1;
+      if (trace.status === 429) {
+        current.outcomes.push('rate_limit:429');
+      } else if (trace.ok) {
+        current.outcomes.push(`success:${trace.status}`);
+        current.sawSuccess = true;
+      } else if (trace.status) {
+        current.outcomes.push(`http:${trace.status}`);
+      }
+
+      if (trace.error) {
+        current.outcomes.push(trace.error.includes('AbortError') ? 'timeout:abort' : `error:${trace.error}`);
+        if (trace.error.includes('AbortError')) {
+          current.sawAbort = true;
+        }
+      }
+
+      current.finalOutcome =
+        trace.error?.includes('AbortError')
+          ? 'timeout'
+          : trace.status === 429
+            ? 'rate_limit'
+            : trace.ok
+              ? `success:${trace.status}`
+              : trace.status
+                ? `http:${trace.status}`
+                : trace.error
+                  ? `error:${trace.error}`
+                  : current.finalOutcome;
+      grouped.set(key, current);
+    }
+
+    return [...grouped.values()].sort(
+      (left, right) =>
+        (left.fixtureAttempt ?? 0) - (right.fixtureAttempt ?? 0) ||
+        left.callSequence - right.callSequence,
+    );
+  }
+
+  function writeFixtureDiagnostics(params: {
+    fixtureName: string;
+    fixtureAttempt: number;
+    runResponse: {
+      success: boolean;
+      error?: string;
+      providerError?: SerializableProviderError;
+    };
+    fetchTraces: FetchTrace[];
+  }) {
+    if (!diagnosticArtifactDir) {
+      return;
+    }
+
+    fs.mkdirSync(diagnosticArtifactDir, { recursive: true });
+    const outputPath = path.join(
+      diagnosticArtifactDir,
+      `${params.fixtureName}.attempt-${params.fixtureAttempt}.diagnostic.json`,
+    );
+    fs.writeFileSync(
+      outputPath,
+      `${JSON.stringify(
+        {
+          fixtureName: params.fixtureName,
+          fixtureAttempt: params.fixtureAttempt,
+          recordedAt: new Date().toISOString(),
+          runResponse: params.runResponse,
+          callSummaries: summarizeStructurerCalls(params.fetchTraces),
+          fetchTraces: params.fetchTraces,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  }
+
   function formatRunDiagnostics(runResponse: {
     success: boolean;
     error?: string;
     providerError?: SerializableProviderError;
   }) {
+    const callSummaries = summarizeStructurerCalls(fetchTraces);
     return JSON.stringify(
       {
         runResponse,
         fetchTraces,
+        callSummaries,
       },
       null,
       2,
@@ -345,6 +592,47 @@ describeReal('Structure-focused real structurer', () => {
       providerError?: SerializableProviderError;
     },
   ): ExternalSkipResult | null {
+    const externalIssue = getExternalIssueMetadata(runResponse);
+    if (!externalIssue) {
+      return null;
+    }
+
+    if (externalIssue.kind === 'rate_limit' && allowExternalIssueSkip) {
+      return {
+        skippedDueToExternalIssue: true,
+        reason: [
+          `${fixture.name} hit a known external structurer rate limit and was skipped.`,
+          `provider=${runResponse.providerError?.provider ?? savedProviderConfig.structurer.type}`,
+          `status=${externalIssue.status ?? 429}`,
+          `endpoint=${externalIssue.endpoint}`,
+          `recommended_wait_ms=${effectiveRateLimitCooldownMs}`,
+          `Unset LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP to treat this as a hard failure.`,
+        ].join(' '),
+      };
+    }
+
+    if (externalIssue.kind === 'timeout' && allowExternalIssueSkip) {
+      return {
+        skippedDueToExternalIssue: true,
+        reason: [
+          `${fixture.name} hit a known external structurer timeout and was skipped.`,
+          `provider=${runResponse.providerError?.provider ?? savedProviderConfig.structurer.type}`,
+          `timeout_ms=${effectiveStructurerTimeoutMs}`,
+          `endpoint=${externalIssue.endpoint}`,
+          `recommended_wait_ms=${effectiveTimeoutCooldownMs}`,
+          `Unset LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP to treat this as a hard failure.`,
+        ].join(' '),
+      };
+    }
+
+    return null;
+  }
+
+  function getExternalIssueMetadata(runResponse: {
+    success: boolean;
+    error?: string;
+    providerError?: SerializableProviderError;
+  }): ExternalIssueMetadata | null {
     if (runResponse.success) {
       return null;
     }
@@ -353,6 +641,7 @@ describeReal('Structure-focused real structurer', () => {
     const matchedTrace = fetchTraces.find((trace) => trace.status === 429);
     const traceBody = matchedTrace?.responseBody ?? '';
     const timedOutTraceCount = fetchTraces.filter((trace) => trace.error?.includes('AbortError')).length;
+    const lastTraceWithUrl = [...fetchTraces].reverse().find((trace) => trace.url);
     const isKnownRateLimit =
       providerError?.code === 'RATE_LIMIT_ERROR' ||
       providerError?.status === 429 ||
@@ -362,34 +651,19 @@ describeReal('Structure-focused real structurer', () => {
       providerError?.code === 'TIMEOUT_ERROR' ||
       timedOutTraceCount > 0;
 
-    if (isKnownRateLimit && allowExternalIssueSkip) {
-      const recommendedDelayMs = Math.max(effectiveFixtureDelayMs, 20_000);
-      const endpoint = matchedTrace?.url ?? savedProviderConfig.structurer.endpoint ?? '<unknown>';
-      const status = providerError?.status ?? matchedTrace?.status ?? 429;
-
+    if (isKnownRateLimit) {
       return {
-        skippedDueToExternalIssue: true,
-        reason: [
-          `${fixture.name} hit a known external structurer rate limit and was skipped.`,
-          `provider=${providerError?.provider ?? savedProviderConfig.structurer.type}`,
-          `status=${status}`,
-          `endpoint=${endpoint}`,
-          `recommended_wait_ms=${recommendedDelayMs}`,
-          `Unset LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP to treat this as a hard failure.`,
-        ].join(' '),
+        kind: 'rate_limit',
+        endpoint: matchedTrace?.url ?? savedProviderConfig.structurer.endpoint ?? '<unknown>',
+        status: providerError?.status ?? matchedTrace?.status ?? 429,
       };
     }
 
-    if (isKnownTimeout && allowExternalIssueSkip) {
+    if (isKnownTimeout) {
       return {
-        skippedDueToExternalIssue: true,
-        reason: [
-          `${fixture.name} hit a known external structurer timeout and was skipped.`,
-          `provider=${providerError?.provider ?? savedProviderConfig.structurer.type}`,
-          `timeout_ms=${effectiveStructurerTimeoutMs}`,
-          `endpoint=${savedProviderConfig.structurer.endpoint ?? '<unknown>'}`,
-          `Unset LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP to treat this as a hard failure.`,
-        ].join(' '),
+        kind: 'timeout',
+        endpoint:
+          lastTraceWithUrl?.url ?? matchedTrace?.url ?? savedProviderConfig.structurer.endpoint ?? '<unknown>',
       };
     }
 
@@ -451,22 +725,54 @@ describeReal('Structure-focused real structurer', () => {
     };
   }
 
-  async function runFixture(fixture: StructureFixture) {
+  async function runFixture(fixture: StructureFixture, fixtureAttempt: number) {
+    fetchTraces = [];
     const expectedSessionId = `fixture_${fixture.name}_${Date.now()}`;
     const materialized = materializeFixture(fixture, expectedSessionId);
-    const runResponse = await dispatchMessage({
-      type: 'TEST_STRUCTURER_SESSION_RUN',
-      target: 'service-worker',
-      payload: {
-        seed: materialized.seed,
-        transcripts: materialized.transcripts,
-        finalizeSession: true,
-      },
+    currentFixtureRunContext = {
+      fixtureName: fixture.name,
+      fixtureAttempt,
+      nextCallSequence: 1,
+      callSequenceByKey: new Map(),
+    };
+    let runResponse: {
+      success: boolean;
+      error?: string;
+      providerError?: SerializableProviderError;
+      sessionId?: string;
+    };
+    try {
+      runResponse = await dispatchMessage({
+        type: 'TEST_STRUCTURER_SESSION_RUN',
+        target: 'service-worker',
+        payload: {
+          seed: materialized.seed,
+          transcripts: materialized.transcripts,
+          finalizeSession: true,
+        },
+      });
+    } finally {
+      currentFixtureRunContext = null;
+    }
+    writeFixtureDiagnostics({
+      fixtureName: fixture.name,
+      fixtureAttempt,
+      runResponse,
+      fetchTraces,
     });
 
     const externalSkipResult = getExternalSkipResult(fixture, runResponse);
     if (externalSkipResult) {
       return externalSkipResult;
+    }
+
+    const externalIssue = getExternalIssueMetadata(runResponse);
+    if (externalIssue) {
+      throw new ExternalProviderIssueError(
+        externalIssue,
+        formatRunDiagnostics(runResponse),
+        runResponse,
+      );
     }
 
     expect(
@@ -640,22 +946,79 @@ describeReal('Structure-focused real structurer', () => {
   }
 
   const fixtures = loadFixtures();
+  let nextFixtureCooldownMs = 0;
   for (const [index, fixture] of fixtures.entries()) {
-    test(fixture.name, { timeout: effectiveStructurerTimeoutMs + 30_000 }, async () => {
-      if (index > 0 && effectiveFixtureDelayMs > 0) {
-        await new Promise((resolve) => setTimeout(resolve, effectiveFixtureDelayMs));
+    test(
+      fixture.name,
+      {
+        timeout:
+          (effectiveStructurerTimeoutMs +
+            Math.max(
+              effectiveFixtureDelayMs,
+              effectiveTimeoutCooldownMs,
+              effectiveRateLimitCooldownMs,
+            ) +
+            30_000) *
+          (effectiveExternalRetryLimit + 1),
+      },
+      async () => {
+        const cooldownBeforeFixtureMs =
+          index > 0 ? Math.max(effectiveFixtureDelayMs, nextFixtureCooldownMs) : 0;
+        if (cooldownBeforeFixtureMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, cooldownBeforeFixtureMs));
       }
-      const result = await runFixture(fixture);
-      if ('skippedDueToExternalIssue' in result) {
-        console.warn(result.reason);
-        return;
+      nextFixtureCooldownMs = 0;
+
+      try {
+        let attempt = 0;
+        while (true) {
+          attempt += 1;
+          try {
+            const result = await runFixture(fixture, attempt);
+            if ('skippedDueToExternalIssue' in result) {
+              console.warn(result.reason);
+              return;
+            }
+            assertFixtureAcceptance({
+              fixture,
+              debugData: result.debugData,
+              exportData: result.exportData,
+              previousGraph: result.previousGraph,
+            });
+            break;
+          } catch (error) {
+            if (
+              error instanceof ExternalProviderIssueError &&
+              attempt <= effectiveExternalRetryLimit
+            ) {
+              const retryCooldownMs =
+                error.metadata.kind === 'timeout'
+                  ? effectiveTimeoutCooldownMs
+                  : effectiveRateLimitCooldownMs;
+              console.warn(
+                [
+                  `${fixture.name} attempt ${attempt} hit external ${error.metadata.kind}.`,
+                  `retrying_after_ms=${retryCooldownMs}`,
+                  `endpoint=${error.metadata.endpoint}`,
+                ].join(' '),
+              );
+              await new Promise((resolve) => setTimeout(resolve, retryCooldownMs));
+              continue;
+            }
+
+            throw error;
+          }
+        }
+      } catch (error) {
+        if (error instanceof ExternalProviderIssueError) {
+          nextFixtureCooldownMs =
+            error.metadata.kind === 'timeout'
+              ? effectiveTimeoutCooldownMs
+              : effectiveRateLimitCooldownMs;
+        }
+        throw error;
       }
-      assertFixtureAcceptance({
-        fixture,
-        debugData: result.debugData,
-        exportData: result.exportData,
-        previousGraph: result.previousGraph,
-      });
-    });
+      },
+    );
   }
 });

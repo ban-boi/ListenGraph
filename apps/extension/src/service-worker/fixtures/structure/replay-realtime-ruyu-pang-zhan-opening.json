@@ -1,0 +1,72 @@
+{
+  "name": "replay-realtime-ruyu-pang-zhan-opening",
+  "transcripts": [
+    {
+      "chunkId": "replay-realtime-ruyu-pang-zhan-opening_01",
+      "text": "我和阿庞、阿詹，我们仨有一个群，阿庞给这个群起名叫鲁豫老师的粉丝。",
+      "startMs": 0,
+      "endMs": 6080,
+      "raw": {
+        "source": "tencent-realtime-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "messageId": "783cf210-9627-4120-b46a-b7a5103e0687_80_0",
+        "voiceId": "783cf210-9627-4120-b46a-b7a5103e0687"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-ruyu-pang-zhan-opening_02",
+      "text": "我觉得这个名字非常可爱，我也接受。但同时我也是他们俩的粉丝，我曾经在我的音频节目当中分别采访过他们俩，我们也在辩论场上彼此见面，完成了我人生第一次辩论。我能够看到我们身上各自的特长，也能够看到彼此身上的闪光。其实我们是三个很不相同的人，我是70后阿庞，出生于88年，是80后阿芝安90年，90后，三个不同的年代，三个人有着不同的性格，不同的成长背景。原本是三条平行线，但可能是命运吧，让我们在这个时刻发生交汇。我们在各自领域始终在努力的表达，也始终对世界保持着最大的热忱和好奇。我想我们很不同，但也有很多相似。那接下来是我跟阿庞和阿詹的对话。",
+      "startMs": 6100,
+      "endMs": 60320,
+      "raw": {
+        "source": "tencent-realtime-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "messageId": "783cf210-9627-4120-b46a-b7a5103e0687_758_0",
+        "voiceId": "783cf210-9627-4120-b46a-b7a5103e0687"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-ruyu-pang-zhan-opening_03",
+      "text": "本期视频播客由coach联合呈现，让我们一起勇于求真，书写真我故事文字跃入连绵时，四周不断变换新的视角，由此展开书写真我故事。",
+      "startMs": 60800,
+      "endMs": 82960,
+      "raw": {
+        "source": "tencent-realtime-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "messageId": "783cf210-9627-4120-b46a-b7a5103e0687_1040_0",
+        "voiceId": "783cf210-9627-4120-b46a-b7a5103e0687"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-ruyu-pang-zhan-opening_04",
+      "text": "就是好久不见，你为什么背着包来？我带一个给你的礼。哎，其实我也有礼物，但哎待会儿那个网友交接了，网友进来画了一些马然选，怎么这么，你这也太心灵手巧了，就是指定，那我要指定型，终于有人又收了这样的花ter，你一定要在一个艺术家最初的时候收藏。对诶，我要先说一下啊，我们今天录制的时间。",
+      "startMs": 87880,
+      "endMs": 120000,
+      "raw": {
+        "source": "tencent-realtime-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "messageId": "783cf210-9627-4120-b46a-b7a5103e0687_1500_0",
+        "voiceId": "783cf210-9627-4120-b46a-b7a5103e0687"
+      }
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "mustContainOneOfTexts": [
+      [
+        "阿庞",
+        "阿詹"
+      ],
+      [
+        "粉丝"
+      ],
+      [
+        "不同",
+        "年代"
+      ]
+    ]
+  }
+}

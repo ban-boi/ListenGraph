@@ -27,6 +27,49 @@ export interface AudioChunkPayload {
   endMs: number;
 }
 
+export interface AsrStreamStartPayload {
+  transport: 'batch' | 'ws';
+  tencentRealtime?: {
+    signedUrl: string;
+    sampleRate: number;
+    frameDurationMs: number;
+  };
+}
+
+export interface AsrStreamUtterancePayload {
+  text: string;
+  startMs: number;
+  endMs: number;
+  provider: string;
+  confidence?: number;
+  voiceId?: string;
+  messageId?: string;
+  wordSize?: number;
+  raw?: unknown;
+}
+
+export interface AsrStreamPartialPayload {
+  text: string;
+  sliceType: 0 | 1;
+  startMs?: number;
+  endMs?: number;
+  voiceId?: string;
+  messageId?: string;
+  raw?: unknown;
+}
+
+export interface AsrStreamStatusPayload {
+  status: 'connecting' | 'connected' | 'closing' | 'closed';
+  provider: string;
+  detail?: string;
+}
+
+export interface AsrStreamErrorPayload {
+  provider: string;
+  code: string;
+  message: string;
+}
+
 export interface RuntimeSnapshot {
   sessionId: string | null;
   state: SessionState;
@@ -120,6 +163,16 @@ export type AppMessage =
       payload: { tabId: number; sourceType?: 'tab' | 'file' };
     }
   | {
+      type: 'START_CAPTURE';
+      target: 'content-script';
+      payload: AsrStreamStartPayload;
+    }
+  | {
+      type: 'STOP_CAPTURE';
+      target: 'content-script';
+      payload: {};
+    }
+  | {
       type: 'SESSION_STOP';
       target: 'service-worker';
       payload: { sessionId: string };
@@ -173,6 +226,26 @@ export type AppMessage =
       type: 'AUDIO_CHUNK_READY';
       target: 'service-worker';
       payload: AudioChunkPayload;
+    }
+  | {
+      type: 'ASR_STREAM_UTTERANCE_READY';
+      target: 'service-worker';
+      payload: AsrStreamUtterancePayload;
+    }
+  | {
+      type: 'ASR_STREAM_PARTIAL_UPDATED';
+      target: 'service-worker';
+      payload: AsrStreamPartialPayload;
+    }
+  | {
+      type: 'ASR_STREAM_STATUS';
+      target: 'service-worker';
+      payload: AsrStreamStatusPayload;
+    }
+  | {
+      type: 'ASR_STREAM_ERROR';
+      target: 'service-worker';
+      payload: AsrStreamErrorPayload;
     }
   | {
       type: 'TEST_STRUCTURER_SESSION_RUN';

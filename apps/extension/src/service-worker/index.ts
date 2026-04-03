@@ -31,6 +31,10 @@ import type {
 import { generateId } from '@listen-graphic/shared-utils';
 import type {
   AppMessage,
+  AsrStreamErrorPayload,
+  AsrStreamPartialPayload,
+  AsrStreamStatusPayload,
+  AsrStreamUtterancePayload,
   AudioChunkPayload,
   DebugSessionData,
   ExportFormat,
@@ -42,6 +46,7 @@ import type {
 } from '../shared/messages';
 import { BUILD_INFO } from '../shared/build-info';
 import { buildSessionExport } from './export-formatters';
+import { createTencentRealtimeSessionConfig } from './tencent-realtime';
 
 type ServiceWorkerResponse = {
   success: boolean;
@@ -94,7 +99,10 @@ let structurerProvider: StructurerProvider;
 
 const RUNTIME_STATE_KEY = 'listen-graphic-runtime-state';
 const CONTENT_SCRIPT_FILE = 'content-script/content-script.js';
-const STRUCTURER_BOOTSTRAP_WINDOW_SIZE = 3;
+const STRUCTURER_WINDOW_SIZE = 3;
+const STRUCTURER_BOOTSTRAP_MIN_CHUNKS = 2;
+const STRUCTURER_BOOTSTRAP_MIN_DURATION_MS = 45_000;
+const STRUCTURER_BOOTSTRAP_MIN_CHAR_COUNT = 160;
 const providerRegistry = createProviderRegistry();
 const sessionRepository = createSessionRepository({ sessions: db.sessions });
 const transcriptChunkRepository = createTranscriptChunkRepository({
@@ -189,6 +197,14 @@ async function handleMessage(
       return handleGetReplaySession(message.payload.sessionId);
     case 'AUDIO_CHUNK_READY':
       return enqueueAudioChunk(message.payload);
+    case 'ASR_STREAM_UTTERANCE_READY':
+      return handleAsrStreamUtterance(message.payload);
+    case 'ASR_STREAM_PARTIAL_UPDATED':
+      return handleAsrStreamPartial(message.payload);
+    case 'ASR_STREAM_STATUS':
+      return handleAsrStreamStatus(message.payload);
+    case 'ASR_STREAM_ERROR':
+      return handleAsrStreamError(message.payload);
     case 'TEST_STRUCTURER_SESSION_RUN':
       return handleTestStructurerSessionRun(message.payload);
     case 'NODE_CLICKED':
@@ -242,11 +258,12 @@ async function startSession(tabId: number): Promise<ServiceWorkerResponse> {
   let captureStarted = false;
 
   try {
+    const capturePayload = await buildContentScriptStartPayload();
     const response = await sendMessageToContentScript(tabId, {
       type: 'START_CAPTURE',
       target: 'content-script',
-      payload: {},
-    } as AppMessage | { type: 'START_CAPTURE'; target: 'content-script'; payload: {} });
+      payload: capturePayload,
+    });
 
     if (!response?.success) {
       throw new Error(response?.error || '内容脚本启动采集失败');
@@ -325,7 +342,7 @@ async function stopSession(sessionId: string): Promise<ServiceWorkerResponse> {
 
 async function sendMessageToContentScript<TResponse = any>(
   tabId: number,
-  message: AppMessage | { type: 'START_CAPTURE' | 'STOP_CAPTURE' | 'SEEK_TO_TIMESTAMP'; target: 'content-script'; payload: any },
+  message: Extract<AppMessage, { target: 'content-script' }>,
 ): Promise<TResponse> {
   try {
     return await chrome.tabs.sendMessage(tabId, message) as TResponse;
@@ -439,6 +456,94 @@ async function handleAudioChunk(
   }
 }
 
+async function handleAsrStreamUtterance(
+  payload: AsrStreamUtterancePayload,
+): Promise<ServiceWorkerResponse> {
+  await ensureHydrated();
+
+  if (!currentSession) {
+    return { success: false, error: '没有活动会话' };
+  }
+
+  if (
+    currentSession.state === 'error' ||
+    stoppingSessionId === currentSession.sessionId
+  ) {
+    return { success: false, error: '当前会话已停止或进入错误状态' };
+  }
+
+  const transcript: TranscriptChunk = {
+    chunkId: generateId('chunk'),
+    sessionId: currentSession.sessionId,
+    text: payload.text,
+    startMs: payload.startMs,
+    endMs: payload.endMs,
+    provider: payload.provider,
+    confidence: payload.confidence,
+    raw: payload.raw
+      ? {
+          ...toRecord(payload.raw),
+          voiceId: payload.voiceId,
+          messageId: payload.messageId,
+          wordSize: payload.wordSize,
+          transport: 'ws',
+        }
+      : {
+          voiceId: payload.voiceId,
+          messageId: payload.messageId,
+          wordSize: payload.wordSize,
+          transport: 'ws',
+        },
+  };
+
+  return processTranscriptChunk(transcript);
+}
+
+async function handleAsrStreamPartial(
+  payload: AsrStreamPartialPayload,
+): Promise<ServiceWorkerResponse> {
+  await ensureHydrated();
+  const label = payload.sliceType === 0 ? '开始' : '中间结果';
+  const text = payload.text.trim();
+  await notifyProviderProgress(
+    'asr',
+    text ? `腾讯实时 ASR ${label}: ${text}` : `腾讯实时 ASR ${label}`,
+  );
+  return { success: true };
+}
+
+async function handleAsrStreamStatus(
+  payload: AsrStreamStatusPayload,
+): Promise<ServiceWorkerResponse> {
+  await ensureHydrated();
+  await notifyProviderProgress('asr', payload.detail ?? `腾讯实时 ASR ${payload.status}`);
+  return { success: true };
+}
+
+async function handleAsrStreamError(
+  payload: AsrStreamErrorPayload,
+): Promise<ServiceWorkerResponse> {
+  await ensureHydrated();
+
+  lastProviderError = serializeProviderError(
+    new ProviderRequestError({
+      code: normalizeAsrErrorCode(payload.code),
+      message: payload.message,
+      provider: payload.provider,
+      stage: 'asr',
+      retriable: false,
+    }),
+  );
+
+  if (currentSession) {
+    currentSession.state = 'error';
+    await notifySessionState('error');
+    await persistRuntimeState();
+  }
+  await notifyError(lastProviderError.code, lastProviderError.message);
+  return { success: false, error: lastProviderError.message, providerError: lastProviderError };
+}
+
 async function processTranscriptChunk(
   transcript: TranscriptChunk,
 ): Promise<ServiceWorkerResponse> {
@@ -460,10 +565,21 @@ async function processTranscriptChunk(
       payload: { transcript },
     });
 
-    if (!mergedGraph && transcriptWindow.length < STRUCTURER_BOOTSTRAP_WINDOW_SIZE) {
+    if (!mergedGraph && !hasEnoughBootstrapContext(transcriptWindow)) {
       await notifyProviderProgress(
         'structurer',
-        `等待 30 秒上下文 (${transcriptWindow.length}/${STRUCTURER_BOOTSTRAP_WINDOW_SIZE})`,
+        `等待 30 秒上下文或足够长的稳定话语 (${transcriptWindow.length}条/${getTranscriptWindowCharCount(transcriptWindow)}字)`,
+      );
+      lastProviderError = null;
+      await notifySessionState('capturing');
+      await persistRuntimeState();
+      return { success: true };
+    }
+
+    if (mergedGraph && shouldSkipIncrementalStructuring(transcript)) {
+      await notifyProviderProgress(
+        'structurer',
+        `跳过低信息量稳定话语 (${getNormalizedTranscriptCharCount(transcript)}字)`,
       );
       lastProviderError = null;
       await notifySessionState('capturing');
@@ -890,7 +1006,62 @@ async function handleCaptureEnded(
 
 function pushTranscript(transcript: TranscriptChunk) {
   chunkIndex += 1;
-  transcriptWindow = [...transcriptWindow, transcript].slice(-3);
+  transcriptWindow = [...transcriptWindow, transcript].slice(-STRUCTURER_WINDOW_SIZE);
+}
+
+function hasEnoughBootstrapContext(window: TranscriptChunk[]) {
+  if (window.length >= STRUCTURER_WINDOW_SIZE) {
+    return true;
+  }
+
+  if (window.length < STRUCTURER_BOOTSTRAP_MIN_CHUNKS) {
+    return false;
+  }
+
+  return (
+    getTranscriptWindowDurationMs(window) >= STRUCTURER_BOOTSTRAP_MIN_DURATION_MS ||
+    getTranscriptWindowCharCount(window) >= STRUCTURER_BOOTSTRAP_MIN_CHAR_COUNT
+  );
+}
+
+function getTranscriptWindowDurationMs(window: TranscriptChunk[]) {
+  if (window.length === 0) {
+    return 0;
+  }
+
+  return Math.max(0, (window[window.length - 1]?.endMs ?? 0) - (window[0]?.startMs ?? 0));
+}
+
+function getTranscriptWindowCharCount(window: TranscriptChunk[]) {
+  return window.reduce((sum, chunk) => sum + chunk.text.length, 0);
+}
+
+function shouldSkipIncrementalStructuring(transcript: TranscriptChunk) {
+  const normalizedText = transcript.text.replace(/\s+/g, '').trim();
+  return (
+    /声音[。！？]?$/u.test(normalizedText) ||
+    /^(掌声|谢谢|欢迎|好的|好吧|嗯|啊|诶|哎)[。！？]?$/u.test(normalizedText)
+  );
+}
+
+function getNormalizedTranscriptCharCount(transcript: TranscriptChunk) {
+  return transcript.text.replace(/\s+/g, '').trim().length;
+}
+
+async function buildContentScriptStartPayload(): Promise<Extract<AppMessage, { type: 'START_CAPTURE' }>['payload']> {
+  if (activeProviderConfig.asr.type !== 'tencent' || activeProviderConfig.asr.transport !== 'ws') {
+    return { transport: 'batch' };
+  }
+
+  const sessionConfig = await createTencentRealtimeSessionConfig(activeProviderConfig.asr);
+  return {
+    transport: 'ws',
+    tencentRealtime: {
+      signedUrl: sessionConfig.signedUrl,
+      sampleRate: 16_000,
+      frameDurationMs: 40,
+    },
+  };
 }
 
 async function loadMergedGraphAsset(
@@ -1393,18 +1564,11 @@ chrome.runtime.onSuspend.addListener(() => {
 
 async function loadProviderRuntimeFromSettings() {
   const storedConfig = await settingsRepository.getProviderConfig();
-  const sanitizedStoredConfig = storedConfig
-    ? stripProviderRetryOverrides(storedConfig)
-    : undefined;
   applyProviderRuntime(
     constrainProviderConfigToDirectMode(
-      normalizeProviderConfig(sanitizedStoredConfig ?? createDefaultProviderConfig()),
+      normalizeProviderConfig(storedConfig ?? createDefaultProviderConfig()),
     ),
   );
-
-  if (storedConfig && sanitizedStoredConfig && hasProviderRetryOverrides(storedConfig)) {
-    await settingsRepository.saveProviderConfig(sanitizedStoredConfig);
-  }
 }
 
 function applyProviderRuntime(config: Partial<ProviderConfig> | ProviderConfig) {
@@ -1556,4 +1720,23 @@ function sanitizeProviderError(error: SerializableProviderError): SerializablePr
     ...error,
     message: error.message || 'Provider request failed',
   };
+}
+
+function normalizeAsrErrorCode(code: string): SerializableProviderError['code'] {
+  switch (code) {
+    case 'AUTH_ERROR':
+    case 'RATE_LIMIT_ERROR':
+    case 'NETWORK_ERROR':
+    case 'TIMEOUT_ERROR':
+    case 'INVALID_RESPONSE':
+    case 'CONFIG_ERROR':
+    case 'TRANSCRIBE_ERROR':
+      return code;
+    default:
+      return 'TRANSCRIBE_ERROR';
+  }
+}
+
+function toRecord(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
 }

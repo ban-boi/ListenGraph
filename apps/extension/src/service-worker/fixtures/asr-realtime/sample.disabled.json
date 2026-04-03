@@ -1,0 +1,11 @@
+{
+  "name": "sample-disabled",
+  "disabled": true,
+  "audioFile": "./audio/sample.wav",
+  "acceptance": {
+    "minStableUtterances": 1,
+    "mustContainTexts": [
+      "示例文本"
+    ]
+  }
+}

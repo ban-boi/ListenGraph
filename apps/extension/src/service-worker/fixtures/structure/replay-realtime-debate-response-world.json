@@ -1,0 +1,59 @@
+{
+  "name": "replay-realtime-debate-response-world",
+  "transcripts": [
+    {
+      "chunkId": "replay-realtime-debate-response-world_01",
+      "text": "各位2020年新国辩的赛场的观众，大家晚上好，每一年新国变这个环节一直以来是最让我心跳加速的环节，我非常非常非常喜欢看哲理变，特别是这两位仁兄给我们呈现的这么一场精彩的交锋，我一直在思考传统经济辩论和哲理辩得最大差别在哪里？",
+      "startMs": 160,
+      "endMs": 39360,
+      "raw": {
+        "source": "tencent-realtime-replay",
+        "artifactFixtureName": "generated:3_冲突争论型_黄执中周玄毅哲理辩",
+        "messageId": "e3667fd5-f12b-44de-b9f1-1afb1e2a6919_495_0",
+        "voiceId": "e3667fd5-f12b-44de-b9f1-1afb1e2a6919"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-debate-response-world_02",
+      "text": "后来我想了一下，这两者可能都同样给我们呈现世界的无绝对性，只不过差别是在于传统经济辩论是大家先建构辉煌的叙事，然后凭借着频密的快速的交锋，让我们看到无论多恢宏的叙事，都是世事无绝对，都各有短板。而这里边也许是反过来给我们呈现这一面足够长时间的叙述环节，让双方在虽然敌对的立场上，给我们看到最终各自都能够兼顾起恢弘的叙事，让我们从反面看到世事无绝对这件事情。今天这道辩题是脱口秀或者是辩论，能更好的回应世界恰好是新国变，我们在前一赛段中所采用的一道辩题。呃，今天我们在这里边同样打这一道辩题。",
+      "startMs": 39420,
+      "endMs": 99700,
+      "raw": {
+        "source": "tencent-realtime-replay",
+        "artifactFixtureName": "generated:3_冲突争论型_黄执中周玄毅哲理辩",
+        "messageId": "e3667fd5-f12b-44de-b9f1-1afb1e2a6919_1250_0",
+        "voiceId": "e3667fd5-f12b-44de-b9f1-1afb1e2a6919"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-debate-response-world_03",
+      "text": "让我们看看另外一面的风貌，请大家用掌声欢迎我们今天的两位辩手入席。",
+      "startMs": 99700,
+      "endMs": 120000,
+      "raw": {
+        "source": "tencent-realtime-replay",
+        "artifactFixtureName": "generated:3_冲突争论型_黄执中周玄毅哲理辩",
+        "messageId": "e3667fd5-f12b-44de-b9f1-1afb1e2a6919_1500_0",
+        "voiceId": "e3667fd5-f12b-44de-b9f1-1afb1e2a6919"
+      }
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "mustContainOneOfTexts": [
+      [
+        "脱口秀"
+      ],
+      [
+        "辩论"
+      ],
+      [
+        "回应世界",
+        "世界"
+      ]
+    ]
+  }
+}

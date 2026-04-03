@@ -342,7 +342,56 @@ describe('Service Worker - 当前主链路', () => {
 
     expect(chromeMock.tabs.sendMessage).toHaveBeenCalledWith(
       123,
-      expect.objectContaining({ type: 'START_CAPTURE' }),
+      expect.objectContaining({
+        type: 'START_CAPTURE',
+        payload: expect.objectContaining({ transport: 'batch' }),
+      }),
+    );
+  });
+
+  it('腾讯 realtime 配置会把一次性 WebSocket 参数下发给 content script', async () => {
+    const chromeMock = (globalThis as any).chrome;
+    getProviderConfigMock.mockResolvedValue({
+      asr: {
+        type: 'tencent',
+        mode: 'direct',
+        transport: 'ws',
+        appId: '1250000000',
+        model: '16k_zh',
+        language: 'zh',
+        secretId: 'secret-id',
+        secretKey: 'secret-key',
+      },
+      structurer: {
+        type: 'mock',
+        mode: 'direct',
+        model: 'mock-structurer',
+        language: 'zh',
+      },
+    });
+
+    await dispatchMessage(
+      {
+        type: 'SESSION_START',
+        target: 'service-worker',
+        payload: { tabId: 123 },
+      },
+      { tab: { id: 123 } },
+    );
+
+    expect(chromeMock.tabs.sendMessage).toHaveBeenCalledWith(
+      123,
+      expect.objectContaining({
+        type: 'START_CAPTURE',
+        payload: expect.objectContaining({
+          transport: 'ws',
+          tencentRealtime: expect.objectContaining({
+            signedUrl: expect.stringContaining('wss://asr.cloud.tencent.com/asr/v2/1250000000?'),
+            sampleRate: 16000,
+            frameDurationMs: 40,
+          }),
+        }),
+      }),
     );
   });
 
@@ -766,6 +815,63 @@ describe('Service Worker - 当前主链路', () => {
         ]),
       }),
     );
+  });
+
+  it('收到腾讯实时稳定句段后会持久化 transcript 并驱动 structurer', async () => {
+    await dispatchMessage(
+      {
+        type: 'SESSION_START',
+        target: 'service-worker',
+        payload: { tabId: 123 },
+      },
+      { tab: { id: 123 } },
+    );
+
+    await dispatchMessage({
+      type: 'ASR_STREAM_UTTERANCE_READY',
+      target: 'service-worker',
+      payload: {
+        text: '第一句稳定话语',
+        startMs: 0,
+        endMs: 10000,
+        provider: 'tencent-asr',
+        raw: { result: { slice_type: 2 } },
+      },
+    });
+    await dispatchMessage({
+      type: 'ASR_STREAM_UTTERANCE_READY',
+      target: 'service-worker',
+      payload: {
+        text: '第二句稳定话语',
+        startMs: 10000,
+        endMs: 20000,
+        provider: 'tencent-asr',
+        raw: { result: { slice_type: 2 } },
+      },
+    });
+    await dispatchMessage({
+      type: 'ASR_STREAM_UTTERANCE_READY',
+      target: 'service-worker',
+      payload: {
+        text: '第三句稳定话语',
+        startMs: 20000,
+        endMs: 30000,
+        provider: 'tencent-asr',
+        raw: { result: { slice_type: 2 } },
+      },
+    });
+
+    expect(appendTranscriptChunkMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: '第三句稳定话语',
+        provider: 'tencent-asr',
+        raw: expect.objectContaining({
+          transport: 'ws',
+        }),
+      }),
+    );
+    expect(extractSegmentGraphMock).toHaveBeenCalledTimes(1);
+    expect(saveMergedGraphMock).toHaveBeenCalled();
   });
 
   it('调试会话会返回 transcript、segment 和逐轮 trace', async () => {

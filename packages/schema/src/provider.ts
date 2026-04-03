@@ -5,6 +5,7 @@ export type ProviderMode = 'direct' | 'relay';
 export type AsrProviderType = 'mock' | 'openai' | 'tencent';
 export type StructurerProviderType = 'mock' | 'openai' | 'zhipu';
 export type ProviderStage = 'asr' | 'structurer';
+export type AsrTransport = 'batch' | 'ws';
 
 export interface ProviderRetryPolicy {
   maxAttempts: number;
@@ -17,12 +18,20 @@ export interface ProviderRetryPolicy {
 export interface AsrProviderConfig {
   type: AsrProviderType;
   mode: ProviderMode;
+  transport?: AsrTransport;
   endpoint?: string;
   apiKey?: string;
   sessionToken?: string;
   model?: string;
   language?: string;
   region?: string;
+  appId?: string;
+  needVad?: boolean;
+  vadSilenceTimeMs?: number;
+  maxSpeakTimeMs?: number;
+  hotwordId?: string;
+  hotwordList?: string;
+  wordInfo?: number;
   // 腾讯云特有字段
   secretId?: string;
   secretKey?: string;
@@ -48,6 +57,7 @@ export interface ProviderConfig {
 export interface ProviderRuntimeEntrySummary {
   type: string;
   mode: ProviderMode;
+  transport?: AsrTransport;
   endpoint?: string;
   model?: string;
   language?: string;
