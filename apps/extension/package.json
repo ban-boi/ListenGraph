@@ -22,6 +22,7 @@
     "test:structure:real:replay": "node ./scripts/run-structure-real.mjs replay",
     "test:structure:real:replay:strict": "node ./scripts/run-structure-replay-strict.mjs",
     "test:structure": "pnpm run test:structure:mock && pnpm run test:structure:real:smoke",
+    "test:structure:stable": "pnpm run test:structure:mock && pnpm run test:structure:real:smoke && pnpm run test:structure:real:replay:strict",
     "test:structure:full": "pnpm run test:structure:mock && pnpm run test:structure:real:full",
     "test:asr:real": "vitest run src/service-worker/asr-realtime.real.test.ts",
     "test:asr:compare": "vitest run src/service-worker/asr-transport-compare.real.test.ts",

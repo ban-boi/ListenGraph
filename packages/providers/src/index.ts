@@ -5,6 +5,8 @@ export * from './http/retry';
 export * from './asr/openai-asr';
 export * from './asr/tencent-asr';
 export * from './structurer/openai-structurer';
+export * from './structurer/aliyun-structurer';
+export * from './structurer/baidu-structurer';
 export * from './structurer/zhipu-structurer';
 export * from './mock/mock-structurer';
 export * from './mock/mock-asr';

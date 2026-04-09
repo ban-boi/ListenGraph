@@ -587,6 +587,156 @@ describe('App 组件', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('切换到百度千帆后会自动回填默认 endpoint 和 model', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: null,
+              state: 'idle',
+              graph: null,
+              currentTimeMs: 0,
+              providerSummary: {
+                asr: {
+                  type: 'mock',
+                  mode: 'direct',
+                  model: 'mock-asr',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                },
+                structurer: {
+                  type: 'mock',
+                  mode: 'direct',
+                  model: 'mock-structurer',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                },
+              },
+              lastProviderError: null,
+            },
+          });
+        }
+        if (message?.type === 'GET_PROVIDER_SETTINGS') {
+          return Promise.resolve({
+            success: true,
+            config: {
+              asr: {
+                type: 'mock',
+                mode: 'direct',
+                model: 'mock-asr',
+                language: 'zh',
+              },
+              structurer: {
+                type: 'mock',
+                mode: 'direct',
+                model: 'mock-structurer',
+                language: 'zh',
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    const user = userEvent.setup();
+    await renderApp();
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^设置$/ }));
+    });
+
+    const settingsPanel = await screen.findByTestId('settings-panel');
+    const providerTypeSelects = within(settingsPanel).getAllByLabelText(/Provider Type/i);
+    const endpointInputs = within(settingsPanel).getAllByLabelText(/Endpoint/i);
+    const modelInputs = within(settingsPanel).getAllByLabelText(/Model/i);
+
+    await act(async () => {
+      await user.selectOptions(providerTypeSelects[1], 'baidu');
+    });
+
+    expect(endpointInputs[1]).toHaveValue('https://qianfan.baidubce.com/v2');
+    expect(modelInputs[1]).toHaveValue('ernie-speed-8k');
+  });
+
+  it('切换到阿里云百炼后会自动回填默认 endpoint 和 model', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: null,
+              state: 'idle',
+              graph: null,
+              currentTimeMs: 0,
+              providerSummary: {
+                asr: {
+                  type: 'mock',
+                  mode: 'direct',
+                  model: 'mock-asr',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                },
+                structurer: {
+                  type: 'mock',
+                  mode: 'direct',
+                  model: 'mock-structurer',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                },
+              },
+              lastProviderError: null,
+            },
+          });
+        }
+        if (message?.type === 'GET_PROVIDER_SETTINGS') {
+          return Promise.resolve({
+            success: true,
+            config: {
+              asr: {
+                type: 'mock',
+                mode: 'direct',
+                model: 'mock-asr',
+                language: 'zh',
+              },
+              structurer: {
+                type: 'mock',
+                mode: 'direct',
+                model: 'mock-structurer',
+                language: 'zh',
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    const user = userEvent.setup();
+    await renderApp();
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^设置$/ }));
+    });
+
+    const settingsPanel = await screen.findByTestId('settings-panel');
+    const providerTypeSelects = within(settingsPanel).getAllByLabelText(/Provider Type/i);
+    const endpointInputs = within(settingsPanel).getAllByLabelText(/Endpoint/i);
+    const modelInputs = within(settingsPanel).getAllByLabelText(/Model/i);
+
+    await act(async () => {
+      await user.selectOptions(providerTypeSelects[1], 'aliyun');
+    });
+
+    expect(endpointInputs[1]).toHaveValue('https://dashscope.aliyuncs.com/compatible-mode/v1');
+    expect(modelInputs[1]).toHaveValue('qwen-plus');
+  });
+
   it('Structurer provider type 可以直接切换到智谱 GLM（Coding Plan）', async () => {
     (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
       (message: { type?: string }) => {
@@ -1566,11 +1716,14 @@ describe('App 组件', () => {
                     sequence: 1,
                     mode: 'bootstrap',
                     transcriptEndMs: 30000,
+                    latestTranscriptId: 'chunk_1',
                     latestChunkId: 'chunk_1',
                     windowStartMs: 0,
                     windowEndMs: 30000,
+                    windowTranscriptCount: 1,
                     windowChunkCount: 1,
                     windowCharCount: 7,
+                    latestTranscriptCharCount: 7,
                     latestChunkCharCount: 7,
                     recentNodeCount: 0,
                     recentEdgeCount: 0,
@@ -1633,11 +1786,14 @@ describe('App 组件', () => {
                   sequence: 1,
                   mode: 'bootstrap',
                   transcriptEndMs: 30000,
+                  latestTranscriptId: 'chunk_1',
                   latestChunkId: 'chunk_1',
                   windowStartMs: 0,
                   windowEndMs: 30000,
+                  windowTranscriptCount: 1,
                   windowChunkCount: 1,
                   windowCharCount: 7,
+                  latestTranscriptCharCount: 7,
                   latestChunkCharCount: 7,
                   recentNodeCount: 0,
                   recentEdgeCount: 0,
@@ -1672,9 +1828,9 @@ describe('App 组件', () => {
     );
     const debugPanel = await screen.findByTestId('debug-panel');
     expect(within(debugPanel).getByText(/sessionId: session_debug/)).toBeInTheDocument();
-    expect(within(debugPanel).getByText(/transcript chunks: 1/)).toBeInTheDocument();
+    expect(within(debugPanel).getByText(/transcript units: 1/)).toBeInTheDocument();
     expect(within(debugPanel).getByText(/structurer segments: 1/)).toBeInTheDocument();
-    expect(within(debugPanel).getByText(/chunk traces: 1/)).toBeInTheDocument();
+    expect(within(debugPanel).getByText(/transcript traces: 1/)).toBeInTheDocument();
     expect(within(debugPanel).getByText(/structurer runs: 1/)).toBeInTheDocument();
     expect(within(debugPanel).getByText(/第一段调试转写/)).toBeInTheDocument();
     expect(within(debugPanel).getByText(/调试图节点/)).toBeInTheDocument();

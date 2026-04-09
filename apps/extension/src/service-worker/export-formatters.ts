@@ -51,7 +51,7 @@ function toMarkdown(bundle: ExportBundle) {
 
   const transcriptLines =
     bundle.transcripts.length === 0
-      ? ['## Transcript', '', '_No transcript chunks exported._']
+      ? ['## Transcript', '', '_No transcript units exported._']
       : [
           '## Transcript',
           '',

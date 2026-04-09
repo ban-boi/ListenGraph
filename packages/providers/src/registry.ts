@@ -15,6 +15,8 @@ import { MockAsrProvider } from './mock/mock-asr';
 import { MockStructurerProvider } from './mock/mock-structurer';
 import { OpenAIAsrProvider } from './asr/openai-asr';
 import { TencentAsrProvider } from './asr/tencent-asr';
+import { AliyunStructurerProvider } from './structurer/aliyun-structurer';
+import { BaiduStructurerProvider } from './structurer/baidu-structurer';
 import { OpenAIStructurerProvider } from './structurer/openai-structurer';
 import { ZhipuStructurerProvider } from './structurer/zhipu-structurer';
 
@@ -59,6 +61,16 @@ export function createProviderRegistry(): ProviderRegistry {
       if (config.type === 'zhipu') {
         requireProviderCredential(config, 'Zhipu structurer provider');
         return new ZhipuStructurerProvider(config);
+      }
+
+      if (config.type === 'baidu') {
+        requireProviderCredential(config, 'Baidu structurer provider');
+        return new BaiduStructurerProvider(config);
+      }
+
+      if (config.type === 'aliyun') {
+        requireProviderCredential(config, 'Aliyun structurer provider');
+        return new AliyunStructurerProvider(config);
       }
 
       requireProviderCredential(config, 'Structurer provider');

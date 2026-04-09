@@ -3,7 +3,7 @@
 > 2026-03 baseline note:
 > This plan is obsolete and retained only as historical context.
 > It targets `apps/extension/public/service-worker.js` and a `tabCapture + offscreen` path that is no longer the active mainline.
-> For the current baseline, use `docs/plans/2026-03-21-extension-execution-baseline.md`.
+> For the current baseline, use `docs/extension/runtime-mainline.md`.
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 

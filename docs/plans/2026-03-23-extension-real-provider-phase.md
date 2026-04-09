@@ -5,8 +5,8 @@
 目标是让实现、测试以及当前 **direct（直连）** 范围与扩展当前主链路保持一致。
 
 ## 权威来源
-- 扩展主链路：`docs/plans/2026-03-21-extension-execution-baseline.md`
-- 当前结构化增量设计：`docs/plans/2026-03-31-extension-structurer-incremental-design.md`
+- 扩展主链路：`docs/extension/runtime-mainline.md`
+- 当前结构化运行时：`docs/extension/structurer-runtime.md`
 - 工程设计：`doc/更工程化的技术设计文档.md`
 - 产品/阶段参考：`doc/重构版 design 文档 v2.md`
 

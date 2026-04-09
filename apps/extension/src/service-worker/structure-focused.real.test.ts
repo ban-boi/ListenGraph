@@ -15,6 +15,7 @@ type StructureFixture = {
     transcriptWindow?: Array<Omit<TranscriptChunk, 'sessionId' | 'provider'> & { provider?: string }>;
     mergedGraph?: MergedGraph;
     currentTimeMs?: number;
+    transcriptSequence?: number;
     chunkIndex?: number;
   };
   transcripts: Array<Omit<TranscriptChunk, 'sessionId' | 'provider'> & { provider?: string }>;
@@ -716,6 +717,7 @@ describeReal('Structure-focused real structurer', () => {
             transcriptWindow: fixture.seed.transcriptWindow?.map(materializeChunk),
             mergedGraph,
             currentTimeMs: fixture.seed.currentTimeMs,
+            transcriptSequence: fixture.seed.transcriptSequence,
             chunkIndex: fixture.seed.chunkIndex,
             sessionId,
             sourceType: 'file' as const,

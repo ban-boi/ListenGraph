@@ -165,12 +165,68 @@ describe('provider registry contract', () => {
     expect(providers.structurer.name).toBe('zhipu-structurer');
   });
 
-  it('structurer 默认超时时间会延长到 60 秒，并且不重试 429', () => {
+  it('百度 structurer 会使用独立 provider 类型和默认 endpoint/model', () => {
+    const registry = createProviderRegistry();
+    const config = normalizeProviderConfig({
+      asr: {
+        type: 'mock',
+      },
+      structurer: {
+        type: 'baidu',
+        mode: 'direct',
+        apiKey: 'baidu-secret',
+      },
+    });
+
+    expect(config.structurer).toEqual(
+      expect.objectContaining({
+        type: 'baidu',
+        mode: 'direct',
+        endpoint: 'https://qianfan.baidubce.com/v2',
+        model: 'ernie-speed-8k',
+        apiKey: 'baidu-secret',
+        language: 'zh',
+      }),
+    );
+
+    const providers = registry.createRuntimeProviders(config);
+    expect(providers.structurer.name).toBe('baidu-structurer');
+  });
+
+  it('阿里云百炼 structurer 会使用独立 provider 类型和默认 endpoint/model', () => {
+    const registry = createProviderRegistry();
+    const config = normalizeProviderConfig({
+      asr: {
+        type: 'mock',
+      },
+      structurer: {
+        type: 'aliyun',
+        mode: 'direct',
+        apiKey: 'aliyun-secret',
+      },
+    });
+
+    expect(config.structurer).toEqual(
+      expect.objectContaining({
+        type: 'aliyun',
+        mode: 'direct',
+        endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        model: 'qwen-plus',
+        apiKey: 'aliyun-secret',
+        language: 'zh',
+      }),
+    );
+
+    const providers = registry.createRuntimeProviders(config);
+    expect(providers.structurer.name).toBe('aliyun-structurer');
+  });
+
+  it('structurer 默认超时时间会延长到 90 秒，并且不重试 429', () => {
     const config = createDefaultProviderConfig();
 
     expect(config.structurer.retry).toEqual(
       expect.objectContaining({
-        timeoutMs: 60_000,
+        timeoutMs: 90_000,
       }),
     );
     expect(config.structurer.retry?.retryableStatusCodes).not.toContain(429);

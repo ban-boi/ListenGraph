@@ -87,7 +87,20 @@ describe('Service Worker - 当前主链路', () => {
     listSegmentGraphsBySessionMock = vi.fn(async () => []);
     saveMergedGraphMock = vi.fn(async () => undefined);
     getMergedGraphBySessionMock = vi.fn(async () => undefined);
-    getProviderConfigMock = vi.fn(async () => undefined);
+    getProviderConfigMock = vi.fn(async () => ({
+      asr: {
+        type: 'mock',
+        mode: 'direct',
+        model: 'mock-asr',
+        language: 'zh',
+      },
+      structurer: {
+        type: 'mock',
+        mode: 'direct',
+        model: 'mock-structurer',
+        language: 'zh',
+      },
+    }));
     asrResetMock = vi.fn();
     structurerResetMock = vi.fn();
     createRuntimeProvidersMock = vi.fn((config: any) => ({

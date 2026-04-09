@@ -1,5 +1,14 @@
 # 智谱 GLM Structurer 开发文档
 
+> 状态：历史参考
+>
+> 智谱 provider 仍保留在代码和设置中，可手动切回用于对照或排障；
+> 但它**不再是当前 extension 的默认 structurer provider**。
+>
+> 当前默认结论请优先阅读：
+> - `docs/extension/current-runtime.md`
+> - `docs/extension/structurer-runtime.md`
+
 > 本文档汇总了 ListenGraph 项目集成智谱 GLM 作为 Structurer Provider 所需的所有官方文档、API 规范、示例代码和最佳实践。
 
 ## 📚 目录
@@ -686,7 +695,7 @@ for chunk in response:
 
 ---
 
-## ListenGraph 集成方案
+## ListenGraph 集成方案（历史）
 
 ### 方案 1：复用 OpenAI Provider（推荐）
 

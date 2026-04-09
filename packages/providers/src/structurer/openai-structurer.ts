@@ -122,18 +122,9 @@ export class OpenAIStructurerProvider implements StructurerProvider {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${getCredential(this.config)}`,
               },
-              body: JSON.stringify({
-                model: this.config.model ?? 'gpt-4.1-mini',
-                response_format: { type: 'json_object' },
-                messages: buildMessages(input, recentGraphContext),
-                ...(this.config.type === 'zhipu'
-                  ? {
-                      thinking: {
-                        type: 'disabled',
-                      },
-                    }
-                  : {}),
-              }),
+              body: JSON.stringify(
+                buildChatCompletionsRequestBody(this.config, input, recentGraphContext),
+              ),
               signal: createTimeoutSignal(retryPolicy.timeoutMs),
             },
           );
@@ -176,7 +167,7 @@ export class OpenAIStructurerProvider implements StructurerProvider {
         }
 
         try {
-          return JSON.parse(stripCodeFences(rawContent)) as SegmentGraphPayload;
+          return parseSegmentGraphPayload(rawContent);
         } catch {
           throw mapHttpError({
             provider: this.name,
@@ -221,6 +212,34 @@ export class OpenAIStructurerProvider implements StructurerProvider {
 
 function getCredential(config: StructurerProviderConfig) {
   return config.mode === 'relay' ? config.sessionToken : config.apiKey;
+}
+
+function buildChatCompletionsRequestBody(
+  config: StructurerProviderConfig,
+  input: {
+    transcriptWindow: TranscriptChunk[];
+    previousGraph?: MergedGraph;
+    language?: string;
+  },
+  recentGraphContext: RecentGraphContext,
+) {
+  return {
+    model: config.model ?? 'gpt-4.1-mini',
+    messages: buildMessages(input, recentGraphContext),
+    ...(config.type === 'baidu' ? {} : { response_format: { type: 'json_object' as const } }),
+    ...(config.type === 'zhipu'
+      ? {
+          thinking: {
+            type: 'disabled' as const,
+          },
+        }
+      : {}),
+    ...(config.type === 'baidu'
+      ? {
+          temperature: 0.1,
+        }
+      : {}),
+  };
 }
 
 function buildMessages(input: {
@@ -517,6 +536,259 @@ function normalizeStringArray(value: unknown) {
 
 function stripCodeFences(content: string) {
   return content.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/, '');
+}
+
+function parseSegmentGraphPayload(content: string): SegmentGraphPayload {
+  const normalized = stripCodeFences(content).trim();
+
+  try {
+    return JSON.parse(normalized) as SegmentGraphPayload;
+  } catch {
+    const repaired = repairLikelyObjectArrayEntries(normalized);
+    try {
+      return JSON.parse(repaired) as SegmentGraphPayload;
+    } catch {
+      const extracted = extractFirstJsonObject(repaired);
+      if (extracted) {
+        return JSON.parse(extracted) as SegmentGraphPayload;
+      }
+      throw new Error('Unable to extract a valid JSON object from structurer content');
+    }
+  }
+}
+
+function repairLikelyObjectArrayEntries(content: string) {
+  let repaired = content;
+  for (const key of ['nodes', 'edges'] as const) {
+    repaired = repairNamedObjectArray(repaired, key);
+  }
+  return repaired;
+}
+
+function repairNamedObjectArray(content: string, key: 'nodes' | 'edges') {
+  const keyPattern = new RegExp(`"${key}"\\s*:\\s*\\[`, 'g');
+  let repaired = '';
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = keyPattern.exec(content)) !== null) {
+    const bracketIndex = keyPattern.lastIndex - 1;
+    const endIndex = findMatchingBracket(content, bracketIndex);
+    if (endIndex === -1) {
+      break;
+    }
+
+    repaired += content.slice(cursor, bracketIndex + 1);
+    repaired += repairTopLevelObjectArrayContent(content.slice(bracketIndex + 1, endIndex));
+    cursor = endIndex;
+    keyPattern.lastIndex = endIndex;
+  }
+
+  return cursor === 0 ? content : repaired + content.slice(cursor);
+}
+
+function repairTopLevelObjectArrayContent(content: string) {
+  let repaired = '';
+  let inString = false;
+  let escaping = false;
+  let nestedDepth = 0;
+  let expectingElement = true;
+
+  for (let index = 0; index < content.length; index += 1) {
+    const char = content[index];
+
+    if (inString) {
+      repaired += char;
+      if (escaping) {
+        escaping = false;
+      } else if (char === '\\') {
+        escaping = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      if (expectingElement && nestedDepth === 0) {
+        const nextNonWhitespaceIndex = findNextNonWhitespaceIndex(content, index + 1);
+        if (
+          nextNonWhitespaceIndex !== -1 &&
+          content[nextNonWhitespaceIndex] === '{'
+        ) {
+          const closingQuoteIndex = findJsonStringEnd(content, index);
+          if (closingQuoteIndex !== -1) {
+            try {
+              repaired += JSON.parse(content.slice(index, closingQuoteIndex + 1)) as string;
+              expectingElement = false;
+              index = closingQuoteIndex;
+              continue;
+            } catch {
+              // Fall through to the legacy repair path below.
+            }
+          }
+        }
+      }
+
+      if (expectingElement && nestedDepth === 0) {
+        const nextNonWhitespaceIndex = findNextNonWhitespaceIndex(content, index + 1);
+        if (
+          nextNonWhitespaceIndex !== -1 &&
+          content[nextNonWhitespaceIndex] === '{'
+        ) {
+          expectingElement = false;
+          const closingQuoteIndex = findJsonStringEnd(content, index);
+          if (closingQuoteIndex !== -1) {
+            index = closingQuoteIndex;
+            continue;
+          }
+        }
+      }
+
+      if (expectingElement && nestedDepth === 0) {
+        repaired += '{';
+        nestedDepth += 1;
+        expectingElement = false;
+      }
+      repaired += char;
+      inString = true;
+      continue;
+    }
+
+    if (nestedDepth === 0) {
+      if (char === ',') {
+        repaired += char;
+        expectingElement = true;
+        continue;
+      }
+
+      if (!/\s/.test(char)) {
+        expectingElement = false;
+      }
+    }
+
+    repaired += char;
+
+    if (char === '{' || char === '[') {
+      nestedDepth += 1;
+    } else if ((char === '}' || char === ']') && nestedDepth > 0) {
+      nestedDepth -= 1;
+    }
+  }
+
+  return repaired;
+}
+
+function findNextNonWhitespaceIndex(content: string, startIndex: number) {
+  for (let index = startIndex; index < content.length; index += 1) {
+    if (!/\s/.test(content[index])) {
+      return index;
+    }
+  }
+
+  return -1;
+}
+
+function findJsonStringEnd(content: string, startIndex: number) {
+  let escaping = false;
+
+  for (let index = startIndex + 1; index < content.length; index += 1) {
+    const char = content[index];
+    if (escaping) {
+      escaping = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      escaping = true;
+      continue;
+    }
+
+    if (char === '"') {
+      return index;
+    }
+  }
+
+  return -1;
+}
+
+function findMatchingBracket(content: string, startIndex: number) {
+  let depth = 0;
+  let inString = false;
+  let escaping = false;
+
+  for (let index = startIndex; index < content.length; index += 1) {
+    const char = content[index];
+
+    if (inString) {
+      if (escaping) {
+        escaping = false;
+      } else if (char === '\\') {
+        escaping = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (char === '[') {
+      depth += 1;
+    } else if (char === ']') {
+      depth -= 1;
+      if (depth === 0) {
+        return index;
+      }
+    }
+  }
+
+  return -1;
+}
+
+function extractFirstJsonObject(content: string) {
+  const firstBraceIndex = content.indexOf('{');
+  if (firstBraceIndex === -1) {
+    return null;
+  }
+
+  let depth = 0;
+  let inString = false;
+  let escaping = false;
+
+  for (let index = firstBraceIndex; index < content.length; index += 1) {
+    const char = content[index];
+
+    if (inString) {
+      if (escaping) {
+        escaping = false;
+      } else if (char === '\\') {
+        escaping = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (char === '{') {
+      depth += 1;
+    } else if (char === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        return content.slice(firstBraceIndex, index + 1);
+      }
+    }
+  }
+
+  return null;
 }
 
 async function safeReadError(response: Response) {

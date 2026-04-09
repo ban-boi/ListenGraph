@@ -1,5 +1,13 @@
 # 腾讯云 ASR 开发文档
 
+> 状态：历史参考
+>
+> 本文档主要整理的是录音文件识别 / batch 相关背景材料，**不再是当前 extension 主链路的权威说明**。
+> 当前推荐优先阅读：
+> - `docs/providers/tencent-asr-smoke.md`
+> - `docs/腾讯云实时语音识别-开发笔记.md`
+> - `docs/extension/current-runtime.md`
+
 > 本文档汇总了 ListenGraph 项目集成腾讯云 ASR 服务所需的所有官方文档、API 规范、示例代码和最佳实践。
 
 ## 📚 目录
@@ -104,7 +112,7 @@
 ⚠️ **安全警告**：
 > 腾讯云官方明确警告：**请务必不要将 SDK 直接用于 Web 前端（包括小程序等），暴露密钥在这些环境非常不安全**
 
-### ListenGraph 项目选择
+### ListenGraph 项目选择（历史阶段）
 
 本项目使用 **API 直接调用**，原因：
 
@@ -514,7 +522,7 @@ const RECOMMENDED_AUDIO_CONFIG = {
 };
 ```
 
-### 2. 切片策略
+### 2. 切片策略（历史 batch 方案）
 
 ```typescript
 // ListenGraph 项目采用 30 秒切片

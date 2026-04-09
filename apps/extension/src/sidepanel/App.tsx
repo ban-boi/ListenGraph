@@ -31,7 +31,6 @@ import {
   type RendererGraph,
 } from '@listen-graphic/graph-renderers';
 import {
-  createDefaultProviderConfig,
   normalizeProviderConfig,
   redactProviderConfig,
 } from '@listen-graphic/providers';
@@ -265,25 +264,25 @@ function buildDebugViewArtifacts(params: {
   );
 }
 
-function summarizeTranscriptChunk(
-  chunk: DebugSessionData['transcripts'][number],
+function summarizeTranscriptUnit(
+  transcript: DebugSessionData['transcripts'][number],
   mode: DebugExportMode,
 ) {
   if (mode === 'full') {
-    return chunk;
+    return transcript;
   }
 
   return {
-    chunkId: chunk.chunkId,
-    sessionId: chunk.sessionId,
-    text: chunk.text,
-    startMs: chunk.startMs,
-    endMs: chunk.endMs,
-    provider: chunk.provider,
-    confidence: chunk.confidence,
-    speakerHints: chunk.speakerHints,
-    tokenCount: chunk.tokens?.length ?? 0,
-    hasRaw: chunk.raw !== undefined,
+    chunkId: transcript.chunkId,
+    sessionId: transcript.sessionId,
+    text: transcript.text,
+    startMs: transcript.startMs,
+    endMs: transcript.endMs,
+    provider: transcript.provider,
+    confidence: transcript.confidence,
+    speakerHints: transcript.speakerHints,
+    tokenCount: transcript.tokens?.length ?? 0,
+    hasRaw: transcript.raw !== undefined,
   };
 }
 
@@ -330,17 +329,17 @@ function summarizeDebugData(
 
   return {
     ...debugData,
-    transcripts: debugData.transcripts.map((chunk) =>
-      summarizeTranscriptChunk(chunk, mode),
+    transcripts: debugData.transcripts.map((transcript) =>
+      summarizeTranscriptUnit(transcript, mode),
     ),
     segments: debugData.segments.map((segment) =>
       summarizeSegment(segment, mode),
     ),
     traces: debugData.traces.map((trace) => ({
       sequence: trace.sequence,
-      transcript: summarizeTranscriptChunk(trace.transcript, mode),
-      transcriptWindow: trace.transcriptWindow.map((chunk) =>
-        summarizeTranscriptChunk(chunk, mode),
+      transcript: summarizeTranscriptUnit(trace.transcript, mode),
+      transcriptWindow: trace.transcriptWindow.map((transcript) =>
+        summarizeTranscriptUnit(transcript, mode),
       ),
       segment: trace.segment ? summarizeSegment(trace.segment, mode) : null,
       structurerRun: trace.structurerRun
@@ -386,7 +385,22 @@ function readStructurerRunDebug(segment: DebugSessionData['segments'][number]) {
     return null;
   }
 
-  return (segment.raw as { debug?: StructurerRunDebug }).debug ?? null;
+  const debug = (segment.raw as { debug?: Partial<StructurerRunDebug> }).debug;
+  if (!debug) {
+    return null;
+  }
+
+  return {
+    ...debug,
+    latestTranscriptId: debug.latestTranscriptId ?? debug.latestChunkId ?? '',
+    latestChunkId: debug.latestChunkId ?? debug.latestTranscriptId ?? '',
+    windowTranscriptCount: debug.windowTranscriptCount ?? debug.windowChunkCount ?? 0,
+    windowChunkCount: debug.windowChunkCount ?? debug.windowTranscriptCount ?? 0,
+    latestTranscriptCharCount:
+      debug.latestTranscriptCharCount ?? debug.latestChunkCharCount ?? 0,
+    latestChunkCharCount:
+      debug.latestChunkCharCount ?? debug.latestTranscriptCharCount ?? 0,
+  } as StructurerRunDebug;
 }
 
 function downloadTextFile(filename: string, content: string, mimeType: string) {
@@ -448,6 +462,24 @@ function pinProviderConfigToDirectMode(config: ProviderConfig): ProviderConfig {
       sessionToken: undefined,
     },
   };
+}
+
+function createExtensionDefaultProviderConfigForUi(): ProviderConfig {
+  return normalizeProviderConfig({
+    asr: {
+      type: 'tencent',
+      mode: 'direct',
+      transport: 'ws',
+      model: '16k_zh',
+      needVad: true,
+      language: 'zh',
+    },
+    structurer: {
+      type: 'aliyun',
+      mode: 'direct',
+      language: 'zh',
+    },
+  });
 }
 
 function getProviderTypeSelectValue(
@@ -661,10 +693,10 @@ export default function App() {
   const [graph, setGraph] = useState<MergedGraph>(createEmptyGraph);
   const [logPanelHeight, setLogPanelHeight] = useState(DEFAULT_LOG_PANEL_HEIGHT);
   const [providerConfig, setProviderConfig] = useState<ProviderConfig>(() =>
-    createDefaultProviderConfig(),
+    createExtensionDefaultProviderConfigForUi(),
   );
   const [providerSummary, setProviderSummary] = useState(() =>
-    redactProviderConfig(createDefaultProviderConfig()),
+    redactProviderConfig(createExtensionDefaultProviderConfigForUi()),
   );
   const [workerBuildLabel, setWorkerBuildLabel] = useState('waiting');
 
@@ -836,7 +868,7 @@ export default function App() {
       setSessionState(snapshot.state === 'stopped' ? 'idle' : snapshot.state);
       setCurrentTimeMs(snapshot.currentTimeMs);
       setProviderSummary(
-        snapshot.providerSummary ?? redactProviderConfig(createDefaultProviderConfig()),
+        snapshot.providerSummary ?? redactProviderConfig(createExtensionDefaultProviderConfigForUi()),
       );
       setWorkerBuildLabel(snapshot.workerBuild?.label ?? 'unknown');
 
@@ -1042,7 +1074,7 @@ export default function App() {
         return;
       }
 
-      const fallbackConfig = createDefaultProviderConfig();
+      const fallbackConfig = createExtensionDefaultProviderConfigForUi();
       setProviderConfig(fallbackConfig);
       setProviderSummary(redactProviderConfig(fallbackConfig));
       addLog('provider 密钥已清除');
@@ -1689,6 +1721,8 @@ export default function App() {
                   <option value="mock">Mock (测试)</option>
                   <option value="openai">OpenAI</option>
                   {stageKey === 'asr' && <option value="tencent">腾讯云</option>}
+                  {stageKey === 'structurer' && <option value="aliyun">阿里云百炼</option>}
+                  {stageKey === 'structurer' && <option value="baidu">百度千帆</option>}
                   {stageKey === 'structurer' && <option value="zhipu">智谱 GLM</option>}
                   {stageKey === 'structurer' && (
                     <option value="zhipu-coding-plan">智谱 GLM（Coding Plan）</option>
@@ -1718,7 +1752,7 @@ export default function App() {
                   <span>Tencent Transport</span>
                   <select
                     aria-label="Tencent Transport"
-                    value={providerConfig.asr.transport ?? 'batch'}
+                    value={providerConfig.asr.transport ?? 'ws'}
                     onChange={(event) =>
                       updateProviderEntry(stageKey, 'transport', event.target.value)
                     }
@@ -2087,13 +2121,13 @@ export default function App() {
               sessionId: {debugData?.session?.sessionId ?? sessionId ?? 'none'}
             </div>
             <div style={{ marginBottom: 6 }}>
-              transcript chunks: {debugData?.transcripts.length ?? 0}
+              transcript units: {debugData?.transcripts.length ?? 0}
             </div>
             <div style={{ marginBottom: 6 }}>
               structurer segments: {debugData?.segments.length ?? 0}
             </div>
             <div style={{ marginBottom: 6 }}>
-              chunk traces: {debugData?.traces.length ?? 0}
+              transcript traces: {debugData?.traces.length ?? 0}
             </div>
             <div style={{ marginBottom: 6 }}>
               structurer runs: {debugData?.structurerRuns?.length ?? 0}

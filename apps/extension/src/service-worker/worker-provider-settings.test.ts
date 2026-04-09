@@ -639,10 +639,39 @@ describe('Service Worker - provider settings', () => {
     expect(saveProviderConfigMock).toHaveBeenCalledWith(
       expect.objectContaining({
         asr: expect.objectContaining({
-          type: 'mock',
+          type: 'tencent',
+          transport: 'ws',
         }),
         structurer: expect.objectContaining({
-          type: 'mock',
+          type: 'aliyun',
+        }),
+      }),
+    );
+  });
+
+  it('未保存 provider 配置时，会返回腾讯 realtime ASR 和阿里云 structurer 作为默认设置', async () => {
+    getProviderConfigMock.mockResolvedValue(undefined);
+
+    const response = await dispatchMessage({
+      type: 'GET_PROVIDER_SETTINGS',
+      target: 'service-worker',
+      payload: {},
+    });
+
+    expect(response.success).toBe(true);
+    expect(response.config).toEqual(
+      expect.objectContaining({
+        asr: expect.objectContaining({
+          type: 'tencent',
+          transport: 'ws',
+          model: '16k_zh',
+          mode: 'direct',
+          language: 'zh',
+        }),
+        structurer: expect.objectContaining({
+          type: 'aliyun',
+          mode: 'direct',
+          language: 'zh',
         }),
       }),
     );

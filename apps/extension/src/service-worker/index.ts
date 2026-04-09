@@ -66,6 +66,7 @@ type PersistedRuntimeState = {
   currentSession: ActiveSession | null;
   transcriptWindow: TranscriptChunk[];
   mergedGraph: MergedGraph | null;
+  transcriptSequence?: number;
   chunkIndex: number;
   currentTimeMs: number;
   currentView: RuntimeSnapshot['currentView'];
@@ -80,7 +81,7 @@ let currentSession: ActiveSession | null = null;
 let recoveredSessionId: string | null = null;
 let transcriptWindow: TranscriptChunk[] = [];
 let mergedGraph: MergedGraph | null = null;
-let chunkIndex = 0;
+let transcriptSequence = 0;
 let currentTimeMs = 0;
 let currentView: RuntimeSnapshot['currentView'];
 let currentViewPinned = false;
@@ -90,7 +91,7 @@ let chunkQueueTail: Promise<void> = Promise.resolve();
 let stoppingSessionId: string | null = null;
 let runtimeStateHydrated = false;
 let hydrationPromise: Promise<void> | null = null;
-let activeProviderConfig: ProviderConfig = createDefaultProviderConfig();
+let activeProviderConfig: ProviderConfig = createExtensionDefaultProviderConfig();
 let providerSummary = redactProviderConfig(activeProviderConfig);
 let lastProviderError: SerializableProviderError | null = null;
 let lastStructurerRun: StructurerRunDebug | null = null;
@@ -118,7 +119,7 @@ const settingsRepository = createSettingsRepository({
   settings: db.settings,
 });
 
-applyProviderRuntime(activeProviderConfig);
+applyBootstrapProviderRuntime();
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log('[Service Worker] Listen Graphic 已安装');
@@ -247,7 +248,7 @@ async function startSession(tabId: number): Promise<ServiceWorkerResponse> {
   recoveredSessionId = null;
   transcriptWindow = [];
   mergedGraph = null;
-  chunkIndex = 0;
+  transcriptSequence = 0;
   currentTimeMs = 0;
   currentView = undefined;
   currentViewPinned = false;
@@ -284,7 +285,7 @@ async function startSession(tabId: number): Promise<ServiceWorkerResponse> {
     recoveredSessionId = null;
     mergedGraph = null;
     transcriptWindow = [];
-    chunkIndex = 0;
+    transcriptSequence = 0;
     currentTimeMs = 0;
     currentView = undefined;
     currentViewPinned = false;
@@ -556,7 +557,7 @@ async function processTranscriptChunk(
       }
       console.warn('[Service Worker] transcript 持久化暂不可用，保留内存态结果:', error);
     }
-    pushTranscript(transcript);
+    appendTranscriptToWindow(transcript);
     currentTimeMs = transcript.endMs;
 
     await broadcastToSidepanel({
@@ -590,7 +591,7 @@ async function processTranscriptChunk(
     await notifySessionState('structuring');
     const structurerRun = createStructurerRunDebug({
       sessionId: currentSession!.sessionId,
-      sequence: chunkIndex,
+      sequence: transcriptSequence,
       transcript,
       transcriptWindow,
       previousGraph: mergedGraph,
@@ -701,7 +702,10 @@ async function handleTestStructurerSessionRun(payload: {
   recoveredSessionId = null;
   transcriptWindow = [...(payload.seed?.transcriptWindow ?? [])];
   mergedGraph = payload.seed?.mergedGraph ?? null;
-  chunkIndex = payload.seed?.chunkIndex ?? transcriptWindow.length;
+  transcriptSequence =
+    payload.seed?.transcriptSequence ??
+    payload.seed?.chunkIndex ??
+    transcriptWindow.length;
   currentTimeMs =
     payload.seed?.currentTimeMs ??
     transcriptWindow[transcriptWindow.length - 1]?.endMs ??
@@ -897,7 +901,7 @@ async function handleGetProviderSettings(): Promise<ServiceWorkerResponse> {
   const config = stripProviderSecrets(
     constrainProviderConfigToDirectMode(
       normalizeProviderConfig(
-        stripProviderRetryOverrides(storedConfig ?? activeProviderConfig),
+        stripProviderRetryOverrides(storedConfig ?? createExtensionDefaultProviderConfig()),
       ),
     ),
   );
@@ -928,9 +932,11 @@ async function handleSaveProviderSettings(
 async function handleClearProviderSecrets(): Promise<ServiceWorkerResponse> {
   await ensureHydrated();
   await settingsRepository.clearProviderSecrets();
-  const fallbackConfig = stripProviderRetryOverrides(createDefaultProviderConfig());
+  const fallbackConfig = stripProviderRetryOverrides(createExtensionDefaultProviderConfig());
   await settingsRepository.saveProviderConfig(fallbackConfig);
-  applyProviderRuntime(fallbackConfig);
+  applyBootstrapProviderRuntime();
+  activeProviderConfig = fallbackConfig;
+  providerSummary = redactProviderConfig(fallbackConfig);
   await persistRuntimeState();
   return { success: true };
 }
@@ -945,7 +951,7 @@ async function loadDebugSessionData(sessionId: string): Promise<DebugSessionData
     session: session ?? null,
     transcripts,
     segments,
-    traces: buildDebugChunkTraces(
+    traces: buildDebugTranscriptTraces(
       transcripts,
       segments,
       getStructurerRunsForDebugSession(sessionId, segments),
@@ -1004,8 +1010,8 @@ async function handleCaptureEnded(
   return { success: true };
 }
 
-function pushTranscript(transcript: TranscriptChunk) {
-  chunkIndex += 1;
+function appendTranscriptToWindow(transcript: TranscriptChunk) {
+  transcriptSequence += 1;
   transcriptWindow = [...transcriptWindow, transcript].slice(-STRUCTURER_WINDOW_SIZE);
 }
 
@@ -1143,7 +1149,7 @@ function buildMergedGraphFromState(
   };
 }
 
-function buildDebugChunkTraces(
+function buildDebugTranscriptTraces(
   transcripts: TranscriptChunk[],
   segments: SegmentGraph[],
   structurerRuns: StructurerRunDebug[],
@@ -1252,7 +1258,7 @@ async function ensureHydrated() {
         recoveredSessionId = state.currentSession?.sessionId ?? null;
         transcriptWindow = state.transcriptWindow ?? [];
         mergedGraph = state.mergedGraph;
-        chunkIndex = state.chunkIndex ?? 0;
+        transcriptSequence = state.transcriptSequence ?? state.chunkIndex ?? 0;
         currentTimeMs = state.currentTimeMs ?? 0;
         currentView = state.currentView;
         currentViewPinned = state.currentViewPinned ?? false;
@@ -1273,7 +1279,7 @@ async function ensureHydrated() {
           recoveredSessionId = latestSession.sessionId;
           transcriptWindow = recoveredChunks.slice(-3);
           mergedGraph = recoveredGraph ?? null;
-          chunkIndex = recoveredChunks.length;
+          transcriptSequence = recoveredChunks.length;
           currentTimeMs = recoveredChunks[recoveredChunks.length - 1]?.endMs ?? 0;
           currentView = recoveredGraph?.viewHints?.defaultView;
           currentViewPinned = false;
@@ -1283,8 +1289,10 @@ async function ensureHydrated() {
       try {
         await loadProviderRuntimeFromSettings();
       } catch (error) {
-        console.warn('[Service Worker] provider 配置恢复失败，回退默认 mock:', error);
-        applyProviderRuntime(createDefaultProviderConfig());
+        console.warn('[Service Worker] provider 配置恢复失败，回退安全 runtime:', error);
+        applyBootstrapProviderRuntime();
+        activeProviderConfig = createExtensionDefaultProviderConfig();
+        providerSummary = redactProviderConfig(activeProviderConfig);
       }
       runtimeStateHydrated = true;
     })().finally(() => {
@@ -1331,7 +1339,8 @@ async function persistRuntimeState() {
         currentSession,
         transcriptWindow,
         mergedGraph,
-        chunkIndex,
+        transcriptSequence,
+        chunkIndex: transcriptSequence,
         currentTimeMs,
         currentView,
         currentViewPinned,
@@ -1381,7 +1390,7 @@ async function cleanupSession(payload: {
     recoveredSessionId = null;
     transcriptWindow = [];
     mergedGraph = null;
-    chunkIndex = 0;
+    transcriptSequence = 0;
     currentTimeMs = 0;
     currentView = undefined;
     currentViewPinned = false;
@@ -1415,7 +1424,7 @@ async function flushPendingSessionFinalize() {
       !currentSession &&
       transcriptWindow.length === 0 &&
       !mergedGraph &&
-      chunkIndex === 0 &&
+      transcriptSequence === 0 &&
       currentTimeMs === 0 &&
       !currentView &&
       !currentViewPinned
@@ -1459,12 +1468,15 @@ function createStructurerRunDebug(params: {
     sequence: params.sequence,
     mode: params.previousGraph ? 'incremental' : 'bootstrap',
     transcriptEndMs: params.transcript.endMs,
+    latestTranscriptId: params.transcript.chunkId,
     latestChunkId: params.transcript.chunkId,
     windowStartMs: params.transcriptWindow[0]?.startMs ?? params.transcript.startMs,
     windowEndMs:
       params.transcriptWindow[params.transcriptWindow.length - 1]?.endMs ?? params.transcript.endMs,
+    windowTranscriptCount: params.transcriptWindow.length,
     windowChunkCount: params.transcriptWindow.length,
     windowCharCount: params.transcriptWindow.reduce((sum, chunk) => sum + chunk.text.length, 0),
+    latestTranscriptCharCount: params.transcript.text.length,
     latestChunkCharCount: params.transcript.text.length,
     recentNodeCount: params.previousGraph?.nodes.length ?? 0,
     recentEdgeCount: params.previousGraph?.edges.length ?? 0,
@@ -1523,8 +1535,22 @@ function readStructurerRunDebug(segment: SegmentGraph): StructurerRunDebug | nul
     return null;
   }
 
-  const debug = (segment.raw as { debug?: StructurerRunDebug }).debug;
-  return debug ?? null;
+  const debug = (segment.raw as { debug?: Partial<StructurerRunDebug> }).debug;
+  if (!debug) {
+    return null;
+  }
+
+  return {
+    ...debug,
+    latestTranscriptId: debug.latestTranscriptId ?? debug.latestChunkId ?? '',
+    latestChunkId: debug.latestChunkId ?? debug.latestTranscriptId ?? '',
+    windowTranscriptCount: debug.windowTranscriptCount ?? debug.windowChunkCount ?? 0,
+    windowChunkCount: debug.windowChunkCount ?? debug.windowTranscriptCount ?? 0,
+    latestTranscriptCharCount:
+      debug.latestTranscriptCharCount ?? debug.latestChunkCharCount ?? 0,
+    latestChunkCharCount:
+      debug.latestChunkCharCount ?? debug.latestTranscriptCharCount ?? 0,
+  } as StructurerRunDebug;
 }
 
 function isTimeoutProviderError(error: unknown) {
@@ -1566,7 +1592,7 @@ async function loadProviderRuntimeFromSettings() {
   const storedConfig = await settingsRepository.getProviderConfig();
   applyProviderRuntime(
     constrainProviderConfigToDirectMode(
-      normalizeProviderConfig(storedConfig ?? createDefaultProviderConfig()),
+      normalizeProviderConfig(storedConfig ?? createExtensionDefaultProviderConfig()),
     ),
   );
 }
@@ -1574,6 +1600,12 @@ async function loadProviderRuntimeFromSettings() {
 function applyProviderRuntime(config: Partial<ProviderConfig> | ProviderConfig) {
   const runtime = providerRegistry.createRuntimeProviders(config);
   commitProviderRuntime(runtime);
+}
+
+function applyBootstrapProviderRuntime() {
+  const runtime = providerRegistry.createRuntimeProviders(createDefaultProviderConfig());
+  asrProvider = runtime.asr;
+  structurerProvider = runtime.structurer;
 }
 
 function commitProviderRuntime(
@@ -1720,6 +1752,24 @@ function sanitizeProviderError(error: SerializableProviderError): SerializablePr
     ...error,
     message: error.message || 'Provider request failed',
   };
+}
+
+function createExtensionDefaultProviderConfig(): ProviderConfig {
+  return normalizeProviderConfig({
+    asr: {
+      type: 'tencent',
+      mode: 'direct',
+      transport: 'ws',
+      model: '16k_zh',
+      needVad: true,
+      language: 'zh',
+    },
+    structurer: {
+      type: 'aliyun',
+      mode: 'direct',
+      language: 'zh',
+    },
+  });
 }
 
 function normalizeAsrErrorCode(code: string): SerializableProviderError['code'] {

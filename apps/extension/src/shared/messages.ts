@@ -89,11 +89,14 @@ export interface StructurerRunDebug {
   sequence: number;
   mode: 'bootstrap' | 'incremental';
   transcriptEndMs: number;
+  latestTranscriptId: string;
   latestChunkId: string;
   windowStartMs: number;
   windowEndMs: number;
+  windowTranscriptCount: number;
   windowChunkCount: number;
   windowCharCount: number;
+  latestTranscriptCharCount: number;
   latestChunkCharCount: number;
   recentNodeCount: number;
   recentEdgeCount: number;
@@ -153,6 +156,7 @@ export interface StructurerInjectionSeed {
   transcriptWindow?: TranscriptChunk[];
   mergedGraph?: MergedGraph | null;
   currentTimeMs?: number;
+  transcriptSequence?: number;
   chunkIndex?: number;
 }
 

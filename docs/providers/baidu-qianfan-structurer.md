@@ -1,5 +1,10 @@
 # 百度千帆 ERNIE-Speed 接入开发文档
 
+> 状态：历史选型 / 参考实现
+>
+> 百度 provider 仍保留为可选 provider，但当前 extension 默认 structurer 已切到 `aliyun`。
+> 本文档适合用来查看当时的接入思路、限流判断和参数差异，不应直接视为当前默认方案说明。
+
 > 用于 ListenGraph Structurer 模块，替代智谱 API（解决 429 限流问题）
 
 ## 1. 为什么选百度千帆

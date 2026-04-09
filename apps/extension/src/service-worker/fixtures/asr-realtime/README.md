@@ -98,6 +98,24 @@ If you want the stricter and more isolated replay run, use:
 pnpm --filter extension test:structure:real:replay:strict
 ```
 
+If you want the current recommended structure regression gate, use:
+
+```bash
+pnpm --filter extension test:structure
+```
+
+This keeps `mock + smoke` as the daily structure gate.
+
+If you want the current full real structurer validation on active fixtures, use:
+
+```bash
+pnpm --filter extension test:structure:real:full:part1
+pnpm --filter extension test:structure:real:full:part2
+```
+
+`replay:strict` is still useful when you specifically want to verify
+real Tencent utterance artifacts, but it is no longer the default structure gate.
+
 This runs one replay fixture per process with longer default cooldowns:
 
 - `LISTEN_GRAPHIC_E2E_STRUCTURER_TIMEOUT_MS=180000`
@@ -110,6 +128,11 @@ This runs one replay fixture per process with longer default cooldowns:
 Per-fixture failure reports and an overall summary are written under:
 
 - `apps/extension/src/service-worker/fixtures/structure/artifacts/provider-instability/`
+
+Current recommendation:
+
+- default structurer provider for extension settings: `aliyun`
+- old providers such as `zhipu/openai/baidu` remain available for manual fallback and comparison
 
 If you want to compare Tencent batch ASR with Tencent realtime WS on the same clipped audio:
 

@@ -5,6 +5,7 @@ const profile = (process.argv[2] || 'full').trim().toLowerCase();
 const extensionRoot = fileURLToPath(new URL('..', import.meta.url));
 const FULL_PART_1_FIXTURES = [
   'bootstrap-basic',
+  'bootstrap-debate-response',
   'bootstrap-decision-reason',
   'bootstrap-identity-tradeoff',
   'bootstrap-law-constraint',
@@ -13,6 +14,7 @@ const FULL_PART_1_FIXTURES = [
   'bootstrap-value-greed',
 ];
 const FULL_PART_2_FIXTURES = [
+  'bootstrap-public-safety',
   'bootstrap-weird-interesting',
   'incremental-career-regret',
   'incremental-neutrality-conflict',
@@ -46,7 +48,7 @@ if (!env.LISTEN_GRAPHIC_E2E_STRUCTURER_TIMEOUT_MS) {
 
 if (!env.LISTEN_GRAPHIC_E2E_STRUCTURE_DELAY_MS) {
   env.LISTEN_GRAPHIC_E2E_STRUCTURE_DELAY_MS =
-    profile === 'smoke' ? '60000' : profile === 'replay' ? '15000' : '120000';
+    profile === 'smoke' ? '20000' : profile === 'replay' ? '15000' : '30000';
 }
 
 if (!env.LISTEN_GRAPHIC_E2E_STRUCTURE_TIMEOUT_COOLDOWN_MS) {

@@ -77,6 +77,14 @@ export function normalizeProviderConfig(
         endpoint: 'https://open.bigmodel.cn/api/paas/v4',
         model: 'glm-4.7-flash',
       },
+      baiduDefaults: {
+        endpoint: 'https://qianfan.baidubce.com/v2',
+        model: 'ernie-speed-8k',
+      },
+      aliyunDefaults: {
+        endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        model: 'qwen-plus',
+      },
     }),
   };
 }
@@ -99,6 +107,14 @@ function normalizeEntry<T extends AsrProviderConfig | StructurerProviderConfig>(
     endpoint: string;
     model: string;
   };
+  baiduDefaults?: {
+    endpoint: string;
+    model: string;
+  };
+  aliyunDefaults?: {
+    endpoint: string;
+    model: string;
+  };
 }): T {
   const merged = {
     ...params.defaults,
@@ -109,7 +125,11 @@ function normalizeEntry<T extends AsrProviderConfig | StructurerProviderConfig>(
   merged.mode = merged.mode ?? 'direct';
   if (isAsrConfig(merged)) {
     const defaultTransport = isAsrConfig(params.defaults) ? params.defaults.transport : undefined;
-    merged.transport = merged.transport ?? defaultTransport ?? 'batch';
+    merged.transport =
+      merged.transport ??
+      (merged.type === 'tencent' ? 'ws' : undefined) ??
+      defaultTransport ??
+      'batch';
   }
   merged.retry = {
     ...DEFAULT_RETRY_POLICY,
@@ -126,6 +146,16 @@ function normalizeEntry<T extends AsrProviderConfig | StructurerProviderConfig>(
     merged.endpoint = merged.endpoint ?? params.zhipuDefaults?.endpoint;
     if (!params.input?.model || params.input.type === 'zhipu') {
       merged.model = params.input?.model ?? params.zhipuDefaults?.model;
+    }
+  } else if (merged.type === 'baidu') {
+    merged.endpoint = merged.endpoint ?? params.baiduDefaults?.endpoint;
+    if (!params.input?.model || params.input.type === 'baidu') {
+      merged.model = params.input?.model ?? params.baiduDefaults?.model;
+    }
+  } else if (merged.type === 'aliyun') {
+    merged.endpoint = merged.endpoint ?? params.aliyunDefaults?.endpoint;
+    if (!params.input?.model || params.input.type === 'aliyun') {
+      merged.model = params.input?.model ?? params.aliyunDefaults?.model;
     }
   } else if (merged.type === 'tencent') {
     merged.endpoint = params.input?.endpoint;

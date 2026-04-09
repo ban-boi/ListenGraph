@@ -25,9 +25,18 @@
     "minMergedNodes": 2,
     "minMergedEdges": 1,
     "allowFallback": false,
-    "mustContainTexts": [
-      "律师",
-      "身份"
+    "mustContainOneOfTexts": [
+      [
+        "多一种身份",
+        "身份",
+        "双重身份"
+      ],
+      [
+        "留了退路",
+        "留退路",
+        "托住自己",
+        "另一个方向能托住自己"
+      ]
     ]
   }
 }
