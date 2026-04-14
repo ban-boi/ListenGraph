@@ -214,6 +214,86 @@ describe('App 组件', () => {
     );
   });
 
+  it('snapshot 带有 lastProviderError 时会显示顶部最近错误提示', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: null,
+              state: 'idle',
+              graph: null,
+              currentTimeMs: 0,
+              lastProviderError: {
+                code: 'CONFIG_ERROR',
+                message: 'Tencent ASR provider requires secretId and secretKey',
+                provider: 'provider-config',
+                stage: 'asr',
+                retriable: false,
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+
+    const banner = screen.getByTestId('recent-error-banner');
+    expect(banner).toBeInTheDocument();
+    expect(within(banner).getByText(/最近错误/)).toBeInTheDocument();
+    expect(within(banner).getByText(/ASR \/ CONFIG_ERROR/)).toBeInTheDocument();
+    expect(within(banner).getByText(/secretId and secretKey/)).toBeInTheDocument();
+  });
+
+  it('收到错误后会显示最近错误提示，后续成功消息会清除', async () => {
+    let runtimeMessageListener: ((message: any) => void) | undefined;
+    (globalThis as any).chrome.runtime.onMessage.addListener.mockImplementation((listener: any) => {
+      runtimeMessageListener = listener;
+    });
+
+    await renderApp();
+    expect(screen.queryByTestId('recent-error-banner')).not.toBeInTheDocument();
+
+    await act(async () => {
+      runtimeMessageListener?.({
+        type: 'ERROR',
+        target: 'sidepanel',
+        payload: {
+          code: 'TIMEOUT_ERROR',
+          message: 'Structurer request timed out',
+        },
+      });
+      await Promise.resolve();
+    });
+
+    const banner = screen.getByTestId('recent-error-banner');
+    expect(within(banner).getByText(/Structurer \/ TIMEOUT_ERROR/)).toBeInTheDocument();
+    expect(within(banner).getByText(/timed out/)).toBeInTheDocument();
+
+    await act(async () => {
+      runtimeMessageListener?.({
+        type: 'TRANSCRIPT_READY',
+        target: 'sidepanel',
+        payload: {
+          transcript: {
+            chunkId: 'chunk_1',
+            sessionId: 'session_1',
+            text: '恢复后的转写',
+            startMs: 0,
+            endMs: 1000,
+            provider: 'mock-asr',
+          },
+        },
+      });
+      await Promise.resolve();
+    });
+
+    expect(screen.queryByTestId('recent-error-banner')).not.toBeInTheDocument();
+  });
+
   it('点击开始按钮后应该改变状态', async () => {
     const user = userEvent.setup();
     await renderApp();
@@ -1376,11 +1456,44 @@ describe('App 组件', () => {
     const user = userEvent.setup();
 
     await renderApp();
+    const stoppedGraph = {
+      sessionId: 'session_live',
+      revision: 1,
+      topics: [] as [],
+      nodes: [
+        {
+          id: 'n1',
+          type: 'claim' as const,
+          text: '刚停止的节点',
+          timestampMs: 0,
+          status: 'confirmed' as const,
+        },
+      ],
+      edges: [],
+      viewHints: {
+        defaultView: 'timeline' as const,
+        scores: {
+          timeline: 3,
+          causal: 0,
+          comparison: 0,
+          flow: 0,
+          hierarchy: 0,
+        },
+      },
+      updatedAt: Date.now(),
+    };
     await act(async () => {
       listeners[0]?.({
         type: 'SESSION_STATE_CHANGED',
         target: 'sidepanel',
-        payload: { sessionId: 'session_live', state: 'stopped' },
+        payload: {
+          sessionId: 'session_live',
+          state: 'stopped',
+          mergedGraph: stoppedGraph,
+          currentTimeMs: 30000,
+          currentView: 'timeline',
+          currentViewPinned: false,
+        },
       });
       await Promise.resolve();
     });
@@ -1441,6 +1554,179 @@ describe('App 组件', () => {
     expect(
       screen.getByText(/ASR: 腾讯 ASR 任务已创建，TaskId=9527/),
     ).toBeInTheDocument();
+  });
+
+  it('连续腾讯实时中间结果在日志区仅保留一行（覆盖更新）', async () => {
+    const listeners: Array<(message: any) => void> = [];
+    (globalThis as any).chrome.runtime.onMessage.addListener.mockImplementation(
+      (listener: (message: any) => void) => {
+        listeners.push(listener);
+      },
+    );
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: 'session_tencent_merge',
+              state: 'capturing',
+              graph: null,
+              currentTimeMs: 0,
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+
+    await act(async () => {
+      listeners[0]?.({
+        type: 'PROVIDER_PROGRESS',
+        target: 'sidepanel',
+        payload: {
+          stage: 'asr',
+          message: '腾讯实时 ASR 中间结果: first',
+        },
+      });
+      await Promise.resolve();
+    });
+    await act(async () => {
+      listeners[0]?.({
+        type: 'PROVIDER_PROGRESS',
+        target: 'sidepanel',
+        payload: {
+          stage: 'asr',
+          message: '腾讯实时 ASR 中间结果: second',
+        },
+      });
+      await Promise.resolve();
+    });
+
+    const logArea = screen.getByTestId('log-area');
+    const partialLines = within(logArea).getAllByText(/腾讯实时 ASR 中间结果/);
+    expect(partialLines).toHaveLength(1);
+    expect(partialLines[0]).toHaveTextContent(/second/);
+    expect(partialLines[0]).not.toHaveTextContent(/first/);
+  });
+
+  it('非流式腾讯 ASR 进度仍逐条追加，不被合并', async () => {
+    const listeners: Array<(message: any) => void> = [];
+    (globalThis as any).chrome.runtime.onMessage.addListener.mockImplementation(
+      (listener: (message: any) => void) => {
+        listeners.push(listener);
+      },
+    );
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: 'session_batch_asr',
+              state: 'transcribing',
+              graph: null,
+              currentTimeMs: 0,
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+
+    await act(async () => {
+      listeners[0]?.({
+        type: 'PROVIDER_PROGRESS',
+        target: 'sidepanel',
+        payload: {
+          stage: 'asr',
+          message: '腾讯 ASR 轮询 A',
+        },
+      });
+      await Promise.resolve();
+    });
+    await act(async () => {
+      listeners[0]?.({
+        type: 'PROVIDER_PROGRESS',
+        target: 'sidepanel',
+        payload: {
+          stage: 'asr',
+          message: '腾讯 ASR 轮询 B',
+        },
+      });
+      await Promise.resolve();
+    });
+
+    const logArea = screen.getByTestId('log-area');
+    expect(within(logArea).getAllByText(/腾讯 ASR 轮询 A/)).toHaveLength(1);
+    expect(within(logArea).getAllByText(/腾讯 ASR 轮询 B/)).toHaveLength(1);
+  });
+
+  it('TRANSCRIPT_READY 会清除腾讯实时流式行再写转写', async () => {
+    const listeners: Array<(message: any) => void> = [];
+    (globalThis as any).chrome.runtime.onMessage.addListener.mockImplementation(
+      (listener: (message: any) => void) => {
+        listeners.push(listener);
+      },
+    );
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: 'session_transcript_clear',
+              state: 'capturing',
+              graph: null,
+              currentTimeMs: 0,
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+
+    await act(async () => {
+      listeners[0]?.({
+        type: 'PROVIDER_PROGRESS',
+        target: 'sidepanel',
+        payload: {
+          stage: 'asr',
+          message: '腾讯实时 ASR 中间结果: partial only',
+        },
+      });
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      listeners[0]?.({
+        type: 'TRANSCRIPT_READY',
+        target: 'sidepanel',
+        payload: {
+          transcript: {
+            chunkId: 'c1',
+            sessionId: 'session_transcript_clear',
+            text: 'final stable',
+            startMs: 0,
+            endMs: 100,
+            provider: 'tencent-asr',
+          },
+        },
+      });
+      await Promise.resolve();
+    });
+
+    const logArea = screen.getByTestId('log-area');
+    expect(
+      within(logArea).queryByText(/腾讯实时 ASR 中间结果/),
+    ).not.toBeInTheDocument();
+    expect(within(logArea).getByText(/转写: final stable/)).toBeInTheDocument();
   });
 
   it('点击停止后会等待 stopped 广播，再恢复可导出状态', async () => {
@@ -1512,11 +1798,44 @@ describe('App 组件', () => {
 
     expect(screen.getByRole('button', { name: /导出 JSON/i })).toBeDisabled();
 
+    const stoppedGraph = {
+      sessionId: 'session_stop_flow',
+      revision: 1,
+      topics: [] as [],
+      nodes: [
+        {
+          id: 'n1',
+          type: 'claim' as const,
+          text: '停止后可导出',
+          timestampMs: 0,
+          status: 'confirmed' as const,
+        },
+      ],
+      edges: [],
+      viewHints: {
+        defaultView: 'timeline' as const,
+        scores: {
+          timeline: 3,
+          causal: 0,
+          comparison: 0,
+          flow: 0,
+          hierarchy: 0,
+        },
+      },
+      updatedAt: Date.now(),
+    };
     await act(async () => {
       listeners[0]?.({
         type: 'SESSION_STATE_CHANGED',
         target: 'sidepanel',
-        payload: { sessionId: 'session_stop_flow', state: 'stopped' },
+        payload: {
+          sessionId: 'session_stop_flow',
+          state: 'stopped',
+          mergedGraph: stoppedGraph,
+          currentTimeMs: 30000,
+          currentView: 'timeline',
+          currentViewPinned: false,
+        },
       });
       await Promise.resolve();
     });

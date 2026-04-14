@@ -44,6 +44,11 @@ import type {
   StructurerRunDebug,
 } from '../shared/messages';
 import { BUILD_INFO } from '../shared/build-info';
+import {
+  isTencentRealtimeStreamProgressMessage,
+  stripTencentRealtimeStreamLogs,
+  upsertTencentRealtimeStreamLog,
+} from './log-line-helpers';
 
 // ============ 初始空 Graph ============
 
@@ -675,6 +680,10 @@ function clampLogPanelHeight(nextHeight: number) {
   return Math.min(Math.max(nextHeight, MIN_LOG_PANEL_HEIGHT), viewportMax);
 }
 
+function formatErrorStageLabel(stage: 'asr' | 'structurer') {
+  return stage === 'asr' ? 'ASR' : 'Structurer';
+}
+
 export default function App() {
   const [sessionState, setSessionState] = useState<SessionState>('idle');
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -699,6 +708,7 @@ export default function App() {
     redactProviderConfig(createExtensionDefaultProviderConfigForUi()),
   );
   const [workerBuildLabel, setWorkerBuildLabel] = useState('waiting');
+  const [recentProviderError, setRecentProviderError] = useState<RuntimeSnapshot['lastProviderError']>(null);
 
   // 开发模式下的 ref
   const transcriptIndexRef = useRef(0);
@@ -709,6 +719,10 @@ export default function App() {
   const addLog = useCallback((msg: string) => {
     const time = new Date().toLocaleTimeString();
     setLogs((prev) => [`[${time}] ${msg}`, ...prev.slice(0, 49)]);
+  }, []);
+
+  const upsertTencentRealtimePartialLog = useCallback((displayMsg: string) => {
+    setLogs((prev) => upsertTencentRealtimeStreamLog(prev, displayMsg));
   }, []);
 
   // 视图分数
@@ -798,6 +812,27 @@ export default function App() {
       switch (message.type) {
         case 'SESSION_STATE_CHANGED': {
           const p = message.payload;
+          if (p.state === 'stopped') {
+            if (p.mergedGraph) {
+              setGraph(p.mergedGraph);
+              if (typeof p.currentTimeMs === 'number') {
+                setCurrentTimeMs(p.currentTimeMs);
+              }
+              userPinnedViewRef.current = p.currentViewPinned ?? false;
+              setCurrentView((prev) =>
+                p.currentViewPinned
+                  ? prev
+                  : (p.currentView ??
+                    p.mergedGraph!.viewHints?.defaultView ??
+                    pickDefaultView(p.mergedGraph!)),
+              );
+            } else {
+              setGraph(createEmptyGraph());
+              setCurrentTimeMs(0);
+              setCurrentView('causal');
+              userPinnedViewRef.current = false;
+            }
+          }
           const nextState = p.state === 'stopped' ? 'idle' : p.state;
           setSessionId(p.state === 'stopped' ? p.sessionId : nextState === 'idle' ? null : p.sessionId);
           setSessionState(nextState);
@@ -815,15 +850,28 @@ export default function App() {
           break;
         }
         case 'TRANSCRIPT_READY': {
-          addLog(`转写: ${message.payload.transcript.text}`);
+          setRecentProviderError(null);
+          const transcriptText = message.payload.transcript.text;
+          setLogs((prev) => {
+            const cleaned = stripTencentRealtimeStreamLogs(prev);
+            const time = new Date().toLocaleTimeString();
+            return [`[${time}] 转写: ${transcriptText}`, ...cleaned].slice(0, 50);
+          });
           break;
         }
         case 'PROVIDER_PROGRESS': {
-          addLog(`${message.payload.stage.toUpperCase()}: ${message.payload.message}`);
+          const { stage, message: progressMessage } = message.payload;
+          const displayMsg = `${stage.toUpperCase()}: ${progressMessage}`;
+          if (isTencentRealtimeStreamProgressMessage(stage, progressMessage)) {
+            upsertTencentRealtimePartialLog(displayMsg);
+          } else {
+            addLog(displayMsg);
+          }
           break;
         }
         case 'MERGED_GRAPH_UPDATED': {
           const nextGraph = message.payload.graph;
+          setRecentProviderError(null);
           setGraph(nextGraph);
           setCurrentView((prev) =>
             userPinnedViewRef.current
@@ -837,13 +885,20 @@ export default function App() {
           setCurrentTimeMs(message.payload.currentTimeMs);
           break;
         case 'ERROR':
+          setRecentProviderError({
+            code: message.payload.code as NonNullable<RuntimeSnapshot['lastProviderError']>['code'],
+            message: message.payload.message,
+            provider: 'runtime',
+            stage: 'structurer',
+            retriable: false,
+          });
           addLog(`错误(${message.payload.code}): ${message.payload.message}`);
           break;
       }
     };
     chrome.runtime.onMessage.addListener(handleMessage);
     return () => chrome.runtime.onMessage.removeListener(handleMessage);
-  }, [addLog]);
+  }, [addLog, upsertTencentRealtimePartialLog]);
 
   useEffect(() => {
     if (isDevMode) return;
@@ -864,12 +919,13 @@ export default function App() {
       }
 
       const snapshot = response.snapshot;
-      setSessionId(snapshot.sessionId);
+      setSessionId(snapshot.sessionId ?? snapshot.graph?.sessionId ?? null);
       setSessionState(snapshot.state === 'stopped' ? 'idle' : snapshot.state);
       setCurrentTimeMs(snapshot.currentTimeMs);
       setProviderSummary(
         snapshot.providerSummary ?? redactProviderConfig(createExtensionDefaultProviderConfigForUi()),
       );
+      setRecentProviderError(snapshot.lastProviderError ?? null);
       setWorkerBuildLabel(snapshot.workerBuild?.label ?? 'unknown');
 
       if (snapshot.graph) {
@@ -941,6 +997,7 @@ export default function App() {
     setReplayOpen(false);
     setReplayPlaying(false);
     setReplayData(null);
+    setRecentProviderError(null);
     userPinnedViewRef.current = false;
   }, []);
 
@@ -1633,6 +1690,28 @@ export default function App() {
           {isRunning ? '停止' : '开始'}
         </button>
       </div>
+      {recentProviderError && (
+        <div
+          data-testid="recent-error-banner"
+          style={{
+            padding: '8px 12px',
+            borderBottom: '1px solid #fecaca',
+            backgroundColor: '#fef2f2',
+            color: '#991b1b',
+            fontSize: 11,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexShrink: 0,
+          }}
+        >
+          <span style={{ fontWeight: 700 }}>最近错误</span>
+          <span style={{ fontFamily: 'monospace' }}>
+            {formatErrorStageLabel(recentProviderError.stage)} / {recentProviderError.code}
+          </span>
+          <span style={{ color: '#7f1d1d' }}>{recentProviderError.message}</span>
+        </div>
+      )}
 
       {/* 视图切换 */}
       <div
