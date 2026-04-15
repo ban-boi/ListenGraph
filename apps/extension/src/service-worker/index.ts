@@ -88,6 +88,9 @@ let currentViewPinned = false;
 let pendingSessionFinalize: { sessionId: string; endedAt: number } | null = null;
 let inFlightChunkPromise: Promise<ServiceWorkerResponse> | null = null;
 let chunkQueueTail: Promise<void> = Promise.resolve();
+/** 与 file-chunk 队列独立：实时 ASR 的 processTranscriptChunk 必须入队，供 SESSION_STOP 等待 */
+let inFlightTranscriptPromise: Promise<ServiceWorkerResponse> | null = null;
+let transcriptProcessTail: Promise<void> = Promise.resolve();
 let stoppingSessionId: string | null = null;
 let runtimeStateHydrated = false;
 let hydrationPromise: Promise<void> | null = null;
@@ -353,6 +356,7 @@ async function stopSession(sessionId: string): Promise<ServiceWorkerResponse> {
   asrProvider.reset?.();
   structurerProvider.reset?.();
   await waitForChunkQueueToSettle();
+  await waitForTranscriptProcessingToSettle();
 
   await cleanupSession({ sessionId: activeSession.sessionId, state: 'stopped' });
   return { success: true };
@@ -424,6 +428,40 @@ async function waitForChunkQueueToSettle() {
   }
 }
 
+function enqueueTranscriptProcessing(
+  work: () => Promise<ServiceWorkerResponse>,
+): Promise<ServiceWorkerResponse> {
+  const transcriptPromise = transcriptProcessTail
+    .catch(() => undefined)
+    .then(async () => {
+      const currentPromise = work();
+      inFlightTranscriptPromise = currentPromise;
+
+      try {
+        return await currentPromise;
+      } finally {
+        if (inFlightTranscriptPromise === currentPromise) {
+          inFlightTranscriptPromise = null;
+        }
+      }
+    });
+
+  transcriptProcessTail = transcriptPromise.then(
+    () => undefined,
+    () => undefined,
+  );
+
+  return transcriptPromise;
+}
+
+async function waitForTranscriptProcessingToSettle() {
+  await transcriptProcessTail;
+
+  if (inFlightTranscriptPromise) {
+    await inFlightTranscriptPromise;
+  }
+}
+
 async function handleAudioChunk(
   payload: AudioChunkPayload,
 ): Promise<ServiceWorkerResponse> {
@@ -458,7 +496,7 @@ async function handleAudioChunk(
       startMs: payload.startMs,
       endMs: payload.endMs,
     });
-    return await processTranscriptChunk(transcript);
+    return await enqueueTranscriptProcessing(() => processTranscriptChunk(transcript));
   } catch (error) {
     if (currentSession && stoppingSessionId === currentSession.sessionId) {
       return { success: false, error: '会话停止中' };
@@ -514,7 +552,7 @@ async function handleAsrStreamUtterance(
         },
   };
 
-  return processTranscriptChunk(transcript);
+  return enqueueTranscriptProcessing(() => processTranscriptChunk(transcript));
 }
 
 async function handleAsrStreamPartial(
@@ -565,6 +603,11 @@ async function handleAsrStreamError(
 async function processTranscriptChunk(
   transcript: TranscriptChunk,
 ): Promise<ServiceWorkerResponse> {
+  const chunkSessionId = currentSession?.sessionId;
+  if (!chunkSessionId) {
+    return { success: false, error: '没有活动会话' };
+  }
+
   try {
     try {
       await withIndexedDbRetry(() => transcriptChunkRepository.append(transcript));
@@ -632,6 +675,11 @@ async function processTranscriptChunk(
       });
       throw error;
     }
+
+    if (!currentSession || currentSession.sessionId !== chunkSessionId) {
+      return { success: false, error: '会话已结束' };
+    }
+
     lastStructurerRun = null;
     segment = attachStructurerRunDebug(segment, finalizeStructurerRunDebug(structurerRun, {
       status: 'success',
@@ -674,13 +722,17 @@ async function processTranscriptChunk(
     await persistRuntimeState();
     return { success: true };
   } catch (error) {
-    if (currentSession && stoppingSessionId === currentSession.sessionId) {
+    if (!currentSession || currentSession.sessionId !== chunkSessionId) {
+      return { success: false, error: '会话已结束' };
+    }
+
+    if (stoppingSessionId === currentSession.sessionId) {
       return { success: false, error: '会话停止中' };
     }
 
     lastProviderError = serializeProviderError(error);
     const message = lastProviderError.message;
-    currentSession!.state = 'error';
+    currentSession.state = 'error';
     await notifySessionState('error');
     await persistRuntimeState();
     await notifyError(lastProviderError?.code ?? 'CHUNK_PROCESS_ERROR', message);
@@ -755,7 +807,9 @@ async function handleTestStructurerSessionRun(payload: {
       ...nextTranscript,
       sessionId,
     };
-    const response = await processTranscriptChunk(transcript);
+    const response = await enqueueTranscriptProcessing(() =>
+      processTranscriptChunk(transcript),
+    );
     if (!response.success) {
       return response;
     }
