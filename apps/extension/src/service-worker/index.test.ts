@@ -1912,6 +1912,75 @@ describe('Service Worker - 当前主链路', () => {
     expect(snapshotResponse.snapshot.state).toBe('idle');
   });
 
+  it('stop 会等待实时链路上 structuring 挂起结束后再清理，且停止后快照仍含合并后的图谱', async () => {
+    const startResponse = await dispatchMessage(
+      {
+        type: 'SESSION_START',
+        target: 'service-worker',
+        payload: { tabId: 123 },
+      },
+      { tab: { id: 123 } },
+    );
+
+    await bootstrapStructurerWindow();
+
+    let finishStructurer!: (value: unknown) => void;
+    extractSegmentGraphMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishStructurer = resolve;
+        }),
+    );
+
+    const chunk4Promise = sendAudioChunk({ startMs: 30000, endMs: 40000 });
+
+    await vi.waitFor(() => {
+      expect(extractSegmentGraphMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
+
+    const stopPromise = dispatchMessage({
+      type: 'SESSION_STOP',
+      target: 'service-worker',
+      payload: { sessionId: startResponse.sessionId },
+    });
+    await Promise.resolve();
+
+    finishStructurer!({
+      segmentId: 'segment_40000',
+      sessionId: startResponse.sessionId,
+      startMs: 30000,
+      endMs: 40000,
+      topic: 'provider topic',
+      provider: 'mock-structurer',
+      nodes: [
+        {
+          id: 'segment_40000:node_4',
+          type: 'claim',
+          text: '第四段',
+          timestampMs: 30000,
+          status: 'confirmed',
+          evidenceChunkIds: ['chunk_mock'],
+        },
+      ],
+      edges: [],
+    });
+
+    const [stopResult, chunk4Result] = await Promise.all([stopPromise, chunk4Promise]);
+
+    expect(stopResult.success).toBe(true);
+    expect(chunk4Result.success).toBe(true);
+
+    const snapshotResponse = await dispatchMessage({
+      type: 'GET_RUNTIME_SNAPSHOT',
+      target: 'service-worker',
+      payload: {},
+    });
+
+    expect(snapshotResponse.snapshot.state).toBe('idle');
+    expect(snapshotResponse.snapshot.sessionId).toBeNull();
+    expect(snapshotResponse.snapshot.graph?.nodes?.length ?? 0).toBeGreaterThanOrEqual(2);
+  });
+
   it('stop 先发出而最后一个 chunk 后到时，会直接丢弃该 chunk 并完成清理', async () => {
     const startResponse = await dispatchMessage(
       {

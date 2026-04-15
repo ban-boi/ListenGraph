@@ -10,66 +10,74 @@ describe('Service Worker - provider recovery', () => {
   ) => Promise<any>;
   let storageState: Record<string, unknown> = {};
   let createRuntimeProvidersMock: any;
+  /** 与 worker 内 structurerProvider 同一引用，便于断言调用次数（勿在 factory 内联 new vi.fn，否则易与 runtime 脱节） */
+  let extractSegmentGraphMock: ReturnType<typeof vi.fn>;
+  let transcribeChunkMock: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     vi.clearAllMocks();
     vi.resetModules();
     messageListeners = [];
     storageState = {};
+
+    transcribeChunkMock = vi.fn(async ({ sessionId, startMs, endMs, audio }: any) => ({
+      chunkId: `chunk_${startMs}`,
+      sessionId,
+      text: `恢复片段@${startMs}-${endMs}`,
+      startMs,
+      endMs,
+      provider: 'mock-asr',
+      raw: {
+        audioSize:
+          audio instanceof ArrayBuffer ? audio.byteLength : audio?.size ?? 0,
+      },
+    }));
+
+    extractSegmentGraphMock = vi.fn(
+      async ({ sessionId, transcriptWindow, previousGraph }: any) => ({
+        segmentId: `segment_${transcriptWindow.length}`,
+        sessionId,
+        startMs: transcriptWindow[transcriptWindow.length - 1].startMs,
+        endMs: transcriptWindow[transcriptWindow.length - 1].endMs,
+        topic: '恢复测试主题',
+        provider: 'mock-structurer',
+        nodes: [
+          {
+            id: `node_${transcriptWindow.length}`,
+            type: 'claim',
+            text: transcriptWindow[transcriptWindow.length - 1].text,
+            timestampMs: transcriptWindow[transcriptWindow.length - 1].startMs,
+            status: 'confirmed',
+            evidenceChunkIds: [transcriptWindow[transcriptWindow.length - 1].chunkId],
+          },
+        ],
+        edges:
+          previousGraph?.nodes?.length > 0
+            ? [
+                {
+                  id: 'edge_mock',
+                  source: previousGraph.nodes[previousGraph.nodes.length - 1].id,
+                  target: `node_${transcriptWindow.length}`,
+                  type: 'supports',
+                  evidenceChunkIds: [
+                    transcriptWindow[transcriptWindow.length - 1].chunkId,
+                  ],
+                },
+              ]
+            : [],
+      }),
+    );
+
     createRuntimeProvidersMock = vi.fn((config: any) => ({
       config,
       asr: {
         name: 'mock-asr',
-        transcribeChunk: vi.fn(async ({ sessionId, startMs, endMs, audio }: any) => ({
-          chunkId: `chunk_${startMs}`,
-          sessionId,
-          text: startMs === 0 ? '第一段恢复前内容' : '第二段恢复后内容',
-          startMs,
-          endMs,
-          provider: 'mock-asr',
-          raw: {
-            audioSize:
-              audio instanceof ArrayBuffer ? audio.byteLength : audio?.size ?? 0,
-          },
-        })),
+        transcribeChunk: transcribeChunkMock,
         reset: vi.fn(),
       },
       structurer: {
         name: 'mock-structurer',
-        extractSegmentGraph: vi.fn(
-          async ({ sessionId, transcriptWindow, previousGraph }: any) => ({
-            segmentId: `segment_${transcriptWindow.length}`,
-            sessionId,
-            startMs: transcriptWindow[transcriptWindow.length - 1].startMs,
-            endMs: transcriptWindow[transcriptWindow.length - 1].endMs,
-            topic: '恢复测试主题',
-            provider: 'mock-structurer',
-            nodes: [
-              {
-                id: `node_${transcriptWindow.length}`,
-                type: 'claim',
-                text: transcriptWindow[transcriptWindow.length - 1].text,
-                timestampMs: transcriptWindow[transcriptWindow.length - 1].startMs,
-                status: 'confirmed',
-                evidenceChunkIds: [transcriptWindow[transcriptWindow.length - 1].chunkId],
-              },
-            ],
-            edges:
-              previousGraph?.nodes?.length > 0
-                ? [
-                    {
-                      id: 'edge_mock',
-                      source: previousGraph.nodes[previousGraph.nodes.length - 1].id,
-                      target: `node_${transcriptWindow.length}`,
-                      type: 'supports',
-                      evidenceChunkIds: [
-                        transcriptWindow[transcriptWindow.length - 1].chunkId,
-                      ],
-                    },
-                  ]
-                : [],
-          }),
-        ),
+        extractSegmentGraph: extractSegmentGraphMock,
         reset: vi.fn(),
       },
     }));
@@ -148,7 +156,15 @@ describe('Service Worker - provider recovery', () => {
         getBySession: vi.fn(async () => undefined),
       }),
       createSettingsRepository: () => ({
-        getProviderConfig: vi.fn(async () => undefined),
+        getProviderConfig: vi.fn(async () => ({
+          asr: { type: 'mock', mode: 'direct', model: 'mock-asr', language: 'zh' },
+          structurer: {
+            type: 'mock',
+            mode: 'direct',
+            model: 'mock-structurer',
+            language: 'zh',
+          },
+        })),
       }),
       db: {
         sessions: {},
@@ -200,6 +216,32 @@ describe('Service Worker - provider recovery', () => {
       });
   }
 
+  async function sendAudioChunk(params: {
+    startMs: number;
+    endMs: number;
+    tabId?: number;
+  }) {
+    return dispatchMessage(
+      {
+        type: 'AUDIO_CHUNK_READY',
+        target: 'service-worker',
+        payload: {
+          audioData: [1, 2, 3, 4],
+          startMs: params.startMs,
+          endMs: params.endMs,
+        },
+      },
+      { tab: { id: params.tabId ?? 123 } },
+    );
+  }
+
+  /** 与主链路 index.test 一致：第三条音频后才满足 bootstrap，首次写入 mergedGraph */
+  async function bootstrapMergedGraph() {
+    await sendAudioChunk({ startMs: 0, endMs: 10_000 });
+    await sendAudioChunk({ startMs: 10_000, endMs: 20_000 });
+    await sendAudioChunk({ startMs: 20_000, endMs: 30_000 });
+  }
+
   it('worker 重载后继续处理 chunk 时不会让 mock provider 序列回到起点', async () => {
     const chromeMock = (globalThis as any).chrome;
 
@@ -212,38 +254,33 @@ describe('Service Worker - provider recovery', () => {
       { tab: { id: 123 } },
     );
 
-    await dispatchMessage(
-      {
-        type: 'AUDIO_CHUNK_READY',
-        target: 'service-worker',
-        payload: {
-          audioData: [1, 2, 3, 4],
-          startMs: 0,
-          endMs: 30000,
-        },
-      },
-      { tab: { id: 123 } },
-    );
+    await bootstrapMergedGraph();
+
+    const peekAfterBootstrap = await dispatchMessage({
+      type: 'GET_RUNTIME_SNAPSHOT',
+      target: 'service-worker',
+      payload: {},
+    });
+    expect(extractSegmentGraphMock).toHaveBeenCalled();
+    expect(peekAfterBootstrap.snapshot.graph?.nodes?.length ?? 0).toBeGreaterThan(0);
 
     const onSuspendHandler =
       chromeMock.runtime.onSuspend.addListener.mock.calls.at(-1)?.[0];
     await onSuspendHandler?.();
 
+    // onSuspend 里是 void ensureHydrated().then(() => persistRuntimeState())，须等落盘后再重载模块
+    const runtimeKey = 'listen-graphic-runtime-state';
+    await vi.waitFor(() => {
+      const payload = storageState[runtimeKey] as
+        | { mergedGraph?: { nodes?: unknown[] } }
+        | undefined;
+      expect(payload?.mergedGraph?.nodes?.length ?? 0).toBeGreaterThan(0);
+    });
+
     vi.resetModules();
     await initializeModule();
 
-    await dispatchMessage(
-      {
-        type: 'AUDIO_CHUNK_READY',
-        target: 'service-worker',
-        payload: {
-          audioData: [5, 6, 7, 8],
-          startMs: 30000,
-          endMs: 60000,
-        },
-      },
-      { tab: { id: 123 } },
-    );
+    await sendAudioChunk({ startMs: 30_000, endMs: 40_000 });
 
     const snapshotResponse = await dispatchMessage({
       type: 'GET_RUNTIME_SNAPSHOT',
@@ -251,9 +288,9 @@ describe('Service Worker - provider recovery', () => {
       payload: {},
     });
 
-    expect(snapshotResponse.snapshot.graph.nodes.length).toBeGreaterThanOrEqual(2);
-    expect(snapshotResponse.snapshot.graph.nodes[0].text).not.toBe(
-      snapshotResponse.snapshot.graph.nodes[1].text,
-    );
+    const graph = snapshotResponse.snapshot.graph;
+    expect(graph).not.toBeNull();
+    expect(graph!.nodes.length).toBeGreaterThanOrEqual(2);
+    expect(graph!.nodes[0].text).not.toBe(graph!.nodes[1].text);
   });
 });

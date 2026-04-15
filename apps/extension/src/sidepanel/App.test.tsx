@@ -4,6 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { act, useEffect, type ReactNode } from 'react';
 
 const reactFlowFitViewSpy = vi.fn();
+const reactFlowFitBoundsSpy = vi.fn();
+const reactFlowGetViewportSpy = vi.fn();
+let reactFlowViewport = { x: 0, y: 0, zoom: 1 };
 
 vi.mock('reactflow', () => ({
   ReactFlow: ({
@@ -12,6 +15,8 @@ vi.mock('reactflow', () => ({
     fitView,
     onInit,
     onNodeClick,
+    onMoveStart,
+    onMoveEnd,
   }: {
     children?: ReactNode;
     nodes?: Array<{
@@ -20,17 +25,34 @@ vi.mock('reactflow', () => ({
       data?: { label?: string; timestampMs?: number };
     }>;
     fitView?: boolean;
-    onInit?: (instance: { fitView: typeof reactFlowFitViewSpy }) => void;
+    onInit?: (instance: {
+      fitView: typeof reactFlowFitViewSpy;
+      fitBounds: typeof reactFlowFitBoundsSpy;
+      getViewport: typeof reactFlowGetViewportSpy;
+    }) => void;
     onNodeClick?: (_event: React.MouseEvent, node: any) => void;
+    onMoveStart?: () => void;
+    onMoveEnd?: () => void;
   }) => {
     useEffect(() => {
       onInit?.({
         fitView: reactFlowFitViewSpy,
+        fitBounds: reactFlowFitBoundsSpy,
+        getViewport: reactFlowGetViewportSpy,
       });
     }, [onInit]);
 
     return (
-      <div data-testid="reactflow-mock" data-fit-view-prop={fitView ? 'true' : 'false'}>
+      <div
+        data-testid="reactflow-mock"
+        data-fit-view-prop={fitView ? 'true' : 'false'}
+        onMouseDown={() => onMoveStart?.()}
+        onMouseUp={() => onMoveEnd?.()}
+        onWheel={() => {
+          onMoveStart?.();
+          onMoveEnd?.();
+        }}
+      >
         {nodes.map((node) => (
           <button
             key={node.id}
@@ -49,6 +71,23 @@ vi.mock('reactflow', () => ({
   Background: () => <div data-testid="reactflow-background" />,
   Controls: () => <div data-testid="reactflow-controls" />,
   Handle: () => null,
+  getViewportForBounds: (
+    bounds: { x: number; y: number; width: number; height: number },
+    width: number,
+    height: number,
+    minZoom: number,
+    maxZoom: number,
+    padding = 0,
+  ) => {
+    const paddedWidth = bounds.width * (1 + padding * 2);
+    const paddedHeight = bounds.height * (1 + padding * 2);
+    const zoom = Math.max(minZoom, Math.min(maxZoom, Math.min(width / paddedWidth, height / paddedHeight)));
+    return {
+      x: width / 2 - (bounds.x + bounds.width / 2) * zoom,
+      y: height / 2 - (bounds.y + bounds.height / 2) * zoom,
+      zoom,
+    };
+  },
   Position: {
     Top: 'top',
     Bottom: 'bottom',
@@ -76,10 +115,23 @@ describe('App 组件', () => {
   let createObjectURLSpy: any;
   let revokeObjectURLSpy: any;
   let anchorClickSpy: any;
+  let clientWidthGetter: any;
+  let clientHeightGetter: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
     reactFlowFitViewSpy.mockReset();
+    reactFlowFitBoundsSpy.mockReset();
+    reactFlowGetViewportSpy.mockReset();
+    reactFlowViewport = { x: 0, y: 0, zoom: 1 };
+    reactFlowGetViewportSpy.mockImplementation(() => reactFlowViewport);
+    reactFlowFitBoundsSpy.mockImplementation((bounds: { x: number; y: number; width: number; height: number }) => {
+      reactFlowViewport = {
+        x: -bounds.x,
+        y: -bounds.y,
+        zoom: reactFlowViewport.zoom,
+      };
+    });
     originalConsoleError = console.error;
     originalConsoleWarn = console.warn;
     originalStderrWrite = process.stderr.write.bind(process.stderr);
@@ -136,6 +188,8 @@ describe('App 组件', () => {
     anchorClickSpy = vi
       .spyOn(HTMLAnchorElement.prototype, 'click')
       .mockImplementation(() => {});
+    clientWidthGetter = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(960);
+    clientHeightGetter = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(720);
   });
 
   afterEach(() => {
@@ -146,6 +200,8 @@ describe('App 组件', () => {
     createObjectURLSpy.mockRestore();
     revokeObjectURLSpy.mockRestore();
     anchorClickSpy.mockRestore();
+    clientWidthGetter.mockRestore();
+    clientHeightGetter.mockRestore();
   });
 
   it('应该渲染日志区域', async () => {
@@ -1225,7 +1281,7 @@ describe('App 组件', () => {
     expect(screen.getByText(/当前时间: 0:30/)).toBeInTheDocument();
     expect(screen.getByText('已恢复的节点')).toBeInTheDocument();
     expect(screen.getByTestId('reactflow-mock')).toHaveAttribute('data-fit-view-prop', 'false');
-    expect(reactFlowFitViewSpy).toHaveBeenCalledTimes(1);
+    expect(reactFlowFitViewSpy).toHaveBeenCalled();
   });
 
   it('同一 session 的图更新不会自动切换当前视图', async () => {
@@ -1406,7 +1462,8 @@ describe('App 组件', () => {
 
     const firstPosition = screen.getByRole('button', { name: '节点一' }).dataset.nodePosition;
     const secondPosition = screen.getByRole('button', { name: '节点二' }).dataset.nodePosition;
-    expect(reactFlowFitViewSpy).toHaveBeenCalledTimes(1);
+    const initialFitViewCalls = reactFlowFitViewSpy.mock.calls.length;
+    expect(initialFitViewCalls).toBeGreaterThan(0);
 
     await act(async () => {
       listeners[0]?.({
@@ -1460,8 +1517,368 @@ describe('App 组件', () => {
 
     expect(screen.getByRole('button', { name: '节点一' }).dataset.nodePosition).toBe(firstPosition);
     expect(screen.getByRole('button', { name: '节点二' }).dataset.nodePosition).toBe(secondPosition);
-    expect(reactFlowFitViewSpy).toHaveBeenCalledTimes(1);
+    expect(reactFlowFitViewSpy).toHaveBeenCalledTimes(initialFitViewCalls);
+    expect(reactFlowFitBoundsSpy).not.toHaveBeenCalled();
     expect(screen.getByText(/图更新: 仅新增连线 \+1/)).toBeInTheDocument();
+  });
+
+  it('新增节点更新时会使用动画 fitBounds 跟随新区域', async () => {
+    const listeners: Array<(message: any) => void> = [];
+    (globalThis as any).chrome.runtime.onMessage.addListener.mockImplementation(
+      (listener: (message: any) => void) => {
+        listeners.push(listener);
+      },
+    );
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: 'session_follow_view',
+              state: 'capturing',
+              currentTimeMs: 30000,
+              currentView: 'timeline',
+              currentViewPinned: false,
+              graph: {
+                sessionId: 'session_follow_view',
+                revision: 1,
+                topics: [],
+                nodes: [
+                  {
+                    id: 'n1',
+                    type: 'claim',
+                    text: '节点一',
+                    timestampMs: 0,
+                    status: 'confirmed',
+                  },
+                  {
+                    id: 'n2',
+                    type: 'claim',
+                    text: '节点二',
+                    timestampMs: 30000,
+                    status: 'confirmed',
+                  },
+                ],
+                edges: [],
+                viewHints: {
+                  defaultView: 'timeline',
+                  scores: {
+                    timeline: 3,
+                    causal: 0,
+                    comparison: 0,
+                    flow: 0,
+                    hierarchy: 0,
+                  },
+                },
+                updatedAt: 100,
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+    expect(reactFlowFitViewSpy).toHaveBeenCalled();
+
+    await act(async () => {
+      listeners[0]?.({
+        type: 'MERGED_GRAPH_UPDATED',
+        target: 'sidepanel',
+        payload: {
+          graph: {
+            sessionId: 'session_follow_view',
+            revision: 2,
+            topics: [],
+            nodes: [
+              {
+                id: 'n1',
+                type: 'claim',
+                text: '节点一',
+                timestampMs: 0,
+                status: 'confirmed',
+              },
+              {
+                id: 'n2',
+                type: 'claim',
+                text: '节点二',
+                timestampMs: 30000,
+                status: 'confirmed',
+              },
+              {
+                id: 'n3',
+                type: 'reason',
+                text: '新增原因',
+                timestampMs: 60000,
+                status: 'confirmed',
+              },
+            ],
+            edges: [
+              {
+                id: 'e1',
+                source: 'n2',
+                target: 'n3',
+                type: 'supports',
+              },
+            ],
+            viewHints: {
+              defaultView: 'timeline',
+              scores: {
+                timeline: 4,
+                causal: 0,
+                comparison: 0,
+                flow: 0,
+                hierarchy: 0,
+              },
+            },
+            updatedAt: 200,
+          },
+        },
+      });
+      await Promise.resolve();
+    });
+
+    expect(reactFlowFitBoundsSpy).toHaveBeenCalledTimes(1);
+    expect(reactFlowFitBoundsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        width: expect.any(Number),
+        height: expect.any(Number),
+      }),
+      expect.objectContaining({
+        duration: 320,
+        padding: 0,
+      }),
+    );
+  });
+
+  it('新增节点即使已在当前视口内也会聚焦跟随并放大到目标区域', async () => {
+    const listeners: Array<(message: any) => void> = [];
+    reactFlowViewport = { x: 300, y: 210, zoom: 0.3 };
+    reactFlowGetViewportSpy.mockImplementation(() => reactFlowViewport);
+    (globalThis as any).chrome.runtime.onMessage.addListener.mockImplementation(
+      (listener: (message: any) => void) => {
+        listeners.push(listener);
+      },
+    );
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: 'session_visible_view',
+              state: 'capturing',
+              currentTimeMs: 30000,
+              currentView: 'timeline',
+              currentViewPinned: false,
+              graph: {
+                sessionId: 'session_visible_view',
+                revision: 1,
+                topics: [],
+                nodes: [
+                  {
+                    id: 'n1',
+                    type: 'claim',
+                    text: '节点一',
+                    timestampMs: 0,
+                    status: 'confirmed',
+                  },
+                ],
+                edges: [],
+                viewHints: {
+                  defaultView: 'timeline',
+                  scores: {
+                    timeline: 3,
+                    causal: 0,
+                    comparison: 0,
+                    flow: 0,
+                    hierarchy: 0,
+                  },
+                },
+                updatedAt: 100,
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+    reactFlowFitBoundsSpy.mockClear();
+
+    await act(async () => {
+      listeners[0]?.({
+        type: 'MERGED_GRAPH_UPDATED',
+        target: 'sidepanel',
+        payload: {
+          graph: {
+            sessionId: 'session_visible_view',
+            revision: 2,
+            topics: [],
+            nodes: [
+              {
+                id: 'n1',
+                type: 'claim',
+                text: '节点一',
+                timestampMs: 0,
+                status: 'confirmed',
+              },
+              {
+                id: 'n2',
+                type: 'reason',
+                text: '仍在视口里的新增原因',
+                timestampMs: 1000,
+                status: 'confirmed',
+              },
+            ],
+            edges: [
+              {
+                id: 'e1',
+                source: 'n1',
+                target: 'n2',
+                type: 'supports',
+              },
+            ],
+            viewHints: {
+              defaultView: 'timeline',
+              scores: {
+                timeline: 4,
+                causal: 0,
+                comparison: 0,
+                flow: 0,
+                hierarchy: 0,
+              },
+            },
+            updatedAt: 200,
+          },
+        },
+      });
+      await Promise.resolve();
+    });
+
+    expect(reactFlowFitBoundsSpy).toHaveBeenCalledTimes(1);
+    expect(reactFlowFitBoundsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        width: expect.any(Number),
+        height: expect.any(Number),
+      }),
+      expect.objectContaining({
+        duration: 320,
+        padding: 0,
+      }),
+    );
+  });
+
+  it('用户刚手动移动画布后会暂停自动跟随', async () => {
+    const listeners: Array<(message: any) => void> = [];
+    (globalThis as any).chrome.runtime.onMessage.addListener.mockImplementation(
+      (listener: (message: any) => void) => {
+        listeners.push(listener);
+      },
+    );
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: 'session_user_control',
+              state: 'capturing',
+              currentTimeMs: 30000,
+              currentView: 'timeline',
+              currentViewPinned: false,
+              graph: {
+                sessionId: 'session_user_control',
+                revision: 1,
+                topics: [],
+                nodes: [
+                  {
+                    id: 'n1',
+                    type: 'claim',
+                    text: '节点一',
+                    timestampMs: 0,
+                    status: 'confirmed',
+                  },
+                ],
+                edges: [],
+                viewHints: {
+                  defaultView: 'timeline',
+                  scores: {
+                    timeline: 3,
+                    causal: 0,
+                    comparison: 0,
+                    flow: 0,
+                    hierarchy: 0,
+                  },
+                },
+                updatedAt: 100,
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+    reactFlowFitBoundsSpy.mockClear();
+    fireEvent.mouseDown(screen.getByTestId('reactflow-mock'));
+    fireEvent.mouseUp(screen.getByTestId('reactflow-mock'));
+
+    await act(async () => {
+      listeners[0]?.({
+        type: 'MERGED_GRAPH_UPDATED',
+        target: 'sidepanel',
+        payload: {
+          graph: {
+            sessionId: 'session_user_control',
+            revision: 2,
+            topics: [],
+            nodes: [
+              {
+                id: 'n1',
+                type: 'claim',
+                text: '节点一',
+                timestampMs: 0,
+                status: 'confirmed',
+              },
+              {
+                id: 'n2',
+                type: 'reason',
+                text: '新增原因',
+                timestampMs: 30000,
+                status: 'confirmed',
+              },
+            ],
+            edges: [
+              {
+                id: 'e1',
+                source: 'n1',
+                target: 'n2',
+                type: 'supports',
+              },
+            ],
+            viewHints: {
+              defaultView: 'timeline',
+              scores: {
+                timeline: 4,
+                causal: 0,
+                comparison: 0,
+                flow: 0,
+                hierarchy: 0,
+              },
+            },
+            updatedAt: 200,
+          },
+        },
+      });
+      await Promise.resolve();
+    });
+
+    expect(reactFlowFitBoundsSpy).not.toHaveBeenCalled();
   });
 
   it('恢复已停止会话资产后切换视图不会再回写 worker', async () => {

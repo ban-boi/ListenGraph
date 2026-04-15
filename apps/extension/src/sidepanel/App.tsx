@@ -16,6 +16,7 @@ import {
   type ReactFlowInstance,
   Handle,
   Position,
+  getViewportForBounds,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -182,6 +183,12 @@ type StableViewLayoutState = {
 };
 
 type StableLayoutCache = Record<ViewType, StableViewLayoutState>;
+type ViewBounds = {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+};
 
 const STABLE_LAYOUT_CARD_WIDTH = 220;
 const STABLE_LAYOUT_CARD_HEIGHT = 132;
@@ -925,6 +932,13 @@ const isDevMode = false;
 const DEFAULT_LOG_PANEL_HEIGHT = 120;
 const MIN_LOG_PANEL_HEIGHT = 80;
 const MAX_LOG_PANEL_HEIGHT = 360;
+const AUTO_REVEAL_PADDING = 48;
+const AUTO_REVEAL_DURATION_MS = 320;
+const AUTO_REVEAL_MIN_WIDTH_RATIO = 0.78;
+const AUTO_REVEAL_MIN_HEIGHT_RATIO = 0.68;
+const AUTO_REVEAL_VIEWPORT_EPSILON = 6;
+const AUTO_REVEAL_ZOOM_EPSILON = 0.02;
+const USER_VIEWPORT_COOLDOWN_MS = 1800;
 
 function clampLogPanelHeight(nextHeight: number) {
   const viewportMax = typeof window === 'undefined'
@@ -935,6 +949,103 @@ function clampLogPanelHeight(nextHeight: number) {
 
 function formatErrorStageLabel(stage: 'asr' | 'structurer') {
   return stage === 'asr' ? 'ASR' : 'Structurer';
+}
+
+function getAddedNodeIds(previousGraph: MergedGraph | null, nextGraph: MergedGraph) {
+  const previousNodeIds = new Set(previousGraph?.nodes.map((node) => node.id) ?? []);
+  return nextGraph.nodes
+    .filter((node) => !previousNodeIds.has(node.id))
+    .map((node) => node.id);
+}
+
+function getAutoRevealAnchorNodeIds(params: {
+  addedNodeIds: string[];
+  previousGraph: MergedGraph | null;
+  nextGraph: MergedGraph;
+}) {
+  if (!params.addedNodeIds.length) {
+    return [];
+  }
+
+  const previousNodeIds = new Set(params.previousGraph?.nodes.map((node) => node.id) ?? []);
+  const addedNodeSet = new Set(params.addedNodeIds);
+  const anchorIds = new Set<string>();
+
+  for (const edge of params.nextGraph.edges) {
+    const sourceIsAdded = addedNodeSet.has(edge.source);
+    const targetIsAdded = addedNodeSet.has(edge.target);
+    if (sourceIsAdded && previousNodeIds.has(edge.target)) {
+      anchorIds.add(edge.target);
+    }
+    if (targetIsAdded && previousNodeIds.has(edge.source)) {
+      anchorIds.add(edge.source);
+    }
+  }
+
+  return Array.from(anchorIds);
+}
+
+function getNodeBounds(node: { position: { x: number; y: number } }): ViewBounds {
+  return {
+    left: node.position.x,
+    top: node.position.y,
+    right: node.position.x + STABLE_LAYOUT_CARD_WIDTH,
+    bottom: node.position.y + STABLE_LAYOUT_CARD_HEIGHT,
+  };
+}
+
+function mergeViewBounds(bounds: ViewBounds[]) {
+  return bounds.reduce<ViewBounds | null>((acc, next) => {
+    if (!acc) {
+      return { ...next };
+    }
+    return {
+      left: Math.min(acc.left, next.left),
+      top: Math.min(acc.top, next.top),
+      right: Math.max(acc.right, next.right),
+      bottom: Math.max(acc.bottom, next.bottom),
+    };
+  }, null);
+}
+
+function expandViewBounds(bounds: ViewBounds, padding: number) {
+  return {
+    left: bounds.left - padding,
+    top: bounds.top - padding,
+    right: bounds.right + padding,
+    bottom: bounds.bottom + padding,
+  };
+}
+
+function ensureMinimumBoundsSize(params: {
+  bounds: ViewBounds;
+  minimumWidth: number;
+  minimumHeight: number;
+}) {
+  const width = params.bounds.right - params.bounds.left;
+  const height = params.bounds.bottom - params.bounds.top;
+  const centerX = (params.bounds.left + params.bounds.right) / 2;
+  const centerY = (params.bounds.top + params.bounds.bottom) / 2;
+  const nextWidth = Math.max(width, params.minimumWidth);
+  const nextHeight = Math.max(height, params.minimumHeight);
+
+  return {
+    left: centerX - nextWidth / 2,
+    right: centerX + nextWidth / 2,
+    top: centerY - nextHeight / 2,
+    bottom: centerY + nextHeight / 2,
+  };
+}
+
+function isViewportCloseToTarget(params: {
+  current: { x: number; y: number; zoom: number };
+  target: { x: number; y: number; zoom: number };
+}) {
+  return (
+    Math.abs(params.current.x - params.target.x) <= AUTO_REVEAL_VIEWPORT_EPSILON &&
+    Math.abs(params.current.y - params.target.y) <= AUTO_REVEAL_VIEWPORT_EPSILON &&
+    Math.abs(params.current.zoom - params.target.zoom) <= AUTO_REVEAL_ZOOM_EPSILON
+  );
 }
 
 export default function App() {
@@ -975,6 +1086,15 @@ export default function App() {
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const flowContainerRef = useRef<HTMLDivElement | null>(null);
   const hasAutoFitRef = useRef(false);
+  const userViewportInteractingRef = useRef(false);
+  const lastUserViewportChangeAtRef = useRef(0);
+  const pendingAutoRevealRef = useRef<{
+    sessionId: string;
+    revision: number;
+    nodeIds: string[];
+    anchorNodeIds: string[];
+  } | null>(null);
+  const lastAutoRevealKeyRef = useRef<string | null>(null);
 
   const addLog = useCallback((msg: string) => {
     const time = new Date().toLocaleTimeString();
@@ -1099,6 +1219,7 @@ export default function App() {
               setCurrentView('causal');
               userPinnedViewRef.current = false;
               activeViewSessionRef.current = null;
+              pendingAutoRevealRef.current = null;
             }
           }
           const nextState = p.state === 'stopped' ? 'idle' : p.state;
@@ -1114,6 +1235,7 @@ export default function App() {
             setCurrentView('causal');
             userPinnedViewRef.current = false;
             activeViewSessionRef.current = null;
+            pendingAutoRevealRef.current = null;
           }
           addLog(`状态: ${p.state}`);
           break;
@@ -1142,10 +1264,23 @@ export default function App() {
           const nextGraph = message.payload.graph;
           const shouldPreserveView = activeViewSessionRef.current === nextGraph.sessionId;
           const previousGraph = graphRef.current;
+          const addedNodeIds = getAddedNodeIds(previousGraph, nextGraph);
           setRecentProviderError(null);
           setGraph(nextGraph);
           graphRef.current = nextGraph;
           activeViewSessionRef.current = nextGraph.sessionId;
+          pendingAutoRevealRef.current = addedNodeIds.length > 0
+            ? {
+                sessionId: nextGraph.sessionId,
+                revision: nextGraph.revision,
+                nodeIds: addedNodeIds,
+                anchorNodeIds: getAutoRevealAnchorNodeIds({
+                  addedNodeIds,
+                  previousGraph,
+                  nextGraph,
+                }),
+              }
+            : null;
           setCurrentView((prev) =>
             shouldPreserveView ? prev : getPreferredView(nextGraph),
           );
@@ -1204,11 +1339,13 @@ export default function App() {
         setCurrentView(getPreferredView(snapshot.graph, snapshot.currentView));
         userPinnedViewRef.current = snapshot.currentViewPinned ?? false;
         activeViewSessionRef.current = snapshot.graph.sessionId;
+        pendingAutoRevealRef.current = null;
       } else {
         setGraph(createEmptyGraph());
         setCurrentView('causal');
         userPinnedViewRef.current = false;
         activeViewSessionRef.current = null;
+        pendingAutoRevealRef.current = null;
       }
     };
 
@@ -1269,6 +1406,8 @@ export default function App() {
     setRecentProviderError(null);
     userPinnedViewRef.current = false;
     activeViewSessionRef.current = null;
+    pendingAutoRevealRef.current = null;
+    lastAutoRevealKeyRef.current = null;
   }, []);
 
   const updateProviderEntry = useCallback(
@@ -1741,6 +1880,8 @@ export default function App() {
       layoutCacheRef.current = createEmptyStableLayoutCache();
       layoutCacheSessionRef.current = null;
       hasAutoFitRef.current = false;
+      pendingAutoRevealRef.current = null;
+      lastAutoRevealKeyRef.current = null;
       return;
     }
 
@@ -1748,6 +1889,8 @@ export default function App() {
       layoutCacheRef.current = createEmptyStableLayoutCache();
       layoutCacheSessionRef.current = graph.sessionId;
       hasAutoFitRef.current = false;
+      pendingAutoRevealRef.current = null;
+      lastAutoRevealKeyRef.current = null;
     }
   }, [graph.nodes.length, graph.sessionId]);
 
@@ -1810,9 +1953,105 @@ export default function App() {
     [graph.nodes.length],
   );
 
+  const maybeAutoRevealIncrementalNodes = useCallback(() => {
+    const pending = pendingAutoRevealRef.current;
+    if (!pending || pending.sessionId !== graph.sessionId || pending.revision !== graph.revision) {
+      return;
+    }
+
+    if (
+      userViewportInteractingRef.current ||
+      Date.now() - lastUserViewportChangeAtRef.current < USER_VIEWPORT_COOLDOWN_MS
+    ) {
+      return;
+    }
+
+    const inst = reactFlowInstanceRef.current;
+    const el = flowContainerRef.current;
+    if (!inst?.fitBounds || !inst.getViewport || !el) {
+      return;
+    }
+
+    const containerWidth = el.clientWidth ?? 0;
+    const containerHeight = el.clientHeight ?? 0;
+    if (containerWidth < 2 || containerHeight < 2) {
+      return;
+    }
+
+    const autoRevealKey = `${pending.sessionId}:${pending.revision}:${currentView}`;
+    if (lastAutoRevealKeyRef.current === autoRevealKey) {
+      return;
+    }
+
+    const nodeIds = new Set([...pending.nodeIds, ...pending.anchorNodeIds]);
+    const targetNodes = debugViewArtifacts[currentView].reactFlow.nodes.filter((node) =>
+      nodeIds.has(node.id),
+    );
+    if (!targetNodes.length) {
+      pendingAutoRevealRef.current = null;
+      return;
+    }
+
+    const mergedBounds = mergeViewBounds(targetNodes.map(getNodeBounds));
+    if (!mergedBounds) {
+      pendingAutoRevealRef.current = null;
+      return;
+    }
+
+    const currentViewport = inst.getViewport();
+    const paddedBounds = expandViewBounds(mergedBounds, AUTO_REVEAL_PADDING);
+    const targetBounds = ensureMinimumBoundsSize({
+      bounds: paddedBounds,
+      minimumWidth: (containerWidth / (currentViewport.zoom || 1)) * AUTO_REVEAL_MIN_WIDTH_RATIO,
+      minimumHeight: (containerHeight / (currentViewport.zoom || 1)) * AUTO_REVEAL_MIN_HEIGHT_RATIO,
+    });
+
+    const viewportForBounds = getViewportForBounds(
+      {
+        x: targetBounds.left,
+        y: targetBounds.top,
+        width: targetBounds.right - targetBounds.left,
+        height: targetBounds.bottom - targetBounds.top,
+      },
+      containerWidth,
+      containerHeight,
+      0.3,
+      2,
+      0,
+    );
+
+    if (isViewportCloseToTarget({ current: currentViewport, target: viewportForBounds })) {
+      pendingAutoRevealRef.current = null;
+      return;
+    }
+
+    inst.fitBounds(
+      {
+        x: targetBounds.left,
+        y: targetBounds.top,
+        width: targetBounds.right - targetBounds.left,
+        height: targetBounds.bottom - targetBounds.top,
+      },
+      {
+        duration: AUTO_REVEAL_DURATION_MS,
+        padding: 0,
+      },
+    );
+
+    pendingAutoRevealRef.current = null;
+    lastAutoRevealKeyRef.current = autoRevealKey;
+  }, [currentView, debugViewArtifacts, graph.revision, graph.sessionId]);
+
   useLayoutEffect(() => {
     requestAutoFit();
   }, [requestAutoFit]);
+
+  useLayoutEffect(() => {
+    if (!hasAutoFitRef.current) {
+      return;
+    }
+    maybeAutoRevealIncrementalNodes();
+  }, [flowNodes, graph.revision, maybeAutoRevealIncrementalNodes]);
 
   useLayoutEffect(() => {
     const el = flowContainerRef.current;
@@ -2421,6 +2660,14 @@ export default function App() {
           edges={flowEdges}
           nodeTypes={nodeTypes}
           onNodeClick={handleNodeClick}
+          onMoveStart={() => {
+            userViewportInteractingRef.current = true;
+            lastUserViewportChangeAtRef.current = Date.now();
+          }}
+          onMoveEnd={() => {
+            userViewportInteractingRef.current = false;
+            lastUserViewportChangeAtRef.current = Date.now();
+          }}
           onInit={(instance) => {
             reactFlowInstanceRef.current = instance;
             // 父级 useLayoutEffect 可能早于 onInit 执行；真实环境靠异步 RO 回调补救，这里再补一次避免竞态。
