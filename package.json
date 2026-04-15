@@ -7,7 +7,11 @@
     "dev:ext": "turbo run dev --filter=extension",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "test:ext:contract": "pnpm --filter extension test:run -- src/service-worker/index.test.ts",
+    "test:ext:replay": "pnpm --filter extension test:structure",
+    "test:ext:e2e": "pnpm --filter extension test:e2e",
+    "test:ext:e2e:closure": "pnpm --filter extension exec playwright test e2e/extension.closure.spec.ts"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
