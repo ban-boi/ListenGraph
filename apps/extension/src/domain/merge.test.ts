@@ -1,184 +1,128 @@
 import { describe, expect, it } from 'vitest';
-import { mergeSegmentGraph } from '@listen-graphic/domain';
 import type { MergedGraph, SegmentGraph } from '@listen-graphic/schema';
+import { mergeSegmentGraph } from '@listen-graphic/domain';
 
 function createBaseGraph(): MergedGraph {
   return {
-    sessionId: 'session_merge',
+    sessionId: 'session_1',
     revision: 1,
     topics: [],
-    nodes: [],
+    nodes: [
+      {
+        id: 'existing_claim',
+        type: 'claim',
+        text: '做 AI API 很难盈利',
+        timestampMs: 10_000,
+        status: 'confirmed',
+        confidence: 0.9,
+      },
+    ],
     edges: [],
-    updatedAt: 1,
+    updatedAt: 100,
   };
 }
 
-describe('domain mergeSegmentGraph', () => {
-  it('节点折叠后会把新边重写到保留节点，避免悬空边', () => {
-    const prev: MergedGraph = {
-      ...createBaseGraph(),
-      nodes: [
-        {
-          id: 'kept_claim',
-          type: 'claim',
-          text: '很多同学觉得杨贵妃是红颜祸水',
-          timestampMs: 0,
-          status: 'confirmed',
-          evidenceChunkIds: ['chunk_prev'],
-        },
-      ],
-    };
-    const next: SegmentGraph = {
-      segmentId: 'segment_next',
-      sessionId: 'session_merge',
-      startMs: 10_000,
-      endMs: 20_000,
-      provider: 'mock-structurer',
-      nodes: [
-        {
-          id: 'segment_next:n1',
-          type: 'claim',
-          text: '很多同学认为杨贵妃是红颜祸水',
-          timestampMs: 10_000,
-          status: 'draft',
-          evidenceChunkIds: ['chunk_next'],
-        },
-        {
-          id: 'segment_next:n2',
-          type: 'reason',
-          text: '这种看法把复杂责任归给单一人物',
-          timestampMs: 10_000,
-          status: 'draft',
-          evidenceChunkIds: ['chunk_next'],
-        },
-      ],
-      edges: [
-        {
-          id: 'edge_next',
-          source: 'segment_next:n1',
-          target: 'segment_next:n2',
-          type: 'supports',
-          evidenceChunkIds: ['chunk_next'],
-        },
-      ],
-    };
+function createSegment(params: {
+  nodes: SegmentGraph['nodes'];
+  edges?: SegmentGraph['edges'];
+}): SegmentGraph {
+  return {
+    segmentId: 'segment_2',
+    sessionId: 'session_1',
+    startMs: 20_000,
+    endMs: 30_000,
+    provider: 'test-structurer',
+    topic: 'topic',
+    nodes: params.nodes,
+    edges: params.edges ?? [],
+  };
+}
 
-    const merged = mergeSegmentGraph(prev, next);
-
-    expect(merged.nodes).toHaveLength(2);
-    expect(merged.nodes.map((node) => node.id)).toEqual(
-      expect.arrayContaining(['kept_claim', 'segment_next:n2']),
-    );
-    expect(merged.edges).toEqual([
-      expect.objectContaining({
-        source: 'kept_claim',
-        target: 'segment_next:n2',
-        type: 'supports',
-      }),
-    ]);
-    expect(
-      merged.edges.every(
-        (edge) =>
-          merged.nodes.some((node) => node.id === edge.source) &&
-          merged.nodes.some((node) => node.id === edge.target),
-      ),
-    ).toBe(true);
-  });
-
-  it('节点被折叠后产生的自环边会被丢弃', () => {
-    const prev: MergedGraph = {
-      ...createBaseGraph(),
+describe('mergeSegmentGraph', () => {
+  it('会精确去重，但不会改写已有节点文本或类型', () => {
+    const prev = createBaseGraph();
+    const next = createSegment({
       nodes: [
         {
-          id: 'kept_claim',
+          id: 'incoming_claim',
           type: 'claim',
-          text: '很多同学觉得杨贵妃是红颜祸水',
-          timestampMs: 0,
-          status: 'confirmed',
-        },
-      ],
-    };
-    const next: SegmentGraph = {
-      segmentId: 'segment_self_loop',
-      sessionId: 'session_merge',
-      startMs: 10_000,
-      endMs: 20_000,
-      provider: 'mock-structurer',
-      nodes: [
-        {
-          id: 'segment_self_loop:n1',
-          type: 'claim',
-          text: '很多同学认为杨贵妃是红颜祸水',
-          timestampMs: 10_000,
+          text: '做 AI API 很难盈利',
+          timestampMs: 21_000,
           status: 'draft',
+          confidence: 0.7,
+          evidenceChunkIds: ['chunk_2'],
         },
       ],
-      edges: [
-        {
-          id: 'edge_self_loop',
-          source: 'segment_self_loop:n1',
-          target: 'segment_self_loop:n1',
-          type: 'follows',
-        },
-      ],
-    };
+    });
 
     const merged = mergeSegmentGraph(prev, next);
 
     expect(merged.nodes).toHaveLength(1);
-    expect(merged.edges).toHaveLength(0);
+    expect(merged.nodes[0]).toMatchObject({
+      id: 'existing_claim',
+      type: 'claim',
+      text: '做 AI API 很难盈利',
+      status: 'confirmed',
+    });
+    expect(merged.nodes[0]?.evidenceChunkIds).toContain('chunk_2');
   });
 
-  it('保守近重复折叠不会误并远时间或 question 节点', () => {
-    const prev: MergedGraph = {
-      ...createBaseGraph(),
+  it('不会把更完整的新说法吞并到旧节点里', () => {
+    const prev = createBaseGraph();
+    const next = createSegment({
       nodes: [
         {
-          id: 'old_claim',
+          id: 'incoming_claim',
           type: 'claim',
-          text: '很多同学觉得杨贵妃是红颜祸水',
-          timestampMs: 0,
-          status: 'confirmed',
-        },
-        {
-          id: 'old_question',
-          type: 'question',
-          text: '你还记得当时用的论点吗',
-          timestampMs: 0,
-          status: 'confirmed',
+          text: '做 AI API 很难盈利，因为推理成本高而且价格竞争激烈',
+          timestampMs: 22_000,
+          status: 'draft',
+          confidence: 0.8,
         },
       ],
-    };
-    const next: SegmentGraph = {
-      segmentId: 'segment_far',
-      sessionId: 'session_merge',
-      startMs: 60_000,
-      endMs: 70_000,
-      provider: 'mock-structurer',
-      nodes: [
-        {
-          id: 'segment_far:n1',
-          type: 'claim',
-          text: '很多同学认为杨贵妃是红颜祸水',
-          timestampMs: 60_000,
-          status: 'draft',
-        },
-        {
-          id: 'segment_far:n2',
-          type: 'question',
-          text: '你还记得当时的论点是什么吗',
-          timestampMs: 60_000,
-          status: 'draft',
-        },
-      ],
-      edges: [],
-    };
+    });
 
     const merged = mergeSegmentGraph(prev, next);
 
-    expect(merged.nodes.map((node) => node.id)).toEqual(
-      expect.arrayContaining(['old_claim', 'old_question', 'segment_far:n1', 'segment_far:n2']),
-    );
-    expect(merged.nodes).toHaveLength(4);
+    expect(merged.nodes).toHaveLength(2);
+    expect(merged.nodes[0]).toMatchObject({
+      id: 'existing_claim',
+      text: '做 AI API 很难盈利',
+      type: 'claim',
+    });
+    expect(merged.nodes[1]).toMatchObject({
+      id: 'incoming_claim',
+      text: '做 AI API 很难盈利，因为推理成本高而且价格竞争激烈',
+      type: 'claim',
+    });
+  });
+
+  it('会合并高相似度的近重复转写噪声，但只更新 metadata', () => {
+    const prev = createBaseGraph();
+    const next = createSegment({
+      nodes: [
+        {
+          id: 'incoming_claim',
+          type: 'claim',
+          text: '做AI API很难盈利',
+          timestampMs: 22_000,
+          status: 'draft',
+          confidence: 0.95,
+          evidenceChunkIds: ['chunk_2'],
+        },
+      ],
+    });
+
+    const merged = mergeSegmentGraph(prev, next);
+
+    expect(merged.nodes).toHaveLength(1);
+    expect(merged.nodes[0]).toMatchObject({
+      id: 'existing_claim',
+      text: '做 AI API 很难盈利',
+      type: 'claim',
+      status: 'confirmed',
+      confidence: 0.95,
+    });
+    expect(merged.nodes[0]?.evidenceChunkIds).toContain('chunk_2');
   });
 });

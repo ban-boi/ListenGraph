@@ -3,7 +3,8 @@ import { computeTextOverlap, normalizeText } from './normalize';
 
 const NEAR_DUPLICATE_MAX_TIME_DELTA_MS = 30_000;
 const NEAR_DUPLICATE_MIN_TEXT_LENGTH = 12;
-const NEAR_DUPLICATE_OVERLAP_THRESHOLD = 0.68;
+const NEAR_DUPLICATE_OVERLAP_THRESHOLD = 0.82;
+const NEAR_DUPLICATE_MIN_LENGTH_RATIO = 0.88;
 
 function canCompareNode(a: GraphNode, b: GraphNode): boolean {
   if (a.type !== b.type) return false;
@@ -37,8 +38,10 @@ function canNearMergeNode(a: GraphNode, b: GraphNode): boolean {
     return false;
   }
 
-  if (normalizedA.includes(normalizedB) || normalizedB.includes(normalizedA)) {
-    return true;
+  const minLength = Math.min(normalizedA.length, normalizedB.length);
+  const maxLength = Math.max(normalizedA.length, normalizedB.length);
+  if (minLength / maxLength < NEAR_DUPLICATE_MIN_LENGTH_RATIO) {
+    return false;
   }
 
   return computeTextOverlap(a.text, b.text) >= NEAR_DUPLICATE_OVERLAP_THRESHOLD;
