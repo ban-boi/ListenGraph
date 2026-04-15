@@ -136,10 +136,22 @@ export async function saveProviderSettings(
 ) {
   await serviceWorker.evaluate(async (providerConfig) => {
     await new Promise<void>((resolve, reject) => {
-      const request = indexedDB.open('listen-graphic-db', 10);
+      const request = indexedDB.open('listen-graphic-db', 2);
 
       request.onupgradeneeded = () => {
         const db = request.result;
+        if (!db.objectStoreNames.contains('sessions')) {
+          db.createObjectStore('sessions', { keyPath: 'sessionId' });
+        }
+        if (!db.objectStoreNames.contains('transcriptChunks')) {
+          db.createObjectStore('transcriptChunks', { keyPath: 'chunkId' });
+        }
+        if (!db.objectStoreNames.contains('segmentGraphs')) {
+          db.createObjectStore('segmentGraphs', { keyPath: 'segmentId' });
+        }
+        if (!db.objectStoreNames.contains('mergedGraphs')) {
+          db.createObjectStore('mergedGraphs', { keyPath: 'sessionId' });
+        }
         if (!db.objectStoreNames.contains('settings')) {
           db.createObjectStore('settings', { keyPath: 'key' });
         }
@@ -163,6 +175,17 @@ export async function saveProviderSettings(
       };
     });
   }, config);
+}
+
+export async function applyProviderSettings(
+  page: Page,
+  config: ProviderConfig,
+) {
+  return await sendRuntimeMessage<{ success: boolean; error?: string }>(page, {
+    type: 'SAVE_PROVIDER_SETTINGS',
+    target: 'service-worker',
+    payload: { config },
+  });
 }
 
 export async function getRuntimeSnapshot(page: Page) {

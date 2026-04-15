@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { ProviderConfig } from '@listen-graphic/schema';
 import {
+  applyProviderSettings,
   captureSessionDiagnostics,
   closeStaticServer,
   createStaticServer,
@@ -12,7 +13,6 @@ import {
   launchExtensionContext,
   openSidepanelPage,
   resolveTabId,
-  saveProviderSettings,
   startSession,
   waitForGraph,
 } from './helpers';
@@ -91,12 +91,12 @@ test.describe('Extension real provider validation', () => {
     try {
       const launched = await launchExtensionContext(userDataDir);
       context = launched.context;
-      await saveProviderSettings(launched.serviceWorker, providerConfig!);
-
       const fixturePage = await context.newPage();
       await fixturePage.goto(`${url}/index.html`);
 
       const sidepanelPage = await openSidepanelPage(context, launched.extensionId);
+      const saveResponse = await applyProviderSettings(sidepanelPage, providerConfig!);
+      expect(saveResponse.success).toBe(true);
       const tabId = await resolveTabId(sidepanelPage, `${url}/index.html`);
       expect(tabId).not.toBeNull();
 

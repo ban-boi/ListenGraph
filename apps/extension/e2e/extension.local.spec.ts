@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { ProviderConfig } from '@listen-graphic/schema';
 import {
+  applyProviderSettings,
   EXTENSION_PATH,
   FIXTURE_ROOT,
   captureSessionDiagnostics,
@@ -14,7 +15,6 @@ import {
   launchExtensionContext,
   openSidepanelPage,
   resolveTabId,
-  saveProviderSettings,
   startSession,
   stopSession,
   waitForGraph,
@@ -89,12 +89,12 @@ test.describe('Extension local regression', () => {
     try {
       const launched = await launchExtensionContext(userDataDir);
       context = launched.context;
-      await saveProviderSettings(launched.serviceWorker, mockProviderConfig);
-
       const fixturePage = await context.newPage();
       await fixturePage.goto(`${url}/index.html`);
 
       const sidepanelPage = await openSidepanelPage(context, launched.extensionId);
+      const saveResponse = await applyProviderSettings(sidepanelPage, mockProviderConfig);
+      expect(saveResponse.success).toBe(true);
       const tabId = await resolveTabId(sidepanelPage, `${url}/index.html`);
       expect(tabId).not.toBeNull();
 
@@ -116,7 +116,7 @@ test.describe('Extension local regression', () => {
 
       await sidepanelPage.getByRole('button', { name: /^调试$/ }).click();
       await expect(sidepanelPage.getByTestId('debug-panel')).toBeVisible();
-      await expect(sidepanelPage.getByText(/transcript chunks: 4/)).toBeVisible();
+      await expect(sidepanelPage.getByText(/transcript units: 4/)).toBeVisible();
       await expect(sidepanelPage.getByText(/structurer segments: 2/)).toBeVisible();
       await expect(sidepanelPage.getByText(/mock-asr/)).toBeVisible();
 
