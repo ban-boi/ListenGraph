@@ -23,9 +23,12 @@
 
 ## 当前推荐入口
 
+如果你是在判断“这个问题该补哪层测试”，先看：
+- [Extension 测试入口](C:\Users\finni\Desktop\ListenGraph\docs\testing\README.md)
+
 ### 日常回归
 ```powershell
-pnpm --filter extension test:structure
+pnpm run test:ext:replay
 ```
 
 它包含：

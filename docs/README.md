@@ -26,6 +26,9 @@
 ### Structurer 行为与回归
 - [扩展 Structurer 运行时行为](C:/Users/finni/Desktop/ListenGraph/docs/extension/structurer-runtime.md)
   - 当前 structurer 窗口、bootstrap、prompt 合约、归一化和调试语义
+- [Extension 测试入口](C:/Users/finni/Desktop/ListenGraph/docs/testing/README.md)
+  - 当前三层测试结构
+  - contract / replay / thin E2E 推荐入口
 - [Structure 回归说明](C:/Users/finni/Desktop/ListenGraph/docs/testing/structure-regression.md)
   - 当前 structure-focused fixture 体系
   - smoke / full / strict real suite 入口
@@ -49,10 +52,11 @@
 3. [fixtures/asr-realtime/README.md](C:/Users/finni/Desktop/ListenGraph/apps/extension/src/service-worker/fixtures/asr-realtime/README.md)
 
 ### 想看真实结构化回归怎么跑
-1. [structure-regression.md](C:/Users/finni/Desktop/ListenGraph/docs/testing/structure-regression.md)
-2. [structurer-runtime.md](C:/Users/finni/Desktop/ListenGraph/docs/extension/structurer-runtime.md)
-3. `pnpm --filter extension test:structure`
-4. 如需全量真实验收：
+1. [docs/testing/README.md](C:/Users/finni/Desktop/ListenGraph/docs/testing/README.md)
+2. [structure-regression.md](C:/Users/finni/Desktop/ListenGraph/docs/testing/structure-regression.md)
+3. [structurer-runtime.md](C:/Users/finni/Desktop/ListenGraph/docs/extension/structurer-runtime.md)
+4. `pnpm run test:ext:replay`
+5. 如需全量真实验收：
 `pnpm --filter extension test:structure:real:full:part1`
 `pnpm --filter extension test:structure:real:full:part2`
 
