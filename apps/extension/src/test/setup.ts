@@ -92,9 +92,27 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Mock ResizeObserver
+// Mock ResizeObserver：observe 时同步回调，避免 jsdom 下 clientWidth=0 导致依赖尺寸的 UI 永远不执行
 class ResizeObserverMock {
-  observe = vi.fn();
+  constructor(private readonly callback: ResizeObserverCallback) {}
+  observe = vi.fn((target: Element) => {
+    const rect = target.getBoundingClientRect();
+    const width = rect.width > 1 ? rect.width : 1024;
+    const height = rect.height > 1 ? rect.height : 768;
+    const contentRect = new DOMRect(0, 0, width, height);
+    this.callback(
+      [
+        {
+          target,
+          contentRect,
+          borderBoxSize: [],
+          contentBoxSize: [],
+          devicePixelContentBoxSize: [],
+        } as ResizeObserverEntry,
+      ],
+      this,
+    );
+  });
   unobserve = vi.fn();
   disconnect = vi.fn();
 }

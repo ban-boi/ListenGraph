@@ -1,4 +1,11 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
 import {
   ReactFlow,
   Background,
@@ -6,6 +13,7 @@ import {
   type Node,
   type Edge,
   type NodeProps,
+  type ReactFlowInstance,
   Handle,
   Position,
 } from 'reactflow';
@@ -151,6 +159,11 @@ type ReactFlowDebugEdge = {
 
 type DebugViewArtifact = {
   rendererGraph: RendererGraph;
+  layoutDiagnostics: {
+    reusedPositions: number;
+    newPositions: number;
+    movedPositions: number;
+  };
   reactFlow: {
     nodes: ReactFlowDebugNode[];
     edges: ReactFlowDebugEdge[];
@@ -158,6 +171,36 @@ type DebugViewArtifact = {
 };
 
 type DebugExportMode = 'slim' | 'full';
+
+type StableNodePosition = {
+  x: number;
+  y: number;
+};
+
+type StableViewLayoutState = {
+  positions: Record<string, StableNodePosition>;
+};
+
+type StableLayoutCache = Record<ViewType, StableViewLayoutState>;
+
+const STABLE_LAYOUT_CARD_WIDTH = 220;
+const STABLE_LAYOUT_CARD_HEIGHT = 132;
+const STABLE_LAYOUT_MAIN_X = 60;
+const STABLE_LAYOUT_COMPARISON_RIGHT_X = 360;
+const STABLE_LAYOUT_BRANCH_OFFSET_X = 280;
+const STABLE_LAYOUT_ROW_GAP = 168;
+const STABLE_LAYOUT_BRANCH_GAP = 148;
+const STABLE_LAYOUT_COLLISION_GAP = 24;
+
+function createEmptyStableLayoutCache(): StableLayoutCache {
+  return {
+    timeline: { positions: {} },
+    causal: { positions: {} },
+    comparison: { positions: {} },
+    flow: { positions: {} },
+    hierarchy: { positions: {} },
+  };
+}
 
 function getRendererGraph(graph: MergedGraph, view: ViewType): RendererGraph {
   switch (view) {
@@ -174,56 +217,202 @@ function getRendererGraph(graph: MergedGraph, view: ViewType): RendererGraph {
   }
 }
 
-function getReactFlowDebugNodePosition(
+function getLaneX(
   view: ViewType,
-  index: number,
+  nodeType: ReactFlowDebugNodeData['nodeType'] | NodeType,
   speaker?: string,
 ) {
   switch (view) {
-    case 'timeline':
-      return {
-        x: (index % 3) * 200,
-        y: Math.floor(index / 3) * 130,
-      };
     case 'comparison':
-      return {
-        x: speaker === '嘉宾B' ? 250 : 50,
-        y: index * 90,
-      };
+      return speaker === '嘉宾B'
+        ? STABLE_LAYOUT_COMPARISON_RIGHT_X
+        : STABLE_LAYOUT_MAIN_X;
     case 'hierarchy':
-      return {
-        x: 50 + (index % 3) * 180,
-        y: Math.floor(index / 3) * 140,
-      };
+      return nodeType === 'claim' || nodeType === 'conclusion'
+        ? STABLE_LAYOUT_MAIN_X
+        : STABLE_LAYOUT_MAIN_X + STABLE_LAYOUT_BRANCH_OFFSET_X;
     default:
-      return {
-        x: 50 + (index % 2) * 220,
-        y: index * 110,
-      };
+      return STABLE_LAYOUT_MAIN_X;
   }
 }
 
-function buildReactFlowDebugGraph(params: {
+function isBranchNodeType(nodeType: NodeType) {
+  return nodeType === 'reason' || nodeType === 'example' || nodeType === 'question';
+}
+
+function getNodeRect(position: StableNodePosition) {
+  return {
+    left: position.x,
+    right: position.x + STABLE_LAYOUT_CARD_WIDTH,
+    top: position.y,
+    bottom: position.y + STABLE_LAYOUT_CARD_HEIGHT,
+  };
+}
+
+function hasCollision(position: StableNodePosition, occupied: StableNodePosition[]) {
+  const candidateRect = getNodeRect(position);
+  return occupied.some((existing) => {
+    const existingRect = getNodeRect(existing);
+    return !(
+      candidateRect.right + STABLE_LAYOUT_COLLISION_GAP <= existingRect.left ||
+      existingRect.right + STABLE_LAYOUT_COLLISION_GAP <= candidateRect.left ||
+      candidateRect.bottom + STABLE_LAYOUT_COLLISION_GAP <= existingRect.top ||
+      existingRect.bottom + STABLE_LAYOUT_COLLISION_GAP <= candidateRect.top
+    );
+  });
+}
+
+function findAvailablePosition(
+  basePosition: StableNodePosition,
+  occupied: StableNodePosition[],
+) {
+  let candidate = basePosition;
+  while (hasCollision(candidate, occupied)) {
+    candidate = {
+      x: candidate.x,
+      y: candidate.y + STABLE_LAYOUT_COLLISION_GAP,
+    };
+  }
+  return candidate;
+}
+
+function getMaxYForLane(
+  positions: Record<string, StableNodePosition>,
+  laneX?: number,
+) {
+  const relevantPositions = Object.values(positions).filter((position) =>
+    laneX === undefined ? true : position.x === laneX,
+  );
+  if (relevantPositions.length === 0) {
+    return -STABLE_LAYOUT_ROW_GAP;
+  }
+  return Math.max(...relevantPositions.map((position) => position.y));
+}
+
+function pickAnchorNodeId(params: {
+  nodeId: string;
+  timestampMs: number;
+  edges: RendererGraph['edges'];
+  nodeMap: Map<string, RendererGraph['nodes'][number]>;
+  positions: Record<string, StableNodePosition>;
+}) {
+  const neighborIds = new Set<string>();
+  for (const edge of params.edges) {
+    if (edge.source === params.nodeId && params.positions[edge.target]) {
+      neighborIds.add(edge.target);
+    }
+    if (edge.target === params.nodeId && params.positions[edge.source]) {
+      neighborIds.add(edge.source);
+    }
+  }
+
+  const candidates = Array.from(neighborIds)
+    .map((id) => params.nodeMap.get(id))
+    .filter((node): node is RendererGraph['nodes'][number] => Boolean(node));
+
+  candidates.sort((a, b) => {
+    const typeScoreA =
+      a.type === 'claim' || a.type === 'conclusion' ? 0 : isBranchNodeType(a.type) ? 1 : 2;
+    const typeScoreB =
+      b.type === 'claim' || b.type === 'conclusion' ? 0 : isBranchNodeType(b.type) ? 1 : 2;
+    if (typeScoreA !== typeScoreB) return typeScoreA - typeScoreB;
+    return Math.abs(a.timestampMs - params.timestampMs) - Math.abs(b.timestampMs - params.timestampMs);
+  });
+
+  return candidates[0]?.id;
+}
+
+function buildStableReactFlowDebugGraph(params: {
   rendererGraph: RendererGraph;
   view: ViewType;
   currentTimeMs: number;
   selectedNodeId: string | null;
+  previousLayoutState: StableViewLayoutState;
 }) {
-  const nodes: ReactFlowDebugNode[] = params.rendererGraph.nodes.map((node, index) => ({
-    id: node.id,
-    type: 'graphNode',
-    position: getReactFlowDebugNodePosition(params.view, index, node.speaker),
-    data: {
-      label: node.label,
-      nodeType: node.type,
-      speaker: node.speaker,
+  const validNodeIds = new Set(params.rendererGraph.nodes.map((node) => node.id));
+  const positions: Record<string, StableNodePosition> = {};
+  const occupied: StableNodePosition[] = [];
+  const nodeMap = new Map(params.rendererGraph.nodes.map((node) => [node.id, node]));
+  const branchCountByAnchor = new Map<string, number>();
+  let reusedPositions = 0;
+  let newPositions = 0;
+  let movedPositions = 0;
+
+  for (const node of params.rendererGraph.nodes) {
+    const existingPosition = params.previousLayoutState.positions[node.id];
+    if (!existingPosition) {
+      continue;
+    }
+    positions[node.id] = existingPosition;
+    occupied.push(existingPosition);
+    reusedPositions += 1;
+  }
+
+  for (const node of params.rendererGraph.nodes) {
+    if (positions[node.id]) {
+      continue;
+    }
+
+    const anchorId = pickAnchorNodeId({
+      nodeId: node.id,
       timestampMs: node.timestampMs,
-      status: node.status,
-      isActive:
-        Math.abs(node.timestampMs - params.currentTimeMs) < 30000 ||
-        node.id === params.selectedNodeId,
-    },
-  }));
+      edges: params.rendererGraph.edges,
+      nodeMap,
+      positions,
+    });
+
+    let basePosition: StableNodePosition;
+    if (anchorId && isBranchNodeType(node.type)) {
+      const anchorPosition = positions[anchorId];
+      const branchCount = branchCountByAnchor.get(anchorId) ?? 0;
+      basePosition = {
+        x: getLaneX(params.view, node.type, node.speaker) === anchorPosition.x
+          ? anchorPosition.x + STABLE_LAYOUT_BRANCH_OFFSET_X
+          : getLaneX(params.view, node.type, node.speaker),
+        y: anchorPosition.y + STABLE_LAYOUT_BRANCH_GAP * (branchCount + 1),
+      };
+      branchCountByAnchor.set(anchorId, branchCount + 1);
+    } else {
+      const laneX = getLaneX(params.view, node.type, node.speaker);
+      basePosition = {
+        x: laneX,
+        y: getMaxYForLane(positions, params.view === 'comparison' ? laneX : undefined) +
+          STABLE_LAYOUT_ROW_GAP,
+      };
+    }
+
+    const nextPosition = findAvailablePosition(basePosition, occupied);
+    const previousPosition = params.previousLayoutState.positions[node.id];
+    if (previousPosition) {
+      if (previousPosition.x !== nextPosition.x || previousPosition.y !== nextPosition.y) {
+        movedPositions += 1;
+      } else {
+        reusedPositions += 1;
+      }
+    } else {
+      newPositions += 1;
+    }
+    positions[node.id] = nextPosition;
+    occupied.push(nextPosition);
+  }
+
+  const nodes: ReactFlowDebugNode[] = params.rendererGraph.nodes
+    .filter((node) => validNodeIds.has(node.id))
+    .map((node) => ({
+      id: node.id,
+      type: 'graphNode',
+      position: positions[node.id],
+      data: {
+        label: node.label,
+        nodeType: node.type,
+        speaker: node.speaker,
+        timestampMs: node.timestampMs,
+        status: node.status,
+        isActive:
+          Math.abs(node.timestampMs - params.currentTimeMs) < 30000 ||
+          node.id === params.selectedNodeId,
+      },
+    }));
 
   const edges: ReactFlowDebugEdge[] = params.rendererGraph.edges.map((edge) => ({
     id: edge.id,
@@ -243,30 +432,73 @@ function buildReactFlowDebugGraph(params: {
     animated: edge.relation === 'causes',
   }));
 
-  return { nodes, edges };
+  return {
+    layoutDiagnostics: {
+      reusedPositions,
+      newPositions,
+      movedPositions,
+    },
+    reactFlow: { nodes, edges },
+    layoutState: {
+      positions: Object.fromEntries(
+        Object.entries(positions).filter(([nodeId]) => validNodeIds.has(nodeId)),
+      ),
+    },
+  }
+}
+
+function buildReactFlowDebugGraph(params: {
+  rendererGraphs: Record<ViewType, RendererGraph>;
+  currentTimeMs: number;
+  selectedNodeId: string | null;
+  previousLayoutCache: StableLayoutCache;
+}) {
+  const artifacts = {} as Record<ViewType, DebugViewArtifact>;
+  const nextLayoutCache = createEmptyStableLayoutCache();
+
+  for (const view of VIEW_TYPES) {
+    const rendererGraph = params.rendererGraphs[view];
+    const result = buildStableReactFlowDebugGraph({
+      rendererGraph,
+      view,
+      currentTimeMs: params.currentTimeMs,
+      selectedNodeId: params.selectedNodeId,
+      previousLayoutState: params.previousLayoutCache[view],
+    });
+    artifacts[view] = {
+      rendererGraph,
+      layoutDiagnostics: result.layoutDiagnostics,
+      reactFlow: result.reactFlow,
+    };
+    nextLayoutCache[view] = result.layoutState;
+  }
+
+  return {
+    artifacts,
+    nextLayoutCache,
+  };
 }
 
 function buildDebugViewArtifacts(params: {
   graph: MergedGraph;
   currentTimeMs: number;
   selectedNodeId: string | null;
+  previousLayoutCache: StableLayoutCache;
 }) {
-  return VIEW_TYPES.reduce(
+  const rendererGraphs = VIEW_TYPES.reduce(
     (acc, view) => {
-      const rendererGraph = getRendererGraph(params.graph, view);
-      acc[view] = {
-        rendererGraph,
-        reactFlow: buildReactFlowDebugGraph({
-          rendererGraph,
-          view,
-          currentTimeMs: params.currentTimeMs,
-          selectedNodeId: params.selectedNodeId,
-        }),
-      };
+      acc[view] = getRendererGraph(params.graph, view);
       return acc;
     },
-    {} as Record<ViewType, DebugViewArtifact>,
+    {} as Record<ViewType, RendererGraph>,
   );
+
+  return buildReactFlowDebugGraph({
+    rendererGraphs,
+    currentTimeMs: params.currentTimeMs,
+    selectedNodeId: params.selectedNodeId,
+    previousLayoutCache: params.previousLayoutCache,
+  });
 }
 
 function summarizeTranscriptUnit(
@@ -419,6 +651,27 @@ function downloadTextFile(filename: string, content: string, mimeType: string) {
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+function formatGraphDeltaLog(previousGraph: MergedGraph | null, nextGraph: MergedGraph) {
+  const previousNodeIds = new Set(previousGraph?.nodes.map((node) => node.id) ?? []);
+  const previousEdgeIds = new Set(previousGraph?.edges.map((edge) => edge.id) ?? []);
+  const addedNodeCount = nextGraph.nodes.filter((node) => !previousNodeIds.has(node.id)).length;
+  const addedEdgeCount = nextGraph.edges.filter((edge) => !previousEdgeIds.has(edge.id)).length;
+
+  if (addedNodeCount === 0 && addedEdgeCount === 0) {
+    return `图更新: 无新增节点/连线 | 当前 ${nextGraph.nodes.length} 节点, ${nextGraph.edges.length} 边`;
+  }
+
+  if (addedNodeCount === 0) {
+    return `图更新: 仅新增连线 +${addedEdgeCount} | 当前 ${nextGraph.nodes.length} 节点, ${nextGraph.edges.length} 边`;
+  }
+
+  if (addedEdgeCount === 0) {
+    return `图更新: 新增节点 +${addedNodeCount} | 当前 ${nextGraph.nodes.length} 节点, ${nextGraph.edges.length} 边`;
+  }
+
+  return `图更新: +${addedNodeCount} 节点, +${addedEdgeCount} 连线 | 当前 ${nextGraph.nodes.length} 节点, ${nextGraph.edges.length} 边`;
 }
 
 function renderSecretHint(params: {
@@ -715,6 +968,13 @@ export default function App() {
   const sessionStartTimeRef = useRef(0);
   const userPinnedViewRef = useRef(false);
   const logResizeStartRef = useRef<{ pointerY: number; height: number } | null>(null);
+  const graphRef = useRef<MergedGraph>(createEmptyGraph());
+  const layoutCacheRef = useRef<StableLayoutCache>(createEmptyStableLayoutCache());
+  const layoutCacheSessionRef = useRef<string | null>(null);
+  const activeViewSessionRef = useRef<string | null>(null);
+  const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
+  const flowContainerRef = useRef<HTMLDivElement | null>(null);
+  const hasAutoFitRef = useRef(false);
 
   const addLog = useCallback((msg: string) => {
     const time = new Date().toLocaleTimeString();
@@ -724,6 +984,16 @@ export default function App() {
   const upsertTencentRealtimePartialLog = useCallback((displayMsg: string) => {
     setLogs((prev) => upsertTencentRealtimeStreamLog(prev, displayMsg));
   }, []);
+
+  useEffect(() => {
+    graphRef.current = graph;
+  }, [graph]);
+
+  const getPreferredView = useCallback(
+    (nextGraph: MergedGraph, requestedView?: ViewType | null) =>
+      requestedView ?? nextGraph.viewHints?.defaultView ?? pickDefaultView(nextGraph),
+    [],
+  );
 
   // 视图分数
   const viewScores = useMemo(() => scoreViews(graph), [graph]);
@@ -783,9 +1053,7 @@ export default function App() {
         };
 
         addLog(`转写: ${text}`);
-        addLog(
-          `节点: +1 (${newNode.type}) | 图更新: ${updated.nodes.length} 个节点`,
-        );
+        addLog(`节点: +1 (${newNode.type}) | ${formatGraphDeltaLog(prev, updated)}`);
 
         return updated;
       });
@@ -814,23 +1082,23 @@ export default function App() {
           const p = message.payload;
           if (p.state === 'stopped') {
             if (p.mergedGraph) {
-              setGraph(p.mergedGraph);
+              const mergedGraph = p.mergedGraph;
+              const shouldPreserveView = activeViewSessionRef.current === mergedGraph.sessionId;
+              setGraph(mergedGraph);
               if (typeof p.currentTimeMs === 'number') {
                 setCurrentTimeMs(p.currentTimeMs);
               }
               userPinnedViewRef.current = p.currentViewPinned ?? false;
+              activeViewSessionRef.current = mergedGraph.sessionId;
               setCurrentView((prev) =>
-                p.currentViewPinned
-                  ? prev
-                  : (p.currentView ??
-                    p.mergedGraph!.viewHints?.defaultView ??
-                    pickDefaultView(p.mergedGraph!)),
+                shouldPreserveView ? prev : getPreferredView(mergedGraph, p.currentView),
               );
             } else {
               setGraph(createEmptyGraph());
               setCurrentTimeMs(0);
               setCurrentView('causal');
               userPinnedViewRef.current = false;
+              activeViewSessionRef.current = null;
             }
           }
           const nextState = p.state === 'stopped' ? 'idle' : p.state;
@@ -845,6 +1113,7 @@ export default function App() {
             setSelectedNodeId(null);
             setCurrentView('causal');
             userPinnedViewRef.current = false;
+            activeViewSessionRef.current = null;
           }
           addLog(`状态: ${p.state}`);
           break;
@@ -871,14 +1140,16 @@ export default function App() {
         }
         case 'MERGED_GRAPH_UPDATED': {
           const nextGraph = message.payload.graph;
+          const shouldPreserveView = activeViewSessionRef.current === nextGraph.sessionId;
+          const previousGraph = graphRef.current;
           setRecentProviderError(null);
           setGraph(nextGraph);
+          graphRef.current = nextGraph;
+          activeViewSessionRef.current = nextGraph.sessionId;
           setCurrentView((prev) =>
-            userPinnedViewRef.current
-              ? prev
-              : nextGraph.viewHints?.defaultView ?? pickDefaultView(nextGraph),
+            shouldPreserveView ? prev : getPreferredView(nextGraph),
           );
-          addLog(`图更新: ${nextGraph.nodes.length} 个节点`);
+          addLog(formatGraphDeltaLog(previousGraph, nextGraph));
           break;
         }
         case 'PLAYBACK_TIME_UPDATED':
@@ -898,7 +1169,7 @@ export default function App() {
     };
     chrome.runtime.onMessage.addListener(handleMessage);
     return () => chrome.runtime.onMessage.removeListener(handleMessage);
-  }, [addLog, upsertTencentRealtimePartialLog]);
+  }, [addLog, getPreferredView, upsertTencentRealtimePartialLog]);
 
   useEffect(() => {
     if (isDevMode) return;
@@ -930,16 +1201,14 @@ export default function App() {
 
       if (snapshot.graph) {
         setGraph(snapshot.graph);
-        setCurrentView(
-          snapshot.currentView ??
-            snapshot.graph.viewHints?.defaultView ??
-            pickDefaultView(snapshot.graph),
-        );
+        setCurrentView(getPreferredView(snapshot.graph, snapshot.currentView));
         userPinnedViewRef.current = snapshot.currentViewPinned ?? false;
+        activeViewSessionRef.current = snapshot.graph.sessionId;
       } else {
         setGraph(createEmptyGraph());
         setCurrentView('causal');
         userPinnedViewRef.current = false;
+        activeViewSessionRef.current = null;
       }
     };
 
@@ -948,7 +1217,7 @@ export default function App() {
     return () => {
       disposed = true;
     };
-  }, []);
+  }, [getPreferredView]);
 
   useEffect(() => {
     setReplayOpen(false);
@@ -999,6 +1268,7 @@ export default function App() {
     setReplayData(null);
     setRecentProviderError(null);
     userPinnedViewRef.current = false;
+    activeViewSessionRef.current = null;
   }, []);
 
   const updateProviderEntry = useCallback(
@@ -1466,15 +1736,37 @@ export default function App() {
     [logPanelHeight],
   );
 
-  const debugViewArtifacts = useMemo(
+  useEffect(() => {
+    if (!graph.nodes.length) {
+      layoutCacheRef.current = createEmptyStableLayoutCache();
+      layoutCacheSessionRef.current = null;
+      hasAutoFitRef.current = false;
+      return;
+    }
+
+    if (layoutCacheSessionRef.current !== graph.sessionId) {
+      layoutCacheRef.current = createEmptyStableLayoutCache();
+      layoutCacheSessionRef.current = graph.sessionId;
+      hasAutoFitRef.current = false;
+    }
+  }, [graph.nodes.length, graph.sessionId]);
+
+  const layoutBuild = useMemo(
     () =>
       buildDebugViewArtifacts({
         graph,
         currentTimeMs,
         selectedNodeId,
+        previousLayoutCache: layoutCacheRef.current,
       }),
     [currentTimeMs, graph, selectedNodeId],
   );
+
+  const debugViewArtifacts = layoutBuild.artifacts;
+
+  useLayoutEffect(() => {
+    layoutCacheRef.current = layoutBuild.nextLayoutCache;
+  }, [layoutBuild]);
 
   const flowNodes = useMemo<Node[]>(
     () =>
@@ -1492,6 +1784,54 @@ export default function App() {
     () => debugViewArtifacts[currentView].reactFlow.edges,
     [currentView, debugViewArtifacts],
   );
+
+  /** Chrome 侧栏在首次绘制或不可见时容器常为 0×0，此时 fitView 无效但会锁死 hasAutoFit；用 ResizeObserver 在尺寸就绪后补一次。 */
+  const requestAutoFit = useCallback(
+    (sizeHint?: { width: number; height: number }) => {
+      if (!graph.nodes.length || hasAutoFitRef.current) {
+        return;
+      }
+      const inst = reactFlowInstanceRef.current;
+      if (!inst?.fitView) {
+        return;
+      }
+      const el = flowContainerRef.current;
+      const w = sizeHint?.width ?? el?.clientWidth ?? 0;
+      const h = sizeHint?.height ?? el?.clientHeight ?? 0;
+      if (w < 2 || h < 2) {
+        return;
+      }
+      inst.fitView({
+        padding: 0.16,
+        duration: 240,
+      });
+      hasAutoFitRef.current = true;
+    },
+    [graph.nodes.length],
+  );
+
+  useLayoutEffect(() => {
+    requestAutoFit();
+  }, [requestAutoFit]);
+
+  useLayoutEffect(() => {
+    const el = flowContainerRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) {
+        return;
+      }
+      const { width, height } = entry.contentRect;
+      requestAutoFit({ width, height });
+    });
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+    };
+  }, [requestAutoFit]);
 
   const slimDebugExportPayload = useMemo(
     () => buildDebugExportPayload({
@@ -2068,6 +2408,7 @@ export default function App() {
 
       {/* 图表区域 */}
       <div
+        ref={flowContainerRef}
         style={{
           flex: 1,
           minHeight: 0,
@@ -2080,7 +2421,13 @@ export default function App() {
           edges={flowEdges}
           nodeTypes={nodeTypes}
           onNodeClick={handleNodeClick}
-          fitView
+          onInit={(instance) => {
+            reactFlowInstanceRef.current = instance;
+            // 父级 useLayoutEffect 可能早于 onInit 执行；真实环境靠异步 RO 回调补救，这里再补一次避免竞态。
+            queueMicrotask(() => {
+              requestAutoFit();
+            });
+          }}
           minZoom={0.3}
           maxZoom={2}
         >
