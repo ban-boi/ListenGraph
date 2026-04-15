@@ -295,7 +295,10 @@ describe('real provider adapters', () => {
       }),
     ]);
     expect(userPayload.recentGraphContext.edges).toEqual([]);
+    expect(systemPrompt).toContain('Treat recentGraphContext as frozen semantics');
     expect(systemPrompt).toContain('Do not restate, paraphrase, or rename semantics');
+    expect(systemPrompt).toContain('append to history instead of revising history');
+    expect(systemPrompt).toContain('Do not rewrite, broaden, narrow, or replace the text or node type');
     expect(systemPrompt).toContain('prefer adding an edge instead of repeating the claim');
 
     expect(segment.startMs).toBe(20_000);

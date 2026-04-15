@@ -99,6 +99,15 @@ let asrProvider: AsrProvider;
 let structurerProvider: StructurerProvider;
 
 const RUNTIME_STATE_KEY = 'listen-graphic-runtime-state';
+const LAST_STOPPED_SESSION_KEY = 'listen-graphic-last-stopped-session';
+
+type LastStoppedSessionPayload = {
+  sessionId: string;
+  mergedGraph: MergedGraph;
+  currentTimeMs: number;
+  currentView: RuntimeSnapshot['currentView'];
+  currentViewPinned: boolean;
+};
 const CONTENT_SCRIPT_FILE = 'content-script/content-script.js';
 const STRUCTURER_WINDOW_SIZE = 3;
 const STRUCTURER_BOOTSTRAP_MIN_CHUNKS = 2;
@@ -180,7 +189,7 @@ async function handleMessage(
     case 'GET_RUNTIME_SNAPSHOT':
       return {
         success: true,
-        snapshot: getRuntimeSnapshot(),
+        snapshot: await getRuntimeSnapshotForSidepanel(),
       } as ServiceWorkerResponse & { snapshot: RuntimeSnapshot };
     case 'GET_PROVIDER_SETTINGS':
       return handleGetProviderSettings();
@@ -230,16 +239,24 @@ async function startSession(tabId: number): Promise<ServiceWorkerResponse> {
 
   try {
     await loadProviderRuntimeFromSettings();
-  lastProviderError = null;
-  lastStructurerRun = null;
+    lastProviderError = null;
+    lastStructurerRun = null;
   } catch (error) {
     const message =
       error instanceof Error ? error.message : '读取 provider 配置失败';
+    lastProviderError = createProviderConfigError(message);
     await notifyError('PROVIDER_CONFIG_ERROR', message);
+    await persistRuntimeState();
     return { success: false, error: message };
   }
 
   const sessionId = generateId('session');
+  try {
+    await getRuntimeStorageArea().remove(LAST_STOPPED_SESSION_KEY);
+  } catch (error) {
+    console.warn('[Service Worker] 清理上次停止会话快照失败:', error);
+  }
+
   currentSession = {
     sessionId,
     tabId,
@@ -682,12 +699,14 @@ async function handleTestStructurerSessionRun(payload: {
 
   try {
     await loadProviderRuntimeFromSettings();
-  lastProviderError = null;
-  lastStructurerRun = null;
+    lastProviderError = null;
+    lastStructurerRun = null;
   } catch (error) {
     const message =
       error instanceof Error ? error.message : '读取 provider 配置失败';
+    lastProviderError = createProviderConfigError(message);
     await notifyError('PROVIDER_CONFIG_ERROR', message);
+    await persistRuntimeState();
     return { success: false, error: message };
   }
 
@@ -1375,6 +1394,10 @@ async function cleanupSession(payload: {
   state: Extract<SessionState, 'stopped'>;
 }) {
   const endedAt = Date.now();
+  const lastMergedGraph = mergedGraph;
+  const lastTimeMs = currentTimeMs;
+  const lastView = currentView;
+  const lastViewPinned = currentViewPinned;
   try {
     await sessionRepository.markEnded(payload.sessionId, endedAt);
     pendingSessionFinalize = null;
@@ -1401,10 +1424,39 @@ async function cleanupSession(payload: {
       await clearRuntimeState();
     }
 
+    if (lastMergedGraph) {
+      try {
+        await getRuntimeStorageArea().set({
+          [LAST_STOPPED_SESSION_KEY]: {
+            sessionId: payload.sessionId,
+            mergedGraph: lastMergedGraph,
+            currentTimeMs: lastTimeMs,
+            currentView: lastView ?? lastMergedGraph.viewHints?.defaultView,
+            currentViewPinned: lastViewPinned,
+          } satisfies LastStoppedSessionPayload,
+        });
+      } catch (error) {
+        console.warn('[Service Worker] 写入停止会话图谱快照失败:', error);
+      }
+    } else {
+      try {
+        await getRuntimeStorageArea().remove(LAST_STOPPED_SESSION_KEY);
+      } catch (error) {
+        console.warn('[Service Worker] 移除停止会话图谱快照失败:', error);
+      }
+    }
+
     await broadcastToSidepanel({
       type: 'SESSION_STATE_CHANGED',
       target: 'sidepanel',
-      payload,
+      payload: {
+        sessionId: payload.sessionId,
+        state: payload.state,
+        mergedGraph: lastMergedGraph,
+        currentTimeMs: lastTimeMs,
+        currentView: lastView ?? lastMergedGraph?.viewHints?.defaultView,
+        currentViewPinned: lastViewPinned,
+      },
     });
   }
 }
@@ -1454,6 +1506,32 @@ function getRuntimeSnapshot(): RuntimeSnapshot {
     lastProviderError,
     workerBuild: BUILD_INFO,
   };
+}
+
+async function getRuntimeSnapshotForSidepanel(): Promise<RuntimeSnapshot> {
+  const base = getRuntimeSnapshot();
+  if (base.graph != null || base.sessionId != null) {
+    return base;
+  }
+
+  try {
+    const raw = await getRuntimeStorageArea().get(LAST_STOPPED_SESSION_KEY);
+    const last = raw?.[LAST_STOPPED_SESSION_KEY] as LastStoppedSessionPayload | undefined;
+    if (last?.mergedGraph && last.sessionId) {
+      return {
+        ...base,
+        state: 'idle',
+        graph: last.mergedGraph,
+        currentTimeMs: last.currentTimeMs,
+        currentView: last.currentView,
+        currentViewPinned: last.currentViewPinned,
+      };
+    }
+  } catch (error) {
+    console.warn('[Service Worker] 读取停止会话图谱快照失败:', error);
+  }
+
+  return base;
 }
 
 function createStructurerRunDebug(params: {
@@ -1641,6 +1719,23 @@ function serializeProviderError(error: unknown): SerializableProviderError {
     message:
       error instanceof Error ? error.message : 'Provider 请求发生未知错误',
     provider,
+    stage,
+    retriable: false,
+  });
+}
+
+function createProviderConfigError(message: string): SerializableProviderError {
+  const normalizedMessage = message || '读取 provider 配置失败';
+  const normalizedLowerMessage = normalizedMessage.toLowerCase();
+  const stage =
+    normalizedLowerMessage.includes('asr') || normalizedLowerMessage.includes('transcrib')
+      ? 'asr'
+      : 'structurer';
+
+  return sanitizeProviderError({
+    code: 'CONFIG_ERROR',
+    message: normalizedMessage,
+    provider: 'provider-config',
     stage,
     retriable: false,
   });

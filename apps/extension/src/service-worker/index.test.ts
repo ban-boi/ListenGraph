@@ -510,6 +510,45 @@ describe('Service Worker - 当前主链路', () => {
     expect(snapshotResponse.snapshot.state).toBe('idle');
   });
 
+  it('provider 配置错误会写入 lastProviderError，便于 UI 和快照统一感知', async () => {
+    await dispatchMessage({
+      type: 'GET_RUNTIME_SNAPSHOT',
+      target: 'service-worker',
+      payload: {},
+    });
+
+    createRuntimeProvidersMock.mockImplementationOnce(() => {
+      throw new Error('Tencent ASR provider requires secretId and secretKey (or apiKey) for direct mode');
+    });
+
+    const startResponse = await dispatchMessage(
+      {
+        type: 'SESSION_START',
+        target: 'service-worker',
+        payload: { tabId: 123 },
+      },
+      { tab: { id: 123 } },
+    );
+
+    expect(startResponse.success).toBe(false);
+    expect(startResponse.error).toContain('requires secretId and secretKey');
+
+    const snapshotResponse = await dispatchMessage({
+      type: 'GET_RUNTIME_SNAPSHOT',
+      target: 'service-worker',
+      payload: {},
+    });
+
+    expect(snapshotResponse.snapshot.state).toBe('idle');
+    expect(snapshotResponse.snapshot.lastProviderError).toEqual(
+      expect.objectContaining({
+        code: 'CONFIG_ERROR',
+        provider: 'provider-config',
+        retriable: false,
+      }),
+    );
+  });
+
   it('收到音频 chunk 后会广播 transcript 与 graph 更新', async () => {
     const chromeMock = (globalThis as any).chrome;
 

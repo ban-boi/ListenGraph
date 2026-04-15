@@ -224,7 +224,15 @@ export type AppMessage =
   | {
       type: 'SESSION_STATE_CHANGED';
       target: 'sidepanel';
-      payload: { sessionId: string | null; state: SessionState };
+      payload: {
+        sessionId: string | null;
+        state: SessionState;
+        /** 停止会话时附带内存中的最终图谱，避免侧栏在快照图为空时误清空 React Flow */
+        mergedGraph?: MergedGraph | null;
+        currentTimeMs?: number;
+        currentView?: ViewType;
+        currentViewPinned?: boolean;
+      };
     }
   | {
       type: 'AUDIO_CHUNK_READY';
