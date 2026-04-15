@@ -1,31 +1,51 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { act, type ReactNode } from 'react';
+import { act, useEffect, type ReactNode } from 'react';
+
+const reactFlowFitViewSpy = vi.fn();
 
 vi.mock('reactflow', () => ({
   ReactFlow: ({
     children,
     nodes = [],
+    fitView,
+    onInit,
     onNodeClick,
   }: {
     children?: ReactNode;
-    nodes?: Array<{ id: string; data?: { label?: string; timestampMs?: number } }>;
+    nodes?: Array<{
+      id: string;
+      position?: { x: number; y: number };
+      data?: { label?: string; timestampMs?: number };
+    }>;
+    fitView?: boolean;
+    onInit?: (instance: { fitView: typeof reactFlowFitViewSpy }) => void;
     onNodeClick?: (_event: React.MouseEvent, node: any) => void;
-  }) => (
-    <div data-testid="reactflow-mock">
-      {nodes.map((node) => (
-        <button
-          key={node.id}
-          type="button"
-          onClick={(event) => onNodeClick?.(event as unknown as React.MouseEvent, node)}
-        >
-          {node.data?.label}
-        </button>
-      ))}
-      {children}
-    </div>
-  ),
+  }) => {
+    useEffect(() => {
+      onInit?.({
+        fitView: reactFlowFitViewSpy,
+      });
+    }, [onInit]);
+
+    return (
+      <div data-testid="reactflow-mock" data-fit-view-prop={fitView ? 'true' : 'false'}>
+        {nodes.map((node) => (
+          <button
+            key={node.id}
+            type="button"
+            data-node-id={node.id}
+            data-node-position={`${node.position?.x ?? 0},${node.position?.y ?? 0}`}
+            onClick={(event) => onNodeClick?.(event as unknown as React.MouseEvent, node)}
+          >
+            {node.data?.label}
+          </button>
+        ))}
+        {children}
+      </div>
+    );
+  },
   Background: () => <div data-testid="reactflow-background" />,
   Controls: () => <div data-testid="reactflow-controls" />,
   Handle: () => null,
@@ -59,6 +79,7 @@ describe('App 组件', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    reactFlowFitViewSpy.mockReset();
     originalConsoleError = console.error;
     originalConsoleWarn = console.warn;
     originalStderrWrite = process.stderr.write.bind(process.stderr);
@@ -1203,6 +1224,244 @@ describe('App 组件', () => {
     expect(await screen.findByText(/会话: session_123/)).toBeInTheDocument();
     expect(screen.getByText(/当前时间: 0:30/)).toBeInTheDocument();
     expect(screen.getByText('已恢复的节点')).toBeInTheDocument();
+    expect(screen.getByTestId('reactflow-mock')).toHaveAttribute('data-fit-view-prop', 'false');
+    expect(reactFlowFitViewSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('同一 session 的图更新不会自动切换当前视图', async () => {
+    const listeners: Array<(message: any) => void> = [];
+    (globalThis as any).chrome.runtime.onMessage.addListener.mockImplementation(
+      (listener: (message: any) => void) => {
+        listeners.push(listener);
+      },
+    );
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: 'session_locked_view',
+              state: 'capturing',
+              currentTimeMs: 30000,
+              currentView: 'timeline',
+              currentViewPinned: false,
+              graph: {
+                sessionId: 'session_locked_view',
+                revision: 1,
+                topics: [],
+                nodes: [
+                  {
+                    id: 'n1',
+                    type: 'claim',
+                    text: '旧节点',
+                    timestampMs: 0,
+                    status: 'confirmed',
+                  },
+                ],
+                edges: [],
+                viewHints: {
+                  defaultView: 'timeline',
+                  scores: {
+                    timeline: 3,
+                    causal: 0,
+                    comparison: 0,
+                    flow: 0,
+                    hierarchy: 0,
+                  },
+                },
+                updatedAt: 100,
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /时间线/ })).toHaveStyle({
+        backgroundColor: '#eff6ff',
+      }),
+    );
+
+    await act(async () => {
+      listeners[0]?.({
+        type: 'MERGED_GRAPH_UPDATED',
+        target: 'sidepanel',
+        payload: {
+          graph: {
+            sessionId: 'session_locked_view',
+            revision: 2,
+            topics: [],
+            nodes: [
+              {
+                id: 'n1',
+                type: 'claim',
+                text: '旧节点',
+                timestampMs: 0,
+                status: 'confirmed',
+              },
+              {
+                id: 'n2',
+                type: 'reason',
+                text: '新增原因',
+                timestampMs: 40000,
+                status: 'confirmed',
+              },
+            ],
+            edges: [
+              {
+                id: 'e1',
+                source: 'n1',
+                target: 'n2',
+                type: 'example_of',
+              },
+            ],
+            viewHints: {
+              defaultView: 'hierarchy',
+              scores: {
+                timeline: 0,
+                causal: 0,
+                comparison: 0,
+                flow: 0,
+                hierarchy: 5,
+              },
+            },
+            updatedAt: 200,
+          },
+        },
+      });
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole('button', { name: /时间线/ })).toHaveStyle({
+      backgroundColor: '#eff6ff',
+    });
+    expect(screen.getByRole('button', { name: /层级/ })).not.toHaveStyle({
+      backgroundColor: '#eff6ff',
+    });
+  });
+
+  it('纯新增边更新时会保留已有节点坐标且不再次 fitView', async () => {
+    const listeners: Array<(message: any) => void> = [];
+    (globalThis as any).chrome.runtime.onMessage.addListener.mockImplementation(
+      (listener: (message: any) => void) => {
+        listeners.push(listener);
+      },
+    );
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: 'session_stable_layout',
+              state: 'capturing',
+              currentTimeMs: 30000,
+              currentView: 'timeline',
+              currentViewPinned: false,
+              graph: {
+                sessionId: 'session_stable_layout',
+                revision: 1,
+                topics: [],
+                nodes: [
+                  {
+                    id: 'n1',
+                    type: 'claim',
+                    text: '节点一',
+                    timestampMs: 0,
+                    status: 'confirmed',
+                  },
+                  {
+                    id: 'n2',
+                    type: 'claim',
+                    text: '节点二',
+                    timestampMs: 30000,
+                    status: 'confirmed',
+                  },
+                ],
+                edges: [],
+                viewHints: {
+                  defaultView: 'timeline',
+                  scores: {
+                    timeline: 3,
+                    causal: 0,
+                    comparison: 0,
+                    flow: 0,
+                    hierarchy: 0,
+                  },
+                },
+                updatedAt: 100,
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+
+    const firstPosition = screen.getByRole('button', { name: '节点一' }).dataset.nodePosition;
+    const secondPosition = screen.getByRole('button', { name: '节点二' }).dataset.nodePosition;
+    expect(reactFlowFitViewSpy).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      listeners[0]?.({
+        type: 'MERGED_GRAPH_UPDATED',
+        target: 'sidepanel',
+        payload: {
+          graph: {
+            sessionId: 'session_stable_layout',
+            revision: 2,
+            topics: [],
+            nodes: [
+              {
+                id: 'n1',
+                type: 'claim',
+                text: '节点一',
+                timestampMs: 0,
+                status: 'confirmed',
+              },
+              {
+                id: 'n2',
+                type: 'claim',
+                text: '节点二',
+                timestampMs: 30000,
+                status: 'confirmed',
+              },
+            ],
+            edges: [
+              {
+                id: 'e1',
+                source: 'n1',
+                target: 'n2',
+                type: 'supports',
+              },
+            ],
+            viewHints: {
+              defaultView: 'causal',
+              scores: {
+                timeline: 0,
+                causal: 2,
+                comparison: 0,
+                flow: 0,
+                hierarchy: 0,
+              },
+            },
+            updatedAt: 200,
+          },
+        },
+      });
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole('button', { name: '节点一' }).dataset.nodePosition).toBe(firstPosition);
+    expect(screen.getByRole('button', { name: '节点二' }).dataset.nodePosition).toBe(secondPosition);
+    expect(reactFlowFitViewSpy).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/图更新: 仅新增连线 \+1/)).toBeInTheDocument();
   });
 
   it('恢复已停止会话资产后切换视图不会再回写 worker', async () => {
@@ -2277,6 +2536,8 @@ describe('App 组件', () => {
     expect(anchorClickSpy).toHaveBeenCalled();
     expect(slimJson).toContain('"segments"');
     expect(slimJson).toContain('"derivedViews"');
+    expect(slimJson).toContain('"layoutDiagnostics"');
+    expect(slimJson).toContain('"reusedPositions"');
     expect(slimJson).toContain('"timeline"');
     expect(slimJson).toContain('导出调试节点');
     expect(slimJson).not.toContain('"tokens"');
