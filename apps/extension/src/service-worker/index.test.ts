@@ -1,3 +1,4 @@
+import { ProviderRequestError } from '@listen-graphic/providers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('Service Worker - 当前主链路', () => {
@@ -285,6 +286,57 @@ describe('Service Worker - 当前主链路', () => {
     return sendAudioChunk({ startMs: 20000, endMs: 30000 });
   }
 
+  function mockRealtimeProviderConfig() {
+    getProviderConfigMock.mockResolvedValue({
+      asr: {
+        type: 'tencent',
+        mode: 'direct',
+        transport: 'ws',
+        appId: '1250000000',
+        model: '16k_zh',
+        language: 'zh',
+        secretId: 'secret-id',
+        secretKey: 'secret-key',
+      },
+      structurer: {
+        type: 'mock',
+        mode: 'direct',
+        model: 'mock-structurer',
+        language: 'zh',
+      },
+    });
+  }
+
+  async function startRealtimeSession() {
+    mockRealtimeProviderConfig();
+    return await dispatchMessage(
+      {
+        type: 'SESSION_START',
+        target: 'service-worker',
+        payload: { tabId: 123 },
+      },
+      { tab: { id: 123 } },
+    );
+  }
+
+  async function sendStableUtterance(params: {
+    text: string;
+    startMs: number;
+    endMs: number;
+  }) {
+    return await dispatchMessage({
+      type: 'ASR_STREAM_UTTERANCE_READY',
+      target: 'service-worker',
+      payload: {
+        text: params.text,
+        startMs: params.startMs,
+        endMs: params.endMs,
+        provider: 'tencent-asr',
+        raw: { result: { slice_type: 2 } },
+      },
+    });
+  }
+
   async function runInjectedStructurerSession(params: {
     transcripts: Array<{
       chunkId: string;
@@ -364,33 +416,7 @@ describe('Service Worker - 当前主链路', () => {
 
   it('腾讯 realtime 配置会把一次性 WebSocket 参数下发给 content script', async () => {
     const chromeMock = (globalThis as any).chrome;
-    getProviderConfigMock.mockResolvedValue({
-      asr: {
-        type: 'tencent',
-        mode: 'direct',
-        transport: 'ws',
-        appId: '1250000000',
-        model: '16k_zh',
-        language: 'zh',
-        secretId: 'secret-id',
-        secretKey: 'secret-key',
-      },
-      structurer: {
-        type: 'mock',
-        mode: 'direct',
-        model: 'mock-structurer',
-        language: 'zh',
-      },
-    });
-
-    await dispatchMessage(
-      {
-        type: 'SESSION_START',
-        target: 'service-worker',
-        payload: { tabId: 123 },
-      },
-      { tab: { id: 123 } },
-    );
+    await startRealtimeSession();
 
     expect(chromeMock.tabs.sendMessage).toHaveBeenCalledWith(
       123,
@@ -870,52 +896,19 @@ describe('Service Worker - 当前主链路', () => {
   });
 
   it('收到腾讯实时稳定句段后会持久化 transcript 并驱动 structurer', async () => {
-    await dispatchMessage(
-      {
-        type: 'SESSION_START',
-        target: 'service-worker',
-        payload: { tabId: 123 },
-      },
-      { tab: { id: 123 } },
-    );
+    const firstUtterance = '第一句稳定话语'.repeat(8);
+    const secondUtterance = '第二句稳定话语'.repeat(8);
+    const thirdUtterance = '第三句稳定话语'.repeat(8);
 
-    await dispatchMessage({
-      type: 'ASR_STREAM_UTTERANCE_READY',
-      target: 'service-worker',
-      payload: {
-        text: '第一句稳定话语',
-        startMs: 0,
-        endMs: 10000,
-        provider: 'tencent-asr',
-        raw: { result: { slice_type: 2 } },
-      },
-    });
-    await dispatchMessage({
-      type: 'ASR_STREAM_UTTERANCE_READY',
-      target: 'service-worker',
-      payload: {
-        text: '第二句稳定话语',
-        startMs: 10000,
-        endMs: 20000,
-        provider: 'tencent-asr',
-        raw: { result: { slice_type: 2 } },
-      },
-    });
-    await dispatchMessage({
-      type: 'ASR_STREAM_UTTERANCE_READY',
-      target: 'service-worker',
-      payload: {
-        text: '第三句稳定话语',
-        startMs: 20000,
-        endMs: 30000,
-        provider: 'tencent-asr',
-        raw: { result: { slice_type: 2 } },
-      },
-    });
+    await startRealtimeSession();
+
+    await sendStableUtterance({ text: firstUtterance, startMs: 0, endMs: 10000 });
+    await sendStableUtterance({ text: secondUtterance, startMs: 10000, endMs: 20000 });
+    await sendStableUtterance({ text: thirdUtterance, startMs: 20000, endMs: 30000 });
 
     expect(appendTranscriptChunkMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        text: '第三句稳定话语',
+        text: thirdUtterance,
         provider: 'tencent-asr',
         raw: expect.objectContaining({
           transport: 'ws',
@@ -923,6 +916,35 @@ describe('Service Worker - 当前主链路', () => {
       }),
     );
     expect(extractSegmentGraphMock).toHaveBeenCalledTimes(1);
+    expect(saveMergedGraphMock).toHaveBeenCalled();
+  });
+
+  it('腾讯 realtime 在达到 3 条稳定句段但未达字数或时长阈值时不会 bootstrap', async () => {
+    await startRealtimeSession();
+
+    await sendStableUtterance({ text: '第一句稳定话语', startMs: 0, endMs: 10000 });
+    await sendStableUtterance({ text: '第二句稳定话语', startMs: 10000, endMs: 20000 });
+    await sendStableUtterance({ text: '第三句稳定话语', startMs: 20000, endMs: 30000 });
+
+    expect(extractSegmentGraphMock).not.toHaveBeenCalled();
+    expect(saveMergedGraphMock).not.toHaveBeenCalled();
+  });
+
+  it('腾讯 realtime 会在累计时长达到阈值时启动 bootstrap', async () => {
+    await startRealtimeSession();
+
+    await sendStableUtterance({ text: '第一句稳定话语', startMs: 0, endMs: 20000 });
+    await sendStableUtterance({ text: '第二句稳定话语', startMs: 20000, endMs: 50000 });
+
+    expect(extractSegmentGraphMock).toHaveBeenCalledTimes(1);
+    expect(extractSegmentGraphMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transcriptWindow: [
+          expect.objectContaining({ text: '第一句稳定话语' }),
+          expect.objectContaining({ text: '第二句稳定话语' }),
+        ],
+      }),
+    );
     expect(saveMergedGraphMock).toHaveBeenCalled();
   });
 
@@ -1020,6 +1042,73 @@ describe('Service Worker - 当前主链路', () => {
         }),
       }),
     ]);
+  });
+
+  it('structurer 抛出带 structurerDiagnostics 时，debug 与 lastProviderError 保留诊断', async () => {
+    const storedTranscripts: any[] = [];
+    appendTranscriptChunkMock.mockImplementation(async (chunk: any) => {
+      storedTranscripts.push(chunk);
+    });
+    listTranscriptChunksBySessionMock.mockImplementation(async (sessionId: string) =>
+      storedTranscripts.filter((chunk) => chunk.sessionId === sessionId),
+    );
+
+    extractSegmentGraphMock.mockRejectedValueOnce(
+      new ProviderRequestError({
+        code: 'INVALID_RESPONSE',
+        message: 'Structurer provider returned invalid JSON',
+        provider: 'mock-structurer',
+        stage: 'structurer',
+        retriable: true,
+        structurerDiagnostics: {
+          responsePreview: '{broken',
+          responseTruncated: false,
+          parseStage: 'primary_json',
+          parseMessage: 'Unexpected token',
+        },
+      }),
+    );
+
+    const startResponse = await dispatchMessage(
+      {
+        type: 'SESSION_START',
+        target: 'service-worker',
+        payload: { tabId: 123 },
+      },
+      { tab: { id: 123 } },
+    );
+    const sessionId = startResponse.sessionId;
+
+    await bootstrapStructurerWindow();
+
+    const debugResponse = await dispatchMessage({
+      type: 'GET_DEBUG_SESSION',
+      target: 'service-worker',
+      payload: { sessionId },
+    });
+
+    expect(debugResponse.success).toBe(true);
+    expect(debugResponse.debugData.lastProviderError).toEqual(
+      expect.objectContaining({
+        code: 'INVALID_RESPONSE',
+        structurerDiagnostics: expect.objectContaining({
+          responsePreview: '{broken',
+          parseStage: 'primary_json',
+        }),
+      }),
+    );
+    const runs = debugResponse.debugData.structurerRuns ?? [];
+    expect(runs.length).toBeGreaterThanOrEqual(1);
+    expect(runs[runs.length - 1]).toEqual(
+      expect.objectContaining({
+        status: 'error',
+        errorCode: 'INVALID_RESPONSE',
+        structurerDiagnostics: expect.objectContaining({
+          responsePreview: '{broken',
+          parseStage: 'primary_json',
+        }),
+      }),
+    );
   });
 
   it('多个音频 chunk 会串行处理，避免并发触发多个 ASR 请求', async () => {

@@ -81,6 +81,14 @@ export type ProviderErrorCode =
   | 'TRANSCRIBE_ERROR'
   | 'STRUCTURE_ERROR';
 
+/** Debug payload when structurer response cannot be parsed (export / storage only). */
+export interface StructurerResponseDiagnostics {
+  responsePreview?: string;
+  responseTruncated?: boolean;
+  parseStage?: 'empty_content' | 'primary_json' | 'repaired_json' | 'extract_object';
+  parseMessage?: string;
+}
+
 export interface SerializableProviderError {
   code: ProviderErrorCode;
   message: string;
@@ -89,6 +97,7 @@ export interface SerializableProviderError {
   retriable: boolean;
   status?: number;
   attemptCount?: number;
+  structurerDiagnostics?: StructurerResponseDiagnostics;
 }
 
 export interface AsrProvider {

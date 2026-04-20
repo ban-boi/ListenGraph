@@ -666,12 +666,23 @@ async function processTranscriptChunk(
         language: 'zh',
       });
     } catch (error) {
+      const providerShape = isSerializableProviderRequestError(error);
       lastStructurerRun = finalizeStructurerRunDebug(structurerRun, {
         status: isTimeoutProviderError(error) ? 'timeout' : 'error',
         errorCode:
-          error instanceof ProviderRequestError ? error.code : 'STRUCTURE_ERROR',
+          error instanceof ProviderRequestError
+            ? error.code
+            : providerShape
+              ? error.code
+              : 'STRUCTURE_ERROR',
         errorMessage:
           error instanceof Error ? error.message : 'Structurer 请求失败',
+        structurerDiagnostics:
+          error instanceof ProviderRequestError
+            ? error.structurerDiagnostics
+            : providerShape
+              ? error.structurerDiagnostics
+              : undefined,
       });
       throw error;
     }
@@ -1089,6 +1100,14 @@ function appendTranscriptToWindow(transcript: TranscriptChunk) {
 }
 
 function hasEnoughBootstrapContext(window: TranscriptChunk[]) {
+  if (getCurrentAsrTransport() === 'ws') {
+    return hasEnoughRealtimeBootstrapContext(window);
+  }
+
+  return hasEnoughBatchBootstrapContext(window);
+}
+
+function hasEnoughBatchBootstrapContext(window: TranscriptChunk[]) {
   if (window.length >= STRUCTURER_WINDOW_SIZE) {
     return true;
   }
@@ -1103,6 +1122,21 @@ function hasEnoughBootstrapContext(window: TranscriptChunk[]) {
   );
 }
 
+function hasEnoughRealtimeBootstrapContext(window: TranscriptChunk[]) {
+  if (window.length < STRUCTURER_BOOTSTRAP_MIN_CHUNKS) {
+    return false;
+  }
+
+  return (
+    getTranscriptWindowDurationMs(window) >= STRUCTURER_BOOTSTRAP_MIN_DURATION_MS ||
+    getEffectiveTranscriptWindowCharCount(window) >= STRUCTURER_BOOTSTRAP_MIN_CHAR_COUNT
+  );
+}
+
+function getCurrentAsrTransport() {
+  return activeProviderConfig.asr.transport === 'ws' ? 'ws' : 'batch';
+}
+
 function getTranscriptWindowDurationMs(window: TranscriptChunk[]) {
   if (window.length === 0) {
     return 0;
@@ -1115,16 +1149,28 @@ function getTranscriptWindowCharCount(window: TranscriptChunk[]) {
   return window.reduce((sum, chunk) => sum + chunk.text.length, 0);
 }
 
+function getEffectiveTranscriptWindowCharCount(window: TranscriptChunk[]) {
+  return window.reduce((sum, chunk) => sum + getEffectiveTranscriptCharCount(chunk), 0);
+}
+
 function shouldSkipIncrementalStructuring(transcript: TranscriptChunk) {
+  return isLowInformationTranscript(transcript);
+}
+
+function getNormalizedTranscriptCharCount(transcript: TranscriptChunk) {
+  return transcript.text.replace(/\s+/g, '').trim().length;
+}
+
+function getEffectiveTranscriptCharCount(transcript: TranscriptChunk) {
+  return isLowInformationTranscript(transcript) ? 0 : getNormalizedTranscriptCharCount(transcript);
+}
+
+function isLowInformationTranscript(transcript: TranscriptChunk) {
   const normalizedText = transcript.text.replace(/\s+/g, '').trim();
   return (
     /声音[。！？]?$/u.test(normalizedText) ||
     /^(掌声|谢谢|欢迎|好的|好吧|嗯|啊|诶|哎)[。！？]?$/u.test(normalizedText)
   );
-}
-
-function getNormalizedTranscriptCharCount(transcript: TranscriptChunk) {
-  return transcript.text.replace(/\s+/g, '').trim().length;
 }
 
 async function buildContentScriptStartPayload(): Promise<Extract<AppMessage, { type: 'START_CAPTURE' }>['payload']> {
@@ -1620,7 +1666,15 @@ function finalizeStructurerRunDebug(
   run: Omit<StructurerRunDebug, 'completedAt' | 'durationMs' | 'status'>,
   result: Pick<
     StructurerRunDebug,
-    'status' | 'segmentId' | 'topic' | 'nodeCount' | 'edgeCount' | 'fallbackUsed' | 'errorCode' | 'errorMessage'
+    | 'status'
+    | 'segmentId'
+    | 'topic'
+    | 'nodeCount'
+    | 'edgeCount'
+    | 'fallbackUsed'
+    | 'errorCode'
+    | 'errorMessage'
+    | 'structurerDiagnostics'
   >,
 ): StructurerRunDebug {
   const completedAt = Date.now();
@@ -1755,9 +1809,37 @@ function commitProviderRuntime(
   }
 }
 
+function isSerializableProviderRequestError(
+  error: unknown,
+): error is SerializableProviderError & Error {
+  if (!error || typeof error !== 'object' || !(error instanceof Error)) {
+    return false;
+  }
+  const e = error as unknown as Record<string, unknown>;
+  return (
+    typeof e.code === 'string' &&
+    typeof e.provider === 'string' &&
+    typeof e.stage === 'string' &&
+    typeof e.retriable === 'boolean'
+  );
+}
+
 function serializeProviderError(error: unknown): SerializableProviderError {
   if (error instanceof ProviderRequestError) {
     return sanitizeProviderError(error.toJSON());
+  }
+
+  if (isSerializableProviderRequestError(error)) {
+    return sanitizeProviderError({
+      code: error.code,
+      message: error.message,
+      provider: error.provider,
+      stage: error.stage,
+      retriable: error.retriable,
+      status: error.status,
+      attemptCount: error.attemptCount,
+      structurerDiagnostics: error.structurerDiagnostics,
+    });
   }
 
   const stage =

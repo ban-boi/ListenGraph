@@ -14,6 +14,12 @@
 - [扩展当前运行现状](C:/Users/finni/Desktop/ListenGraph/docs/extension/current-runtime.md)
   - 当前 ASR / provider / replay 的运行现状
   - 当前推荐执行顺序
+- [扩展增量图稳定性](C:/Users/finni/Desktop/ListenGraph/docs/extension/incremental-graph-stability.md)
+  - session 内图为何表现为“持续长出”而非每次重算
+  - 当前 view / fitView / 布局缓存 / 语义冻结的产品决策
+- [扩展增量相机跟随](C:/Users/finni/Desktop/ListenGraph/docs/extension/incremental-camera-follow.md)
+  - 图增量更新后 viewport 为什么会自动聚焦
+  - 当前目标区域、多段自动导览、双阈值分段、动画跟随与用户冷却期的产品决策
 
 ### ASR 联调与回归
 - [腾讯 ASR 联调 Checklist](C:/Users/finni/Desktop/ListenGraph/docs/providers/tencent-asr-smoke.md)
@@ -44,7 +50,9 @@
 ### 想理解“现在到底怎么跑”
 1. [runtime-mainline.md](C:/Users/finni/Desktop/ListenGraph/docs/extension/runtime-mainline.md)
 2. [current-runtime.md](C:/Users/finni/Desktop/ListenGraph/docs/extension/current-runtime.md)
-3. [docs/providers/README.md](C:/Users/finni/Desktop/ListenGraph/docs/providers/README.md)
+3. [incremental-graph-stability.md](C:/Users/finni/Desktop/ListenGraph/docs/extension/incremental-graph-stability.md)
+4. [incremental-camera-follow.md](C:/Users/finni/Desktop/ListenGraph/docs/extension/incremental-camera-follow.md)
+5. [docs/providers/README.md](C:/Users/finni/Desktop/ListenGraph/docs/providers/README.md)
 
 ### 想联调腾讯 realtime ASR
 1. [tencent-asr-smoke.md](C:/Users/finni/Desktop/ListenGraph/docs/providers/tencent-asr-smoke.md)
@@ -62,7 +70,9 @@
 
 ## 历史参考
 
-下面这些文档仍有价值，但不应当作“当前实现权威说明”：
+> **注意**：`docs/plans/` 下以日期时间戳开头的文档（如 `2026-03-20-*.md`）是 **Cursor 的 plan 模式自动生成的**，非人工编写，仅供参考。
+
+下面这些文档仍有价值，但不应当作”当前实现权威说明”：
 - `docs/providers/tencent-asr.md`
 - `docs/providers/zhipu-glm.md`
 - `docs/providers/zhipu-glm-benchmark-2026-03-31.md`

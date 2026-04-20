@@ -1653,6 +1653,230 @@ describe('App 组件', () => {
     );
   });
 
+  it('长条状新增节点会拆成多段自动导览并最终停在最后一段', async () => {
+    vi.useFakeTimers();
+    const listeners: Array<(message: any) => void> = [];
+    (globalThis as any).chrome.runtime.onMessage.addListener.mockImplementation(
+      (listener: (message: any) => void) => {
+        listeners.push(listener);
+      },
+    );
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: 'session_tour_long',
+              state: 'capturing',
+              currentTimeMs: 30000,
+              currentView: 'timeline',
+              currentViewPinned: false,
+              graph: {
+                sessionId: 'session_tour_long',
+                revision: 1,
+                topics: [],
+                nodes: [
+                  {
+                    id: 'n1',
+                    type: 'claim',
+                    text: '锚点节点',
+                    timestampMs: 0,
+                    status: 'confirmed',
+                  },
+                ],
+                edges: [],
+                viewHints: {
+                  defaultView: 'timeline',
+                  scores: {
+                    timeline: 3,
+                    causal: 0,
+                    comparison: 0,
+                    flow: 0,
+                    hierarchy: 0,
+                  },
+                },
+                updatedAt: 100,
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+    reactFlowFitBoundsSpy.mockClear();
+
+    await act(async () => {
+      listeners[0]?.({
+        type: 'MERGED_GRAPH_UPDATED',
+        target: 'sidepanel',
+        payload: {
+          graph: {
+            sessionId: 'session_tour_long',
+            revision: 2,
+            topics: [],
+            nodes: [
+              { id: 'n1', type: 'claim', text: '锚点节点', timestampMs: 0, status: 'confirmed' },
+              { id: 'n2', type: 'reason', text: '新增节点二', timestampMs: 1000, status: 'confirmed' },
+              { id: 'n3', type: 'reason', text: '新增节点三', timestampMs: 2000, status: 'confirmed' },
+              { id: 'n4', type: 'reason', text: '新增节点四', timestampMs: 3000, status: 'confirmed' },
+              { id: 'n5', type: 'reason', text: '新增节点五', timestampMs: 4000, status: 'confirmed' },
+              { id: 'n6', type: 'reason', text: '新增节点六', timestampMs: 5000, status: 'confirmed' },
+              { id: 'n7', type: 'reason', text: '新增节点七', timestampMs: 6000, status: 'confirmed' },
+            ],
+            edges: [
+              { id: 'e1', source: 'n1', target: 'n2', type: 'supports' },
+              { id: 'e2', source: 'n2', target: 'n3', type: 'supports' },
+              { id: 'e3', source: 'n3', target: 'n4', type: 'supports' },
+              { id: 'e4', source: 'n4', target: 'n5', type: 'supports' },
+              { id: 'e5', source: 'n5', target: 'n6', type: 'supports' },
+              { id: 'e6', source: 'n6', target: 'n7', type: 'supports' },
+            ],
+            viewHints: {
+              defaultView: 'timeline',
+              scores: {
+                timeline: 5,
+                causal: 0,
+                comparison: 0,
+                flow: 0,
+                hierarchy: 0,
+              },
+            },
+            updatedAt: 200,
+          },
+        },
+      });
+      await Promise.resolve();
+    });
+
+    expect(reactFlowFitBoundsSpy).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('auto-tour-status')).toHaveTextContent(/自动导览 1\/2/);
+
+    await act(async () => {
+      vi.advanceTimersByTime(4000);
+    });
+
+    expect(reactFlowFitBoundsSpy).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('auto-tour-status')).toHaveTextContent(/自动导览 2\/2/);
+    const finalBounds = reactFlowFitBoundsSpy.mock.calls.at(-1)?.[0];
+
+    await act(async () => {
+      vi.advanceTimersByTime(6000);
+    });
+
+    expect(screen.getByTestId('auto-tour-status')).toHaveTextContent('运行中');
+    expect(reactFlowFitBoundsSpy.mock.calls.at(-1)?.[0]).toEqual(finalBounds);
+  });
+
+  it('当前视图已经较近时会因相对缩放阈值提前分段', async () => {
+    vi.useFakeTimers();
+    const listeners: Array<(message: any) => void> = [];
+    reactFlowViewport = { x: 0, y: 0, zoom: 1.1 };
+    reactFlowGetViewportSpy.mockImplementation(() => reactFlowViewport);
+    (globalThis as any).chrome.runtime.onMessage.addListener.mockImplementation(
+      (listener: (message: any) => void) => {
+        listeners.push(listener);
+      },
+    );
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: 'session_relative_split',
+              state: 'capturing',
+              currentTimeMs: 30000,
+              currentView: 'timeline',
+              currentViewPinned: false,
+              graph: {
+                sessionId: 'session_relative_split',
+                revision: 1,
+                topics: [],
+                nodes: [
+                  {
+                    id: 'n1',
+                    type: 'claim',
+                    text: '锚点节点',
+                    timestampMs: 0,
+                    status: 'confirmed',
+                  },
+                ],
+                edges: [],
+                viewHints: {
+                  defaultView: 'timeline',
+                  scores: {
+                    timeline: 3,
+                    causal: 0,
+                    comparison: 0,
+                    flow: 0,
+                    hierarchy: 0,
+                  },
+                },
+                updatedAt: 100,
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+    reactFlowFitBoundsSpy.mockClear();
+
+    await act(async () => {
+      listeners[0]?.({
+        type: 'MERGED_GRAPH_UPDATED',
+        target: 'sidepanel',
+        payload: {
+          graph: {
+            sessionId: 'session_relative_split',
+            revision: 2,
+            topics: [],
+            nodes: [
+              { id: 'n1', type: 'claim', text: '锚点节点', timestampMs: 0, status: 'confirmed' },
+              { id: 'n2', type: 'reason', text: '新增节点二', timestampMs: 1000, status: 'confirmed' },
+              { id: 'n3', type: 'reason', text: '新增节点三', timestampMs: 2000, status: 'confirmed' },
+              { id: 'n4', type: 'reason', text: '新增节点四', timestampMs: 3000, status: 'confirmed' },
+              { id: 'n5', type: 'reason', text: '新增节点五', timestampMs: 4000, status: 'confirmed' },
+            ],
+            edges: [
+              { id: 'e1', source: 'n1', target: 'n2', type: 'supports' },
+              { id: 'e2', source: 'n2', target: 'n3', type: 'supports' },
+              { id: 'e3', source: 'n3', target: 'n4', type: 'supports' },
+              { id: 'e4', source: 'n4', target: 'n5', type: 'supports' },
+            ],
+            viewHints: {
+              defaultView: 'timeline',
+              scores: {
+                timeline: 4,
+                causal: 0,
+                comparison: 0,
+                flow: 0,
+                hierarchy: 0,
+              },
+            },
+            updatedAt: 200,
+          },
+        },
+      });
+      await Promise.resolve();
+    });
+
+    expect(reactFlowFitBoundsSpy).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('auto-tour-status')).toHaveTextContent(/自动导览 1\/2/);
+
+    await act(async () => {
+      vi.advanceTimersByTime(3500);
+    });
+
+    expect(reactFlowFitBoundsSpy).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('auto-tour-status')).toHaveTextContent(/自动导览 2\/2/);
+  });
+
   it('新增节点即使已在当前视口内也会聚焦跟随并放大到目标区域', async () => {
     const listeners: Array<(message: any) => void> = [];
     reactFlowViewport = { x: 300, y: 210, zoom: 0.3 };
@@ -1772,7 +1996,8 @@ describe('App 组件', () => {
     );
   });
 
-  it('用户刚手动移动画布后会暂停自动跟随', async () => {
+  it('用户刚手动移动画布后会暂停自动导览并在 3 秒后从下一段恢复', async () => {
+    vi.useFakeTimers();
     const listeners: Array<(message: any) => void> = [];
     (globalThis as any).chrome.runtime.onMessage.addListener.mockImplementation(
       (listener: (message: any) => void) => {
@@ -1824,9 +2049,6 @@ describe('App 组件', () => {
     );
 
     await renderApp();
-    reactFlowFitBoundsSpy.mockClear();
-    fireEvent.mouseDown(screen.getByTestId('reactflow-mock'));
-    fireEvent.mouseUp(screen.getByTestId('reactflow-mock'));
 
     await act(async () => {
       listeners[0]?.({
@@ -1838,28 +2060,21 @@ describe('App 组件', () => {
             revision: 2,
             topics: [],
             nodes: [
-              {
-                id: 'n1',
-                type: 'claim',
-                text: '节点一',
-                timestampMs: 0,
-                status: 'confirmed',
-              },
-              {
-                id: 'n2',
-                type: 'reason',
-                text: '新增原因',
-                timestampMs: 30000,
-                status: 'confirmed',
-              },
+              { id: 'n1', type: 'claim', text: '节点一', timestampMs: 0, status: 'confirmed' },
+              { id: 'n2', type: 'reason', text: '新增原因一', timestampMs: 1000, status: 'confirmed' },
+              { id: 'n3', type: 'reason', text: '新增原因二', timestampMs: 2000, status: 'confirmed' },
+              { id: 'n4', type: 'reason', text: '新增原因三', timestampMs: 3000, status: 'confirmed' },
+              { id: 'n5', type: 'reason', text: '新增原因四', timestampMs: 4000, status: 'confirmed' },
+              { id: 'n6', type: 'reason', text: '新增原因五', timestampMs: 5000, status: 'confirmed' },
+              { id: 'n7', type: 'reason', text: '新增原因六', timestampMs: 6000, status: 'confirmed' },
             ],
             edges: [
-              {
-                id: 'e1',
-                source: 'n1',
-                target: 'n2',
-                type: 'supports',
-              },
+              { id: 'e1', source: 'n1', target: 'n2', type: 'supports' },
+              { id: 'e2', source: 'n2', target: 'n3', type: 'supports' },
+              { id: 'e3', source: 'n3', target: 'n4', type: 'supports' },
+              { id: 'e4', source: 'n4', target: 'n5', type: 'supports' },
+              { id: 'e5', source: 'n5', target: 'n6', type: 'supports' },
+              { id: 'e6', source: 'n6', target: 'n7', type: 'supports' },
             ],
             viewHints: {
               defaultView: 'timeline',
@@ -1878,7 +2093,21 @@ describe('App 组件', () => {
       await Promise.resolve();
     });
 
-    expect(reactFlowFitBoundsSpy).not.toHaveBeenCalled();
+    expect(reactFlowFitBoundsSpy).toHaveBeenCalledTimes(1);
+    fireEvent.mouseDown(screen.getByTestId('reactflow-mock'));
+    fireEvent.mouseUp(screen.getByTestId('reactflow-mock'));
+    expect(screen.getByTestId('auto-tour-status')).toHaveTextContent(/导览暂停 2\/2/);
+
+    await act(async () => {
+      vi.advanceTimersByTime(2999);
+    });
+    expect(reactFlowFitBoundsSpy).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(reactFlowFitBoundsSpy).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('auto-tour-status')).toHaveTextContent(/自动导览 2\/2/);
   });
 
   it('恢复已停止会话资产后切换视图不会再回写 worker', async () => {

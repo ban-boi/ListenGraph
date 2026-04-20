@@ -11,8 +11,8 @@ describe('Service Worker - provider recovery', () => {
   let storageState: Record<string, unknown> = {};
   let createRuntimeProvidersMock: any;
   /** 与 worker 内 structurerProvider 同一引用，便于断言调用次数（勿在 factory 内联 new vi.fn，否则易与 runtime 脱节） */
-  let extractSegmentGraphMock: ReturnType<typeof vi.fn>;
-  let transcribeChunkMock: ReturnType<typeof vi.fn>;
+  let extractSegmentGraphMock: any;
+  let transcribeChunkMock: any;
 
   beforeEach(async () => {
     vi.clearAllMocks();

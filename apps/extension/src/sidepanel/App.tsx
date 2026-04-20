@@ -189,6 +189,18 @@ type ViewBounds = {
   right: number;
   bottom: number;
 };
+type AutoTourSeed = {
+  sessionId: string;
+  revision: number;
+  nodeIds: string[];
+  anchorNodeIds: string[];
+};
+type AutoTourBatch = {
+  nodeIds: string[];
+  anchorNodeIds: string[];
+  dwellMs: number;
+};
+type AutoTourStatus = 'idle' | 'touring' | 'paused';
 
 const STABLE_LAYOUT_CARD_WIDTH = 220;
 const STABLE_LAYOUT_CARD_HEIGHT = 132;
@@ -939,6 +951,16 @@ const AUTO_REVEAL_MIN_HEIGHT_RATIO = 0.68;
 const AUTO_REVEAL_VIEWPORT_EPSILON = 6;
 const AUTO_REVEAL_ZOOM_EPSILON = 0.02;
 const USER_VIEWPORT_COOLDOWN_MS = 1800;
+const AUTO_TOUR_RESUME_DELAY_MS = 3000;
+const AUTO_TOUR_ABSOLUTE_READABLE_ZOOM = 0.75;
+const AUTO_TOUR_FIRST_BATCH_RELATIVE_RATIO = 0.8;
+const AUTO_TOUR_RELATIVE_READABLE_RATIO = 0.85;
+const AUTO_TOUR_BASE_DWELL_MS = 900;
+const AUTO_TOUR_CHAR_DWELL_MS = 40;
+const AUTO_TOUR_NODE_DWELL_MS = 220;
+const AUTO_TOUR_EDGE_DWELL_MS = 90;
+const AUTO_TOUR_MIN_DWELL_MS = 1800;
+const AUTO_TOUR_MAX_DWELL_MS = 5000;
 
 function clampLogPanelHeight(nextHeight: number) {
   const viewportMax = typeof window === 'undefined'
@@ -1048,6 +1070,206 @@ function isViewportCloseToTarget(params: {
   );
 }
 
+function estimateAutoTourDwellMs(params: {
+  nodeCount: number;
+  edgeCount: number;
+  charCount: number;
+}) {
+  const estimated =
+    AUTO_TOUR_BASE_DWELL_MS +
+    params.charCount * AUTO_TOUR_CHAR_DWELL_MS +
+    params.nodeCount * AUTO_TOUR_NODE_DWELL_MS +
+    params.edgeCount * AUTO_TOUR_EDGE_DWELL_MS;
+  return Math.min(Math.max(estimated, AUTO_TOUR_MIN_DWELL_MS), AUTO_TOUR_MAX_DWELL_MS);
+}
+
+function buildAutoTourBatches(params: {
+  seed: AutoTourSeed;
+  flowNodes: Node[];
+  flowEdges: Edge[];
+  containerWidth: number;
+  containerHeight: number;
+  currentZoom: number;
+}) {
+  const nodeMap = new Map(params.flowNodes.map((node) => [node.id, node]));
+  const addedNodes = params.seed.nodeIds
+    .map((id) => nodeMap.get(id))
+    .filter((node): node is Node => Boolean(node));
+  if (addedNodes.length === 0) {
+    return [];
+  }
+
+  const anchorNodes = params.seed.anchorNodeIds
+    .map((id) => nodeMap.get(id))
+    .filter((node): node is Node => Boolean(node));
+  const anchorBounds = anchorNodes.map(getNodeBounds);
+
+  const addedNodeIdSet = new Set(params.seed.nodeIds);
+  const adjacency = new Map<string, Set<string>>();
+  for (const nodeId of [...params.seed.nodeIds, ...params.seed.anchorNodeIds]) {
+    adjacency.set(nodeId, new Set());
+  }
+  for (const edge of params.flowEdges) {
+    if (
+      !(adjacency.has(edge.source) && adjacency.has(edge.target))
+    ) {
+      continue;
+    }
+    adjacency.get(edge.source)?.add(edge.target);
+    adjacency.get(edge.target)?.add(edge.source);
+  }
+
+  const depthByNodeId = new Map<string, number>();
+  if (params.seed.anchorNodeIds.length > 0) {
+    const queue = params.seed.anchorNodeIds.map((nodeId) => ({ nodeId, depth: 0 }));
+    const visited = new Set(params.seed.anchorNodeIds);
+    while (queue.length > 0) {
+      const { nodeId, depth } = queue.shift()!;
+      for (const nextId of adjacency.get(nodeId) ?? []) {
+        if (visited.has(nextId)) {
+          continue;
+        }
+        visited.add(nextId);
+        if (addedNodeIdSet.has(nextId)) {
+          depthByNodeId.set(nextId, depth + 1);
+        }
+        queue.push({ nodeId: nextId, depth: depth + 1 });
+      }
+    }
+  }
+
+  const clusters = params.seed.nodeIds
+    .map((nodeId) => {
+      const node = nodeMap.get(nodeId);
+      return node
+        ? {
+            nodeIds: [nodeId],
+            node,
+            depth: depthByNodeId.get(nodeId) ?? Number.MAX_SAFE_INTEGER,
+          }
+        : null;
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item))
+    .sort((a, b) => {
+      if (a.depth !== b.depth) {
+        return a.depth - b.depth;
+      }
+      if (a.node.position.y !== b.node.position.y) {
+        return a.node.position.y - b.node.position.y;
+      }
+      return a.node.position.x - b.node.position.x;
+    })
+    .map(({ nodeIds }) => {
+      const groupNodes = nodeIds
+        .map((id) => nodeMap.get(id))
+        .filter((node): node is Node => Boolean(node));
+      const groupBounds = mergeViewBounds(groupNodes.map(getNodeBounds));
+      if (!groupBounds) {
+        return null;
+      }
+      const groupNodeIdSet = new Set(nodeIds);
+      const edgeCount = params.flowEdges.filter(
+        (edge) => groupNodeIdSet.has(edge.source) && groupNodeIdSet.has(edge.target),
+      ).length;
+      const charCount = groupNodes.reduce(
+        (sum, node) => sum + String(node.data?.label ?? '').length,
+        0,
+      );
+      return {
+        nodeIds,
+        bounds: groupBounds,
+        edgeCount,
+        charCount,
+      };
+    })
+    .filter((cluster): cluster is NonNullable<typeof cluster> => Boolean(cluster));
+
+  const batches: AutoTourBatch[] = [];
+  let currentBatch: typeof clusters = [];
+  let effectiveCurrentZoom = params.currentZoom > 0 ? params.currentZoom : 1;
+
+  const getBatchViewport = (clustersToTest: typeof clusters, includeAnchors: boolean) => {
+    const bounds = mergeViewBounds([
+      ...clustersToTest.map((cluster) => cluster.bounds),
+      ...(includeAnchors ? anchorBounds : []),
+    ]);
+    if (!bounds) {
+      return null;
+    }
+    return getViewportForBounds(
+      {
+        x: bounds.left - AUTO_REVEAL_PADDING,
+        y: bounds.top - AUTO_REVEAL_PADDING,
+        width: bounds.right - bounds.left + AUTO_REVEAL_PADDING * 2,
+        height: bounds.bottom - bounds.top + AUTO_REVEAL_PADDING * 2,
+      },
+      params.containerWidth,
+      params.containerHeight,
+      0.3,
+      2,
+      0,
+    );
+  };
+
+  const canFitReadably = (clustersToTest: typeof clusters, includeAnchors: boolean) => {
+    const viewport = getBatchViewport(clustersToTest, includeAnchors);
+    if (!viewport) {
+      return false;
+    }
+    const relativeRatio = includeAnchors
+      ? AUTO_TOUR_FIRST_BATCH_RELATIVE_RATIO
+      : AUTO_TOUR_RELATIVE_READABLE_RATIO;
+    const allowedMinZoom = Math.max(
+      AUTO_TOUR_ABSOLUTE_READABLE_ZOOM,
+      effectiveCurrentZoom * relativeRatio,
+    );
+    return viewport.zoom >= allowedMinZoom;
+  };
+
+  const finalizeBatch = (clustersToFlush: typeof clusters, includeAnchors: boolean) => {
+    if (clustersToFlush.length === 0) {
+      return;
+    }
+    const viewport = getBatchViewport(clustersToFlush, includeAnchors);
+    if (!viewport) {
+      return;
+    }
+    const nodeIds = clustersToFlush.flatMap((cluster) => cluster.nodeIds);
+    const edgeCount = clustersToFlush.reduce((sum, cluster) => sum + cluster.edgeCount, 0);
+    const charCount = clustersToFlush.reduce((sum, cluster) => sum + cluster.charCount, 0);
+    batches.push({
+      nodeIds,
+      anchorNodeIds: includeAnchors ? params.seed.anchorNodeIds : [],
+      dwellMs: estimateAutoTourDwellMs({
+        nodeCount: nodeIds.length,
+        edgeCount,
+        charCount,
+      }),
+    });
+    effectiveCurrentZoom = viewport.zoom;
+  };
+
+  clusters.forEach((cluster) => {
+    const candidateBatch = [...currentBatch, cluster];
+    const includeAnchors = batches.length === 0;
+    const canAppend =
+      currentBatch.length === 0 ||
+      canFitReadably(candidateBatch, includeAnchors);
+
+    if (!canAppend) {
+      finalizeBatch(currentBatch, batches.length === 0);
+      currentBatch = [cluster];
+      return;
+    }
+
+    currentBatch = candidateBatch;
+  });
+
+  finalizeBatch(currentBatch, batches.length === 0);
+
+  return batches;
+}
+
 export default function App() {
   const [sessionState, setSessionState] = useState<SessionState>('idle');
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -1065,6 +1287,11 @@ export default function App() {
   const [logs, setLogs] = useState<string[]>([]);
   const [graph, setGraph] = useState<MergedGraph>(createEmptyGraph);
   const [logPanelHeight, setLogPanelHeight] = useState(DEFAULT_LOG_PANEL_HEIGHT);
+  const [autoTourStatus, setAutoTourStatus] = useState<AutoTourStatus>('idle');
+  const [autoTourProgress, setAutoTourProgress] = useState<{ current: number; total: number }>({
+    current: 0,
+    total: 0,
+  });
   const [providerConfig, setProviderConfig] = useState<ProviderConfig>(() =>
     createExtensionDefaultProviderConfigForUi(),
   );
@@ -1088,13 +1315,13 @@ export default function App() {
   const hasAutoFitRef = useRef(false);
   const userViewportInteractingRef = useRef(false);
   const lastUserViewportChangeAtRef = useRef(0);
-  const pendingAutoRevealRef = useRef<{
-    sessionId: string;
-    revision: number;
-    nodeIds: string[];
-    anchorNodeIds: string[];
-  } | null>(null);
-  const lastAutoRevealKeyRef = useRef<string | null>(null);
+  const pendingAutoTourRef = useRef<AutoTourSeed | null>(null);
+  const autoTourBatchesRef = useRef<AutoTourBatch[]>([]);
+  const autoTourCurrentIndexRef = useRef(-1);
+  const autoTourResumeIndexRef = useRef(0);
+  const autoTourAdvanceTimerRef = useRef<number | null>(null);
+  const autoTourResumeTimerRef = useRef<number | null>(null);
+  const lastAutoTourKeyRef = useRef<string | null>(null);
 
   const addLog = useCallback((msg: string) => {
     const time = new Date().toLocaleTimeString();
@@ -1104,6 +1331,37 @@ export default function App() {
   const upsertTencentRealtimePartialLog = useCallback((displayMsg: string) => {
     setLogs((prev) => upsertTencentRealtimeStreamLog(prev, displayMsg));
   }, []);
+
+  const clearAutoTourAdvanceTimer = useCallback(() => {
+    if (autoTourAdvanceTimerRef.current !== null) {
+      window.clearTimeout(autoTourAdvanceTimerRef.current);
+      autoTourAdvanceTimerRef.current = null;
+    }
+  }, []);
+
+  const clearAutoTourResumeTimer = useCallback(() => {
+    if (autoTourResumeTimerRef.current !== null) {
+      window.clearTimeout(autoTourResumeTimerRef.current);
+      autoTourResumeTimerRef.current = null;
+    }
+  }, []);
+
+  const resetAutoTourState = useCallback((nextStatus: AutoTourStatus = 'idle') => {
+    clearAutoTourAdvanceTimer();
+    clearAutoTourResumeTimer();
+    autoTourBatchesRef.current = [];
+    autoTourCurrentIndexRef.current = -1;
+    autoTourResumeIndexRef.current = 0;
+    pendingAutoTourRef.current = null;
+    lastAutoTourKeyRef.current = null;
+    setAutoTourStatus(nextStatus);
+    setAutoTourProgress({ current: 0, total: 0 });
+  }, [clearAutoTourAdvanceTimer, clearAutoTourResumeTimer]);
+
+  useEffect(() => () => {
+    clearAutoTourAdvanceTimer();
+    clearAutoTourResumeTimer();
+  }, [clearAutoTourAdvanceTimer, clearAutoTourResumeTimer]);
 
   useEffect(() => {
     graphRef.current = graph;
@@ -1219,7 +1477,7 @@ export default function App() {
               setCurrentView('causal');
               userPinnedViewRef.current = false;
               activeViewSessionRef.current = null;
-              pendingAutoRevealRef.current = null;
+              resetAutoTourState();
             }
           }
           const nextState = p.state === 'stopped' ? 'idle' : p.state;
@@ -1235,7 +1493,7 @@ export default function App() {
             setCurrentView('causal');
             userPinnedViewRef.current = false;
             activeViewSessionRef.current = null;
-            pendingAutoRevealRef.current = null;
+            resetAutoTourState();
           }
           addLog(`状态: ${p.state}`);
           break;
@@ -1269,7 +1527,12 @@ export default function App() {
           setGraph(nextGraph);
           graphRef.current = nextGraph;
           activeViewSessionRef.current = nextGraph.sessionId;
-          pendingAutoRevealRef.current = addedNodeIds.length > 0
+          clearAutoTourAdvanceTimer();
+          clearAutoTourResumeTimer();
+          autoTourBatchesRef.current = [];
+          autoTourCurrentIndexRef.current = -1;
+          autoTourResumeIndexRef.current = 0;
+          pendingAutoTourRef.current = addedNodeIds.length > 0
             ? {
                 sessionId: nextGraph.sessionId,
                 revision: nextGraph.revision,
@@ -1281,6 +1544,9 @@ export default function App() {
                 }),
               }
             : null;
+          lastAutoTourKeyRef.current = null;
+          setAutoTourStatus('idle');
+          setAutoTourProgress({ current: 0, total: 0 });
           setCurrentView((prev) =>
             shouldPreserveView ? prev : getPreferredView(nextGraph),
           );
@@ -1339,13 +1605,13 @@ export default function App() {
         setCurrentView(getPreferredView(snapshot.graph, snapshot.currentView));
         userPinnedViewRef.current = snapshot.currentViewPinned ?? false;
         activeViewSessionRef.current = snapshot.graph.sessionId;
-        pendingAutoRevealRef.current = null;
+        resetAutoTourState();
       } else {
         setGraph(createEmptyGraph());
         setCurrentView('causal');
         userPinnedViewRef.current = false;
         activeViewSessionRef.current = null;
-        pendingAutoRevealRef.current = null;
+        resetAutoTourState();
       }
     };
 
@@ -1406,9 +1672,8 @@ export default function App() {
     setRecentProviderError(null);
     userPinnedViewRef.current = false;
     activeViewSessionRef.current = null;
-    pendingAutoRevealRef.current = null;
-    lastAutoRevealKeyRef.current = null;
-  }, []);
+    resetAutoTourState();
+  }, [resetAutoTourState]);
 
   const updateProviderEntry = useCallback(
     (
@@ -1805,29 +2070,6 @@ export default function App() {
     [addLog, isRunning, sessionId],
   );
 
-  // 处理节点点击
-  const handleNodeClick = useCallback(
-    (_: React.MouseEvent, node: Node) => {
-      setCurrentTimeMs(node.data.timestampMs as number);
-      setSelectedNodeId(node.id);
-      void sendSeekMessage(node.id, node.data.timestampMs as number);
-    },
-    [sendSeekMessage],
-  );
-
-  const handleTimeClick = useCallback(
-    (ms: number) => {
-      setCurrentTimeMs(ms);
-      if (graph.nodes.length === 0) return;
-      const nearest = graph.nodes.reduce((a, b) =>
-        Math.abs(a.timestampMs - ms) < Math.abs(b.timestampMs - ms) ? a : b,
-      );
-      setSelectedNodeId(nearest.id);
-      void sendSeekMessage(nearest.id, ms);
-    },
-    [graph, sendSeekMessage],
-  );
-
   const stopLogResize = useCallback(() => {
     logResizeStartRef.current = null;
     document.body.style.cursor = '';
@@ -1880,8 +2122,7 @@ export default function App() {
       layoutCacheRef.current = createEmptyStableLayoutCache();
       layoutCacheSessionRef.current = null;
       hasAutoFitRef.current = false;
-      pendingAutoRevealRef.current = null;
-      lastAutoRevealKeyRef.current = null;
+      resetAutoTourState();
       return;
     }
 
@@ -1889,10 +2130,9 @@ export default function App() {
       layoutCacheRef.current = createEmptyStableLayoutCache();
       layoutCacheSessionRef.current = graph.sessionId;
       hasAutoFitRef.current = false;
-      pendingAutoRevealRef.current = null;
-      lastAutoRevealKeyRef.current = null;
+      resetAutoTourState();
     }
-  }, [graph.nodes.length, graph.sessionId]);
+  }, [graph.nodes.length, graph.sessionId, resetAutoTourState]);
 
   const layoutBuild = useMemo(
     () =>
@@ -1910,18 +2150,6 @@ export default function App() {
   useLayoutEffect(() => {
     layoutCacheRef.current = layoutBuild.nextLayoutCache;
   }, [layoutBuild]);
-
-  const flowNodes = useMemo<Node[]>(
-    () =>
-      debugViewArtifacts[currentView].reactFlow.nodes.map((node) => ({
-        ...node,
-        data: {
-          ...node.data,
-          onClickTime: handleTimeClick,
-        },
-      })),
-    [currentView, debugViewArtifacts, handleTimeClick],
-  );
 
   const flowEdges = useMemo<Edge[]>(
     () => debugViewArtifacts[currentView].reactFlow.edges,
@@ -1953,52 +2181,29 @@ export default function App() {
     [graph.nodes.length],
   );
 
-  const maybeAutoRevealIncrementalNodes = useCallback(() => {
-    const pending = pendingAutoRevealRef.current;
-    if (!pending || pending.sessionId !== graph.sessionId || pending.revision !== graph.revision) {
-      return;
-    }
-
-    if (
-      userViewportInteractingRef.current ||
-      Date.now() - lastUserViewportChangeAtRef.current < USER_VIEWPORT_COOLDOWN_MS
-    ) {
-      return;
-    }
-
+  const buildAutoTourTargetBounds = useCallback((batch: AutoTourBatch) => {
     const inst = reactFlowInstanceRef.current;
     const el = flowContainerRef.current;
-    if (!inst?.fitBounds || !inst.getViewport || !el) {
-      return;
+    if (!inst?.getViewport || !el) {
+      return null;
     }
 
     const containerWidth = el.clientWidth ?? 0;
     const containerHeight = el.clientHeight ?? 0;
     if (containerWidth < 2 || containerHeight < 2) {
-      return;
-    }
-
-    const autoRevealKey = `${pending.sessionId}:${pending.revision}:${currentView}`;
-    if (lastAutoRevealKeyRef.current === autoRevealKey) {
-      return;
-    }
-
-    const nodeIds = new Set([...pending.nodeIds, ...pending.anchorNodeIds]);
-    const targetNodes = debugViewArtifacts[currentView].reactFlow.nodes.filter((node) =>
-      nodeIds.has(node.id),
-    );
-    if (!targetNodes.length) {
-      pendingAutoRevealRef.current = null;
-      return;
-    }
-
-    const mergedBounds = mergeViewBounds(targetNodes.map(getNodeBounds));
-    if (!mergedBounds) {
-      pendingAutoRevealRef.current = null;
-      return;
+      return null;
     }
 
     const currentViewport = inst.getViewport();
+    const nodeIds = new Set([...batch.nodeIds, ...batch.anchorNodeIds]);
+    const targetNodes = debugViewArtifacts[currentView].reactFlow.nodes.filter((node) =>
+      nodeIds.has(node.id),
+    );
+    const mergedBounds = mergeViewBounds(targetNodes.map(getNodeBounds));
+    if (!mergedBounds) {
+      return null;
+    }
+
     const paddedBounds = expandViewBounds(mergedBounds, AUTO_REVEAL_PADDING);
     const targetBounds = ensureMinimumBoundsSize({
       bounds: paddedBounds,
@@ -2020,17 +2225,41 @@ export default function App() {
       0,
     );
 
-    if (isViewportCloseToTarget({ current: currentViewport, target: viewportForBounds })) {
-      pendingAutoRevealRef.current = null;
+    return {
+      currentViewport,
+      targetViewport: viewportForBounds,
+      targetBounds,
+    };
+  }, [currentView, debugViewArtifacts]);
+
+  const playAutoTourBatch = useCallback((index: number) => {
+    const batch = autoTourBatchesRef.current[index];
+    if (!batch) {
+      setAutoTourStatus('idle');
       return;
     }
 
+    const inst = reactFlowInstanceRef.current;
+    const target = buildAutoTourTargetBounds(batch);
+    if (!inst?.fitBounds || !target) {
+      setAutoTourStatus('idle');
+      return;
+    }
+
+    autoTourCurrentIndexRef.current = index;
+    autoTourResumeIndexRef.current = index + 1;
+    setAutoTourStatus('touring');
+    setAutoTourProgress({
+      current: index + 1,
+      total: autoTourBatchesRef.current.length,
+    });
+
     inst.fitBounds(
       {
-        x: targetBounds.left,
-        y: targetBounds.top,
-        width: targetBounds.right - targetBounds.left,
-        height: targetBounds.bottom - targetBounds.top,
+        x: target.targetBounds.left,
+        y: target.targetBounds.top,
+        width: target.targetBounds.right - target.targetBounds.left,
+        height: target.targetBounds.bottom - target.targetBounds.top,
       },
       {
         duration: AUTO_REVEAL_DURATION_MS,
@@ -2038,9 +2267,143 @@ export default function App() {
       },
     );
 
-    pendingAutoRevealRef.current = null;
-    lastAutoRevealKeyRef.current = autoRevealKey;
-  }, [currentView, debugViewArtifacts, graph.revision, graph.sessionId]);
+    clearAutoTourAdvanceTimer();
+    autoTourAdvanceTimerRef.current = window.setTimeout(() => {
+      const nextIndex = index + 1;
+      if (nextIndex >= autoTourBatchesRef.current.length) {
+        clearAutoTourAdvanceTimer();
+        setAutoTourStatus('idle');
+        return;
+      }
+      playAutoTourBatch(nextIndex);
+    }, AUTO_REVEAL_DURATION_MS + batch.dwellMs);
+  }, [buildAutoTourTargetBounds, clearAutoTourAdvanceTimer]);
+
+  const scheduleAutoTourResume = useCallback(() => {
+    clearAutoTourResumeTimer();
+    autoTourResumeTimerRef.current = window.setTimeout(() => {
+      const nextIndex = autoTourResumeIndexRef.current;
+      if (nextIndex >= autoTourBatchesRef.current.length) {
+        setAutoTourStatus('idle');
+        return;
+      }
+      playAutoTourBatch(nextIndex);
+    }, AUTO_TOUR_RESUME_DELAY_MS);
+  }, [clearAutoTourResumeTimer, playAutoTourBatch]);
+
+  const pauseAutoTour = useCallback(() => {
+    if (autoTourBatchesRef.current.length === 0) {
+      return;
+    }
+
+    clearAutoTourAdvanceTimer();
+    const nextReadableIndex = Math.min(
+      autoTourResumeIndexRef.current + 1,
+      autoTourBatchesRef.current.length,
+    );
+    setAutoTourStatus('paused');
+    setAutoTourProgress({
+      current: nextReadableIndex,
+      total: autoTourBatchesRef.current.length,
+    });
+    scheduleAutoTourResume();
+  }, [clearAutoTourAdvanceTimer, scheduleAutoTourResume]);
+
+  const maybeStartAutoTour = useCallback(() => {
+    const pending = pendingAutoTourRef.current;
+    if (!pending || pending.sessionId !== graph.sessionId || pending.revision !== graph.revision) {
+      return;
+    }
+
+    if (
+      userViewportInteractingRef.current ||
+      Date.now() - lastUserViewportChangeAtRef.current < USER_VIEWPORT_COOLDOWN_MS
+    ) {
+      return;
+    }
+
+    const inst = reactFlowInstanceRef.current;
+    const el = flowContainerRef.current;
+    if (!inst?.getViewport || !el) {
+      return;
+    }
+
+    const autoTourKey = `${pending.sessionId}:${pending.revision}:${currentView}`;
+    if (lastAutoTourKeyRef.current === autoTourKey) {
+      return;
+    }
+
+    const batches = buildAutoTourBatches({
+      seed: pending,
+      flowNodes: debugViewArtifacts[currentView].reactFlow.nodes,
+      flowEdges,
+      containerWidth: el.clientWidth ?? 0,
+      containerHeight: el.clientHeight ?? 0,
+      currentZoom: inst.getViewport().zoom || 1,
+    });
+    if (batches.length === 0) {
+      pendingAutoTourRef.current = null;
+      return;
+    }
+
+    const firstTarget = buildAutoTourTargetBounds(batches[0]);
+    if (
+      batches.length === 1 &&
+      firstTarget &&
+      isViewportCloseToTarget({
+        current: firstTarget.currentViewport,
+        target: firstTarget.targetViewport,
+      })
+    ) {
+      pendingAutoTourRef.current = null;
+      return;
+    }
+
+    autoTourBatchesRef.current = batches;
+    autoTourCurrentIndexRef.current = -1;
+    autoTourResumeIndexRef.current = 0;
+    pendingAutoTourRef.current = null;
+    lastAutoTourKeyRef.current = autoTourKey;
+    playAutoTourBatch(0);
+  }, [buildAutoTourTargetBounds, currentView, debugViewArtifacts, flowEdges, graph.revision, graph.sessionId, playAutoTourBatch]);
+
+  const handleNodeClick = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      lastUserViewportChangeAtRef.current = Date.now();
+      pauseAutoTour();
+      setCurrentTimeMs(node.data.timestampMs as number);
+      setSelectedNodeId(node.id);
+      void sendSeekMessage(node.id, node.data.timestampMs as number);
+    },
+    [pauseAutoTour, sendSeekMessage],
+  );
+
+  const handleTimeClick = useCallback(
+    (ms: number) => {
+      lastUserViewportChangeAtRef.current = Date.now();
+      pauseAutoTour();
+      setCurrentTimeMs(ms);
+      if (graph.nodes.length === 0) return;
+      const nearest = graph.nodes.reduce((a, b) =>
+        Math.abs(a.timestampMs - ms) < Math.abs(b.timestampMs - ms) ? a : b,
+      );
+      setSelectedNodeId(nearest.id);
+      void sendSeekMessage(nearest.id, ms);
+    },
+    [graph, pauseAutoTour, sendSeekMessage],
+  );
+
+  const flowNodes = useMemo<Node[]>(
+    () =>
+      debugViewArtifacts[currentView].reactFlow.nodes.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          onClickTime: handleTimeClick,
+        },
+      })),
+    [currentView, debugViewArtifacts, handleTimeClick],
+  );
 
   useLayoutEffect(() => {
     requestAutoFit();
@@ -2050,8 +2413,8 @@ export default function App() {
     if (!hasAutoFitRef.current) {
       return;
     }
-    maybeAutoRevealIncrementalNodes();
-  }, [flowNodes, graph.revision, maybeAutoRevealIncrementalNodes]);
+    maybeStartAutoTour();
+  }, [flowNodes, graph.revision, maybeStartAutoTour]);
 
   useLayoutEffect(() => {
     const el = flowContainerRef.current;
@@ -2139,8 +2502,34 @@ export default function App() {
     addLog(`已导出: ${filename}`);
   }, [addLog, debugData, fullDebugExportPayload, sessionId, slimDebugExportPayload]);
 
+  const autoTourIndicatorColor =
+    autoTourStatus === 'touring'
+      ? '#10b981'
+      : autoTourStatus === 'paused'
+        ? '#ef4444'
+        : isRunning
+          ? '#10b981'
+          : '#d1d5db';
+  const autoTourStatusText =
+    autoTourStatus === 'touring'
+      ? `自动导览 ${autoTourProgress.current}/${autoTourProgress.total}`
+      : autoTourStatus === 'paused'
+        ? `导览暂停 ${autoTourProgress.current}/${autoTourProgress.total}`
+        : isRunning
+          ? '运行中'
+          : '空闲';
+
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <style>
+        {`
+          @keyframes listen-graphic-tour-pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.45; transform: scale(0.82); }
+            100% { opacity: 1; transform: scale(1); }
+          }
+        `}
+      </style>
       {/* 顶部栏 */}
       <div
         style={{
@@ -2154,15 +2543,20 @@ export default function App() {
       >
         <span style={{ fontWeight: 600, fontSize: 14 }}>Listen Graphic</span>
         <div
+          data-testid="auto-tour-indicator"
           style={{
             width: 8,
             height: 8,
             borderRadius: '50%',
-            backgroundColor: isRunning ? '#10b981' : '#d1d5db',
+            backgroundColor: autoTourIndicatorColor,
+            animation:
+              autoTourStatus === 'touring'
+                ? 'listen-graphic-tour-pulse 1s ease-in-out infinite'
+                : 'none',
           }}
         />
-        <span style={{ fontSize: 11, color: '#6b7280' }}>
-          {isRunning ? '运行中' : '空闲'}
+        <span data-testid="auto-tour-status" style={{ fontSize: 11, color: '#6b7280' }}>
+          {autoTourStatusText}
         </span>
         <button
           onClick={() => void handleExport('json')}
@@ -2306,6 +2700,8 @@ export default function App() {
           <button
             key={v}
             onClick={() => {
+              lastUserViewportChangeAtRef.current = Date.now();
+              pauseAutoTour();
               userPinnedViewRef.current = true;
               setCurrentView(v);
               if (sessionId && isRunning) {
@@ -2663,10 +3059,12 @@ export default function App() {
           onMoveStart={() => {
             userViewportInteractingRef.current = true;
             lastUserViewportChangeAtRef.current = Date.now();
+            pauseAutoTour();
           }}
           onMoveEnd={() => {
             userViewportInteractingRef.current = false;
             lastUserViewportChangeAtRef.current = Date.now();
+            pauseAutoTour();
           }}
           onInit={(instance) => {
             reactFlowInstanceRef.current = instance;

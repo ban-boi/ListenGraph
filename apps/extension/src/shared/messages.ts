@@ -4,6 +4,7 @@ import type {
   ProviderRuntimeSummary,
   SerializableProviderError,
   SegmentGraph,
+  StructurerResponseDiagnostics,
   TranscriptChunk,
 } from '@listen-graphic/schema';
 import type { ViewType } from '@listen-graphic/schema';
@@ -111,6 +112,7 @@ export interface StructurerRunDebug {
   fallbackUsed?: boolean;
   errorCode?: string;
   errorMessage?: string;
+  structurerDiagnostics?: StructurerResponseDiagnostics;
 }
 
 export interface DebugSessionData {

@@ -13,6 +13,9 @@
 - 超时 / 重试策略
 - 调试导出语义
 
+本文不展开 sidepanel 的视觉稳定策略；关于 view 锁定、`fitView` 语义、稳定布局缓存和语义冻结的产品决策，见：
+- [扩展增量图稳定性](C:\Users\finni\Desktop\ListenGraph\docs\extension\incremental-graph-stability.md)
+
 ## 当前管线
 当前运行时应概括为：
 
@@ -40,8 +43,14 @@
 - `STRUCTURER_BOOTSTRAP_MIN_CHAR_COUNT = 160`
 
 行为：
-- 少于 `2` 条 transcript 时，只更新转写/调试状态
-- 达到 `2` 条后，只有满足“时长够”或“字符数够”才启动 bootstrap
+- `batch`:
+  - 少于 `2` 条 transcript 时，只更新转写/调试状态
+  - 达到 `2` 条后，只有满足“时长够”或“字符数够”才启动 bootstrap
+  - 达到 `3` 条时直接视为上下文足够
+- `tencent/ws`:
+  - 少于 `2` 条 stable utterance 时，只更新转写/调试状态
+  - 不再使用“达到 `3` 条直接启动”的历史规则
+  - 达到 `2` 条后，只有满足“累计时长够”或“累计有效字符数够”才启动 bootstrap
 - 之后保持滚动窗口上下文，latest transcript 仍是增量焦点
 
 ## 提示词合约
@@ -58,6 +67,7 @@
 当前策略：
 - bootstrap 可以对完整窗口做摘要
 - incremental 只应输出 `latestChunkTranscript` 暗示的净新增
+- incremental 默认应把 `recentGraphContext` 视为冻结语义，只允许追加，不应回写历史
 - 若新内容只是支撑/细节/例证，优先用边表达
 - 若无净新增语义，返回空 `nodes` / `edges`
 - 不应重述近期图中已有语义
@@ -99,11 +109,13 @@ structurer 不直接原样使用腾讯 ASR 原始文本。
 - 若 provider 未返回 id，运行时生成本地 fallback id
 
 ## 合并与去重规则
-`mergeSegmentGraph()` 当前以图正确性优先。
+`mergeSegmentGraph()` 当前以历史稳定优先。
 
 节点合并：
 - 精确合并：同类型、无 speaker 冲突、规范化文本完全相同
-- 保守近重复合并：同类型、非 `question`、时间接近、文本足够长，且满足包含或高 bigram 重叠
+- 保守近重复合并：同类型、非 `question`、时间接近、文本长度相近，且满足较高 bigram 重叠
+- 合并后只更新 metadata，不改写已有节点文本、类型或 speaker
+- “更完整的新说法”默认不应吞并旧节点，而应保留为新增节点并通过边表达关系
 
 边合并：
 - 合并后重写端点
@@ -150,4 +162,5 @@ structurer 不直接原样使用腾讯 ASR 原始文本。
 ## 相关文档
 - [扩展运行时主链路基线](C:\Users\finni\Desktop\ListenGraph\docs\extension\runtime-mainline.md)
 - [扩展当前运行现状](C:\Users\finni\Desktop\ListenGraph\docs\extension\current-runtime.md)
+- [扩展增量图稳定性](C:\Users\finni\Desktop\ListenGraph\docs\extension\incremental-graph-stability.md)
 - [Structure 回归说明](C:\Users\finni\Desktop\ListenGraph\docs\testing\structure-regression.md)

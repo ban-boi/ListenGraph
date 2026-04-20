@@ -3,6 +3,7 @@ import type {
   ProviderRetryPolicy,
   ProviderStage,
   SerializableProviderError,
+  StructurerResponseDiagnostics,
 } from '@listen-graphic/schema';
 
 export class ProviderRequestError extends Error {
@@ -12,6 +13,7 @@ export class ProviderRequestError extends Error {
   readonly retriable: boolean;
   readonly status?: number;
   readonly attemptCount?: number;
+  readonly structurerDiagnostics?: StructurerResponseDiagnostics;
 
   constructor(input: SerializableProviderError) {
     super(input.message);
@@ -23,6 +25,7 @@ export class ProviderRequestError extends Error {
     this.retriable = input.retriable;
     this.status = input.status;
     this.attemptCount = input.attemptCount;
+    this.structurerDiagnostics = input.structurerDiagnostics;
   }
 
   toJSON(): SerializableProviderError {
@@ -34,6 +37,7 @@ export class ProviderRequestError extends Error {
       retriable: this.retriable,
       status: this.status,
       attemptCount: this.attemptCount,
+      structurerDiagnostics: this.structurerDiagnostics,
     };
   }
 }
@@ -87,6 +91,7 @@ export function mapHttpError(params: {
   retriable?: boolean;
   code?: ProviderErrorCode;
   attemptCount?: number;
+  structurerDiagnostics?: StructurerResponseDiagnostics;
 }) {
   return new ProviderRequestError({
     provider: params.provider,
@@ -101,6 +106,7 @@ export function mapHttpError(params: {
         status: params.status,
       }),
     attemptCount: params.attemptCount,
+    structurerDiagnostics: params.structurerDiagnostics,
   });
 }
 

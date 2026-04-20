@@ -217,3 +217,4 @@ import { mergeSegmentGraph } from '@listen-graphic/domain';
 6. **Provider**：产品面主要暴露 **direct**；**relay** 仅在 schema/provider 合约层保留。
 7. **状态**：Extension 侧栏用 **zustand v5**。
 8. **工具链**：pnpm@10、turbo@2、vitest、playwright、vite@5。
+9. **docs/plans 时间戳文档**：`docs/plans/` 下以日期时间戳开头的文件是 Cursor 的 plan 模式自动生成的，非人工编写，仅作参考。

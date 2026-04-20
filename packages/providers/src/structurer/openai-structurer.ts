@@ -7,6 +7,7 @@ import type {
   SegmentGraph,
   StructurerProvider,
   StructurerProviderConfig,
+  StructurerResponseDiagnostics,
   TranscriptChunk,
 } from '@listen-graphic/schema';
 import { generateId } from '@listen-graphic/shared-utils';
@@ -14,8 +15,8 @@ import { DEFAULT_STRUCTURER_RETRY_POLICY } from '../config';
 import {
   createTimeoutSignal,
   mapHttpError,
+  ProviderRequestError,
   retryAsync,
-  type ProviderRequestError,
 } from '../http/retry';
 
 type OpenAIChatResponse = {
@@ -85,6 +86,9 @@ const ALLOWED_EDGE_TYPES = new Set<EdgeType>([
 ]);
 const TENCENT_TRANSCRIPT_PREFIX =
   /^\[\d+:\d+\.\d+,\d+:\d+\.\d+\]\s*/;
+
+/** UTF-16 code units; only used on structurer parse failure for debug export. */
+export const STRUCTURER_RESPONSE_PREVIEW_MAX_CHARS = 8192;
 
 export class OpenAIStructurerProvider implements StructurerProvider {
   name = 'openai-structurer';
@@ -161,23 +165,28 @@ export class OpenAIStructurerProvider implements StructurerProvider {
             stage: 'structurer',
             code: 'INVALID_RESPONSE',
             message: 'Structurer provider returned an empty response',
-            retriable: false,
+            retriable: true,
             attemptCount: attempt,
+            structurerDiagnostics: {
+              parseStage: 'empty_content',
+              parseMessage: 'choices[0].message.content was empty or whitespace-only',
+            },
           });
         }
 
-        try {
-          return parseSegmentGraphPayload(rawContent);
-        } catch {
+        const parsed = tryParseSegmentGraphPayload(rawContent);
+        if (!parsed.ok) {
           throw mapHttpError({
             provider: this.name,
             stage: 'structurer',
             code: 'INVALID_RESPONSE',
             message: 'Structurer provider returned invalid JSON',
-            retriable: false,
+            retriable: true,
             attemptCount: attempt,
+            structurerDiagnostics: parsed.diagnostics,
           });
         }
+        return parsed.payload;
       },
       retryPolicy,
       (error) => isRetriableProviderError(error, retryPolicy),
@@ -542,21 +551,68 @@ function stripCodeFences(content: string) {
   return content.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/, '');
 }
 
-function parseSegmentGraphPayload(content: string): SegmentGraphPayload {
-  const normalized = stripCodeFences(content).trim();
+function truncateStructurerResponsePreview(rawContent: string): Pick<
+  StructurerResponseDiagnostics,
+  'responsePreview' | 'responseTruncated'
+> {
+  if (!rawContent) {
+    return {};
+  }
+  if (rawContent.length <= STRUCTURER_RESPONSE_PREVIEW_MAX_CHARS) {
+    return { responsePreview: rawContent, responseTruncated: false };
+  }
+  return {
+    responsePreview: rawContent.slice(0, STRUCTURER_RESPONSE_PREVIEW_MAX_CHARS),
+    responseTruncated: true,
+  };
+}
+
+export type TryParseSegmentGraphPayloadResult =
+  | { ok: true; payload: SegmentGraphPayload }
+  | { ok: false; diagnostics: StructurerResponseDiagnostics };
+
+/** Exported for unit tests; mirrors production parse path including repair/extract. */
+export function tryParseSegmentGraphPayload(rawContent: string): TryParseSegmentGraphPayloadResult {
+  const previewBase = truncateStructurerResponsePreview(rawContent);
+  const normalized = stripCodeFences(rawContent).trim();
 
   try {
-    return JSON.parse(normalized) as SegmentGraphPayload;
-  } catch {
+    return { ok: true, payload: JSON.parse(normalized) as SegmentGraphPayload };
+  } catch (primaryErr) {
+    const primaryMsg = primaryErr instanceof Error ? primaryErr.message : String(primaryErr);
     const repaired = repairLikelyObjectArrayEntries(normalized);
     try {
-      return JSON.parse(repaired) as SegmentGraphPayload;
-    } catch {
+      return { ok: true, payload: JSON.parse(repaired) as SegmentGraphPayload };
+    } catch (repairedErr) {
+      const repairedMsg =
+        repairedErr instanceof Error ? repairedErr.message : String(repairedErr);
       const extracted = extractFirstJsonObject(repaired);
       if (extracted) {
-        return JSON.parse(extracted) as SegmentGraphPayload;
+        try {
+          return { ok: true, payload: JSON.parse(extracted) as SegmentGraphPayload };
+        } catch (extractErr) {
+          const extractMsg = extractErr instanceof Error ? extractErr.message : String(extractErr);
+          return {
+            ok: false,
+            diagnostics: {
+              ...previewBase,
+              parseStage: 'extract_object',
+              parseMessage: `extracted object parse failed: ${extractMsg}; primary: ${primaryMsg}; repaired: ${repairedMsg}`,
+            },
+          };
+        }
       }
-      throw new Error('Unable to extract a valid JSON object from structurer content');
+      const repairUnchanged = repaired === normalized;
+      return {
+        ok: false,
+        diagnostics: {
+          ...previewBase,
+          parseStage: repairUnchanged ? 'primary_json' : 'repaired_json',
+          parseMessage: repairUnchanged
+            ? primaryMsg
+            : `primary: ${primaryMsg}; after repair: ${repairedMsg}`,
+        },
+      };
     }
   }
 }
@@ -808,6 +864,10 @@ function isRetriableProviderError(
   retryPolicy: { retryableStatusCodes: number[] },
 ) {
   if (isAbortError(error)) {
+    return true;
+  }
+
+  if (error instanceof ProviderRequestError && error.code === 'INVALID_RESPONSE') {
     return true;
   }
 
