@@ -12,6 +12,8 @@ vi.mock('reactflow', () => ({
   ReactFlow: ({
     children,
     nodes = [],
+    edges = [],
+    nodeTypes = {},
     fitView,
     onInit,
     onNodeClick,
@@ -21,9 +23,19 @@ vi.mock('reactflow', () => ({
     children?: ReactNode;
     nodes?: Array<{
       id: string;
+      type?: string;
       position?: { x: number; y: number };
       data?: { label?: string; timestampMs?: number };
     }>;
+    edges?: Array<{
+      id: string;
+      source?: string;
+      target?: string;
+      sourceHandle?: string;
+      targetHandle?: string;
+      type?: string;
+    }>;
+    nodeTypes?: Record<string, (props: any) => ReactNode>;
     fitView?: boolean;
     onInit?: (instance: {
       fitView: typeof reactFlowFitViewSpy;
@@ -54,15 +66,31 @@ vi.mock('reactflow', () => ({
         }}
       >
         {nodes.map((node) => (
-          <button
-            key={node.id}
-            type="button"
-            data-node-id={node.id}
-            data-node-position={`${node.position?.x ?? 0},${node.position?.y ?? 0}`}
-            onClick={(event) => onNodeClick?.(event as unknown as React.MouseEvent, node)}
-          >
-            {node.data?.label}
-          </button>
+          <div key={node.id}>
+            <button
+              type="button"
+              data-node-id={node.id}
+              data-node-position={`${node.position?.x ?? 0},${node.position?.y ?? 0}`}
+              onClick={(event) => onNodeClick?.(event as unknown as React.MouseEvent, node)}
+            >
+              {node.data?.label}
+            </button>
+            {node.type && nodeTypes[node.type]
+              ? nodeTypes[node.type]({ data: node.data, selected: false, xPos: 0, yPos: 0, id: node.id })
+              : null}
+          </div>
+        ))}
+        {edges.map((edge) => (
+          <div
+            key={edge.id}
+            data-testid="reactflow-edge"
+            data-edge-id={edge.id}
+            data-edge-source={edge.source ?? ''}
+            data-edge-target={edge.target ?? ''}
+            data-edge-source-handle={edge.sourceHandle ?? ''}
+            data-edge-target-handle={edge.targetHandle ?? ''}
+            data-edge-type={edge.type ?? ''}
+          />
         ))}
         {children}
       </div>
@@ -70,7 +98,14 @@ vi.mock('reactflow', () => ({
   },
   Background: () => <div data-testid="reactflow-background" />,
   Controls: () => <div data-testid="reactflow-controls" />,
-  Handle: () => null,
+  Handle: ({ id, type, position, 'data-testid': dataTestId }: any) => (
+    <div
+      data-testid={dataTestId ?? 'reactflow-handle'}
+      data-handle-id={id ?? ''}
+      data-handle-type={type ?? ''}
+      data-handle-position={position ?? ''}
+    />
+  ),
   getViewportForBounds: (
     bounds: { x: number; y: number; width: number; height: number },
     width: number,
@@ -96,7 +131,7 @@ vi.mock('reactflow', () => ({
   },
 }));
 
-import App from '../sidepanel/App';
+import App, { resolveEdgeHandles } from '../sidepanel/App';
 
 async function renderApp() {
   render(<App />);
@@ -104,6 +139,44 @@ async function renderApp() {
     await Promise.resolve();
   });
 }
+
+describe('resolveEdgeHandles', () => {
+  it('垂直向下时使用 bottom -> top', () => {
+    expect(
+      resolveEdgeHandles({ x: 60, y: 0 }, { x: 60, y: 200 }),
+    ).toEqual({
+      sourceHandle: 'source-bottom',
+      targetHandle: 'target-top',
+    });
+  });
+
+  it('垂直向上时使用 top -> bottom', () => {
+    expect(
+      resolveEdgeHandles({ x: 60, y: 240 }, { x: 60, y: 0 }),
+    ).toEqual({
+      sourceHandle: 'source-top',
+      targetHandle: 'target-bottom',
+    });
+  });
+
+  it('水平向右时使用 right -> left', () => {
+    expect(
+      resolveEdgeHandles({ x: 60, y: 0 }, { x: 420, y: 10 }),
+    ).toEqual({
+      sourceHandle: 'source-right',
+      targetHandle: 'target-left',
+    });
+  });
+
+  it('对角线但横纵接近时退回 bottom -> top', () => {
+    expect(
+      resolveEdgeHandles({ x: 60, y: 0 }, { x: 240, y: 180 }),
+    ).toEqual({
+      sourceHandle: 'source-bottom',
+      targetHandle: 'target-top',
+    });
+  });
+});
 
 describe('App 组件', () => {
   let consoleErrorSpy: any;
@@ -1279,9 +1352,107 @@ describe('App 组件', () => {
 
     expect(await screen.findByText(/会话: session_123/)).toBeInTheDocument();
     expect(screen.getByText(/当前时间: 0:30/)).toBeInTheDocument();
-    expect(screen.getByText('已恢复的节点')).toBeInTheDocument();
+    expect(screen.getAllByText('已恢复的节点')).toHaveLength(2);
     expect(screen.getByTestId('reactflow-mock')).toHaveAttribute('data-fit-view-prop', 'false');
     expect(reactFlowFitViewSpy).toHaveBeenCalled();
+  });
+
+  it('节点会渲染四向 source/target handles', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: 'session_handles',
+              state: 'capturing',
+              currentTimeMs: 0,
+              currentView: 'causal',
+              currentViewPinned: true,
+              graph: {
+                sessionId: 'session_handles',
+                revision: 1,
+                topics: [],
+                nodes: [
+                  {
+                    id: 'n1',
+                    type: 'claim',
+                    text: '句柄节点',
+                    timestampMs: 0,
+                    status: 'confirmed',
+                  },
+                ],
+                edges: [],
+                updatedAt: Date.now(),
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+
+    expect(screen.getByTestId('graph-handle-source-top')).toHaveAttribute('data-handle-id', 'source-top');
+    expect(screen.getByTestId('graph-handle-source-bottom')).toHaveAttribute('data-handle-id', 'source-bottom');
+    expect(screen.getByTestId('graph-handle-source-left')).toHaveAttribute('data-handle-id', 'source-left');
+    expect(screen.getByTestId('graph-handle-source-right')).toHaveAttribute('data-handle-id', 'source-right');
+    expect(screen.getByTestId('graph-handle-target-top')).toHaveAttribute('data-handle-id', 'target-top');
+    expect(screen.getByTestId('graph-handle-target-bottom')).toHaveAttribute('data-handle-id', 'target-bottom');
+    expect(screen.getByTestId('graph-handle-target-left')).toHaveAttribute('data-handle-id', 'target-left');
+    expect(screen.getByTestId('graph-handle-target-right')).toHaveAttribute('data-handle-id', 'target-right');
+  });
+
+  it('默认视图的边会显式带几何锚点 handles', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: 'session_edges',
+              state: 'capturing',
+              currentTimeMs: 0,
+              currentView: 'causal',
+              currentViewPinned: true,
+              graph: {
+                sessionId: 'session_edges',
+                revision: 1,
+                topics: [],
+                nodes: [
+                  {
+                    id: 'n1',
+                    type: 'claim',
+                    text: '上方节点',
+                    timestampMs: 0,
+                    status: 'confirmed',
+                  },
+                  {
+                    id: 'n2',
+                    type: 'claim',
+                    text: '下方节点',
+                    timestampMs: 1000,
+                    status: 'confirmed',
+                  },
+                ],
+                edges: [{ id: 'e1', source: 'n1', target: 'n2', type: 'supports' }],
+                updatedAt: Date.now(),
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+
+    const edge = screen.getByTestId('reactflow-edge');
+    expect(edge).toHaveAttribute('data-edge-id', 'e1');
+    expect(edge).toHaveAttribute('data-edge-type', 'smoothstep');
+    expect(edge).toHaveAttribute('data-edge-source-handle', 'source-bottom');
+    expect(edge).toHaveAttribute('data-edge-target-handle', 'target-top');
   });
 
   it('同一 session 的图更新不会自动切换当前视图', async () => {

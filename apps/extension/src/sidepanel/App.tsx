@@ -154,6 +154,9 @@ type ReactFlowDebugEdge = {
   source: string;
   target: string;
   label: string;
+  type: 'smoothstep';
+  sourceHandle: SourceHandleId;
+  targetHandle: TargetHandleId;
   style: { stroke: string };
   animated: boolean;
 };
@@ -177,6 +180,10 @@ type StableNodePosition = {
   x: number;
   y: number;
 };
+
+type EdgeHandleId = 'top' | 'bottom' | 'left' | 'right';
+type SourceHandleId = `source-${EdgeHandleId}`;
+type TargetHandleId = `target-${EdgeHandleId}`;
 
 type StableViewLayoutState = {
   positions: Record<string, StableNodePosition>;
@@ -210,6 +217,7 @@ const STABLE_LAYOUT_BRANCH_OFFSET_X = 280;
 const STABLE_LAYOUT_ROW_GAP = 168;
 const STABLE_LAYOUT_BRANCH_GAP = 148;
 const STABLE_LAYOUT_COLLISION_GAP = 24;
+const EDGE_AXIS_DOMINANCE_RATIO = 1.25;
 
 function createEmptyStableLayoutCache(): StableLayoutCache {
   return {
@@ -341,6 +349,44 @@ function pickAnchorNodeId(params: {
   return candidates[0]?.id;
 }
 
+function getRectCenter(rect: ReturnType<typeof getNodeRect>) {
+  return {
+    x: (rect.left + rect.right) / 2,
+    y: (rect.top + rect.bottom) / 2,
+  };
+}
+
+export function resolveEdgeHandles(
+  sourcePosition: StableNodePosition,
+  targetPosition: StableNodePosition,
+): {
+  sourceHandle: SourceHandleId;
+  targetHandle: TargetHandleId;
+} {
+  const sourceRect = getNodeRect(sourcePosition);
+  const targetRect = getNodeRect(targetPosition);
+  const sourceCenter = getRectCenter(sourceRect);
+  const targetCenter = getRectCenter(targetRect);
+  const deltaX = targetCenter.x - sourceCenter.x;
+  const deltaY = targetCenter.y - sourceCenter.y;
+  const absDeltaX = Math.abs(deltaX);
+  const absDeltaY = Math.abs(deltaY);
+
+  if (absDeltaY >= absDeltaX * EDGE_AXIS_DOMINANCE_RATIO) {
+    return deltaY >= 0
+      ? { sourceHandle: 'source-bottom', targetHandle: 'target-top' }
+      : { sourceHandle: 'source-top', targetHandle: 'target-bottom' };
+  }
+
+  if (absDeltaX >= absDeltaY * EDGE_AXIS_DOMINANCE_RATIO) {
+    return deltaX >= 0
+      ? { sourceHandle: 'source-right', targetHandle: 'target-left' }
+      : { sourceHandle: 'source-left', targetHandle: 'target-right' };
+  }
+
+  return { sourceHandle: 'source-bottom', targetHandle: 'target-top' };
+}
+
 function buildStableReactFlowDebugGraph(params: {
   rendererGraph: RendererGraph;
   view: ViewType;
@@ -433,23 +479,31 @@ function buildStableReactFlowDebugGraph(params: {
       },
     }));
 
-  const edges: ReactFlowDebugEdge[] = params.rendererGraph.edges.map((edge) => ({
-    id: edge.id,
-    source: edge.source,
-    target: edge.target,
-    label: edge.relation,
-    style: {
-      stroke:
-        edge.relation === 'supports'
-          ? '#10b981'
-          : edge.relation === 'opposes'
-            ? '#ef4444'
-            : edge.relation === 'causes'
-              ? '#f59e0b'
-              : '#6b7280',
-    },
-    animated: edge.relation === 'causes',
-  }));
+  const edges: ReactFlowDebugEdge[] = params.rendererGraph.edges
+    .filter((edge) => positions[edge.source] && positions[edge.target])
+    .map((edge) => {
+      const handles = resolveEdgeHandles(positions[edge.source], positions[edge.target]);
+      return {
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        type: 'smoothstep',
+        sourceHandle: handles.sourceHandle,
+        targetHandle: handles.targetHandle,
+        label: edge.relation,
+        style: {
+          stroke:
+            edge.relation === 'supports'
+              ? '#10b981'
+              : edge.relation === 'opposes'
+                ? '#ef4444'
+                : edge.relation === 'causes'
+                  ? '#f59e0b'
+                  : '#6b7280',
+        },
+        animated: edge.relation === 'causes',
+      };
+    });
 
   return {
     layoutDiagnostics: {
@@ -846,9 +900,40 @@ function GraphNodeCard({ data }: NodeProps<GraphNodeData>) {
       }}
     >
       <Handle
+        key="target-top"
         type="target"
         position={Position.Top}
+        id="target-top"
+        data-testid="graph-handle-target-top"
+        isConnectable={false}
         style={{ width: 6, height: 6 }}
+      />
+      <Handle
+        key="source-top"
+        type="source"
+        position={Position.Top}
+        id="source-top"
+        data-testid="graph-handle-source-top"
+        isConnectable={false}
+        style={{ width: 6, height: 6, opacity: 0, pointerEvents: 'none' }}
+      />
+      <Handle
+        key="target-left"
+        type="target"
+        position={Position.Left}
+        id="target-left"
+        data-testid="graph-handle-target-left"
+        isConnectable={false}
+        style={{ width: 6, height: 6 }}
+      />
+      <Handle
+        key="source-left"
+        type="source"
+        position={Position.Left}
+        id="source-left"
+        data-testid="graph-handle-source-left"
+        isConnectable={false}
+        style={{ width: 6, height: 6, opacity: 0, pointerEvents: 'none' }}
       />
 
       <div
@@ -910,8 +995,39 @@ function GraphNodeCard({ data }: NodeProps<GraphNodeData>) {
       </div>
 
       <Handle
+        key="target-bottom"
+        type="target"
+        position={Position.Bottom}
+        id="target-bottom"
+        data-testid="graph-handle-target-bottom"
+        isConnectable={false}
+        style={{ width: 6, height: 6, opacity: 0, pointerEvents: 'none' }}
+      />
+      <Handle
+        key="source-bottom"
         type="source"
         position={Position.Bottom}
+        id="source-bottom"
+        data-testid="graph-handle-source-bottom"
+        isConnectable={false}
+        style={{ width: 6, height: 6 }}
+      />
+      <Handle
+        key="target-right"
+        type="target"
+        position={Position.Right}
+        id="target-right"
+        data-testid="graph-handle-target-right"
+        isConnectable={false}
+        style={{ width: 6, height: 6, opacity: 0, pointerEvents: 'none' }}
+      />
+      <Handle
+        key="source-right"
+        type="source"
+        position={Position.Right}
+        id="source-right"
+        data-testid="graph-handle-source-right"
+        isConnectable={false}
         style={{ width: 6, height: 6 }}
       />
     </div>
