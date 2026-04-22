@@ -1,8 +1,8 @@
 import type {
   AppMessage,
+  AsrStreamFinalPayload,
   AsrStreamPartialPayload,
   AsrStreamStartPayload,
-  AsrStreamUtterancePayload,
 } from '../shared/messages';
 import {
   CAPTURE_CHANNELS,
@@ -44,6 +44,19 @@ type TencentRealtimeCaptureConfig = {
   frameDurationMs: number;
 };
 
+type ExternalBridgeCaptureConfig = {
+  endpoint: string;
+  protocol?: 'lg-asr-ws-v1';
+  authToken?: string;
+  sampleRate: number;
+  frameDurationMs: number;
+  provider: string;
+};
+
+type ActiveRealtimeStreamConfig =
+  | { providerType: 'tencent'; provider: 'tencent-asr'; connectionUrl: string; frameDurationMs: number }
+  | { providerType: 'external'; provider: string; connectionUrl: string; protocol?: 'lg-asr-ws-v1'; authToken?: string; frameDurationMs: number };
+
 type TencentRealtimeServerMessage = {
   code?: number;
   message?: string;
@@ -57,6 +70,55 @@ type TencentRealtimeServerMessage = {
     word_size?: number;
   };
 };
+
+type ExternalBridgeServerMessage =
+  | {
+      type: 'session.started';
+      version?: string;
+      bridge?: { model?: string };
+    }
+  | {
+      type: 'status';
+      status: 'connecting' | 'connected' | 'listening' | 'closing' | 'closed';
+      detail?: string;
+      bridge?: { protocol?: 'lg-asr-ws-v1'; endpoint?: string; model?: string };
+    }
+  | {
+      type: 'transcript.partial';
+      utterance: {
+        utteranceId?: string;
+        revision?: number;
+        text?: string;
+        startMs?: number;
+        endMs?: number;
+        confidence?: number;
+      };
+      vendor?: { name?: string; event?: string };
+    }
+  | {
+      type: 'transcript.final';
+      utterance: {
+        utteranceId?: string;
+        revision?: number;
+        text?: string;
+        startMs?: number;
+        endMs?: number;
+        confidence?: number;
+        finalReason?: AsrStreamFinalPayload['finalReason'];
+        stability?: 'stable';
+        language?: string;
+      };
+      vendor?: { name?: string; event?: string };
+    }
+  | {
+      type: 'error';
+      error: {
+        code?: string;
+        message?: string;
+      };
+    };
+
+let activeRealtimeStreamConfig: ActiveRealtimeStreamConfig | null = null;
 
 chrome.runtime.onMessage.addListener((message: AppMessage | any, _sender, sendResponse) => {
   if (message.target && message.target !== 'content-script') return false;
@@ -95,9 +157,13 @@ async function startTabCapture(payload?: AsrStreamStartPayload) {
 
   try {
     hasReportedCaptureEnd = false;
+    const realtimeConfig = resolveRealtimeStreamConfig(payload);
     const fixtureManifestUrl = readFixtureManifestUrl(document);
     if (fixtureManifestUrl) {
-      await startFixtureCapture(fixtureManifestUrl);
+      if (realtimeConfig) {
+        await openRealtimeSocket(realtimeConfig);
+      }
+      await startFixtureCapture(fixtureManifestUrl, realtimeConfig);
       return;
     }
 
@@ -139,12 +205,6 @@ async function startTabCapture(payload?: AsrStreamStartPayload) {
     const workletUrl = chrome.runtime.getURL('offscreen/audio-processor.worklet.js');
     await audioContext.audioWorklet.addModule(workletUrl);
 
-    const realtimeConfig =
-      payload?.transport === 'ws' ? payload.tencentRealtime : undefined;
-    if (payload?.transport === 'ws' && !realtimeConfig) {
-      throw new Error('缺少腾讯实时 ASR WebSocket 连接参数');
-    }
-
     processorNode = new AudioWorkletNode(audioContext, 'audio-chunk-processor', {
       processorOptions: realtimeConfig
         ? {
@@ -182,7 +242,7 @@ async function startTabCapture(payload?: AsrStreamStartPayload) {
     };
 
     if (realtimeConfig) {
-      await openTencentRealtimeSocket(realtimeConfig);
+      await openRealtimeSocket(realtimeConfig);
     }
 
     sourceNode.connect(processorNode);
@@ -198,6 +258,7 @@ async function stopCapture() {
   activeCaptureRun += 1;
 
   closeRealtimeSocket();
+  activeRealtimeStreamConfig = null;
 
   if (processorNode) {
     processorNode.port.onmessage = null;
@@ -245,7 +306,10 @@ async function seekToTimestamp(timestampMs: number) {
   mediaElement.currentTime = timestampMs / 1000;
 }
 
-async function startFixtureCapture(manifestUrl: string) {
+async function startFixtureCapture(
+  manifestUrl: string,
+  realtimeConfig: ActiveRealtimeStreamConfig | null,
+) {
   const manifest = await loadFixtureCaptureManifest(manifestUrl);
   const runId = ++activeCaptureRun;
   isCapturing = true;
@@ -264,6 +328,11 @@ async function startFixtureCapture(manifestUrl: string) {
     const audioBuffer = await response.arrayBuffer();
     if (!isFixtureCaptureRunActive(runId)) {
       return;
+    }
+
+    if (realtimeConfig) {
+      await streamFixtureAudioChunk(audioBuffer, chunk, manifest);
+      continue;
     }
 
     const chunkResponse = await chrome.runtime.sendMessage({
@@ -289,6 +358,108 @@ async function startFixtureCapture(manifestUrl: string) {
       await delay(delayMs);
     }
   }
+
+  if (realtimeConfig?.providerType === 'external') {
+    sendRealtimeSocketJson({
+      type: 'audio.flush',
+      reason: 'input_finished',
+    });
+  }
+}
+
+async function streamFixtureAudioChunk(
+  audioBuffer: ArrayBuffer,
+  chunk: FixtureCaptureChunk,
+  manifest: FixtureCaptureManifest,
+) {
+  const floatSamples = decodeFixtureWavToFloat32(audioBuffer);
+  const frameSize = Math.max(
+    1,
+    Math.round((SAMPLE_RATE * DEFAULT_REALTIME_FRAME_DURATION_MS) / 1000),
+  );
+
+  for (let offset = 0; offset < floatSamples.length; offset += frameSize) {
+    if (!isCapturing) {
+      return;
+    }
+    const frame = floatSamples.subarray(offset, Math.min(offset + frameSize, floatSamples.length));
+    sendRealtimeAudioFrame(frame);
+    const delayMs = manifest.chunkDelayMs ?? 0;
+    if (delayMs > 0) {
+      await delay(delayMs);
+    }
+  }
+
+  if (chunk.delayAfterMs && chunk.delayAfterMs > 0) {
+    await delay(chunk.delayAfterMs);
+  }
+}
+
+function decodeFixtureWavToFloat32(audioBuffer: ArrayBuffer): Float32Array {
+  const view = new DataView(audioBuffer);
+  if (view.byteLength < 44) {
+    throw new Error('测试音频块格式无效: WAV 头过短');
+  }
+
+  const riff = readFourCc(view, 0);
+  const wave = readFourCc(view, 8);
+  if (riff !== 'RIFF' || wave !== 'WAVE') {
+    throw new Error('测试音频块格式无效: 仅支持 PCM WAV');
+  }
+
+  let offset = 12;
+  let dataOffset = -1;
+  let dataSize = 0;
+  let bitsPerSample = 16;
+  let channels = 1;
+  let audioFormat = 1;
+  let sampleRate = SAMPLE_RATE;
+
+  while (offset + 8 <= view.byteLength) {
+    const chunkId = readFourCc(view, offset);
+    const chunkSize = view.getUint32(offset + 4, true);
+    const chunkDataOffset = offset + 8;
+
+    if (chunkId === 'fmt ' && chunkSize >= 16 && chunkDataOffset + chunkSize <= view.byteLength) {
+      audioFormat = view.getUint16(chunkDataOffset, true);
+      channels = view.getUint16(chunkDataOffset + 2, true);
+      sampleRate = view.getUint32(chunkDataOffset + 4, true);
+      bitsPerSample = view.getUint16(chunkDataOffset + 14, true);
+    } else if (
+      chunkId === 'data' &&
+      chunkDataOffset + chunkSize <= view.byteLength
+    ) {
+      dataOffset = chunkDataOffset;
+      dataSize = chunkSize;
+      break;
+    }
+
+    offset = chunkDataOffset + chunkSize + (chunkSize % 2);
+  }
+
+  if (audioFormat !== 1 || bitsPerSample !== 16 || channels !== 1 || sampleRate !== SAMPLE_RATE) {
+    throw new Error('测试音频块格式无效: 仅支持 16kHz/mono/pcm_s16le WAV');
+  }
+
+  if (dataOffset < 0 || dataSize <= 0) {
+    throw new Error('测试音频块格式无效: 缺少 data chunk');
+  }
+
+  const sampleCount = Math.floor(dataSize / 2);
+  const samples = new Float32Array(sampleCount);
+  for (let index = 0; index < sampleCount; index += 1) {
+    samples[index] = view.getInt16(dataOffset + index * 2, true) / 32768;
+  }
+  return samples;
+}
+
+function readFourCc(view: DataView, offset: number) {
+  return String.fromCharCode(
+    view.getUint8(offset),
+    view.getUint8(offset + 1),
+    view.getUint8(offset + 2),
+    view.getUint8(offset + 3),
+  );
 }
 
 function findMediaElement(root: Document | ShadowRoot): HTMLMediaElement | null {
@@ -365,7 +536,51 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function openTencentRealtimeSocket(config: TencentRealtimeCaptureConfig) {
+function resolveRealtimeStreamConfig(payload?: AsrStreamStartPayload): ActiveRealtimeStreamConfig | null {
+  if (payload?.transport !== 'ws') {
+    return null;
+  }
+
+  if (payload.stream?.providerType === 'external') {
+    const endpoint = payload.stream.endpoint?.trim();
+    if (!endpoint) {
+      throw new Error('缺少 Local ASR Bridge WebSocket 连接参数');
+    }
+
+    return {
+      providerType: 'external',
+      provider: payload.stream.provider,
+      connectionUrl: endpoint,
+      protocol: payload.stream.protocol,
+      authToken: payload.stream.authToken,
+      frameDurationMs: payload.stream.frameDurationMs ?? DEFAULT_REALTIME_FRAME_DURATION_MS,
+    };
+  }
+
+  const tencentRealtime = payload?.tencentRealtime;
+  if (!tencentRealtime?.signedUrl) {
+    throw new Error('缺少腾讯实时 ASR WebSocket 连接参数');
+  }
+
+  return {
+    providerType: 'tencent',
+    provider: 'tencent-asr',
+    connectionUrl: tencentRealtime.signedUrl,
+    frameDurationMs: tencentRealtime.frameDurationMs ?? DEFAULT_REALTIME_FRAME_DURATION_MS,
+  };
+}
+
+async function openRealtimeSocket(config: ActiveRealtimeStreamConfig) {
+  activeRealtimeStreamConfig = config;
+  if (config.providerType === 'tencent') {
+    await openTencentRealtimeSocket(config);
+    return;
+  }
+
+  await openExternalBridgeSocket(config);
+}
+
+async function openTencentRealtimeSocket(config: ActiveRealtimeStreamConfig & { providerType: 'tencent' }) {
   await chrome.runtime.sendMessage({
     type: 'ASR_STREAM_STATUS',
     target: 'service-worker',
@@ -377,7 +592,7 @@ async function openTencentRealtimeSocket(config: TencentRealtimeCaptureConfig) {
   } as AppMessage);
 
   realtimeSocket = await new Promise<WebSocket>((resolve, reject) => {
-    const ws = new WebSocket(config.signedUrl);
+    const ws = new WebSocket(config.connectionUrl);
     ws.binaryType = 'arraybuffer';
 
     const cleanup = () => {
@@ -436,12 +651,131 @@ async function openTencentRealtimeSocket(config: TencentRealtimeCaptureConfig) {
   } as AppMessage);
 }
 
+async function openExternalBridgeSocket(
+  config: ActiveRealtimeStreamConfig & { providerType: 'external' },
+) {
+  await chrome.runtime.sendMessage({
+    type: 'ASR_STREAM_STATUS',
+    target: 'service-worker',
+    payload: {
+      status: 'connecting',
+      provider: config.provider,
+      detail: 'Local ASR Bridge 连接中',
+      bridge: {
+        protocol: config.protocol,
+        endpoint: config.connectionUrl,
+      },
+    },
+  } as AppMessage);
+
+  realtimeSocket = await new Promise<WebSocket>((resolve, reject) => {
+    const ws = new WebSocket(config.connectionUrl);
+    ws.binaryType = 'arraybuffer';
+
+    const cleanup = () => {
+      ws.removeEventListener('open', handleOpen);
+      ws.removeEventListener('error', handleError);
+    };
+
+    const handleOpen = () => {
+      cleanup();
+      resolve(ws);
+    };
+
+    const handleError = () => {
+      cleanup();
+      reject(new Error('Local ASR Bridge WebSocket 连接失败'));
+    };
+
+    ws.addEventListener('open', handleOpen, { once: true });
+    ws.addEventListener('error', handleError, { once: true });
+  });
+
+  realtimeSocket.onmessage = (event) => {
+    void handleExternalBridgeMessage(event.data);
+  };
+  realtimeSocket.onerror = () => {
+    void chrome.runtime.sendMessage({
+      type: 'ASR_STREAM_ERROR',
+      target: 'service-worker',
+      payload: {
+        provider: config.provider,
+        code: 'NETWORK_ERROR',
+        message: 'Local ASR Bridge WebSocket 连接异常',
+      },
+    } as AppMessage);
+  };
+  realtimeSocket.onclose = () => {
+    void chrome.runtime.sendMessage({
+      type: 'ASR_STREAM_STATUS',
+      target: 'service-worker',
+      payload: {
+        status: 'closed',
+        provider: config.provider,
+        detail: 'Local ASR Bridge 已断开',
+        bridge: {
+          protocol: config.protocol,
+          endpoint: config.connectionUrl,
+        },
+      },
+    } as AppMessage);
+  };
+
+  sendRealtimeSocketJson({
+    type: 'session.start',
+    version: '1',
+    session: {
+      sessionId: crypto.randomUUID(),
+    },
+    audio: {
+      codec: 'pcm_s16le',
+      sampleRate: SAMPLE_RATE,
+      channels: 1,
+      frameDurationMs: config.frameDurationMs,
+    },
+    options: {
+      partials: true,
+      finals: true,
+      tokens: false,
+      timestamps: false,
+    },
+    authToken: config.authToken,
+  });
+
+  await chrome.runtime.sendMessage({
+    type: 'ASR_STREAM_STATUS',
+    target: 'service-worker',
+    payload: {
+      status: 'connected',
+      provider: config.provider,
+      detail: 'Local ASR Bridge 已连接',
+      bridge: {
+        protocol: config.protocol,
+        endpoint: config.connectionUrl,
+      },
+    },
+  } as AppMessage);
+}
+
 function sendRealtimeAudioFrame(floatSamples: Float32Array) {
   if (!realtimeSocket || realtimeSocket.readyState !== WebSocket.OPEN) {
     return;
   }
 
   const pcm16 = float32ToPcm16(floatSamples);
+  const config = activeRealtimeStreamConfig;
+  if (config?.providerType === 'external') {
+    sendRealtimeSocketJson({
+      type: 'audio.frame',
+      audio: {
+        codec: 'pcm_s16le',
+        data: bytesToBase64(new Uint8Array(pcm16.buffer.slice(0))),
+        samples: pcm16.length,
+      },
+    });
+    return;
+  }
+
   realtimeSocket.send(new Uint8Array(pcm16.buffer.slice(0)));
 }
 
@@ -481,11 +815,18 @@ async function handleTencentRealtimeMessage(data: unknown) {
   if (sliceType === 0 || sliceType === 1) {
     const partialPayload: AsrStreamPartialPayload = {
       text,
+      provider: 'tencent-asr',
+      kind: 'partial',
+      stability: 'interim',
       sliceType,
       startMs: result.start_time,
       endMs: result.end_time,
-      voiceId: payload.voice_id,
-      messageId: payload.message_id,
+      vendor: {
+        name: 'tencent',
+        event: `slice_type_${sliceType}`,
+        voiceId: payload.voice_id,
+        messageId: payload.message_id,
+      },
       raw: payload,
     };
     await chrome.runtime.sendMessage({
@@ -500,20 +841,129 @@ async function handleTencentRealtimeMessage(data: unknown) {
     return;
   }
 
-  const utterancePayload: AsrStreamUtterancePayload = {
+  const utterancePayload: AsrStreamFinalPayload = {
     text,
     startMs: result.start_time ?? 0,
     endMs: result.end_time ?? result.start_time ?? 0,
     provider: 'tencent-asr',
-    voiceId: payload.voice_id,
-    messageId: payload.message_id,
-    wordSize: result.word_size,
+    kind: 'final',
+    finalReason: 'vendor_defined',
+    stability: 'stable',
+    transport: 'ws',
+    vendor: {
+      name: 'tencent',
+      event: 'slice_type_2',
+      voiceId: payload.voice_id,
+      messageId: payload.message_id,
+      wordSize: result.word_size,
+    },
     raw: payload,
   };
   await chrome.runtime.sendMessage({
-    type: 'ASR_STREAM_UTTERANCE_READY',
+    type: 'ASR_STREAM_FINAL_READY',
     target: 'service-worker',
     payload: utterancePayload,
+  } as AppMessage);
+}
+
+async function handleExternalBridgeMessage(data: unknown) {
+  const payload = parseExternalBridgeServerMessage(data);
+  if (!payload || !activeRealtimeStreamConfig || activeRealtimeStreamConfig.providerType !== 'external') {
+    return;
+  }
+
+  if (payload.type === 'session.started') {
+    await chrome.runtime.sendMessage({
+      type: 'ASR_STREAM_STATUS',
+      target: 'service-worker',
+      payload: {
+        status: 'listening',
+        provider: activeRealtimeStreamConfig.provider,
+        detail: 'Local ASR Bridge 握手成功',
+        bridge: {
+          protocol: activeRealtimeStreamConfig.protocol,
+          endpoint: activeRealtimeStreamConfig.connectionUrl,
+          model: payload.bridge?.model,
+        },
+      },
+    } as AppMessage);
+    return;
+  }
+
+  if (payload.type === 'status') {
+    await chrome.runtime.sendMessage({
+      type: 'ASR_STREAM_STATUS',
+      target: 'service-worker',
+      payload: {
+        status: payload.status,
+        provider: activeRealtimeStreamConfig.provider,
+        detail: payload.detail,
+        bridge: {
+          protocol: payload.bridge?.protocol ?? activeRealtimeStreamConfig.protocol,
+          endpoint: payload.bridge?.endpoint ?? activeRealtimeStreamConfig.connectionUrl,
+          model: payload.bridge?.model,
+        },
+      },
+    } as AppMessage);
+    return;
+  }
+
+  if (payload.type === 'error') {
+    await chrome.runtime.sendMessage({
+      type: 'ASR_STREAM_ERROR',
+      target: 'service-worker',
+      payload: {
+        provider: activeRealtimeStreamConfig.provider,
+        code: payload.error.code ?? 'ASR_STREAM_ERROR',
+        message: payload.error.message ?? 'Local ASR Bridge 返回错误',
+      },
+    } as AppMessage);
+    return;
+  }
+
+  if (payload.type === 'transcript.partial') {
+    await chrome.runtime.sendMessage({
+      type: 'ASR_STREAM_PARTIAL_UPDATED',
+      target: 'service-worker',
+      payload: {
+        text: payload.utterance.text ?? '',
+        provider: activeRealtimeStreamConfig.provider,
+        utteranceId: payload.utterance.utteranceId,
+        revision: payload.utterance.revision,
+        kind: 'partial',
+        stability: 'interim',
+        startMs: payload.utterance.startMs,
+        endMs: payload.utterance.endMs,
+        vendor: payload.vendor,
+        raw: payload,
+      },
+    } as AppMessage);
+    return;
+  }
+
+  if (!payload.utterance.text?.trim()) {
+    return;
+  }
+
+  await chrome.runtime.sendMessage({
+    type: 'ASR_STREAM_FINAL_READY',
+    target: 'service-worker',
+    payload: {
+      text: payload.utterance.text,
+      provider: activeRealtimeStreamConfig.provider,
+      utteranceId: payload.utterance.utteranceId,
+      revision: payload.utterance.revision,
+      kind: 'final',
+      finalReason: payload.utterance.finalReason ?? 'vendor_defined',
+      stability: payload.utterance.stability ?? 'stable',
+      transport: 'ws',
+      language: payload.utterance.language,
+      startMs: payload.utterance.startMs ?? 0,
+      endMs: payload.utterance.endMs ?? payload.utterance.startMs ?? 0,
+      confidence: payload.utterance.confidence,
+      vendor: payload.vendor,
+      raw: payload,
+    },
   } as AppMessage);
 }
 
@@ -527,9 +977,14 @@ function closeRealtimeSocket() {
 
   if (socket.readyState === WebSocket.OPEN) {
     try {
-      socket.send('{"type": "end"}');
+      if (activeRealtimeStreamConfig?.providerType === 'external') {
+        sendRealtimeSocketJson({ type: 'audio.flush', reason: 'input_finished' }, socket);
+        sendRealtimeSocketJson({ type: 'session.stop' }, socket);
+      } else {
+        socket.send('{"type": "end"}');
+      }
     } catch (error) {
-      console.warn('[content-script] 腾讯实时 ASR 结束标记发送失败:', error);
+      console.warn('[content-script] 实时 ASR 结束标记发送失败:', error);
     }
   }
 
@@ -548,6 +1003,34 @@ function parseTencentRealtimeServerMessage(data: unknown): TencentRealtimeServer
   } catch {
     return null;
   }
+}
+
+function parseExternalBridgeServerMessage(data: unknown): ExternalBridgeServerMessage | null {
+  if (typeof data !== 'string') {
+    return null;
+  }
+
+  try {
+    return JSON.parse(data) as ExternalBridgeServerMessage;
+  } catch {
+    return null;
+  }
+}
+
+function sendRealtimeSocketJson(payload: unknown, socket: WebSocket | null = realtimeSocket) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    return;
+  }
+
+  socket.send(JSON.stringify(payload));
+}
+
+function bytesToBase64(bytes: Uint8Array) {
+  let binary = '';
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
 }
 
 window.addEventListener('beforeunload', () => {

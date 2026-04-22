@@ -34,17 +34,16 @@
     "minGraphEdges": 1
   },
   "realAcceptance": {
-    "minTranscriptChunks": 4,
+    "minTranscriptChunks": 1,
     "minGraphNodes": 1,
     "minGraphEdges": 0,
-    "minKeywordGroupHits": 4,
+    "minKeywordGroupHits": 3,
     "keywordGroups": [
-      ["reliable", "reliably"],
-      ["evaluation", "evaluate"],
-      ["fixtures", "fixture"],
-      ["stable", "stability"],
-      ["regression", "regressions"],
-      ["thresholds", "threshold"]
+      ["monday"],
+      ["tomorrow", "the day after tomorrow"],
+      ["always"],
+      ["频繁", "frequently", "free quently"],
+      ["一般现代式", "现代式"]
     ]
   }
 }

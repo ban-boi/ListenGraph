@@ -13,6 +13,7 @@ import {
 } from './config';
 import { MockAsrProvider } from './mock/mock-asr';
 import { MockStructurerProvider } from './mock/mock-structurer';
+import { ExternalBridgeAsrProvider } from './asr/external-bridge-asr';
 import { OpenAIAsrProvider } from './asr/openai-asr';
 import { TencentAsrProvider } from './asr/tencent-asr';
 import { AliyunStructurerProvider } from './structurer/aliyun-structurer';
@@ -48,6 +49,11 @@ export function createProviderRegistry(): ProviderRegistry {
       if (config.type === 'tencent') {
         requireProviderCredential(config, 'Tencent ASR provider');
         return new TencentAsrProvider(config);
+      }
+
+      if (config.type === 'external') {
+        requireProviderCredential(config, 'External ASR bridge');
+        return new ExternalBridgeAsrProvider(config);
       }
 
       requireProviderCredential(config, 'ASR provider');

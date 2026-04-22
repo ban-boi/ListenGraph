@@ -1231,6 +1231,102 @@ describe('App 组件', () => {
     );
   });
 
+  it('Local ASR Bridge 设置会保存 endpoint、protocol 和 auth token，并显示健康提示', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: null,
+              state: 'idle',
+              graph: null,
+              currentTimeMs: 0,
+              providerSummary: {
+                asr: {
+                  type: 'mock',
+                  mode: 'direct',
+                  model: 'mock-asr',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                },
+                structurer: {
+                  type: 'mock',
+                  mode: 'direct',
+                  model: 'mock-structurer',
+                  language: 'zh',
+                  apiKeyConfigured: false,
+                  sessionTokenConfigured: false,
+                },
+              },
+              lastProviderError: null,
+            },
+          });
+        }
+        if (message?.type === 'GET_PROVIDER_SETTINGS') {
+          return Promise.resolve({
+            success: true,
+            config: {
+              asr: {
+                type: 'mock',
+                mode: 'direct',
+                model: 'mock-asr',
+                language: 'zh',
+              },
+              structurer: {
+                type: 'mock',
+                mode: 'direct',
+                model: 'mock-structurer',
+                language: 'zh',
+              },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    const user = userEvent.setup();
+    await renderApp();
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^设置$/ }));
+    });
+
+    const settingsPanel = await screen.findByTestId('settings-panel');
+
+    await act(async () => {
+      await user.selectOptions(within(settingsPanel).getAllByLabelText(/Provider Type/i)[0], 'external');
+      await user.clear(within(settingsPanel).getByLabelText('ASR Endpoint'));
+      await user.type(within(settingsPanel).getByLabelText('ASR Endpoint'), 'ws://127.0.0.1:15377/ws');
+      await user.clear(within(settingsPanel).getByLabelText('ASR Model'));
+      await user.type(within(settingsPanel).getByLabelText('ASR Model'), 'mock-streaming-asr');
+      await user.clear(within(settingsPanel).getByLabelText('Local Bridge Protocol'));
+      await user.type(within(settingsPanel).getByLabelText('Local Bridge Protocol'), 'lg-asr-ws-v1');
+      await user.type(within(settingsPanel).getByLabelText('Local Bridge Auth Token'), 'bridge-token');
+      await user.click(within(settingsPanel).getByRole('button', { name: /保存设置/i }));
+    });
+
+    expect(within(settingsPanel).getByTestId('local-bridge-health')).toHaveTextContent('Bridge 状态: idle');
+    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        type: 'SAVE_PROVIDER_SETTINGS',
+        payload: {
+          config: expect.objectContaining({
+            asr: expect.objectContaining({
+              type: 'external',
+              transport: 'ws',
+              endpoint: 'ws://127.0.0.1:15377/ws',
+              model: 'mock-streaming-asr',
+              bridgeProtocol: 'lg-asr-ws-v1',
+              bridgeAuthToken: 'bridge-token',
+            }),
+          }),
+        },
+      }),
+    );
+  });
+
   it('已保存的腾讯密钥不会回显明文，但会显示留空保持不变的提示', async () => {
     (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
       (message: { type?: string }) => {
@@ -1450,7 +1546,7 @@ describe('App 组件', () => {
 
     const edge = screen.getByTestId('reactflow-edge');
     expect(edge).toHaveAttribute('data-edge-id', 'e1');
-    expect(edge).toHaveAttribute('data-edge-type', 'smoothstep');
+    expect(edge).toHaveAttribute('data-edge-type', 'default');
     expect(edge).toHaveAttribute('data-edge-source-handle', 'source-bottom');
     expect(edge).toHaveAttribute('data-edge-target-handle', 'target-top');
   });

@@ -319,10 +319,41 @@ describe('Service Worker - 当前主链路', () => {
     );
   }
 
+  async function startExternalRealtimeSession() {
+    getProviderConfigMock.mockResolvedValue({
+      asr: {
+        type: 'external',
+        mode: 'direct',
+        transport: 'ws',
+        endpoint: 'ws://127.0.0.1:15377/ws',
+        bridgeProtocol: 'lg-asr-ws-v1',
+        bridgeAuthToken: 'bridge-token',
+        language: 'zh',
+      },
+      structurer: {
+        type: 'mock',
+        mode: 'direct',
+        model: 'mock-structurer',
+        language: 'zh',
+      },
+    });
+
+    return await dispatchMessage(
+      {
+        type: 'SESSION_START',
+        target: 'service-worker',
+        payload: { tabId: 123 },
+      },
+      { tab: { id: 123 } },
+    );
+  }
+
   async function sendStableUtterance(params: {
     text: string;
     startMs: number;
     endMs: number;
+    provider?: string;
+    finalReason?: 'endpoint' | 'input_finished' | 'manual_flush' | 'vendor_defined';
   }) {
     return await dispatchMessage({
       type: 'ASR_STREAM_UTTERANCE_READY',
@@ -331,7 +362,8 @@ describe('Service Worker - 当前主链路', () => {
         text: params.text,
         startMs: params.startMs,
         endMs: params.endMs,
-        provider: 'tencent-asr',
+        provider: params.provider ?? 'tencent-asr',
+        finalReason: params.finalReason,
         raw: { result: { slice_type: 2 } },
       },
     });
@@ -426,6 +458,30 @@ describe('Service Worker - 当前主链路', () => {
           transport: 'ws',
           tencentRealtime: expect.objectContaining({
             signedUrl: expect.stringContaining('wss://asr.cloud.tencent.com/asr/v2/1250000000?'),
+            sampleRate: 16000,
+            frameDurationMs: 40,
+          }),
+        }),
+      }),
+    );
+  });
+
+  it('Local ASR Bridge 配置会把通用 websocket 参数下发给 content script', async () => {
+    const chromeMock = (globalThis as any).chrome;
+    await startExternalRealtimeSession();
+
+    expect(chromeMock.tabs.sendMessage).toHaveBeenCalledWith(
+      123,
+      expect.objectContaining({
+        type: 'START_CAPTURE',
+        payload: expect.objectContaining({
+          transport: 'ws',
+          stream: expect.objectContaining({
+            providerType: 'external',
+            provider: 'local-asr-bridge',
+            endpoint: 'ws://127.0.0.1:15377/ws',
+            protocol: 'lg-asr-ws-v1',
+            authToken: 'bridge-token',
             sampleRate: 16000,
             frameDurationMs: 40,
           }),
@@ -930,6 +986,44 @@ describe('Service Worker - 当前主链路', () => {
     expect(saveMergedGraphMock).not.toHaveBeenCalled();
   });
 
+  it('external realtime 在 3 条短稳定句段后会启动首轮 bootstrap', async () => {
+    await startExternalRealtimeSession();
+
+    await sendStableUtterance({
+      text: '短句一',
+      startMs: 0,
+      endMs: 3000,
+      provider: 'local-asr-bridge',
+      finalReason: 'endpoint',
+    });
+    await sendStableUtterance({
+      text: '短句二',
+      startMs: 3000,
+      endMs: 7000,
+      provider: 'local-asr-bridge',
+      finalReason: 'endpoint',
+    });
+    await sendStableUtterance({
+      text: '短句三',
+      startMs: 7000,
+      endMs: 11000,
+      provider: 'local-asr-bridge',
+      finalReason: 'endpoint',
+    });
+
+    expect(extractSegmentGraphMock).toHaveBeenCalledTimes(1);
+    expect(extractSegmentGraphMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transcriptWindow: [
+          expect.objectContaining({ text: '短句一' }),
+          expect.objectContaining({ text: '短句二' }),
+          expect.objectContaining({ text: '短句三' }),
+        ],
+      }),
+    );
+    expect(saveMergedGraphMock).toHaveBeenCalled();
+  });
+
   it('腾讯 realtime 会在累计时长达到阈值时启动 bootstrap', async () => {
     await startRealtimeSession();
 
@@ -946,6 +1040,56 @@ describe('Service Worker - 当前主链路', () => {
       }),
     );
     expect(saveMergedGraphMock).toHaveBeenCalled();
+  });
+
+  it('实时输入在 input_finished final 到达时会为短会话兜底 bootstrap', async () => {
+    await startExternalRealtimeSession();
+
+    await sendStableUtterance({
+      text: '短句一',
+      startMs: 0,
+      endMs: 4000,
+      provider: 'local-asr-bridge',
+    });
+    await sendStableUtterance({
+      text: '短句二',
+      startMs: 4000,
+      endMs: 8000,
+      provider: 'local-asr-bridge',
+      finalReason: 'input_finished',
+    });
+
+    expect(extractSegmentGraphMock).toHaveBeenCalledTimes(1);
+    expect(extractSegmentGraphMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transcriptWindow: [
+          expect.objectContaining({ text: '短句一' }),
+          expect.objectContaining({ text: '短句二' }),
+        ],
+      }),
+    );
+    expect(saveMergedGraphMock).toHaveBeenCalled();
+  });
+
+  it('实时输入结束兜底不会为低信息量话语创建 graph', async () => {
+    await startExternalRealtimeSession();
+
+    await sendStableUtterance({
+      text: '好的',
+      startMs: 0,
+      endMs: 2000,
+      provider: 'local-asr-bridge',
+    });
+    await sendStableUtterance({
+      text: '谢谢',
+      startMs: 2000,
+      endMs: 4000,
+      provider: 'local-asr-bridge',
+      finalReason: 'input_finished',
+    });
+
+    expect(extractSegmentGraphMock).not.toHaveBeenCalled();
+    expect(saveMergedGraphMock).not.toHaveBeenCalled();
   });
 
   it('调试会话会返回 transcript、segment 和逐轮 trace', async () => {

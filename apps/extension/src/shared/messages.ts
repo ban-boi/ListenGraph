@@ -30,6 +30,16 @@ export interface AudioChunkPayload {
 
 export interface AsrStreamStartPayload {
   transport: 'batch' | 'ws';
+  stream?: {
+    providerType: 'tencent' | 'external';
+    provider: string;
+    endpoint?: string;
+    protocol?: 'lg-asr-ws-v1';
+    authToken?: string;
+    sampleRate: number;
+    frameDurationMs: number;
+    vendorConfig?: Record<string, unknown>;
+  };
   tencentRealtime?: {
     signedUrl: string;
     sampleRate: number;
@@ -37,32 +47,60 @@ export interface AsrStreamStartPayload {
   };
 }
 
-export interface AsrStreamUtterancePayload {
+export interface AsrStreamVendorMetadata {
+  name?: string;
+  event?: string;
+  voiceId?: string;
+  messageId?: string;
+  wordSize?: number;
+}
+
+export interface AsrStreamFinalPayload {
   text: string;
   startMs: number;
   endMs: number;
   provider: string;
+  utteranceId?: string;
+  revision?: number;
+  kind?: 'final';
+  finalReason?:
+    | 'endpoint'
+    | 'input_finished'
+    | 'max_duration'
+    | 'manual_flush'
+    | 'vendor_defined'
+    | 'error_recovery';
+  stability?: 'stable';
+  transport?: 'batch' | 'ws';
+  language?: string;
   confidence?: number;
-  voiceId?: string;
-  messageId?: string;
-  wordSize?: number;
+  vendor?: AsrStreamVendorMetadata;
   raw?: unknown;
 }
 
 export interface AsrStreamPartialPayload {
   text: string;
-  sliceType: 0 | 1;
+  provider?: string;
+  utteranceId?: string;
+  revision?: number;
+  kind?: 'partial';
+  stability?: 'interim';
   startMs?: number;
   endMs?: number;
-  voiceId?: string;
-  messageId?: string;
+  sliceType?: 0 | 1;
+  vendor?: AsrStreamVendorMetadata;
   raw?: unknown;
 }
 
 export interface AsrStreamStatusPayload {
-  status: 'connecting' | 'connected' | 'closing' | 'closed';
+  status: 'connecting' | 'connected' | 'listening' | 'closing' | 'closed';
   provider: string;
   detail?: string;
+  bridge?: {
+    protocol?: 'lg-asr-ws-v1';
+    endpoint?: string;
+    model?: string;
+  };
 }
 
 export interface AsrStreamErrorPayload {
@@ -242,9 +280,14 @@ export type AppMessage =
       payload: AudioChunkPayload;
     }
   | {
+      type: 'ASR_STREAM_FINAL_READY';
+      target: 'service-worker';
+      payload: AsrStreamFinalPayload;
+    }
+  | {
       type: 'ASR_STREAM_UTTERANCE_READY';
       target: 'service-worker';
-      payload: AsrStreamUtterancePayload;
+      payload: AsrStreamFinalPayload;
     }
   | {
       type: 'ASR_STREAM_PARTIAL_UPDATED';

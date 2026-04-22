@@ -2,10 +2,11 @@ import type { MergedGraph, SegmentGraph } from './graph';
 import type { TranscriptChunk } from './transcript';
 
 export type ProviderMode = 'direct' | 'relay';
-export type AsrProviderType = 'mock' | 'openai' | 'tencent';
+export type AsrProviderType = 'mock' | 'openai' | 'tencent' | 'external';
 export type StructurerProviderType = 'mock' | 'openai' | 'zhipu' | 'baidu' | 'aliyun';
 export type ProviderStage = 'asr' | 'structurer';
 export type AsrTransport = 'batch' | 'ws';
+export type AsrBridgeProtocol = 'lg-asr-ws-v1';
 
 export interface ProviderRetryPolicy {
   maxAttempts: number;
@@ -26,6 +27,8 @@ export interface AsrProviderConfig {
   language?: string;
   region?: string;
   appId?: string;
+  bridgeProtocol?: AsrBridgeProtocol;
+  bridgeAuthToken?: string;
   needVad?: boolean;
   vadSilenceTimeMs?: number;
   maxSpeakTimeMs?: number;
@@ -63,6 +66,8 @@ export interface ProviderRuntimeEntrySummary {
   language?: string;
   apiKeyConfigured: boolean;
   sessionTokenConfigured: boolean;
+  bridgeProtocol?: AsrBridgeProtocol;
+  bridgeAuthTokenConfigured?: boolean;
   secretConfigured?: boolean;
 }
 

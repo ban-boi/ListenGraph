@@ -30,6 +30,7 @@ const DEFAULT_ASR_CONFIG: AsrProviderConfig = {
   type: 'mock',
   mode: 'direct',
   transport: 'batch',
+  bridgeProtocol: 'lg-asr-ws-v1',
   model: 'mock-asr',
   language: 'zh',
   retry: DEFAULT_RETRY_POLICY,
@@ -127,7 +128,7 @@ function normalizeEntry<T extends AsrProviderConfig | StructurerProviderConfig>(
     const defaultTransport = isAsrConfig(params.defaults) ? params.defaults.transport : undefined;
     merged.transport =
       merged.transport ??
-      (merged.type === 'tencent' ? 'ws' : undefined) ??
+      (merged.type === 'tencent' || merged.type === 'external' ? 'ws' : undefined) ??
       defaultTransport ??
       'batch';
   }
@@ -160,6 +161,11 @@ function normalizeEntry<T extends AsrProviderConfig | StructurerProviderConfig>(
   } else if (merged.type === 'tencent') {
     merged.endpoint = params.input?.endpoint;
     merged.model = params.input?.model;
+  } else if (merged.type === 'external') {
+    const asrInput = params.input as Partial<AsrProviderConfig> | undefined;
+    merged.endpoint = params.input?.endpoint ?? merged.endpoint;
+    merged.model = params.input?.model ?? merged.model;
+    merged.bridgeProtocol = asrInput?.bridgeProtocol ?? merged.bridgeProtocol ?? 'lg-asr-ws-v1';
   } else {
     merged.model = merged.model ?? params.defaults.model;
   }
@@ -181,6 +187,10 @@ function summarizeEntry(
     language: config.language,
     apiKeyConfigured: Boolean(config.apiKey),
     sessionTokenConfigured: Boolean(config.sessionToken),
+    bridgeProtocol: isAsrConfig(config) ? config.bridgeProtocol : undefined,
+    bridgeAuthTokenConfigured: isAsrConfig(config)
+      ? Boolean(config.bridgeAuthToken)
+      : undefined,
     secretConfigured: hasTencentSecrets,
   };
 }
@@ -191,6 +201,7 @@ export function clearProviderSecrets(config: ProviderConfig): ProviderConfig {
       ...config.asr,
       apiKey: undefined,
       sessionToken: undefined,
+      bridgeAuthToken: undefined,
       secretId: undefined,
       secretKey: undefined,
     },
@@ -207,6 +218,16 @@ export function requireProviderCredential(
   label: string,
 ) {
   if (config.type === 'mock') {
+    return;
+  }
+
+  if (config.type === 'external') {
+    if (config.transport !== 'ws') {
+      throw new Error(`${label} requires websocket transport`);
+    }
+    if (!config.endpoint?.trim()) {
+      throw new Error(`${label} requires endpoint for websocket transport`);
+    }
     return;
   }
 

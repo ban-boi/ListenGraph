@@ -32,9 +32,9 @@ import { generateId } from '@listen-graphic/shared-utils';
 import type {
   AppMessage,
   AsrStreamErrorPayload,
+  AsrStreamFinalPayload,
   AsrStreamPartialPayload,
   AsrStreamStatusPayload,
-  AsrStreamUtterancePayload,
   AudioChunkPayload,
   DebugSessionData,
   ExportFormat,
@@ -210,8 +210,9 @@ async function handleMessage(
       return handleGetReplaySession(message.payload.sessionId);
     case 'AUDIO_CHUNK_READY':
       return enqueueAudioChunk(message.payload);
+    case 'ASR_STREAM_FINAL_READY':
     case 'ASR_STREAM_UTTERANCE_READY':
-      return handleAsrStreamUtterance(message.payload);
+      return handleAsrStreamFinal(message.payload);
     case 'ASR_STREAM_PARTIAL_UPDATED':
       return handleAsrStreamPartial(message.payload);
     case 'ASR_STREAM_STATUS':
@@ -512,8 +513,8 @@ async function handleAudioChunk(
   }
 }
 
-async function handleAsrStreamUtterance(
-  payload: AsrStreamUtterancePayload,
+async function handleAsrStreamFinal(
+  payload: AsrStreamFinalPayload,
 ): Promise<ServiceWorkerResponse> {
   await ensureHydrated();
 
@@ -531,24 +532,31 @@ async function handleAsrStreamUtterance(
   const transcript: TranscriptChunk = {
     chunkId: generateId('chunk'),
     sessionId: currentSession.sessionId,
+    utteranceId: payload.utteranceId,
+    kind: 'final',
+    finalReason: payload.finalReason ?? 'vendor_defined',
+    transport: payload.transport ?? 'ws',
+    stability: payload.stability ?? 'stable',
+    language: payload.language,
     text: payload.text,
     startMs: payload.startMs,
     endMs: payload.endMs,
     provider: payload.provider,
     confidence: payload.confidence,
+    metrics: payload.startMs <= payload.endMs
+      ? {
+          audioDurationMs: payload.endMs - payload.startMs,
+        }
+      : undefined,
     raw: payload.raw
       ? {
           ...toRecord(payload.raw),
-          voiceId: payload.voiceId,
-          messageId: payload.messageId,
-          wordSize: payload.wordSize,
-          transport: 'ws',
+          vendor: payload.vendor,
+          transport: payload.transport ?? 'ws',
         }
       : {
-          voiceId: payload.voiceId,
-          messageId: payload.messageId,
-          wordSize: payload.wordSize,
-          transport: 'ws',
+          vendor: payload.vendor,
+          transport: payload.transport ?? 'ws',
         },
   };
 
@@ -559,11 +567,12 @@ async function handleAsrStreamPartial(
   payload: AsrStreamPartialPayload,
 ): Promise<ServiceWorkerResponse> {
   await ensureHydrated();
+  const providerLabel = payload.provider ?? 'ASR';
   const label = payload.sliceType === 0 ? '开始' : '中间结果';
   const text = payload.text.trim();
   await notifyProviderProgress(
     'asr',
-    text ? `腾讯实时 ASR ${label}: ${text}` : `腾讯实时 ASR ${label}`,
+    text ? `${providerLabel} ${label}: ${text}` : `${providerLabel} ${label}`,
   );
   return { success: true };
 }
@@ -572,7 +581,7 @@ async function handleAsrStreamStatus(
   payload: AsrStreamStatusPayload,
 ): Promise<ServiceWorkerResponse> {
   await ensureHydrated();
-  await notifyProviderProgress('asr', payload.detail ?? `腾讯实时 ASR ${payload.status}`);
+  await notifyProviderProgress('asr', payload.detail ?? `${payload.provider} ${payload.status}`);
   return { success: true };
 }
 
@@ -626,7 +635,12 @@ async function processTranscriptChunk(
       payload: { transcript },
     });
 
-    if (!mergedGraph && !hasEnoughBootstrapContext(transcriptWindow)) {
+    if (
+      !mergedGraph &&
+      !hasEnoughBootstrapContext(transcriptWindow) &&
+      !shouldForceBootstrapForExternalRealtimeWindow(transcriptWindow) &&
+      !shouldForceBootstrapForCompletedRealtimeInput(transcript, transcriptWindow)
+    ) {
       await notifyProviderProgress(
         'structurer',
         `等待 30 秒上下文或足够长的稳定话语 (${transcriptWindow.length}条/${getTranscriptWindowCharCount(transcriptWindow)}字)`,
@@ -1133,6 +1147,39 @@ function hasEnoughRealtimeBootstrapContext(window: TranscriptChunk[]) {
   );
 }
 
+function shouldForceBootstrapForCompletedRealtimeInput(
+  transcript: TranscriptChunk,
+  window: TranscriptChunk[],
+) {
+  if (getCurrentAsrTransport() !== 'ws' || mergedGraph) {
+    return false;
+  }
+
+  if (
+    transcript.finalReason !== 'input_finished' &&
+    transcript.finalReason !== 'manual_flush'
+  ) {
+    return false;
+  }
+
+  return getEffectiveTranscriptWindowCharCount(window) > 0;
+}
+
+function shouldForceBootstrapForExternalRealtimeWindow(window: TranscriptChunk[]) {
+  if (getCurrentAsrTransport() !== 'ws' || mergedGraph) {
+    return false;
+  }
+
+  if (activeProviderConfig.asr.type !== 'external') {
+    return false;
+  }
+
+  return (
+    window.length >= STRUCTURER_WINDOW_SIZE &&
+    getEffectiveTranscriptWindowCharCount(window) > 0
+  );
+}
+
 function getCurrentAsrTransport() {
   return activeProviderConfig.asr.transport === 'ws' ? 'ws' : 'batch';
 }
@@ -1174,13 +1221,39 @@ function isLowInformationTranscript(transcript: TranscriptChunk) {
 }
 
 async function buildContentScriptStartPayload(): Promise<Extract<AppMessage, { type: 'START_CAPTURE' }>['payload']> {
-  if (activeProviderConfig.asr.type !== 'tencent' || activeProviderConfig.asr.transport !== 'ws') {
+  if (activeProviderConfig.asr.transport !== 'ws') {
+    return { transport: 'batch' };
+  }
+
+  if (activeProviderConfig.asr.type === 'external') {
+    return {
+      transport: 'ws',
+      stream: {
+        providerType: 'external',
+        provider: 'local-asr-bridge',
+        endpoint: activeProviderConfig.asr.endpoint,
+        protocol: activeProviderConfig.asr.bridgeProtocol ?? 'lg-asr-ws-v1',
+        authToken: activeProviderConfig.asr.bridgeAuthToken,
+        sampleRate: 16_000,
+        frameDurationMs: 40,
+      },
+    };
+  }
+
+  if (activeProviderConfig.asr.type !== 'tencent') {
     return { transport: 'batch' };
   }
 
   const sessionConfig = await createTencentRealtimeSessionConfig(activeProviderConfig.asr);
   return {
     transport: 'ws',
+    stream: {
+      providerType: 'tencent',
+      provider: 'tencent-asr',
+      endpoint: sessionConfig.signedUrl,
+      sampleRate: 16_000,
+      frameDurationMs: 40,
+    },
     tencentRealtime: {
       signedUrl: sessionConfig.signedUrl,
       sampleRate: 16_000,
@@ -1897,6 +1970,13 @@ function mergeProviderSecrets(
         nextConfig.asr.mode === existingConfig.asr.mode
           ? existingConfig.asr.sessionToken
           : undefined),
+      bridgeAuthToken:
+        nextConfig.asr.bridgeAuthToken ??
+        (nextConfig.asr.type === existingConfig.asr.type &&
+        nextConfig.asr.type === 'external' &&
+        nextConfig.asr.mode === existingConfig.asr.mode
+          ? existingConfig.asr.bridgeAuthToken
+          : undefined),
       secretId:
         nextConfig.asr.secretId ??
         (nextConfig.asr.type === existingConfig.asr.type &&
@@ -1967,6 +2047,7 @@ function stripProviderSecrets(config: ProviderConfig): ProviderConfig {
       ...config.asr,
       apiKey: undefined,
       sessionToken: undefined,
+      bridgeAuthToken: undefined,
       secretId: undefined,
       secretKey: undefined,
     },

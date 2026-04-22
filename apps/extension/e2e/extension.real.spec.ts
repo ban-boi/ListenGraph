@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import type { ProviderConfig } from '@listen-graphic/schema';
 import {
   applyProviderSettings,
@@ -29,8 +30,26 @@ type FixtureManifest = {
   realAcceptance: AcceptanceConfig;
 };
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const REPO_ROOT = path.resolve(__dirname, '../../..');
+
 function loadRealFixtureRoot() {
-  return process.env.LISTEN_GRAPHIC_E2E_REAL_FIXTURE_ROOT?.trim() || null;
+  const configured = process.env.LISTEN_GRAPHIC_E2E_REAL_FIXTURE_ROOT?.trim();
+  if (!configured) {
+    return null;
+  }
+
+  if (path.isAbsolute(configured)) {
+    return configured;
+  }
+
+  const cwdResolved = path.resolve(process.cwd(), configured);
+  if (fs.existsSync(cwdResolved)) {
+    return cwdResolved;
+  }
+
+  return path.resolve(REPO_ROOT, configured);
 }
 
 function loadRealProviderConfigFromEnv(): ProviderConfig | null {
@@ -40,10 +59,14 @@ function loadRealProviderConfigFromEnv(): ProviderConfig | null {
     return null;
   }
 
+  const bridgeProtocol =
+    process.env.LISTEN_GRAPHIC_E2E_ASR_BRIDGE_PROTOCOL?.trim() || 'lg-asr-ws-v1';
+
   return {
     asr: {
       type: asrType as ProviderConfig['asr']['type'],
       mode: 'direct',
+      transport: asrType === 'external' ? 'ws' : undefined,
       endpoint: process.env.LISTEN_GRAPHIC_E2E_ASR_ENDPOINT?.trim() || undefined,
       apiKey: process.env.LISTEN_GRAPHIC_E2E_ASR_API_KEY?.trim() || undefined,
       model: process.env.LISTEN_GRAPHIC_E2E_ASR_MODEL?.trim() || undefined,
@@ -51,6 +74,11 @@ function loadRealProviderConfigFromEnv(): ProviderConfig | null {
       region: process.env.LISTEN_GRAPHIC_E2E_ASR_REGION?.trim() || undefined,
       secretId: process.env.LISTEN_GRAPHIC_E2E_ASR_SECRET_ID?.trim() || undefined,
       secretKey: process.env.LISTEN_GRAPHIC_E2E_ASR_SECRET_KEY?.trim() || undefined,
+      bridgeProtocol: asrType === 'external' ? bridgeProtocol : undefined,
+      bridgeAuthToken:
+        asrType === 'external'
+          ? process.env.LISTEN_GRAPHIC_E2E_ASR_BRIDGE_AUTH_TOKEN?.trim() || undefined
+          : undefined,
     },
     structurer: {
       type: structurerType as ProviderConfig['structurer']['type'],
@@ -72,6 +100,8 @@ function countKeywordGroupHits(text: string, keywordGroups: string[][]) {
 
 test.describe('Extension real provider validation', () => {
   test('external real-audio fixture passes rule-based acceptance', async ({}, testInfo) => {
+    test.setTimeout(120_000);
+
     const fixtureRoot = loadRealFixtureRoot();
     const providerConfig = loadRealProviderConfigFromEnv();
 
@@ -87,6 +117,7 @@ test.describe('Extension real provider validation', () => {
 
     const { server, url } = await createStaticServer(fixtureRoot!);
     let context: Awaited<ReturnType<typeof launchExtensionContext>>['context'] | null = null;
+    let sidepanelPage: Awaited<ReturnType<typeof openSidepanelPage>> | null = null;
 
     try {
       const launched = await launchExtensionContext(userDataDir);
@@ -94,7 +125,7 @@ test.describe('Extension real provider validation', () => {
       const fixturePage = await context.newPage();
       await fixturePage.goto(`${url}/index.html`);
 
-      const sidepanelPage = await openSidepanelPage(context, launched.extensionId);
+      sidepanelPage = await openSidepanelPage(context, launched.extensionId);
       const saveResponse = await applyProviderSettings(sidepanelPage, providerConfig!);
       expect(saveResponse.success).toBe(true);
       const tabId = await resolveTabId(sidepanelPage, `${url}/index.html`);
@@ -152,6 +183,15 @@ test.describe('Extension real provider validation', () => {
         testInfo,
         label: 'real-provider-validation',
       });
+    } catch (error) {
+      if (sidepanelPage) {
+        await captureSessionDiagnostics({
+          page: sidepanelPage,
+          testInfo,
+          label: 'real-provider-validation-failure',
+        });
+      }
+      throw error;
     } finally {
       if (context) {
         await context.close();

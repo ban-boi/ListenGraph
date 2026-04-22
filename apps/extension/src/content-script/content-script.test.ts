@@ -367,13 +367,99 @@ describe('content-script 主链路', () => {
 
     expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
-        type: 'ASR_STREAM_UTTERANCE_READY',
+        type: 'ASR_STREAM_FINAL_READY',
         target: 'service-worker',
         payload: expect.objectContaining({
           text: '今天天气不错。',
           startMs: 0,
           endMs: 1200,
           provider: 'tencent-asr',
+        }),
+      }),
+    );
+  });
+
+  it('Local ASR Bridge 模式会建立 WebSocket，并把 partial/final 回传给 service worker', async () => {
+    const startPromise = dispatchMessage({
+      type: 'START_CAPTURE',
+      target: 'content-script',
+      payload: {
+        transport: 'ws',
+        stream: {
+          providerType: 'external',
+          provider: 'local-asr-bridge',
+          endpoint: 'ws://127.0.0.1:15377/ws',
+          protocol: 'lg-asr-ws-v1',
+          sampleRate: 16000,
+          frameDurationMs: 40,
+        },
+      },
+    });
+
+    for (let attempt = 0; attempt < 10 && webSocketInstances.length === 0; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    expect(webSocketInstances).toHaveLength(1);
+    webSocketInstances[0].dispatchOpen();
+    await startPromise;
+
+    const socketInstance = webSocketInstances[0];
+    expect(socketInstance.sent[0]).toContain('"type":"session.start"');
+
+    socketInstance.onmessage?.({
+      data: JSON.stringify({
+        type: 'session.started',
+        version: '1',
+        bridge: { model: 'mock-paraformer' },
+      }),
+    });
+    socketInstance.onmessage?.({
+      data: JSON.stringify({
+        type: 'transcript.partial',
+        utterance: {
+          utteranceId: 'utt-1',
+          revision: 1,
+          text: '今天',
+          startMs: 0,
+          endMs: 300,
+        },
+      }),
+    });
+    socketInstance.onmessage?.({
+      data: JSON.stringify({
+        type: 'transcript.final',
+        utterance: {
+          utteranceId: 'utt-1',
+          revision: 2,
+          text: '今天天气不错。',
+          startMs: 0,
+          endMs: 1200,
+          finalReason: 'endpoint',
+        },
+      }),
+    });
+    await Promise.resolve();
+
+    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'ASR_STREAM_PARTIAL_UPDATED',
+        target: 'service-worker',
+        payload: expect.objectContaining({
+          text: '今天',
+          provider: 'local-asr-bridge',
+          utteranceId: 'utt-1',
+        }),
+      }),
+    );
+    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'ASR_STREAM_FINAL_READY',
+        target: 'service-worker',
+        payload: expect.objectContaining({
+          text: '今天天气不错。',
+          provider: 'local-asr-bridge',
+          utteranceId: 'utt-1',
+          finalReason: 'endpoint',
         }),
       }),
     );

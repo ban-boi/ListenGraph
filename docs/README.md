@@ -35,6 +35,7 @@
 - [Extension 测试入口](C:/Users/finni/Desktop/ListenGraph/docs/testing/README.md)
   - 当前三层测试结构
   - contract / replay / thin E2E 推荐入口
+  - **本仓库不附带**本地 Sherpa/ONNX 模型；`test:ext:e2e:real:sherpa` 的默认本机模型路径与 `LISTEN_GRAPHIC_SHERPA_*` 等前提见文内「本仓库与本地 ASR 模型」一节（避免误以为克隆即可跑真实 ASR）
 - [Structure 回归说明](C:/Users/finni/Desktop/ListenGraph/docs/testing/structure-regression.md)
   - 当前 structure-focused fixture 体系
   - smoke / full / strict real suite 入口

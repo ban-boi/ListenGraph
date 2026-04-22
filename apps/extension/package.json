@@ -31,6 +31,8 @@
     "test:e2e:closure": "playwright test e2e/extension.closure.spec.ts",
     "test:e2e:headed": "playwright test e2e/extension.local.spec.ts --headed",
     "test:e2e:real": "playwright test e2e/extension.real.spec.ts",
+    "test:e2e:real:local-bridge": "node ./scripts/run-e2e-real-local-bridge.mjs",
+    "test:e2e:real:sherpa": "node ./scripts/run-e2e-real-sherpa.mjs",
     "test:e2e:full": "playwright test e2e/extension.local.spec.ts e2e/extension.closure.spec.ts e2e/extension.real.spec.ts"
   },
   "dependencies": {

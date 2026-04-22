@@ -11,6 +11,9 @@ coverage
 # Playwright
 test-results/
 
+# 本地临时：Playwright 用户数据、Sherpa/ONNX 等下载物（可删、勿提交）
+.tmp/
+
 # Turbo
 .turbo
 
@@ -37,3 +40,7 @@ apps/extension/src/service-worker/fixtures/asr-realtime/compare-artifacts/
 
 # Structure strict / provider 不稳定时的诊断与汇总（可再跑脚本生成）
 apps/extension/src/service-worker/fixtures/structure/artifacts/
+
+# Python
+__pycache__/
+*.py[cod]

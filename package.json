@@ -5,13 +5,17 @@
   "scripts": {
     "dev:web": "turbo run dev --filter=web-demo",
     "dev:ext": "turbo run dev --filter=extension",
+    "dev:mock-asr-bridge": "node ./tools/mock-asr-bridge.mjs",
+    "dev:sherpa-asr-bridge": "python ./tools/sherpa-onnx-bridge.py",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test:ext:contract": "pnpm --filter extension test:run -- src/service-worker/index.test.ts",
     "test:ext:replay": "pnpm --filter extension test:structure",
     "test:ext:e2e": "pnpm --filter extension test:e2e",
-    "test:ext:e2e:closure": "pnpm --filter extension exec playwright test e2e/extension.closure.spec.ts"
+    "test:ext:e2e:closure": "pnpm --filter extension exec playwright test e2e/extension.closure.spec.ts",
+    "test:ext:e2e:real:local-bridge": "pnpm --filter extension test:e2e:real:local-bridge",
+    "test:ext:e2e:real:sherpa": "pnpm --filter extension test:e2e:real:sherpa"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

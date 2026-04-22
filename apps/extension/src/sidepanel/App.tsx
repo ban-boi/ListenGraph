@@ -154,7 +154,7 @@ type ReactFlowDebugEdge = {
   source: string;
   target: string;
   label: string;
-  type: 'smoothstep';
+  type: 'default';
   sourceHandle: SourceHandleId;
   targetHandle: TargetHandleId;
   style: { stroke: string };
@@ -487,7 +487,7 @@ function buildStableReactFlowDebugGraph(params: {
         id: edge.id,
         source: edge.source,
         target: edge.target,
-        type: 'smoothstep',
+        type: 'default',
         sourceHandle: handles.sourceHandle,
         targetHandle: handles.targetHandle,
         label: edge.relation,
@@ -772,11 +772,13 @@ function getStageCredentialState(
 ) {
   const entry = summary[stageKey];
   const isTencentAsr = stageKey === 'asr' && entry.type === 'tencent';
+  const isExternalAsr = stageKey === 'asr' && entry.type === 'external';
 
   return {
     apiKeyConfigured: entry.apiKeyConfigured,
     sessionTokenConfigured: entry.sessionTokenConfigured,
     secretConfigured: isTencentAsr ? Boolean(entry.secretConfigured) : false,
+    bridgeAuthTokenConfigured: isExternalAsr ? Boolean(entry.bridgeAuthTokenConfigured) : false,
   };
 }
 
@@ -844,6 +846,8 @@ function resetProviderEntryForTypeChange(
       model: undefined,
       region: undefined,
       transport: undefined,
+      bridgeProtocol: undefined,
+      bridgeAuthToken: undefined,
       appId: undefined,
       needVad: undefined,
       vadSilenceTimeMs: undefined,
@@ -1416,6 +1420,10 @@ export default function App() {
   );
   const [workerBuildLabel, setWorkerBuildLabel] = useState('waiting');
   const [recentProviderError, setRecentProviderError] = useState<RuntimeSnapshot['lastProviderError']>(null);
+  const [bridgeHealth, setBridgeHealth] = useState<{
+    status: 'idle' | 'connecting' | 'connected' | 'listening' | 'closing' | 'closed' | 'error';
+    detail?: string;
+  }>({ status: 'idle' });
 
   // 开发模式下的 ref
   const transcriptIndexRef = useRef(0);
@@ -1627,6 +1635,17 @@ export default function App() {
         case 'PROVIDER_PROGRESS': {
           const { stage, message: progressMessage } = message.payload;
           const displayMsg = `${stage.toUpperCase()}: ${progressMessage}`;
+          if (stage === 'asr' && providerConfig.asr.type === 'external') {
+            if (progressMessage.includes('连接中')) {
+              setBridgeHealth({ status: 'connecting', detail: progressMessage });
+            } else if (progressMessage.includes('已连接')) {
+              setBridgeHealth({ status: 'connected', detail: progressMessage });
+            } else if (progressMessage.includes('握手成功') || progressMessage.includes('ready')) {
+              setBridgeHealth({ status: 'listening', detail: progressMessage });
+            } else if (progressMessage.includes('已断开')) {
+              setBridgeHealth({ status: 'closed', detail: progressMessage });
+            }
+          }
           if (isTencentRealtimeStreamProgressMessage(stage, progressMessage)) {
             upsertTencentRealtimePartialLog(displayMsg);
           } else {
@@ -1843,6 +1862,9 @@ export default function App() {
           prev,
         );
       });
+      if (stage === 'asr' && nextType !== 'external') {
+        setBridgeHealth({ status: 'idle' });
+      }
     },
     [],
   );
@@ -1872,6 +1894,9 @@ export default function App() {
       setProviderConfig(
         pinProviderConfigToDirectMode(normalizeProviderConfig(response.config)),
       );
+      if (response.config.asr.type !== 'external') {
+        setBridgeHealth({ status: 'idle' });
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : '读取 provider 设置失败';
       addLog(`加载设置失败: ${message}`);
@@ -1894,14 +1919,31 @@ export default function App() {
 
       if (!response?.success) {
         addLog(`保存设置失败: ${response?.error || '未知错误'}`);
+        if (normalized.asr.type === 'external') {
+          setBridgeHealth({
+            status: 'error',
+            detail: response?.error || '保存 Local ASR Bridge 设置失败',
+          });
+        }
         return;
       }
 
       setProviderConfig(normalized);
       setProviderSummary(redactProviderConfig(normalized));
+      if (normalized.asr.type === 'external') {
+        setBridgeHealth({
+          status: 'idle',
+          detail: 'Local ASR Bridge 设置已保存，开始会话后可检查连接状态',
+        });
+      } else {
+        setBridgeHealth({ status: 'idle' });
+      }
       addLog('provider 设置已保存');
     } catch (error) {
       const message = error instanceof Error ? error.message : '保存 provider 设置失败';
+      if (providerConfig.asr.type === 'external') {
+        setBridgeHealth({ status: 'error', detail: message });
+      }
       addLog(`保存设置失败: ${message}`);
     } finally {
       setSettingsSaving(false);
@@ -2891,6 +2933,7 @@ export default function App() {
                   <option value="mock">Mock (测试)</option>
                   <option value="openai">OpenAI</option>
                   {stageKey === 'asr' && <option value="tencent">腾讯云</option>}
+                  {stageKey === 'asr' && <option value="external">Local ASR Bridge</option>}
                   {stageKey === 'structurer' && <option value="aliyun">阿里云百炼</option>}
                   {stageKey === 'structurer' && <option value="baidu">百度千帆</option>}
                   {stageKey === 'structurer' && <option value="zhipu">智谱 GLM</option>}
@@ -2917,6 +2960,21 @@ export default function App() {
                   </div>
                 </div>
               )}
+              {providerConfig[stageKey].type === 'external' && stageKey === 'asr' && (
+                <div style={{
+                  padding: '8px',
+                  backgroundColor: '#ecfeff',
+                  borderRadius: 4,
+                  fontSize: 10,
+                  color: '#155e75',
+                  lineHeight: 1.5,
+                }}>
+                  <div style={{ fontWeight: 600, marginBottom: 4 }}>Local ASR Bridge</div>
+                  <div>• 通过本地 WebSocket bridge 接入任意本地 ASR</div>
+                  <div>• 当前协议：LG-ASR-WS v1</div>
+                  <div>• 推荐地址：ws://127.0.0.1:15377/ws</div>
+                </div>
+              )}
               {providerConfig[stageKey].type === 'tencent' && stageKey === 'asr' && (
                 <label style={{ display: 'grid', gap: 4 }}>
                   <span>Tencent Transport</span>
@@ -2929,6 +2987,20 @@ export default function App() {
                   >
                     <option value="batch">Batch</option>
                     <option value="ws">Realtime WebSocket</option>
+                  </select>
+                </label>
+              )}
+              {providerConfig[stageKey].type === 'external' && stageKey === 'asr' && (
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span>Local Bridge Transport</span>
+                  <select
+                    aria-label="Local Bridge Transport"
+                    value={providerConfig.asr.transport ?? 'ws'}
+                    onChange={(event) =>
+                      updateProviderEntry(stageKey, 'transport', event.target.value)
+                    }
+                  >
+                    <option value="ws">WebSocket</option>
                   </select>
                 </label>
               )}
@@ -2954,6 +3026,64 @@ export default function App() {
                   }
                 />
               </label>
+              {providerConfig[stageKey].type === 'external' && stageKey === 'asr' && (
+                <>
+                  <label style={{ display: 'grid', gap: 4 }}>
+                    <span>Bridge Protocol</span>
+                    <input
+                      aria-label="Local Bridge Protocol"
+                      value={providerConfig.asr.bridgeProtocol ?? ''}
+                      onChange={(event) =>
+                        updateProviderEntry(stageKey, 'bridgeProtocol', event.target.value)
+                      }
+                      placeholder="lg-asr-ws-v1"
+                    />
+                  </label>
+                  <label style={{ display: 'grid', gap: 4 }}>
+                    <span>Bridge Auth Token</span>
+                    <input
+                      aria-label="Local Bridge Auth Token"
+                      type="password"
+                      value={providerConfig.asr.bridgeAuthToken ?? ''}
+                      onChange={(event) =>
+                        updateProviderEntry(stageKey, 'bridgeAuthToken', event.target.value)
+                      }
+                      placeholder={
+                        credentialState.bridgeAuthTokenConfigured
+                          ? '已保存，留空保持不变'
+                          : '可选'
+                      }
+                    />
+                    {renderSecretHint({
+                      configured: credentialState.bridgeAuthTokenConfigured,
+                      label: 'Bridge Auth Token',
+                    })}
+                  </label>
+                  <div
+                    data-testid="local-bridge-health"
+                    style={{
+                      padding: '8px',
+                      backgroundColor:
+                        bridgeHealth.status === 'error'
+                          ? '#fef2f2'
+                          : bridgeHealth.status === 'listening'
+                            ? '#ecfdf5'
+                            : '#f8fafc',
+                      border: '1px solid #dbe4ee',
+                      borderRadius: 4,
+                      fontSize: 10,
+                      color: '#334155',
+                    }}
+                  >
+                    <div style={{ fontWeight: 600 }}>
+                      Bridge 状态: {bridgeHealth.status}
+                    </div>
+                    <div style={{ marginTop: 4 }}>
+                      {bridgeHealth.detail ?? '保存设置后开始会话，可看到连接/握手状态'}
+                    </div>
+                  </div>
+                </>
+              )}
               {/* 腾讯云：独立的 Secret ID 和 Secret Key 输入框 */}
               {providerConfig[stageKey].type === 'tencent' && stageKey === 'asr' ? (
                 <>
@@ -3094,7 +3224,7 @@ export default function App() {
                     </>
                   )}
                 </>
-              ) : (
+              ) : providerConfig[stageKey].type === 'external' && stageKey === 'asr' ? null : (
                 /* 其他 provider：通用的 API Key 输入框 */
                 <label style={{ display: 'grid', gap: 4 }}>
                   <span>{label} API Key</span>
@@ -3144,6 +3274,8 @@ export default function App() {
               {`Structurer=${providerSummary.structurer.type}`}
               {providerSummary.asr.type === 'tencent'
                 ? ` | ASR 密钥=${providerSummary.asr.secretConfigured ? '已保存' : '未保存'}`
+                : providerSummary.asr.type === 'external'
+                  ? ` | Bridge Token=${providerSummary.asr.bridgeAuthTokenConfigured ? '已保存' : '未保存'}`
                 : ` | ASR Key=${providerSummary.asr.apiKeyConfigured ? '已保存' : '未保存'}`}
               {` | Structurer Key=${providerSummary.structurer.apiKeyConfigured ? '已保存' : '未保存'}`}
             </div>

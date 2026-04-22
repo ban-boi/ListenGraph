@@ -2,6 +2,19 @@
 
 本文档定义 extension 当前的三层测试结构，目的是减少“这个问题该补哪层”的歧义。
 
+## 本仓库与本地 ASR 模型（避免误解）
+
+- **本仓库不附带** Sherpa/ONNX 权重、词表等二进制资产；**克隆/拉代码后不会自动拥有**可跑本地流式 ASR 所需的文件。
+- **`pnpm run test:ext:e2e:real:sherpa`** 由 `apps/extension/scripts/run-e2e-real-sherpa.mjs` 驱动。脚本默认在**仓库根目录**下寻找模型目录（可用 `LISTEN_GRAPHIC_SHERPA_MODEL_DIR` 覆盖）：
+
+  - 默认路径：`<repoRoot>/.tmp/sherpa-model/sherpa-onnx-streaming-paraformer-bilingual-zh-en/`
+  - 该目录下须存在：`encoder.int8.onnx`、`decoder.int8.onnx`、`tokens.txt`（与 bridge 启动参数一致）。
+
+  `.tmp/` 已列入根目录 `.gitignore`，只作本机/CI 自准备目录，**不会**随仓库分发给他人。
+
+- **Python**：脚本里有一份**本机开发机示例**的默认解释器路径；在其它机器上应设置 `LISTEN_GRAPHIC_SHERPA_PYTHON` 为已 `pip install sherpa-onnx` 的 `python` 可执行文件路径，否则会报找不到解释器或无法 import。
+- 模型从何处下载、如何解压、推荐 int8 文件名，见 [SherpaOnnx 流式 Paraformer ASR — 开发笔记](../providers/sherpa-onnx-streaming-asr.md) 中「环境搭建 / 下载模型」一节；手工起 bridge 与联调见 [Local ASR Bridge 使用说明](../providers/local-asr-bridge-setup.md)。
+
 ## 三层结构
 
 ### 1. Runtime Contract
@@ -47,12 +60,41 @@ pnpm run test:ext:replay
 ```powershell
 pnpm run test:ext:e2e
 pnpm run test:ext:e2e:closure
+pnpm run test:ext:e2e:real:local-bridge
+pnpm run test:ext:e2e:real:sherpa
 ```
 
 当前覆盖：
 - `apps/extension/e2e/extension.local.spec.ts`
 - `apps/extension/e2e/extension.closure.spec.ts`
 - `apps/extension/e2e/extension.real.spec.ts`
+
+真实本地 ASR bridge 的便捷入口：
+- `pnpm run test:ext:e2e:real:local-bridge`
+- 只要求某个符合 `lg-asr-ws-v1` 的本地 bridge 已经启动并可访问
+- 默认会检查：
+- `ws://127.0.0.1:15377/ws`
+- `http://127.0.0.1:15377/healthz`
+- 默认仍使用 `mock structurer`，避免真实 structurer 配额/网络污染 E2E 结果
+
+Sherpa 专用便捷入口：
+- `pnpm run test:ext:e2e:real:sherpa`
+- 默认启动 `tools/sherpa-onnx-bridge.py`，并把 extension real E2E 需要的 env 一并注入
+- 可通过环境变量覆盖：
+- `LISTEN_GRAPHIC_SHERPA_PYTHON`
+- `LISTEN_GRAPHIC_SHERPA_MODEL_DIR`
+- `LISTEN_GRAPHIC_SHERPA_BRIDGE_SCRIPT`
+- `LISTEN_GRAPHIC_SHERPA_BRIDGE_HOST`
+- `LISTEN_GRAPHIC_SHERPA_BRIDGE_PORT`
+- `LISTEN_GRAPHIC_E2E_REAL_FIXTURE_ROOT`
+- `LISTEN_GRAPHIC_E2E_REAL_TIMEOUT_MS`
+- `LISTEN_GRAPHIC_E2E_REAL_STRUCTURER_TYPE`
+- `LISTEN_GRAPHIC_E2E_REAL_STRUCTURER_MODEL`
+- `LISTEN_GRAPHIC_SHERPA_REUSE_EXISTING`
+- `LISTEN_GRAPHIC_LOCAL_BRIDGE_HOST`
+- `LISTEN_GRAPHIC_LOCAL_BRIDGE_PORT`
+- `LISTEN_GRAPHIC_LOCAL_BRIDGE_PATH`
+- `LISTEN_GRAPHIC_LOCAL_BRIDGE_HEALTH_URL`
 
 适合放这里的问题：
 - 本地 fixture 驱动的完整 UI 闭环
