@@ -24,6 +24,7 @@ test-results/
 
 # 本地配置文件
 *.local.json
+.claude/settings.local.json
 
 # 合并/手工暂存产生的备份（避免挡住 git pull）
 *.wip-local
