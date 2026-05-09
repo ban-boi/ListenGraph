@@ -12,10 +12,7 @@ import {
   Controls,
   type Node,
   type Edge,
-  type NodeProps,
   type ReactFlowInstance,
-  Handle,
-  Position,
   getViewportForBounds,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -25,20 +22,10 @@ import type {
   MergedGraph,
   GraphNode,
   GraphEdge,
-  EdgeType,
-  NodeType,
   ProviderConfig,
   ProviderRuntimeSummary,
 } from '@listen-graphic/schema';
 import { pickDefaultView, scoreViews } from '@listen-graphic/domain';
-import {
-  toCausalRendererGraph,
-  toTimelineRendererGraph,
-  toComparisonRendererGraph,
-  toHierarchyRendererGraph,
-  toFlowRendererGraph,
-  type RendererGraph,
-} from '@listen-graphic/graph-renderers';
 import {
   normalizeProviderConfig,
   redactProviderConfig,
@@ -50,1345 +37,94 @@ import type {
   ReplaySessionData,
   RuntimeSnapshot,
   SessionState,
-  StructurerRunDebug,
 } from '../shared/messages';
 import { BUILD_INFO } from '../shared/build-info';
+import type {
+  DebugExportMode,
+  TimelineEvent,
+  StatusCardData,
+  StableLayoutCache,
+  AutoTourSeed,
+  AutoTourBatch,
+  AutoTourStatus,
+  GraphNodeData,
+} from './types';
 import {
-  isTencentRealtimeStreamProgressMessage,
-  stripTencentRealtimeStreamLogs,
-  upsertTencentRealtimeStreamLog,
-} from './log-line-helpers';
-
-// ============ 初始空 Graph ============
-
-function createEmptyGraph(): MergedGraph {
-  return {
-    sessionId: '',
-    revision: 0,
-    topics: [],
-    nodes: [],
-    edges: [],
-    updatedAt: Date.now(),
-  };
-}
-
-// ============ Mock 数据模板 (用于开发测试) ============
-
-const MOCK_TRANSCRIPTS = [
-  '今天我们来聊聊 AI 创业的挑战。',
-  '大模型公司很难靠 API 获得稳定利润。',
-  '推理成本高，而且价格竞争非常激烈。',
-  '开源模型的追赶速度比预期快很多。',
-  '纯 API 模式可能是一条死路。',
-  '那什么样的 AI 公司才能真正赚钱呢？',
-  '关键是要做垂直场景的深度整合。',
-  '通用能力很难形成真正的壁垒。',
-];
-
-const NODE_TYPES: NodeType[] = [
-  'claim',
-  'reason',
-  'example',
-  'question',
-  'conclusion',
-];
-const EDGE_TYPES: EdgeType[] = [
-  'supports',
-  'opposes',
-  'causes',
-  'follows',
-  'example_of',
-];
-const SPEAKERS = ['主持人', '嘉宾A', '嘉宾B'];
-const ZHIPU_ENDPOINT_STANDARD = 'https://open.bigmodel.cn/api/paas/v4';
-const ZHIPU_ENDPOINT_CODING_PLAN = 'https://open.bigmodel.cn/api/coding/paas/v4';
-
-// ============ 工具函数 ============
-
-function formatTime(ms: number): string {
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes}:${String(seconds % 60).padStart(2, '0')}`;
-}
-
-function getTypeColor(type: string): string {
-  const colors: Record<string, string> = {
-    claim: '#3b82f6',
-    reason: '#10b981',
-    example: '#f59e0b',
-    question: '#8b5cf6',
-    conclusion: '#ef4444',
-  };
-  return colors[type] || '#6b7280';
-}
-
-function getTypeLabel(type: string): string {
-  const labels: Record<string, string> = {
-    claim: '观点',
-    reason: '论据',
-    example: '例子',
-    question: '问题',
-    conclusion: '结论',
-  };
-  return labels[type] || type;
-}
-
-type ReactFlowDebugNodeData = {
-  label: string;
-  nodeType: string;
-  speaker?: string;
-  timestampMs: number;
-  status: 'draft' | 'confirmed';
-  isActive: boolean;
-};
-
-type ReactFlowDebugNode = {
-  id: string;
-  type: 'graphNode';
-  position: { x: number; y: number };
-  data: ReactFlowDebugNodeData;
-};
-
-type ReactFlowDebugEdge = {
-  id: string;
-  source: string;
-  target: string;
-  label: string;
-  type: 'default';
-  sourceHandle: SourceHandleId;
-  targetHandle: TargetHandleId;
-  style: { stroke: string };
-  animated: boolean;
-};
-
-type DebugViewArtifact = {
-  rendererGraph: RendererGraph;
-  layoutDiagnostics: {
-    reusedPositions: number;
-    newPositions: number;
-    movedPositions: number;
-  };
-  reactFlow: {
-    nodes: ReactFlowDebugNode[];
-    edges: ReactFlowDebugEdge[];
-  };
-};
-
-type DebugExportMode = 'slim' | 'full';
-
-type StableNodePosition = {
-  x: number;
-  y: number;
-};
-
-type EdgeHandleId = 'top' | 'bottom' | 'left' | 'right';
-type SourceHandleId = `source-${EdgeHandleId}`;
-type TargetHandleId = `target-${EdgeHandleId}`;
-
-type StableViewLayoutState = {
-  positions: Record<string, StableNodePosition>;
-};
-
-type StableLayoutCache = Record<ViewType, StableViewLayoutState>;
-type ViewBounds = {
-  left: number;
-  top: number;
-  right: number;
-  bottom: number;
-};
-type AutoTourSeed = {
-  sessionId: string;
-  revision: number;
-  nodeIds: string[];
-  anchorNodeIds: string[];
-};
-type AutoTourBatch = {
-  nodeIds: string[];
-  anchorNodeIds: string[];
-  dwellMs: number;
-};
-type AutoTourStatus = 'idle' | 'touring' | 'paused';
-
-const STABLE_LAYOUT_CARD_WIDTH = 220;
-const STABLE_LAYOUT_CARD_HEIGHT = 132;
-const STABLE_LAYOUT_MAIN_X = 60;
-const STABLE_LAYOUT_COMPARISON_RIGHT_X = 360;
-const STABLE_LAYOUT_BRANCH_OFFSET_X = 280;
-const STABLE_LAYOUT_ROW_GAP = 168;
-const STABLE_LAYOUT_BRANCH_GAP = 148;
-const STABLE_LAYOUT_COLLISION_GAP = 24;
-const EDGE_AXIS_DOMINANCE_RATIO = 1.25;
-
-function createEmptyStableLayoutCache(): StableLayoutCache {
-  return {
-    timeline: { positions: {} },
-    causal: { positions: {} },
-    comparison: { positions: {} },
-    flow: { positions: {} },
-    hierarchy: { positions: {} },
-  };
-}
-
-function getRendererGraph(graph: MergedGraph, view: ViewType): RendererGraph {
-  switch (view) {
-    case 'timeline':
-      return toTimelineRendererGraph(graph);
-    case 'comparison':
-      return toComparisonRendererGraph(graph);
-    case 'hierarchy':
-      return toHierarchyRendererGraph(graph);
-    case 'flow':
-      return toFlowRendererGraph(graph);
-    default:
-      return toCausalRendererGraph(graph);
-  }
-}
-
-function getLaneX(
-  view: ViewType,
-  nodeType: ReactFlowDebugNodeData['nodeType'] | NodeType,
-  speaker?: string,
-) {
-  switch (view) {
-    case 'comparison':
-      return speaker === '嘉宾B'
-        ? STABLE_LAYOUT_COMPARISON_RIGHT_X
-        : STABLE_LAYOUT_MAIN_X;
-    case 'hierarchy':
-      return nodeType === 'claim' || nodeType === 'conclusion'
-        ? STABLE_LAYOUT_MAIN_X
-        : STABLE_LAYOUT_MAIN_X + STABLE_LAYOUT_BRANCH_OFFSET_X;
-    default:
-      return STABLE_LAYOUT_MAIN_X;
-  }
-}
-
-function isBranchNodeType(nodeType: NodeType) {
-  return nodeType === 'reason' || nodeType === 'example' || nodeType === 'question';
-}
-
-function getNodeRect(position: StableNodePosition) {
-  return {
-    left: position.x,
-    right: position.x + STABLE_LAYOUT_CARD_WIDTH,
-    top: position.y,
-    bottom: position.y + STABLE_LAYOUT_CARD_HEIGHT,
-  };
-}
-
-function hasCollision(position: StableNodePosition, occupied: StableNodePosition[]) {
-  const candidateRect = getNodeRect(position);
-  return occupied.some((existing) => {
-    const existingRect = getNodeRect(existing);
-    return !(
-      candidateRect.right + STABLE_LAYOUT_COLLISION_GAP <= existingRect.left ||
-      existingRect.right + STABLE_LAYOUT_COLLISION_GAP <= candidateRect.left ||
-      candidateRect.bottom + STABLE_LAYOUT_COLLISION_GAP <= existingRect.top ||
-      existingRect.bottom + STABLE_LAYOUT_COLLISION_GAP <= candidateRect.top
-    );
-  });
-}
-
-function findAvailablePosition(
-  basePosition: StableNodePosition,
-  occupied: StableNodePosition[],
-) {
-  let candidate = basePosition;
-  while (hasCollision(candidate, occupied)) {
-    candidate = {
-      x: candidate.x,
-      y: candidate.y + STABLE_LAYOUT_COLLISION_GAP,
-    };
-  }
-  return candidate;
-}
-
-function getMaxYForLane(
-  positions: Record<string, StableNodePosition>,
-  laneX?: number,
-) {
-  const relevantPositions = Object.values(positions).filter((position) =>
-    laneX === undefined ? true : position.x === laneX,
-  );
-  if (relevantPositions.length === 0) {
-    return -STABLE_LAYOUT_ROW_GAP;
-  }
-  return Math.max(...relevantPositions.map((position) => position.y));
-}
-
-function pickAnchorNodeId(params: {
-  nodeId: string;
-  timestampMs: number;
-  edges: RendererGraph['edges'];
-  nodeMap: Map<string, RendererGraph['nodes'][number]>;
-  positions: Record<string, StableNodePosition>;
-}) {
-  const neighborIds = new Set<string>();
-  for (const edge of params.edges) {
-    if (edge.source === params.nodeId && params.positions[edge.target]) {
-      neighborIds.add(edge.target);
-    }
-    if (edge.target === params.nodeId && params.positions[edge.source]) {
-      neighborIds.add(edge.source);
-    }
-  }
-
-  const candidates = Array.from(neighborIds)
-    .map((id) => params.nodeMap.get(id))
-    .filter((node): node is RendererGraph['nodes'][number] => Boolean(node));
-
-  candidates.sort((a, b) => {
-    const typeScoreA =
-      a.type === 'claim' || a.type === 'conclusion' ? 0 : isBranchNodeType(a.type) ? 1 : 2;
-    const typeScoreB =
-      b.type === 'claim' || b.type === 'conclusion' ? 0 : isBranchNodeType(b.type) ? 1 : 2;
-    if (typeScoreA !== typeScoreB) return typeScoreA - typeScoreB;
-    return Math.abs(a.timestampMs - params.timestampMs) - Math.abs(b.timestampMs - params.timestampMs);
-  });
-
-  return candidates[0]?.id;
-}
-
-function getRectCenter(rect: ReturnType<typeof getNodeRect>) {
-  return {
-    x: (rect.left + rect.right) / 2,
-    y: (rect.top + rect.bottom) / 2,
-  };
-}
-
-export function resolveEdgeHandles(
-  sourcePosition: StableNodePosition,
-  targetPosition: StableNodePosition,
-): {
-  sourceHandle: SourceHandleId;
-  targetHandle: TargetHandleId;
-} {
-  const sourceRect = getNodeRect(sourcePosition);
-  const targetRect = getNodeRect(targetPosition);
-  const sourceCenter = getRectCenter(sourceRect);
-  const targetCenter = getRectCenter(targetRect);
-  const deltaX = targetCenter.x - sourceCenter.x;
-  const deltaY = targetCenter.y - sourceCenter.y;
-  const absDeltaX = Math.abs(deltaX);
-  const absDeltaY = Math.abs(deltaY);
-
-  if (absDeltaY >= absDeltaX * EDGE_AXIS_DOMINANCE_RATIO) {
-    return deltaY >= 0
-      ? { sourceHandle: 'source-bottom', targetHandle: 'target-top' }
-      : { sourceHandle: 'source-top', targetHandle: 'target-bottom' };
-  }
-
-  if (absDeltaX >= absDeltaY * EDGE_AXIS_DOMINANCE_RATIO) {
-    return deltaX >= 0
-      ? { sourceHandle: 'source-right', targetHandle: 'target-left' }
-      : { sourceHandle: 'source-left', targetHandle: 'target-right' };
-  }
-
-  return { sourceHandle: 'source-bottom', targetHandle: 'target-top' };
-}
-
-function buildStableReactFlowDebugGraph(params: {
-  rendererGraph: RendererGraph;
-  view: ViewType;
-  currentTimeMs: number;
-  selectedNodeId: string | null;
-  previousLayoutState: StableViewLayoutState;
-}) {
-  const validNodeIds = new Set(params.rendererGraph.nodes.map((node) => node.id));
-  const positions: Record<string, StableNodePosition> = {};
-  const occupied: StableNodePosition[] = [];
-  const nodeMap = new Map(params.rendererGraph.nodes.map((node) => [node.id, node]));
-  const branchCountByAnchor = new Map<string, number>();
-  let reusedPositions = 0;
-  let newPositions = 0;
-  let movedPositions = 0;
-
-  for (const node of params.rendererGraph.nodes) {
-    const existingPosition = params.previousLayoutState.positions[node.id];
-    if (!existingPosition) {
-      continue;
-    }
-    positions[node.id] = existingPosition;
-    occupied.push(existingPosition);
-    reusedPositions += 1;
-  }
-
-  for (const node of params.rendererGraph.nodes) {
-    if (positions[node.id]) {
-      continue;
-    }
-
-    const anchorId = pickAnchorNodeId({
-      nodeId: node.id,
-      timestampMs: node.timestampMs,
-      edges: params.rendererGraph.edges,
-      nodeMap,
-      positions,
-    });
-
-    let basePosition: StableNodePosition;
-    if (anchorId && isBranchNodeType(node.type)) {
-      const anchorPosition = positions[anchorId];
-      const branchCount = branchCountByAnchor.get(anchorId) ?? 0;
-      basePosition = {
-        x: getLaneX(params.view, node.type, node.speaker) === anchorPosition.x
-          ? anchorPosition.x + STABLE_LAYOUT_BRANCH_OFFSET_X
-          : getLaneX(params.view, node.type, node.speaker),
-        y: anchorPosition.y + STABLE_LAYOUT_BRANCH_GAP * (branchCount + 1),
-      };
-      branchCountByAnchor.set(anchorId, branchCount + 1);
-    } else {
-      const laneX = getLaneX(params.view, node.type, node.speaker);
-      basePosition = {
-        x: laneX,
-        y: getMaxYForLane(positions, params.view === 'comparison' ? laneX : undefined) +
-          STABLE_LAYOUT_ROW_GAP,
-      };
-    }
-
-    const nextPosition = findAvailablePosition(basePosition, occupied);
-    const previousPosition = params.previousLayoutState.positions[node.id];
-    if (previousPosition) {
-      if (previousPosition.x !== nextPosition.x || previousPosition.y !== nextPosition.y) {
-        movedPositions += 1;
-      } else {
-        reusedPositions += 1;
-      }
-    } else {
-      newPositions += 1;
-    }
-    positions[node.id] = nextPosition;
-    occupied.push(nextPosition);
-  }
-
-  const nodes: ReactFlowDebugNode[] = params.rendererGraph.nodes
-    .filter((node) => validNodeIds.has(node.id))
-    .map((node) => ({
-      id: node.id,
-      type: 'graphNode',
-      position: positions[node.id],
-      data: {
-        label: node.label,
-        nodeType: node.type,
-        speaker: node.speaker,
-        timestampMs: node.timestampMs,
-        status: node.status,
-        isActive:
-          Math.abs(node.timestampMs - params.currentTimeMs) < 30000 ||
-          node.id === params.selectedNodeId,
-      },
-    }));
-
-  const edges: ReactFlowDebugEdge[] = params.rendererGraph.edges
-    .filter((edge) => positions[edge.source] && positions[edge.target])
-    .map((edge) => {
-      const handles = resolveEdgeHandles(positions[edge.source], positions[edge.target]);
-      return {
-        id: edge.id,
-        source: edge.source,
-        target: edge.target,
-        type: 'default',
-        sourceHandle: handles.sourceHandle,
-        targetHandle: handles.targetHandle,
-        label: edge.relation,
-        style: {
-          stroke:
-            edge.relation === 'supports'
-              ? '#10b981'
-              : edge.relation === 'opposes'
-                ? '#ef4444'
-                : edge.relation === 'causes'
-                  ? '#f59e0b'
-                  : '#6b7280',
-        },
-        animated: edge.relation === 'causes',
-      };
-    });
-
-  return {
-    layoutDiagnostics: {
-      reusedPositions,
-      newPositions,
-      movedPositions,
-    },
-    reactFlow: { nodes, edges },
-    layoutState: {
-      positions: Object.fromEntries(
-        Object.entries(positions).filter(([nodeId]) => validNodeIds.has(nodeId)),
-      ),
-    },
-  }
-}
-
-function buildReactFlowDebugGraph(params: {
-  rendererGraphs: Record<ViewType, RendererGraph>;
-  currentTimeMs: number;
-  selectedNodeId: string | null;
-  previousLayoutCache: StableLayoutCache;
-}) {
-  const artifacts = {} as Record<ViewType, DebugViewArtifact>;
-  const nextLayoutCache = createEmptyStableLayoutCache();
-
-  for (const view of VIEW_TYPES) {
-    const rendererGraph = params.rendererGraphs[view];
-    const result = buildStableReactFlowDebugGraph({
-      rendererGraph,
-      view,
-      currentTimeMs: params.currentTimeMs,
-      selectedNodeId: params.selectedNodeId,
-      previousLayoutState: params.previousLayoutCache[view],
-    });
-    artifacts[view] = {
-      rendererGraph,
-      layoutDiagnostics: result.layoutDiagnostics,
-      reactFlow: result.reactFlow,
-    };
-    nextLayoutCache[view] = result.layoutState;
-  }
-
-  return {
-    artifacts,
-    nextLayoutCache,
-  };
-}
-
-function buildDebugViewArtifacts(params: {
-  graph: MergedGraph;
-  currentTimeMs: number;
-  selectedNodeId: string | null;
-  previousLayoutCache: StableLayoutCache;
-}) {
-  const rendererGraphs = VIEW_TYPES.reduce(
-    (acc, view) => {
-      acc[view] = getRendererGraph(params.graph, view);
-      return acc;
-    },
-    {} as Record<ViewType, RendererGraph>,
-  );
-
-  return buildReactFlowDebugGraph({
-    rendererGraphs,
-    currentTimeMs: params.currentTimeMs,
-    selectedNodeId: params.selectedNodeId,
-    previousLayoutCache: params.previousLayoutCache,
-  });
-}
-
-function summarizeTranscriptUnit(
-  transcript: DebugSessionData['transcripts'][number],
-  mode: DebugExportMode,
-) {
-  if (mode === 'full') {
-    return transcript;
-  }
-
-  return {
-    chunkId: transcript.chunkId,
-    sessionId: transcript.sessionId,
-    text: transcript.text,
-    startMs: transcript.startMs,
-    endMs: transcript.endMs,
-    provider: transcript.provider,
-    confidence: transcript.confidence,
-    speakerHints: transcript.speakerHints,
-    tokenCount: transcript.tokens?.length ?? 0,
-    hasRaw: transcript.raw !== undefined,
-  };
-}
-
-function summarizeSegment(
-  segment: DebugSessionData['segments'][number],
-  mode: DebugExportMode,
-) {
-  if (mode === 'full') {
-    return segment;
-  }
-
-  return {
-    segmentId: segment.segmentId,
-    sessionId: segment.sessionId,
-    startMs: segment.startMs,
-    endMs: segment.endMs,
-    topic: segment.topic,
-    provider: segment.provider,
-    nodes: segment.nodes,
-    edges: segment.edges,
-    structurerDebug: readStructurerRunDebug(segment),
-    hasRaw: segment.raw !== undefined,
-  };
-}
-
-function summarizeStructurerRun(
-  run: StructurerRunDebug,
-  _mode: DebugExportMode,
-) {
-  return run;
-}
-
-function summarizeDebugData(
-  debugData: DebugSessionData | null,
-  mode: DebugExportMode,
-) {
-  if (!debugData) {
-    return null;
-  }
-
-  if (mode === 'full') {
-    return debugData;
-  }
-
-  return {
-    ...debugData,
-    transcripts: debugData.transcripts.map((transcript) =>
-      summarizeTranscriptUnit(transcript, mode),
-    ),
-    segments: debugData.segments.map((segment) =>
-      summarizeSegment(segment, mode),
-    ),
-    traces: debugData.traces.map((trace) => ({
-      sequence: trace.sequence,
-      transcript: summarizeTranscriptUnit(trace.transcript, mode),
-      transcriptWindow: trace.transcriptWindow.map((transcript) =>
-        summarizeTranscriptUnit(transcript, mode),
-      ),
-      segment: trace.segment ? summarizeSegment(trace.segment, mode) : null,
-      structurerRun: trace.structurerRun
-        ? summarizeStructurerRun(trace.structurerRun, mode)
-        : null,
-      mergedGraphAfter: trace.mergedGraphAfter,
-    })),
-    structurerRuns: (debugData.structurerRuns ?? []).map((run) =>
-      summarizeStructurerRun(run, mode),
-    ),
-  };
-}
-
-function buildDebugExportPayload(params: {
-  mode: DebugExportMode;
-  sessionId: string | null;
-  sessionState: SessionState;
-  currentView: ViewType;
-  workerBuildLabel: string;
-  providerSummary: ProviderRuntimeSummary;
-  logs: string[];
-  debugData: DebugSessionData | null;
-  derivedViews: Record<ViewType, DebugViewArtifact>;
-}) {
-  return {
-    exportedAt: new Date().toISOString(),
-    exportMode: params.mode,
-    sessionId: params.sessionId,
-    sessionState: params.sessionState,
-    currentView: params.currentView,
-    uiBuild: BUILD_INFO,
-    workerBuildLabel: params.workerBuildLabel,
-    providerSummary: params.providerSummary,
-    logCount: params.logs.length,
-    logs: params.mode === 'full' ? params.logs : params.logs.slice(0, 20),
-    debugData: summarizeDebugData(params.debugData, params.mode),
-    derivedViews: params.derivedViews,
-  };
-}
-
-function readStructurerRunDebug(segment: DebugSessionData['segments'][number]) {
-  if (!segment.raw || typeof segment.raw !== 'object') {
-    return null;
-  }
-
-  const debug = (segment.raw as { debug?: Partial<StructurerRunDebug> }).debug;
-  if (!debug) {
-    return null;
-  }
-
-  return {
-    ...debug,
-    latestTranscriptId: debug.latestTranscriptId ?? debug.latestChunkId ?? '',
-    latestChunkId: debug.latestChunkId ?? debug.latestTranscriptId ?? '',
-    windowTranscriptCount: debug.windowTranscriptCount ?? debug.windowChunkCount ?? 0,
-    windowChunkCount: debug.windowChunkCount ?? debug.windowTranscriptCount ?? 0,
-    latestTranscriptCharCount:
-      debug.latestTranscriptCharCount ?? debug.latestChunkCharCount ?? 0,
-    latestChunkCharCount:
-      debug.latestChunkCharCount ?? debug.latestTranscriptCharCount ?? 0,
-  } as StructurerRunDebug;
-}
-
-function downloadTextFile(filename: string, content: string, mimeType: string) {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  try {
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    anchor.click();
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
-
-function formatGraphDeltaLog(previousGraph: MergedGraph | null, nextGraph: MergedGraph) {
-  const previousNodeIds = new Set(previousGraph?.nodes.map((node) => node.id) ?? []);
-  const previousEdgeIds = new Set(previousGraph?.edges.map((edge) => edge.id) ?? []);
-  const addedNodeCount = nextGraph.nodes.filter((node) => !previousNodeIds.has(node.id)).length;
-  const addedEdgeCount = nextGraph.edges.filter((edge) => !previousEdgeIds.has(edge.id)).length;
-
-  if (addedNodeCount === 0 && addedEdgeCount === 0) {
-    return `图更新: 无新增节点/连线 | 当前 ${nextGraph.nodes.length} 节点, ${nextGraph.edges.length} 边`;
-  }
-
-  if (addedNodeCount === 0) {
-    return `图更新: 仅新增连线 +${addedEdgeCount} | 当前 ${nextGraph.nodes.length} 节点, ${nextGraph.edges.length} 边`;
-  }
-
-  if (addedEdgeCount === 0) {
-    return `图更新: 新增节点 +${addedNodeCount} | 当前 ${nextGraph.nodes.length} 节点, ${nextGraph.edges.length} 边`;
-  }
-
-  return `图更新: +${addedNodeCount} 节点, +${addedEdgeCount} 连线 | 当前 ${nextGraph.nodes.length} 节点, ${nextGraph.edges.length} 边`;
-}
-
-function renderSecretHint(params: {
-  configured: boolean;
-  label: string;
-}) {
-  if (!params.configured) {
-    return (
-      <div style={{ fontSize: 10, color: '#64748b' }}>
-        未保存 {params.label}
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ fontSize: 10, color: '#0369a1' }}>
-      已保存 {params.label}，留空则保持不变
-    </div>
-  );
-}
-
-function getStageCredentialState(
-  summary: ProviderRuntimeSummary,
-  stageKey: keyof ProviderConfig,
-) {
-  const entry = summary[stageKey];
-  const isTencentAsr = stageKey === 'asr' && entry.type === 'tencent';
-  const isExternalAsr = stageKey === 'asr' && entry.type === 'external';
-
-  return {
-    apiKeyConfigured: entry.apiKeyConfigured,
-    sessionTokenConfigured: entry.sessionTokenConfigured,
-    secretConfigured: isTencentAsr ? Boolean(entry.secretConfigured) : false,
-    bridgeAuthTokenConfigured: isExternalAsr ? Boolean(entry.bridgeAuthTokenConfigured) : false,
-  };
-}
-
-function pinProviderConfigToDirectMode(config: ProviderConfig): ProviderConfig {
-  return {
-    asr: {
-      ...config.asr,
-      mode: 'direct',
-      sessionToken: undefined,
-    },
-    structurer: {
-      ...config.structurer,
-      mode: 'direct',
-      sessionToken: undefined,
-    },
-  };
-}
-
-function createExtensionDefaultProviderConfigForUi(): ProviderConfig {
-  return normalizeProviderConfig({
-    asr: {
-      type: 'tencent',
-      mode: 'direct',
-      transport: 'ws',
-      model: '16k_zh',
-      needVad: true,
-      language: 'zh',
-    },
-    structurer: {
-      type: 'aliyun',
-      mode: 'direct',
-      language: 'zh',
-    },
-  });
-}
-
-function getProviderTypeSelectValue(
-  stage: keyof ProviderConfig,
-  entry: ProviderConfig[keyof ProviderConfig],
-) {
-  if (
-    stage === 'structurer' &&
-    entry.type === 'zhipu' &&
-    entry.endpoint === ZHIPU_ENDPOINT_CODING_PLAN
-  ) {
-    return 'zhipu-coding-plan';
-  }
-
-  return entry.type;
-}
-
-function resetProviderEntryForTypeChange(
-  stage: keyof ProviderConfig,
-  nextType: ProviderConfig[keyof ProviderConfig]['type'],
-  config: ProviderConfig,
-): ProviderConfig {
-  const nextConfig: ProviderConfig = {
-    ...config,
-    [stage]: {
-      ...config[stage],
-      type: nextType as never,
-      endpoint: undefined,
-      apiKey: undefined,
-      sessionToken: undefined,
-      model: undefined,
-      region: undefined,
-      transport: undefined,
-      bridgeProtocol: undefined,
-      bridgeAuthToken: undefined,
-      appId: undefined,
-      needVad: undefined,
-      vadSilenceTimeMs: undefined,
-      maxSpeakTimeMs: undefined,
-      hotwordId: undefined,
-      hotwordList: undefined,
-      wordInfo: undefined,
-      secretId: undefined,
-      secretKey: undefined,
-    },
-  };
-
-  return pinProviderConfigToDirectMode(normalizeProviderConfig(nextConfig));
-}
-
-// ============ 自定义节点组件 ============
-
-interface GraphNodeData {
-  label: string;
-  nodeType: string;
-  speaker?: string;
-  timestampMs: number;
-  status: 'draft' | 'confirmed';
-  isActive: boolean;
-  onClickTime: (ms: number) => void;
-}
-
-function GraphNodeCard({ data }: NodeProps<GraphNodeData>) {
-  const {
-    label,
-    nodeType,
-    speaker,
-    timestampMs,
-    status,
-    isActive,
-    onClickTime,
-  } = data;
-  const color = getTypeColor(nodeType);
-
-  return (
-    <div
-      style={{
-        padding: '10px 12px',
-        borderRadius: 6,
-        border: `2px solid ${isActive ? '#f59e0b' : color}`,
-        backgroundColor: isActive ? '#fffbeb' : '#ffffff',
-        boxShadow: isActive
-          ? '0 0 8px rgba(245, 158, 11, 0.4)'
-          : '0 1px 4px rgba(0,0,0,0.1)',
-        minWidth: 140,
-        maxWidth: 200,
-        opacity: status === 'draft' ? 0.6 : 1,
-        transition: 'all 0.2s ease',
-      }}
-    >
-      <Handle
-        key="target-top"
-        type="target"
-        position={Position.Top}
-        id="target-top"
-        data-testid="graph-handle-target-top"
-        isConnectable={false}
-        style={{ width: 6, height: 6 }}
-      />
-      <Handle
-        key="source-top"
-        type="source"
-        position={Position.Top}
-        id="source-top"
-        data-testid="graph-handle-source-top"
-        isConnectable={false}
-        style={{ width: 6, height: 6, opacity: 0, pointerEvents: 'none' }}
-      />
-      <Handle
-        key="target-left"
-        type="target"
-        position={Position.Left}
-        id="target-left"
-        data-testid="graph-handle-target-left"
-        isConnectable={false}
-        style={{ width: 6, height: 6 }}
-      />
-      <Handle
-        key="source-left"
-        type="source"
-        position={Position.Left}
-        id="source-left"
-        data-testid="graph-handle-source-left"
-        isConnectable={false}
-        style={{ width: 6, height: 6, opacity: 0, pointerEvents: 'none' }}
-      />
-
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          marginBottom: 4,
-        }}
-      >
-        <span
-          style={{
-            fontSize: 9,
-            padding: '1px 4px',
-            borderRadius: 3,
-            backgroundColor: color,
-            color: 'white',
-            fontWeight: 600,
-          }}
-        >
-          {getTypeLabel(nodeType)}
-        </span>
-        {status === 'draft' && (
-          <span style={{ fontSize: 9, color: '#9ca3af' }}>草稿</span>
-        )}
-      </div>
-
-      <div style={{ fontSize: 12, lineHeight: 1.3, marginBottom: 6 }}>
-        {label}
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontSize: 10,
-          color: '#6b7280',
-        }}
-      >
-        {speaker && <span>{speaker}</span>}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onClickTime(timestampMs);
-          }}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#3b82f6',
-            cursor: 'pointer',
-            fontFamily: 'monospace',
-            padding: 0,
-            fontSize: 10,
-          }}
-        >
-          {formatTime(timestampMs)}
-        </button>
-      </div>
-
-      <Handle
-        key="target-bottom"
-        type="target"
-        position={Position.Bottom}
-        id="target-bottom"
-        data-testid="graph-handle-target-bottom"
-        isConnectable={false}
-        style={{ width: 6, height: 6, opacity: 0, pointerEvents: 'none' }}
-      />
-      <Handle
-        key="source-bottom"
-        type="source"
-        position={Position.Bottom}
-        id="source-bottom"
-        data-testid="graph-handle-source-bottom"
-        isConnectable={false}
-        style={{ width: 6, height: 6 }}
-      />
-      <Handle
-        key="target-right"
-        type="target"
-        position={Position.Right}
-        id="target-right"
-        data-testid="graph-handle-target-right"
-        isConnectable={false}
-        style={{ width: 6, height: 6, opacity: 0, pointerEvents: 'none' }}
-      />
-      <Handle
-        key="source-right"
-        type="source"
-        position={Position.Right}
-        id="source-right"
-        data-testid="graph-handle-source-right"
-        isConnectable={false}
-        style={{ width: 6, height: 6 }}
-      />
-    </div>
-  );
-}
+  clampLogPanelHeight,
+  formatErrorStageLabel,
+  formatRelativeAge,
+  createTimelineEvent,
+  upsertTimelineEvent,
+  stripTimelineTransientEvents,
+  finalizeTransientEvent,
+  classifyProgressTone,
+  bridgeHealthToTone,
+  getStatusCardStyles,
+  timelineEventsToExportLines,
+  formatTime,
+} from './timeline-utils';
+import {
+  createEmptyStableLayoutCache,
+  buildDebugViewArtifacts,
+} from './graph-utils';
+import {
+  createEmptyGraph,
+  MOCK_TRANSCRIPTS,
+  NODE_TYPES,
+  EDGE_TYPES,
+  SPEAKERS,
+  ZHIPU_ENDPOINT_CODING_PLAN,
+  VIEW_TYPES,
+  VIEW_LABELS,
+  isDevMode,
+  DEFAULT_LOG_PANEL_HEIGHT,
+  MIN_LOG_PANEL_HEIGHT,
+  MAX_LOG_PANEL_HEIGHT,
+  MAX_TIMELINE_EVENTS,
+  STRUCTURER_DELAYED_MS,
+  GRAPH_JUST_UPDATED_MS,
+  AUTO_REVEAL_PADDING,
+  AUTO_REVEAL_DURATION_MS,
+  USER_VIEWPORT_COOLDOWN_MS,
+  AUTO_TOUR_RESUME_DELAY_MS,
+} from './constants';
+import {
+  getAddedNodeIds,
+  getAutoRevealAnchorNodeIds,
+  getNodeBounds,
+  mergeViewBounds,
+  expandViewBounds,
+  ensureMinimumBoundsSize,
+  getAutoRevealMinimumBoundsSize,
+  isViewportCloseToTarget,
+  estimateAutoTourDwellMs,
+  buildAutoTourBatches,
+} from './auto-tour-utils';
+import {
+  pinProviderConfigToDirectMode,
+  createExtensionDefaultProviderConfigForUi,
+  resetProviderEntryForTypeChange,
+} from './provider-helpers';
+import {
+  summarizeTranscriptUnit,
+  summarizeSegment,
+  summarizeStructurerRun,
+  summarizeDebugData,
+  buildDebugExportPayload,
+  readStructurerRunDebug,
+  downloadTextFile,
+  formatGraphDeltaLog,
+} from './debug-export-utils';
+import { GraphNodeCard } from './GraphNodeCard';
+import { StatusCards } from './StatusCards';
+import { LogPanel } from './LogPanel';
+import { DebugPanel } from './DebugPanel';
+import { ReplayPanel } from './ReplayPanel';
+import { SettingsPanel } from './SettingsPanel';
 
 const nodeTypes = { graphNode: GraphNodeCard };
 
-// ============ 视图选择器 ============
-
-const VIEW_TYPES: ViewType[] = [
-  'causal',
-  'timeline',
-  'comparison',
-  'flow',
-  'hierarchy',
-];
-const VIEW_LABELS: Record<ViewType, string> = {
-  causal: '因果',
-  timeline: '时间线',
-  comparison: '对比',
-  hierarchy: '层级',
-  flow: '流程',
-};
-
 // ============ 主组件 ============
-
-// 是否为开发模式（模拟数据，不依赖 service worker）
-const isDevMode = false;
-const DEFAULT_LOG_PANEL_HEIGHT = 120;
-const MIN_LOG_PANEL_HEIGHT = 80;
-const MAX_LOG_PANEL_HEIGHT = 360;
-const AUTO_REVEAL_PADDING = 48;
-const AUTO_REVEAL_DURATION_MS = 320;
-const AUTO_REVEAL_MIN_WIDTH_RATIO = 0.78;
-const AUTO_REVEAL_MIN_HEIGHT_RATIO = 0.68;
-const AUTO_REVEAL_VIEWPORT_EPSILON = 6;
-const AUTO_REVEAL_ZOOM_EPSILON = 0.02;
-const USER_VIEWPORT_COOLDOWN_MS = 1800;
-const AUTO_TOUR_RESUME_DELAY_MS = 3000;
-const AUTO_TOUR_ABSOLUTE_READABLE_ZOOM = 0.75;
-const AUTO_TOUR_FIRST_BATCH_RELATIVE_RATIO = 0.8;
-const AUTO_TOUR_RELATIVE_READABLE_RATIO = 0.85;
-const AUTO_TOUR_BASE_DWELL_MS = 900;
-const AUTO_TOUR_CHAR_DWELL_MS = 40;
-const AUTO_TOUR_NODE_DWELL_MS = 220;
-const AUTO_TOUR_EDGE_DWELL_MS = 90;
-const AUTO_TOUR_MIN_DWELL_MS = 1800;
-const AUTO_TOUR_MAX_DWELL_MS = 5000;
-
-function clampLogPanelHeight(nextHeight: number) {
-  const viewportMax = typeof window === 'undefined'
-    ? MAX_LOG_PANEL_HEIGHT
-    : Math.min(MAX_LOG_PANEL_HEIGHT, Math.floor(window.innerHeight * 0.6));
-  return Math.min(Math.max(nextHeight, MIN_LOG_PANEL_HEIGHT), viewportMax);
-}
-
-function formatErrorStageLabel(stage: 'asr' | 'structurer') {
-  return stage === 'asr' ? 'ASR' : 'Structurer';
-}
-
-function getAddedNodeIds(previousGraph: MergedGraph | null, nextGraph: MergedGraph) {
-  const previousNodeIds = new Set(previousGraph?.nodes.map((node) => node.id) ?? []);
-  return nextGraph.nodes
-    .filter((node) => !previousNodeIds.has(node.id))
-    .map((node) => node.id);
-}
-
-function getAutoRevealAnchorNodeIds(params: {
-  addedNodeIds: string[];
-  previousGraph: MergedGraph | null;
-  nextGraph: MergedGraph;
-}) {
-  if (!params.addedNodeIds.length) {
-    return [];
-  }
-
-  const previousNodeIds = new Set(params.previousGraph?.nodes.map((node) => node.id) ?? []);
-  const addedNodeSet = new Set(params.addedNodeIds);
-  const anchorIds = new Set<string>();
-
-  for (const edge of params.nextGraph.edges) {
-    const sourceIsAdded = addedNodeSet.has(edge.source);
-    const targetIsAdded = addedNodeSet.has(edge.target);
-    if (sourceIsAdded && previousNodeIds.has(edge.target)) {
-      anchorIds.add(edge.target);
-    }
-    if (targetIsAdded && previousNodeIds.has(edge.source)) {
-      anchorIds.add(edge.source);
-    }
-  }
-
-  return Array.from(anchorIds);
-}
-
-function getNodeBounds(node: { position: { x: number; y: number } }): ViewBounds {
-  return {
-    left: node.position.x,
-    top: node.position.y,
-    right: node.position.x + STABLE_LAYOUT_CARD_WIDTH,
-    bottom: node.position.y + STABLE_LAYOUT_CARD_HEIGHT,
-  };
-}
-
-function mergeViewBounds(bounds: ViewBounds[]) {
-  return bounds.reduce<ViewBounds | null>((acc, next) => {
-    if (!acc) {
-      return { ...next };
-    }
-    return {
-      left: Math.min(acc.left, next.left),
-      top: Math.min(acc.top, next.top),
-      right: Math.max(acc.right, next.right),
-      bottom: Math.max(acc.bottom, next.bottom),
-    };
-  }, null);
-}
-
-function expandViewBounds(bounds: ViewBounds, padding: number) {
-  return {
-    left: bounds.left - padding,
-    top: bounds.top - padding,
-    right: bounds.right + padding,
-    bottom: bounds.bottom + padding,
-  };
-}
-
-function ensureMinimumBoundsSize(params: {
-  bounds: ViewBounds;
-  minimumWidth: number;
-  minimumHeight: number;
-}) {
-  const width = params.bounds.right - params.bounds.left;
-  const height = params.bounds.bottom - params.bounds.top;
-  const centerX = (params.bounds.left + params.bounds.right) / 2;
-  const centerY = (params.bounds.top + params.bounds.bottom) / 2;
-  const nextWidth = Math.max(width, params.minimumWidth);
-  const nextHeight = Math.max(height, params.minimumHeight);
-
-  return {
-    left: centerX - nextWidth / 2,
-    right: centerX + nextWidth / 2,
-    top: centerY - nextHeight / 2,
-    bottom: centerY + nextHeight / 2,
-  };
-}
-
-function isViewportCloseToTarget(params: {
-  current: { x: number; y: number; zoom: number };
-  target: { x: number; y: number; zoom: number };
-}) {
-  return (
-    Math.abs(params.current.x - params.target.x) <= AUTO_REVEAL_VIEWPORT_EPSILON &&
-    Math.abs(params.current.y - params.target.y) <= AUTO_REVEAL_VIEWPORT_EPSILON &&
-    Math.abs(params.current.zoom - params.target.zoom) <= AUTO_REVEAL_ZOOM_EPSILON
-  );
-}
-
-function estimateAutoTourDwellMs(params: {
-  nodeCount: number;
-  edgeCount: number;
-  charCount: number;
-}) {
-  const estimated =
-    AUTO_TOUR_BASE_DWELL_MS +
-    params.charCount * AUTO_TOUR_CHAR_DWELL_MS +
-    params.nodeCount * AUTO_TOUR_NODE_DWELL_MS +
-    params.edgeCount * AUTO_TOUR_EDGE_DWELL_MS;
-  return Math.min(Math.max(estimated, AUTO_TOUR_MIN_DWELL_MS), AUTO_TOUR_MAX_DWELL_MS);
-}
-
-function buildAutoTourBatches(params: {
-  seed: AutoTourSeed;
-  flowNodes: Node[];
-  flowEdges: Edge[];
-  containerWidth: number;
-  containerHeight: number;
-  currentZoom: number;
-}) {
-  const nodeMap = new Map(params.flowNodes.map((node) => [node.id, node]));
-  const addedNodes = params.seed.nodeIds
-    .map((id) => nodeMap.get(id))
-    .filter((node): node is Node => Boolean(node));
-  if (addedNodes.length === 0) {
-    return [];
-  }
-
-  const anchorNodes = params.seed.anchorNodeIds
-    .map((id) => nodeMap.get(id))
-    .filter((node): node is Node => Boolean(node));
-  const anchorBounds = anchorNodes.map(getNodeBounds);
-
-  const addedNodeIdSet = new Set(params.seed.nodeIds);
-  const adjacency = new Map<string, Set<string>>();
-  for (const nodeId of [...params.seed.nodeIds, ...params.seed.anchorNodeIds]) {
-    adjacency.set(nodeId, new Set());
-  }
-  for (const edge of params.flowEdges) {
-    if (
-      !(adjacency.has(edge.source) && adjacency.has(edge.target))
-    ) {
-      continue;
-    }
-    adjacency.get(edge.source)?.add(edge.target);
-    adjacency.get(edge.target)?.add(edge.source);
-  }
-
-  const depthByNodeId = new Map<string, number>();
-  if (params.seed.anchorNodeIds.length > 0) {
-    const queue = params.seed.anchorNodeIds.map((nodeId) => ({ nodeId, depth: 0 }));
-    const visited = new Set(params.seed.anchorNodeIds);
-    while (queue.length > 0) {
-      const { nodeId, depth } = queue.shift()!;
-      for (const nextId of adjacency.get(nodeId) ?? []) {
-        if (visited.has(nextId)) {
-          continue;
-        }
-        visited.add(nextId);
-        if (addedNodeIdSet.has(nextId)) {
-          depthByNodeId.set(nextId, depth + 1);
-        }
-        queue.push({ nodeId: nextId, depth: depth + 1 });
-      }
-    }
-  }
-
-  const clusters = params.seed.nodeIds
-    .map((nodeId) => {
-      const node = nodeMap.get(nodeId);
-      return node
-        ? {
-            nodeIds: [nodeId],
-            node,
-            depth: depthByNodeId.get(nodeId) ?? Number.MAX_SAFE_INTEGER,
-          }
-        : null;
-    })
-    .filter((item): item is NonNullable<typeof item> => Boolean(item))
-    .sort((a, b) => {
-      if (a.depth !== b.depth) {
-        return a.depth - b.depth;
-      }
-      if (a.node.position.y !== b.node.position.y) {
-        return a.node.position.y - b.node.position.y;
-      }
-      return a.node.position.x - b.node.position.x;
-    })
-    .map(({ nodeIds }) => {
-      const groupNodes = nodeIds
-        .map((id) => nodeMap.get(id))
-        .filter((node): node is Node => Boolean(node));
-      const groupBounds = mergeViewBounds(groupNodes.map(getNodeBounds));
-      if (!groupBounds) {
-        return null;
-      }
-      const groupNodeIdSet = new Set(nodeIds);
-      const edgeCount = params.flowEdges.filter(
-        (edge) => groupNodeIdSet.has(edge.source) && groupNodeIdSet.has(edge.target),
-      ).length;
-      const charCount = groupNodes.reduce(
-        (sum, node) => sum + String(node.data?.label ?? '').length,
-        0,
-      );
-      return {
-        nodeIds,
-        bounds: groupBounds,
-        edgeCount,
-        charCount,
-      };
-    })
-    .filter((cluster): cluster is NonNullable<typeof cluster> => Boolean(cluster));
-
-  const batches: AutoTourBatch[] = [];
-  let currentBatch: typeof clusters = [];
-  let effectiveCurrentZoom = params.currentZoom > 0 ? params.currentZoom : 1;
-
-  const getBatchViewport = (clustersToTest: typeof clusters, includeAnchors: boolean) => {
-    const bounds = mergeViewBounds([
-      ...clustersToTest.map((cluster) => cluster.bounds),
-      ...(includeAnchors ? anchorBounds : []),
-    ]);
-    if (!bounds) {
-      return null;
-    }
-    return getViewportForBounds(
-      {
-        x: bounds.left - AUTO_REVEAL_PADDING,
-        y: bounds.top - AUTO_REVEAL_PADDING,
-        width: bounds.right - bounds.left + AUTO_REVEAL_PADDING * 2,
-        height: bounds.bottom - bounds.top + AUTO_REVEAL_PADDING * 2,
-      },
-      params.containerWidth,
-      params.containerHeight,
-      0.3,
-      2,
-      0,
-    );
-  };
-
-  const canFitReadably = (clustersToTest: typeof clusters, includeAnchors: boolean) => {
-    const viewport = getBatchViewport(clustersToTest, includeAnchors);
-    if (!viewport) {
-      return false;
-    }
-    const relativeRatio = includeAnchors
-      ? AUTO_TOUR_FIRST_BATCH_RELATIVE_RATIO
-      : AUTO_TOUR_RELATIVE_READABLE_RATIO;
-    const allowedMinZoom = Math.max(
-      AUTO_TOUR_ABSOLUTE_READABLE_ZOOM,
-      effectiveCurrentZoom * relativeRatio,
-    );
-    return viewport.zoom >= allowedMinZoom;
-  };
-
-  const finalizeBatch = (clustersToFlush: typeof clusters, includeAnchors: boolean) => {
-    if (clustersToFlush.length === 0) {
-      return;
-    }
-    const viewport = getBatchViewport(clustersToFlush, includeAnchors);
-    if (!viewport) {
-      return;
-    }
-    const nodeIds = clustersToFlush.flatMap((cluster) => cluster.nodeIds);
-    const edgeCount = clustersToFlush.reduce((sum, cluster) => sum + cluster.edgeCount, 0);
-    const charCount = clustersToFlush.reduce((sum, cluster) => sum + cluster.charCount, 0);
-    batches.push({
-      nodeIds,
-      anchorNodeIds: includeAnchors ? params.seed.anchorNodeIds : [],
-      dwellMs: estimateAutoTourDwellMs({
-        nodeCount: nodeIds.length,
-        edgeCount,
-        charCount,
-      }),
-    });
-    effectiveCurrentZoom = viewport.zoom;
-  };
-
-  clusters.forEach((cluster) => {
-    const candidateBatch = [...currentBatch, cluster];
-    const includeAnchors = batches.length === 0;
-    const canAppend =
-      currentBatch.length === 0 ||
-      canFitReadably(candidateBatch, includeAnchors);
-
-    if (!canAppend) {
-      finalizeBatch(currentBatch, batches.length === 0);
-      currentBatch = [cluster];
-      return;
-    }
-
-    currentBatch = candidateBatch;
-  });
-
-  finalizeBatch(currentBatch, batches.length === 0);
-
-  return batches;
-}
 
 export default function App() {
   const [sessionState, setSessionState] = useState<SessionState>('idle');
@@ -1404,7 +140,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState<ViewType>('causal');
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [logs, setLogs] = useState<string[]>([]);
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
   const [graph, setGraph] = useState<MergedGraph>(createEmptyGraph);
   const [logPanelHeight, setLogPanelHeight] = useState(DEFAULT_LOG_PANEL_HEIGHT);
   const [autoTourStatus, setAutoTourStatus] = useState<AutoTourStatus>('idle');
@@ -1420,6 +156,15 @@ export default function App() {
   );
   const [workerBuildLabel, setWorkerBuildLabel] = useState('waiting');
   const [recentProviderError, setRecentProviderError] = useState<RuntimeSnapshot['lastProviderError']>(null);
+  const [lastStructurerRun, setLastStructurerRun] = useState<RuntimeSnapshot['lastStructurerRun']>(null);
+  const [structuringSince, setStructuringSince] = useState<number | null>(null);
+  const [lastTranscriptAt, setLastTranscriptAt] = useState<number | null>(null);
+  const [lastGraphUpdatedAt, setLastGraphUpdatedAt] = useState<number | null>(null);
+  const [pendingTranscriptCount, setPendingTranscriptCount] = useState(0);
+  const [pendingWorkCount, setPendingWorkCount] = useState(0);
+  const [stopDrainPendingCount, setStopDrainPendingCount] = useState(0);
+  const [currentStructurerTarget, setCurrentStructurerTarget] = useState<RuntimeSnapshot['currentStructurerTarget']>(null);
+  const [statusNowMs, setStatusNowMs] = useState(() => Date.now());
   const [bridgeHealth, setBridgeHealth] = useState<{
     status: 'idle' | 'connecting' | 'connected' | 'listening' | 'closing' | 'closed' | 'error';
     detail?: string;
@@ -1427,6 +172,7 @@ export default function App() {
 
   // 开发模式下的 ref
   const transcriptIndexRef = useRef(0);
+  const asrUtteranceIndexRef = useRef(0);
   const sessionStartTimeRef = useRef(0);
   const userPinnedViewRef = useRef(false);
   const logResizeStartRef = useRef<{ pointerY: number; height: number } | null>(null);
@@ -1446,15 +192,27 @@ export default function App() {
   const autoTourAdvanceTimerRef = useRef<number | null>(null);
   const autoTourResumeTimerRef = useRef<number | null>(null);
   const lastAutoTourKeyRef = useRef<string | null>(null);
+  const structurerSlowEventKeyRef = useRef<string | null>(null);
+  const previousPendingTranscriptCountRef = useRef(0);
+
+  const pushTimelineEvent = useCallback((event: TimelineEvent) => {
+    setTimelineEvents((prev) => upsertTimelineEvent(prev, event));
+  }, []);
+
+  const clearTimelineTransient = useCallback((transientKey: string) => {
+    setTimelineEvents((prev) => stripTimelineTransientEvents(prev, transientKey));
+  }, []);
+
+  const finalizeTimelineTransient = useCallback(
+    (transientKey: string, updates: Partial<TimelineEvent>) => {
+      setTimelineEvents((prev) => finalizeTransientEvent(prev, transientKey, updates));
+    },
+    [],
+  );
 
   const addLog = useCallback((msg: string) => {
-    const time = new Date().toLocaleTimeString();
-    setLogs((prev) => [`[${time}] ${msg}`, ...prev.slice(0, 49)]);
-  }, []);
-
-  const upsertTencentRealtimePartialLog = useCallback((displayMsg: string) => {
-    setLogs((prev) => upsertTencentRealtimeStreamLog(prev, displayMsg));
-  }, []);
+    pushTimelineEvent(createTimelineEvent({ stage: 'system', message: msg }));
+  }, [pushTimelineEvent]);
 
   const clearAutoTourAdvanceTimer = useCallback(() => {
     if (autoTourAdvanceTimerRef.current !== null) {
@@ -1490,6 +248,62 @@ export default function App() {
   useEffect(() => {
     graphRef.current = graph;
   }, [graph]);
+
+  useEffect(() => {
+    if (!['capturing', 'transcribing', 'structuring'].includes(sessionState)) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      setStatusNowMs(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [sessionState]);
+
+  useEffect(() => {
+    if (sessionState !== 'structuring' || !structuringSince) {
+      structurerSlowEventKeyRef.current = null;
+      return;
+    }
+
+    const slowEventKey = `${sessionId ?? 'unknown'}:${structuringSince}`;
+    if (
+      statusNowMs - structuringSince >= STRUCTURER_DELAYED_MS &&
+      structurerSlowEventKeyRef.current !== slowEventKey
+    ) {
+      structurerSlowEventKeyRef.current = slowEventKey;
+      pushTimelineEvent(createTimelineEvent({
+        stage: 'structurer',
+        message: 'Structurer slow',
+        detail: `${Math.round((statusNowMs - structuringSince) / 100) / 10}s 仍未返回`,
+        tone: 'warning',
+      }));
+    }
+  }, [pushTimelineEvent, sessionId, sessionState, statusNowMs, structuringSince]);
+
+  useEffect(() => {
+    const previous = previousPendingTranscriptCountRef.current;
+    if (
+      sessionState === 'structuring' &&
+      pendingTranscriptCount > previous &&
+      pendingTranscriptCount > 0
+    ) {
+      pushTimelineEvent(createTimelineEvent({
+        stage: 'structurer',
+        message: `Transcript queued behind current structurer`,
+        detail: `backlog ${pendingTranscriptCount} | target ${currentStructurerTarget?.transcriptId ?? 'unknown'}`,
+        tone: pendingTranscriptCount >= 3 ? 'warning' : 'neutral',
+        aggregationKey: 'structurer-queue-growth',
+      }));
+    }
+    previousPendingTranscriptCountRef.current = pendingTranscriptCount;
+  }, [
+    currentStructurerTarget?.transcriptId,
+    pendingTranscriptCount,
+    pushTimelineEvent,
+    sessionState,
+  ]);
 
   const getPreferredView = useCallback(
     (nextGraph: MergedGraph, requestedView?: ViewType | null) =>
@@ -1607,6 +421,15 @@ export default function App() {
           const nextState = p.state === 'stopped' ? 'idle' : p.state;
           setSessionId(p.state === 'stopped' ? p.sessionId : nextState === 'idle' ? null : p.sessionId);
           setSessionState(nextState);
+          setPendingTranscriptCount(p.pendingTranscriptCount ?? 0);
+          setPendingWorkCount(p.pendingWorkCount ?? 0);
+          setStopDrainPendingCount(p.stopDrainPendingCount ?? 0);
+          setCurrentStructurerTarget(p.currentStructurerTarget ?? null);
+          if (nextState === 'structuring') {
+            setStructuringSince((prev) => prev ?? Date.now());
+          } else if (nextState !== 'error') {
+            setStructuringSince(null);
+          }
           if (p.state === 'stopped' || p.state === 'error') {
             setStopPending(false);
           }
@@ -1619,22 +442,26 @@ export default function App() {
             activeViewSessionRef.current = null;
             resetAutoTourState();
           }
-          addLog(`状态: ${p.state}`);
+          pushTimelineEvent(createTimelineEvent({
+            stage: 'system',
+            message: `状态切换为 ${p.state}`,
+            tone: p.state === 'error' ? 'error' : p.state === 'stopped' ? 'warning' : 'neutral',
+          }));
           break;
         }
         case 'TRANSCRIPT_READY': {
           setRecentProviderError(null);
-          const transcriptText = message.payload.transcript.text;
-          setLogs((prev) => {
-            const cleaned = stripTencentRealtimeStreamLogs(prev);
-            const time = new Date().toLocaleTimeString();
-            return [`[${time}] 转写: ${transcriptText}`, ...cleaned].slice(0, 50);
+          setLastTranscriptAt(Date.now());
+          const utteranceKey = `asr-utterance-${asrUtteranceIndexRef.current}`;
+          finalizeTimelineTransient(utteranceKey, {
+            message: `转写: ${message.payload.transcript.text}`,
+            detail: `${formatTime(message.payload.transcript.startMs)}-${formatTime(message.payload.transcript.endMs)} | ${message.payload.transcript.provider}`,
+            tone: 'success',
           });
           break;
         }
         case 'PROVIDER_PROGRESS': {
           const { stage, message: progressMessage } = message.payload;
-          const displayMsg = `${stage.toUpperCase()}: ${progressMessage}`;
           if (stage === 'asr' && providerConfig.asr.type === 'external') {
             if (progressMessage.includes('连接中')) {
               setBridgeHealth({ status: 'connecting', detail: progressMessage });
@@ -1646,11 +473,40 @@ export default function App() {
               setBridgeHealth({ status: 'closed', detail: progressMessage });
             }
           }
-          if (isTencentRealtimeStreamProgressMessage(stage, progressMessage)) {
-            upsertTencentRealtimePartialLog(displayMsg);
-          } else {
-            addLog(displayMsg);
+          const isStructurerStarted =
+            stage === 'structurer' && progressMessage.startsWith('Structurer started');
+          const isStructurerFinished =
+            stage === 'structurer' && progressMessage.startsWith('Structurer finished');
+          const isStructurerFailed =
+            stage === 'structurer' && progressMessage.startsWith('Structurer failed');
+          const isStopDrain =
+            stage === 'structurer' && progressMessage.startsWith('Stop requested');
+          if (isStructurerStarted) {
+            setStructuringSince(Date.now());
+            structurerSlowEventKeyRef.current = null;
           }
+          if (isStructurerFinished || isStructurerFailed) {
+            setStructuringSince(null);
+            structurerSlowEventKeyRef.current = null;
+          }
+          const asrSlice = message.payload.asrSliceType;
+          if (asrSlice === 0) {
+            asrUtteranceIndexRef.current++;
+          }
+          pushTimelineEvent(createTimelineEvent({
+            stage,
+            message: progressMessage,
+            tone: classifyProgressTone({
+              isStructurerFinished,
+              isStructurerFailed,
+              isStopDrain,
+              progressMessage,
+            }),
+            transientKey:
+              asrSlice !== undefined
+                ? `asr-utterance-${asrUtteranceIndexRef.current}`
+                : undefined,
+          }));
           break;
         }
         case 'MERGED_GRAPH_UPDATED': {
@@ -1685,7 +541,15 @@ export default function App() {
           setCurrentView((prev) =>
             shouldPreserveView ? prev : getPreferredView(nextGraph),
           );
-          addLog(formatGraphDeltaLog(previousGraph, nextGraph));
+          setLastGraphUpdatedAt(Date.now());
+          setLastStructurerRun(null);
+          setStructuringSince(null);
+          pushTimelineEvent(createTimelineEvent({
+            stage: 'graph',
+            message: formatGraphDeltaLog(previousGraph, nextGraph),
+            detail: `revision ${nextGraph.revision} | nodes ${nextGraph.nodes.length} | edges ${nextGraph.edges.length}`,
+            tone: 'success',
+          }));
           break;
         }
         case 'PLAYBACK_TIME_UPDATED':
@@ -1699,13 +563,18 @@ export default function App() {
             stage: 'structurer',
             retriable: false,
           });
-          addLog(`错误(${message.payload.code}): ${message.payload.message}`);
+          pushTimelineEvent(createTimelineEvent({
+            stage: 'system',
+            message: `错误(${message.payload.code})`,
+            detail: message.payload.message,
+            tone: 'error',
+          }));
           break;
       }
     };
     chrome.runtime.onMessage.addListener(handleMessage);
     return () => chrome.runtime.onMessage.removeListener(handleMessage);
-  }, [addLog, getPreferredView, upsertTencentRealtimePartialLog]);
+  }, [clearAutoTourAdvanceTimer, clearAutoTourResumeTimer, finalizeTimelineTransient, getPreferredView, providerConfig.asr.type, pushTimelineEvent, resetAutoTourState]);
 
   useEffect(() => {
     if (isDevMode) return;
@@ -1733,6 +602,14 @@ export default function App() {
         snapshot.providerSummary ?? redactProviderConfig(createExtensionDefaultProviderConfigForUi()),
       );
       setRecentProviderError(snapshot.lastProviderError ?? null);
+      setLastStructurerRun(snapshot.lastStructurerRun ?? null);
+      setStructuringSince(snapshot.structuringSince ?? null);
+      setLastTranscriptAt(snapshot.lastTranscriptAt ?? null);
+      setLastGraphUpdatedAt(snapshot.lastGraphUpdatedAt ?? null);
+      setPendingTranscriptCount(snapshot.pendingTranscriptCount ?? 0);
+      setPendingWorkCount(snapshot.pendingWorkCount ?? 0);
+      setStopDrainPendingCount(snapshot.stopDrainPendingCount ?? 0);
+      setCurrentStructurerTarget(snapshot.currentStructurerTarget ?? null);
       setWorkerBuildLabel(snapshot.workerBuild?.label ?? 'unknown');
 
       if (snapshot.graph) {
@@ -1809,6 +686,18 @@ export default function App() {
     activeViewSessionRef.current = null;
     resetAutoTourState();
   }, [resetAutoTourState]);
+
+  const resetRuntimeUiState = useCallback(() => {
+    setTimelineEvents([]);
+    setLastStructurerRun(null);
+    setStructuringSince(null);
+    setLastTranscriptAt(null);
+    setLastGraphUpdatedAt(null);
+    setPendingTranscriptCount(0);
+    setPendingWorkCount(0);
+    setStopDrainPendingCount(0);
+    setCurrentStructurerTarget(null);
+  }, []);
 
   const updateProviderEntry = useCallback(
     (
@@ -1995,7 +884,7 @@ export default function App() {
       });
       setCurrentTimeMs(0);
       setSelectedNodeId(null);
-      setLogs([]);
+      resetRuntimeUiState();
 
       addLog(`会话开始: ${newSessionId}`);
       addLog('状态: capturing (开发模式)');
@@ -2007,6 +896,7 @@ export default function App() {
       if (!tabs[0]?.id) return;
       clearHistoricalContext();
       setSessionState('capturing');
+      resetRuntimeUiState();
       const res = await chrome.runtime.sendMessage({
         type: 'SESSION_START',
         target: 'service-worker',
@@ -2038,13 +928,18 @@ export default function App() {
     // 生产模式：通过 Chrome API
     if (!sessionId) return;
     setStopPending(true);
+    pushTimelineEvent(createTimelineEvent({
+      stage: 'system',
+      message: '已请求停止',
+      detail: '等待 service worker 清理当前会话',
+      tone: 'warning',
+    }));
     void chrome.runtime.sendMessage({
       type: 'SESSION_STOP',
       target: 'service-worker',
       payload: { sessionId },
     } as AppMessage);
-    addLog('停止中...');
-  }, [sessionId, addLog]);
+  }, [pushTimelineEvent, sessionId]);
 
   const isRunning = ['capturing', 'transcribing', 'structuring'].includes(
     sessionState,
@@ -2056,6 +951,138 @@ export default function App() {
     !['transcribing', 'structuring', 'error'].includes(sessionState);
   const canReplay =
     Boolean(sessionId) && graph.nodes.length > 0 && !stopPending && !isRunning;
+  const structurerElapsedMs =
+    sessionState === 'structuring' && structuringSince
+      ? Math.max(statusNowMs - structuringSince, 0)
+      : 0;
+  const asrStatusCard: StatusCardData = (() => {
+    if (recentProviderError?.stage === 'asr') {
+      return {
+        label: 'ASR',
+        status: 'error',
+        detail: recentProviderError.message,
+        tone: 'error',
+      };
+    }
+    if (providerConfig.asr.type === 'external' && bridgeHealth.status !== 'idle') {
+      return {
+        label: 'ASR',
+        status: bridgeHealth.status,
+        detail:
+          bridgeHealth.detail ??
+          `最近稳定句子 ${formatRelativeAge(lastTranscriptAt, statusNowMs)}`,
+        tone: bridgeHealthToTone(bridgeHealth.status),
+      };
+    }
+    if (sessionState === 'transcribing') {
+      return {
+        label: 'ASR',
+        status: 'processing',
+        detail: `最近稳定句子 ${formatRelativeAge(lastTranscriptAt, statusNowMs)}`,
+        tone: 'active',
+      };
+    }
+    if (sessionState === 'capturing') {
+      return {
+        label: 'ASR',
+        status: lastTranscriptAt ? 'stable ready' : 'listening',
+        detail: `最近稳定句子 ${formatRelativeAge(lastTranscriptAt, statusNowMs)}`,
+        tone: lastTranscriptAt ? 'success' : 'waiting',
+      };
+    }
+    return {
+      label: 'ASR',
+      status: 'idle',
+      detail: `最近稳定句子 ${formatRelativeAge(lastTranscriptAt, statusNowMs)}`,
+      tone: 'neutral',
+    };
+  })();
+  const structurerStatusCard: StatusCardData = (() => {
+    if (recentProviderError?.stage === 'structurer') {
+      return {
+        label: 'Structurer',
+        status: 'error',
+        detail: recentProviderError.message,
+        tone: 'error',
+      };
+    }
+    if (sessionState === 'structuring') {
+      const isCongested = pendingTranscriptCount >= 3 || pendingWorkCount >= 4;
+      const status = isCongested
+        ? 'congested'
+        : structurerElapsedMs >= STRUCTURER_DELAYED_MS
+          ? 'delayed'
+          : 'processing';
+      const targetDetail = currentStructurerTarget
+        ? `target ${formatTime(currentStructurerTarget.transcriptEndMs)} / ${currentStructurerTarget.transcriptCharCount}字`
+        : 'target unknown';
+      const queueDetail =
+        pendingTranscriptCount > 0 ? ` | backlog ${pendingTranscriptCount}` : '';
+      const previewDetail = currentStructurerTarget?.transcriptPreview
+        ? ` | "${currentStructurerTarget.transcriptPreview}"`
+        : '';
+      return {
+        label: 'Structurer',
+        status,
+        detail:
+          `${Math.max(Math.round(structurerElapsedMs / 100) / 10, 0)}s | ${targetDetail}${queueDetail}${previewDetail}` +
+          (lastStructurerRun?.mode ? ` | ${lastStructurerRun.mode}` : ''),
+        tone:
+          status === 'processing'
+            ? 'active'
+            : status === 'congested'
+              ? 'congested'
+              : 'warning',
+      };
+    }
+    if (stopPending && stopDrainPendingCount > 0) {
+      return {
+        label: 'Structurer',
+        status: 'draining',
+        detail: `stop 后剩余 ${stopDrainPendingCount} 个 work 未清空`,
+        tone: 'warning',
+      };
+    }
+    if (sessionState === 'capturing' && graph.nodes.length === 0) {
+      return {
+        label: 'Structurer',
+        status: 'waiting bootstrap',
+        detail:
+          `图谱尚未建立 | 最近转写 ${formatRelativeAge(lastTranscriptAt, statusNowMs)}` +
+          (pendingTranscriptCount > 0 ? ` | backlog ${pendingTranscriptCount}` : ''),
+        tone: 'waiting',
+      };
+    }
+    if (lastStructurerRun) {
+      return {
+        label: 'Structurer',
+        status: lastStructurerRun.status,
+        detail:
+          `${lastStructurerRun.durationMs}ms` +
+          (lastStructurerRun.errorCode ? ` | ${lastStructurerRun.errorCode}` : ''),
+        tone: lastStructurerRun.status === 'success' ? 'success' : 'warning',
+      };
+    }
+    return {
+      label: 'Structurer',
+      status: graph.nodes.length > 0 ? 'idle' : 'waiting',
+      detail: graph.nodes.length > 0 ? '等待下一轮增量' : '等待可结构化上下文',
+      tone: graph.nodes.length > 0 ? 'neutral' : 'waiting',
+    };
+  })();
+  const graphStatusCard: StatusCardData = (() => {
+    const isFresh =
+      typeof lastGraphUpdatedAt === 'number' &&
+      statusNowMs - lastGraphUpdatedAt <= GRAPH_JUST_UPDATED_MS;
+    return {
+      label: 'Graph',
+      status: isFresh ? 'updated just now' : graph.nodes.length > 0 ? 'stable' : 'empty',
+      detail: `${graph.nodes.length} nodes | ${graph.edges.length} edges | 上次更新 ${formatRelativeAge(lastGraphUpdatedAt, statusNowMs)}`,
+      tone: isFresh ? 'success' : 'neutral',
+    };
+  })();
+  const primaryStatusCards = [asrStatusCard, structurerStatusCard];
+  const graphViewStatus = graphStatusCard;
 
   const handleExport = useCallback(
     async (format: ExportFormat) => {
@@ -2363,10 +1390,15 @@ export default function App() {
     }
 
     const paddedBounds = expandViewBounds(mergedBounds, AUTO_REVEAL_PADDING);
+    const minimumBoundsSize = getAutoRevealMinimumBoundsSize({
+      containerWidth,
+      containerHeight,
+      currentZoom: currentViewport.zoom || 1,
+    });
     const targetBounds = ensureMinimumBoundsSize({
       bounds: paddedBounds,
-      minimumWidth: (containerWidth / (currentViewport.zoom || 1)) * AUTO_REVEAL_MIN_WIDTH_RATIO,
-      minimumHeight: (containerHeight / (currentViewport.zoom || 1)) * AUTO_REVEAL_MIN_HEIGHT_RATIO,
+      minimumWidth: minimumBoundsSize.minimumWidth,
+      minimumHeight: minimumBoundsSize.minimumHeight,
     });
 
     const viewportForBounds = getViewportForBounds(
@@ -2593,6 +1625,11 @@ export default function App() {
     };
   }, [requestAutoFit]);
 
+  const exportLogLines = useMemo(
+    () => timelineEventsToExportLines(timelineEvents),
+    [timelineEvents],
+  );
+
   const slimDebugExportPayload = useMemo(
     () => buildDebugExportPayload({
       mode: 'slim',
@@ -2601,7 +1638,7 @@ export default function App() {
       currentView,
       workerBuildLabel,
       providerSummary,
-      logs,
+      logs: exportLogLines,
       debugData,
       derivedViews: debugViewArtifacts,
     }),
@@ -2609,7 +1646,7 @@ export default function App() {
       currentView,
       debugData,
       debugViewArtifacts,
-      logs,
+      exportLogLines,
       providerSummary,
       sessionId,
       sessionState,
@@ -2625,7 +1662,7 @@ export default function App() {
       currentView,
       workerBuildLabel,
       providerSummary,
-      logs,
+      logs: exportLogLines,
       debugData,
       derivedViews: debugViewArtifacts,
     }),
@@ -2633,7 +1670,7 @@ export default function App() {
       currentView,
       debugData,
       debugViewArtifacts,
-      logs,
+      exportLogLines,
       providerSummary,
       sessionId,
       sessionState,
@@ -2700,22 +1737,6 @@ export default function App() {
         }}
       >
         <span style={{ fontWeight: 600, fontSize: 14 }}>Listen Graphic</span>
-        <div
-          data-testid="auto-tour-indicator"
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: autoTourIndicatorColor,
-            animation:
-              autoTourStatus === 'touring'
-                ? 'listen-graphic-tour-pulse 1s ease-in-out infinite'
-                : 'none',
-          }}
-        />
-        <span data-testid="auto-tour-status" style={{ fontSize: 11, color: '#6b7280' }}>
-          {autoTourStatusText}
-        </span>
         <button
           onClick={() => void handleExport('json')}
           disabled={!canExport}
@@ -2844,6 +1865,16 @@ export default function App() {
         </div>
       )}
 
+      <StatusCards
+        primaryStatusCards={primaryStatusCards}
+        graphViewStatus={graphViewStatus}
+        currentView={currentView}
+        autoTourStatus={autoTourStatus}
+        autoTourProgress={autoTourProgress}
+        isRunning={isRunning}
+        autoTourIndicatorColor={autoTourIndicatorColor}
+        autoTourStatusText={autoTourStatusText}
+      />
       {/* 视图切换 */}
       <div
         style={{
@@ -2889,404 +1920,16 @@ export default function App() {
         ))}
       </div>
       {settingsOpen && (
-        <div
-          data-testid="settings-panel"
-          style={{
-            borderBottom: '1px solid #e5e7eb',
-            backgroundColor: '#f8fafc',
-            padding: '10px 12px',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-            gap: 12,
-            fontSize: 11,
-          }}
-        >
-          {(
-            [
-              ['asr', 'ASR'],
-              ['structurer', 'Structurer'],
-            ] as const
-          ).map(([stageKey, label]) => {
-            const credentialState = getStageCredentialState(providerSummary, stageKey);
-
-            return <div
-              key={stageKey}
-              style={{
-                border: '1px solid #dbe4ee',
-                borderRadius: 6,
-                padding: 10,
-                backgroundColor: 'white',
-                display: 'grid',
-                gap: 6,
-              }}
-            >
-              <div style={{ fontWeight: 600 }}>{label}</div>
-              <label style={{ display: 'grid', gap: 4 }}>
-                <span>{label} Provider Type</span>
-                <select
-                  aria-label={`${label} Provider Type`}
-                  value={getProviderTypeSelectValue(stageKey, providerConfig[stageKey])}
-                  onChange={(event) =>
-                    handleProviderTypeChange(stageKey, event.target.value)
-                  }
-                >
-                  <option value="mock">Mock (测试)</option>
-                  <option value="openai">OpenAI</option>
-                  {stageKey === 'asr' && <option value="tencent">腾讯云</option>}
-                  {stageKey === 'asr' && <option value="external">Local ASR Bridge</option>}
-                  {stageKey === 'structurer' && <option value="aliyun">阿里云百炼</option>}
-                  {stageKey === 'structurer' && <option value="baidu">百度千帆</option>}
-                  {stageKey === 'structurer' && <option value="zhipu">智谱 GLM</option>}
-                  {stageKey === 'structurer' && (
-                    <option value="zhipu-coding-plan">智谱 GLM（Coding Plan）</option>
-                  )}
-                </select>
-              </label>
-              {providerConfig[stageKey].type === 'tencent' && stageKey === 'asr' && (
-                <div style={{ 
-                  padding: '8px', 
-                  backgroundColor: '#f0f9ff', 
-                  borderRadius: 4, 
-                  fontSize: 10,
-                  color: '#0369a1',
-                  lineHeight: 1.5
-                }}>
-                  <div style={{ fontWeight: 600, marginBottom: 4 }}>💡 腾讯云 ASR 配置</div>
-                  <div>• 免费额度：10小时/月</div>
-                  <div>• 价格：0.7-1.5元/小时</div>
-                  <div>• 推荐区域：华东地区(上海)</div>
-                  <div style={{ marginTop: 4, fontSize: 9, color: '#0c4a6e' }}>
-                    获取密钥：console.cloud.tencent.com/cam/capi
-                  </div>
-                </div>
-              )}
-              {providerConfig[stageKey].type === 'external' && stageKey === 'asr' && (
-                <div style={{
-                  padding: '8px',
-                  backgroundColor: '#ecfeff',
-                  borderRadius: 4,
-                  fontSize: 10,
-                  color: '#155e75',
-                  lineHeight: 1.5,
-                }}>
-                  <div style={{ fontWeight: 600, marginBottom: 4 }}>Local ASR Bridge</div>
-                  <div>• 通过本地 WebSocket bridge 接入任意本地 ASR</div>
-                  <div>• 当前协议：LG-ASR-WS v1</div>
-                  <div>• 推荐地址：ws://127.0.0.1:15377/ws</div>
-                </div>
-              )}
-              {providerConfig[stageKey].type === 'tencent' && stageKey === 'asr' && (
-                <label style={{ display: 'grid', gap: 4 }}>
-                  <span>Tencent Transport</span>
-                  <select
-                    aria-label="Tencent Transport"
-                    value={providerConfig.asr.transport ?? 'ws'}
-                    onChange={(event) =>
-                      updateProviderEntry(stageKey, 'transport', event.target.value)
-                    }
-                  >
-                    <option value="batch">Batch</option>
-                    <option value="ws">Realtime WebSocket</option>
-                  </select>
-                </label>
-              )}
-              {providerConfig[stageKey].type === 'external' && stageKey === 'asr' && (
-                <label style={{ display: 'grid', gap: 4 }}>
-                  <span>Local Bridge Transport</span>
-                  <select
-                    aria-label="Local Bridge Transport"
-                    value={providerConfig.asr.transport ?? 'ws'}
-                    onChange={(event) =>
-                      updateProviderEntry(stageKey, 'transport', event.target.value)
-                    }
-                  >
-                    <option value="ws">WebSocket</option>
-                  </select>
-                </label>
-              )}
-              {!(stageKey === 'asr' && providerConfig[stageKey].type === 'tencent') && (
-                <label style={{ display: 'grid', gap: 4 }}>
-                  <span>{label} Endpoint</span>
-                  <input
-                    aria-label={`${label} Endpoint`}
-                    value={providerConfig[stageKey].endpoint ?? ''}
-                    onChange={(event) =>
-                      updateProviderEntry(stageKey, 'endpoint', event.target.value)
-                    }
-                  />
-                </label>
-              )}
-              <label style={{ display: 'grid', gap: 4 }}>
-                <span>{stageKey === 'asr' && providerConfig[stageKey].type === 'tencent' ? 'Engine Model' : `${label} Model`}</span>
-                <input
-                  aria-label={stageKey === 'asr' && providerConfig[stageKey].type === 'tencent' ? 'Tencent Engine Model' : `${label} Model`}
-                  value={providerConfig[stageKey].model ?? ''}
-                  onChange={(event) =>
-                    updateProviderEntry(stageKey, 'model', event.target.value)
-                  }
-                />
-              </label>
-              {providerConfig[stageKey].type === 'external' && stageKey === 'asr' && (
-                <>
-                  <label style={{ display: 'grid', gap: 4 }}>
-                    <span>Bridge Protocol</span>
-                    <input
-                      aria-label="Local Bridge Protocol"
-                      value={providerConfig.asr.bridgeProtocol ?? ''}
-                      onChange={(event) =>
-                        updateProviderEntry(stageKey, 'bridgeProtocol', event.target.value)
-                      }
-                      placeholder="lg-asr-ws-v1"
-                    />
-                  </label>
-                  <label style={{ display: 'grid', gap: 4 }}>
-                    <span>Bridge Auth Token</span>
-                    <input
-                      aria-label="Local Bridge Auth Token"
-                      type="password"
-                      value={providerConfig.asr.bridgeAuthToken ?? ''}
-                      onChange={(event) =>
-                        updateProviderEntry(stageKey, 'bridgeAuthToken', event.target.value)
-                      }
-                      placeholder={
-                        credentialState.bridgeAuthTokenConfigured
-                          ? '已保存，留空保持不变'
-                          : '可选'
-                      }
-                    />
-                    {renderSecretHint({
-                      configured: credentialState.bridgeAuthTokenConfigured,
-                      label: 'Bridge Auth Token',
-                    })}
-                  </label>
-                  <div
-                    data-testid="local-bridge-health"
-                    style={{
-                      padding: '8px',
-                      backgroundColor:
-                        bridgeHealth.status === 'error'
-                          ? '#fef2f2'
-                          : bridgeHealth.status === 'listening'
-                            ? '#ecfdf5'
-                            : '#f8fafc',
-                      border: '1px solid #dbe4ee',
-                      borderRadius: 4,
-                      fontSize: 10,
-                      color: '#334155',
-                    }}
-                  >
-                    <div style={{ fontWeight: 600 }}>
-                      Bridge 状态: {bridgeHealth.status}
-                    </div>
-                    <div style={{ marginTop: 4 }}>
-                      {bridgeHealth.detail ?? '保存设置后开始会话，可看到连接/握手状态'}
-                    </div>
-                  </div>
-                </>
-              )}
-              {/* 腾讯云：独立的 Secret ID 和 Secret Key 输入框 */}
-              {providerConfig[stageKey].type === 'tencent' && stageKey === 'asr' ? (
-                <>
-                  <label style={{ display: 'grid', gap: 4 }}>
-                    <span>Tencent App ID</span>
-                    <input
-                      aria-label="Tencent App ID"
-                      value={providerConfig[stageKey].appId ?? ''}
-                      onChange={(event) =>
-                        updateProviderEntry(stageKey, 'appId', event.target.value)
-                      }
-                      placeholder="例如 1250000000"
-                    />
-                  </label>
-                  <label style={{ display: 'grid', gap: 4 }}>
-                    <span>Secret ID</span>
-                    <input
-                      aria-label="Tencent Secret ID"
-                      type="password"
-                      value={providerConfig[stageKey].secretId ?? ''}
-                      onChange={(event) =>
-                        updateProviderEntry(stageKey, 'secretId', event.target.value)
-                      }
-                      placeholder={
-                        credentialState.secretConfigured
-                          ? '已保存，留空保持不变'
-                          : 'AKIDxxxxxxxxxxxx'
-                      }
-                    />
-                    {renderSecretHint({
-                      configured: credentialState.secretConfigured,
-                      label: 'Secret ID / Secret Key',
-                    })}
-                  </label>
-                  <label style={{ display: 'grid', gap: 4 }}>
-                    <span>Secret Key</span>
-                    <input
-                      aria-label="Tencent Secret Key"
-                      type="password"
-                      value={providerConfig[stageKey].secretKey ?? ''}
-                      onChange={(event) =>
-                        updateProviderEntry(stageKey, 'secretKey', event.target.value)
-                      }
-                      placeholder={
-                        credentialState.secretConfigured
-                          ? '已保存，留空保持不变'
-                          : 'xxxxxxxxxxxxxxxx'
-                      }
-                    />
-                  </label>
-                  <label style={{ display: 'grid', gap: 4 }}>
-                    <span>Region (区域)</span>
-                    <select
-                      aria-label="Tencent Region"
-                      value={providerConfig[stageKey].region ?? 'ap-shanghai'}
-                      onChange={(event) =>
-                        updateProviderEntry(stageKey, 'region', event.target.value)
-                      }
-                    >
-                      <option value="ap-shanghai">华东地区(上海) - 推荐</option>
-                      <option value="ap-guangzhou">华南地区(广州)</option>
-                      <option value="ap-beijing">华北地区(北京)</option>
-                      <option value="ap-chengdu">西南地区(成都)</option>
-                    </select>
-                  </label>
-                  {providerConfig.asr.transport === 'ws' && (
-                    <>
-                      <label style={{ display: 'grid', gap: 4 }}>
-                        <span>Need VAD</span>
-                        <select
-                          aria-label="Tencent Need VAD"
-                          value={String(providerConfig.asr.needVad ?? true)}
-                          onChange={(event) =>
-                            updateProviderEntry(stageKey, 'needVad', event.target.value)
-                          }
-                        >
-                          <option value="true">开启</option>
-                          <option value="false">关闭</option>
-                        </select>
-                      </label>
-                      <label style={{ display: 'grid', gap: 4 }}>
-                        <span>VAD Silence Time (ms)</span>
-                        <input
-                          aria-label="Tencent VAD Silence Time"
-                          type="number"
-                          value={providerConfig.asr.vadSilenceTimeMs ?? ''}
-                          onChange={(event) =>
-                            updateProviderEntry(stageKey, 'vadSilenceTimeMs', event.target.value)
-                          }
-                          placeholder="1000"
-                        />
-                      </label>
-                      <label style={{ display: 'grid', gap: 4 }}>
-                        <span>Max Speak Time (ms)</span>
-                        <input
-                          aria-label="Tencent Max Speak Time"
-                          type="number"
-                          value={providerConfig.asr.maxSpeakTimeMs ?? ''}
-                          onChange={(event) =>
-                            updateProviderEntry(stageKey, 'maxSpeakTimeMs', event.target.value)
-                          }
-                          placeholder="60000"
-                        />
-                      </label>
-                      <label style={{ display: 'grid', gap: 4 }}>
-                        <span>Hotword ID</span>
-                        <input
-                          aria-label="Tencent Hotword ID"
-                          value={providerConfig.asr.hotwordId ?? ''}
-                          onChange={(event) =>
-                            updateProviderEntry(stageKey, 'hotwordId', event.target.value)
-                          }
-                        />
-                      </label>
-                      <label style={{ display: 'grid', gap: 4 }}>
-                        <span>Hotword List</span>
-                        <input
-                          aria-label="Tencent Hotword List"
-                          value={providerConfig.asr.hotwordList ?? ''}
-                          onChange={(event) =>
-                            updateProviderEntry(stageKey, 'hotwordList', event.target.value)
-                          }
-                          placeholder="腾讯云|10,语音识别|5"
-                        />
-                      </label>
-                      <label style={{ display: 'grid', gap: 4 }}>
-                        <span>Word Info</span>
-                        <input
-                          aria-label="Tencent Word Info"
-                          type="number"
-                          value={providerConfig.asr.wordInfo ?? ''}
-                          onChange={(event) =>
-                            updateProviderEntry(stageKey, 'wordInfo', event.target.value)
-                          }
-                          placeholder="0"
-                        />
-                      </label>
-                    </>
-                  )}
-                </>
-              ) : providerConfig[stageKey].type === 'external' && stageKey === 'asr' ? null : (
-                /* 其他 provider：通用的 API Key 输入框 */
-                <label style={{ display: 'grid', gap: 4 }}>
-                  <span>{label} API Key</span>
-                  <input
-                    aria-label={`${label} API Key`}
-                    type="password"
-                    value={providerConfig[stageKey].apiKey ?? ''}
-                    onChange={(event) =>
-                      updateProviderEntry(stageKey, 'apiKey', event.target.value)
-                    }
-                    placeholder={
-                      credentialState.apiKeyConfigured
-                        ? '已保存，留空保持不变'
-                        : '请输入 API Key'
-                    }
-                  />
-                  {renderSecretHint({
-                    configured: credentialState.apiKeyConfigured,
-                    label: 'API Key',
-                  })}
-                </label>
-              )}
-              <label style={{ display: 'grid', gap: 4 }}>
-                <span>{label} Language</span>
-                <input
-                  aria-label={`${label} Language`}
-                  value={providerConfig[stageKey].language ?? ''}
-                  onChange={(event) =>
-                    updateProviderEntry(stageKey, 'language', event.target.value)
-                  }
-                  />
-                </label>
-            </div>;
-          })}
-          <div
-            style={{
-              gridColumn: '1 / -1',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12,
-            }}
-          >
-            <div style={{ color: '#64748b' }}>
-              当前摘要:
-              {` ASR=${providerSummary.asr.type} `}
-              {`Structurer=${providerSummary.structurer.type}`}
-              {providerSummary.asr.type === 'tencent'
-                ? ` | ASR 密钥=${providerSummary.asr.secretConfigured ? '已保存' : '未保存'}`
-                : providerSummary.asr.type === 'external'
-                  ? ` | Bridge Token=${providerSummary.asr.bridgeAuthTokenConfigured ? '已保存' : '未保存'}`
-                : ` | ASR Key=${providerSummary.asr.apiKeyConfigured ? '已保存' : '未保存'}`}
-              {` | Structurer Key=${providerSummary.structurer.apiKeyConfigured ? '已保存' : '未保存'}`}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => void handleClearSecrets()}>清除密钥</button>
-              <button onClick={() => void handleSaveSettings()} disabled={settingsSaving}>
-                {settingsSaving ? '保存中...' : '保存设置'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <SettingsPanel
+          providerConfig={providerConfig}
+          providerSummary={providerSummary}
+          settingsSaving={settingsSaving}
+          bridgeHealth={bridgeHealth}
+          onUpdateProviderEntry={updateProviderEntry}
+          onProviderTypeChange={handleProviderTypeChange}
+          onSaveSettings={handleSaveSettings}
+          onClearSecrets={handleClearSecrets}
+        />
       )}
 
       {/* 图表区域 */}
@@ -3354,170 +1997,27 @@ export default function App() {
           />
         </div>
 
-        {/* 日志区域 */}
-        <div
-          data-testid="log-area"
-          style={{
-            height: logPanelHeight,
-            overflowY: 'auto',
-            backgroundColor: '#1e1e1e',
-            color: '#10b981',
-            fontFamily: 'monospace',
-            fontSize: 11,
-            padding: '6px 8px',
-            borderTop: '1px solid #333',
-          }}
-        >
-          {logs.length === 0 ? (
-            <div style={{ color: '#666' }}>点击"开始"启动会话...</div>
-          ) : (
-            logs.map((log, i) => (
-              <div key={i} style={{ marginBottom: 2, wordBreak: 'break-all' }}>
-                {log}
-              </div>
-            ))
-          )}
-        </div>
+        <LogPanel
+          logPanelHeight={logPanelHeight}
+          timelineEvents={timelineEvents}
+        />
         {debugOpen && (
-          <div
-            data-testid="debug-panel"
-            style={{
-              borderTop: '1px solid #d1d5db',
-              backgroundColor: '#f8fafc',
-              padding: '8px 12px',
-              fontSize: 11,
-              color: '#334155',
-              maxHeight: 220,
-              overflowY: 'auto',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 8,
-                marginBottom: 6,
-              }}
-            >
-              <div style={{ fontWeight: 600 }}>Debug</div>
-              <button
-                data-testid="debug-export-button"
-                type="button"
-                onClick={() => handleExportDebug('slim')}
-                disabled={!debugData}
-                style={{
-                  padding: '2px 8px',
-                  borderRadius: 4,
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: debugData ? 'white' : '#e2e8f0',
-                  color: '#334155',
-                  fontSize: 11,
-                  cursor: debugData ? 'pointer' : 'not-allowed',
-                }}
-              >
-                导出调试 JSON
-              </button>
-              <button
-                data-testid="debug-export-full-button"
-                type="button"
-                onClick={() => handleExportDebug('full')}
-                disabled={!debugData}
-                style={{
-                  padding: '2px 8px',
-                  borderRadius: 4,
-                  border: '1px solid #cbd5e1',
-                  backgroundColor: debugData ? 'white' : '#e2e8f0',
-                  color: '#334155',
-                  fontSize: 11,
-                  cursor: debugData ? 'pointer' : 'not-allowed',
-                }}
-              >
-                导出完整调试 JSON
-              </button>
-            </div>
-            <div style={{ marginBottom: 6 }}>
-              sessionId: {debugData?.session?.sessionId ?? sessionId ?? 'none'}
-            </div>
-            <div style={{ marginBottom: 6 }}>
-              transcript units: {debugData?.transcripts.length ?? 0}
-            </div>
-            <div style={{ marginBottom: 6 }}>
-              structurer segments: {debugData?.segments.length ?? 0}
-            </div>
-            <div style={{ marginBottom: 6 }}>
-              transcript traces: {debugData?.traces.length ?? 0}
-            </div>
-            <div style={{ marginBottom: 6 }}>
-              structurer runs: {debugData?.structurerRuns?.length ?? 0}
-            </div>
-            <div style={{ marginBottom: 6 }}>
-              merged graph nodes: {debugData?.graph?.nodes.length ?? 0}
-            </div>
-            <pre
-              data-testid="debug-json"
-              style={{
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                margin: 0,
-                fontFamily: 'monospace',
-              }}
-            >
-              {JSON.stringify(slimDebugExportPayload, null, 2)}
-            </pre>
-          </div>
+          <DebugPanel
+            debugData={debugData}
+            sessionId={sessionId}
+            slimDebugExportPayload={slimDebugExportPayload}
+            onExportDebug={handleExportDebug}
+          />
         )}
         {replayOpen && (
-          <div
-            data-testid="replay-panel"
-            style={{
-              borderTop: '1px solid #d1d5db',
-              backgroundColor: '#fff7ed',
-              padding: '8px 12px',
-              fontSize: 11,
-              color: '#7c2d12',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                marginBottom: 6,
-              }}
-            >
-              <div style={{ fontWeight: 600 }}>Replay</div>
-              <button
-                onClick={handleReplayTogglePlay}
-                disabled={!replayData}
-                style={{
-                  padding: '2px 8px',
-                  borderRadius: 4,
-                  border: '1px solid #fdba74',
-                  backgroundColor: replayData ? 'white' : '#fed7aa',
-                  color: '#9a3412',
-                  fontSize: 11,
-                  cursor: replayData ? 'pointer' : 'not-allowed',
-                }}
-              >
-                {replayPlaying ? '暂停' : '播放'}
-              </button>
-              <span>回放时长: {formatTime(replayData?.durationMs ?? 0)}</span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={replayData?.durationMs ?? 0}
-              step={1000}
-              value={Math.min(currentTimeMs, replayData?.durationMs ?? 0)}
-              onChange={handleReplayScrub}
-              style={{ width: '100%', marginBottom: 6 }}
-            />
-            <div style={{ marginBottom: 4 }}>回放当前时间: {formatTime(currentTimeMs)}</div>
-            <div>
-              当前片段: {activeReplayTranscript?.text ?? '暂无 transcript'}
-            </div>
-          </div>
+          <ReplayPanel
+            replayData={replayData}
+            replayPlaying={replayPlaying}
+            currentTimeMs={currentTimeMs}
+            activeReplayTranscript={activeReplayTranscript}
+            onTogglePlay={handleReplayTogglePlay}
+            onScrub={handleReplayScrub}
+          />
         )}
       </div>
 
