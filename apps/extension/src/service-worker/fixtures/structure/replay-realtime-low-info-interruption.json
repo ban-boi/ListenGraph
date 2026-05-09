@@ -1,0 +1,75 @@
+{
+  "name": "replay-realtime-low-info-interruption",
+  "transcripts": [
+    {
+      "chunkId": "replay-realtime-low-info-interruption_01",
+      "text": "今天的议题是讨论产品路线图接下来两个季度的规划方向。",
+      "startMs": 0,
+      "endMs": 12000,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:low_info_interruption",
+        "messageId": "low-info-interruption-01",
+        "voiceId": "manual"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-low-info-interruption_02",
+      "text": "嗯",
+      "startMs": 12000,
+      "endMs": 13000,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:low_info_interruption",
+        "messageId": "low-info-interruption-02",
+        "voiceId": "manual"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-low-info-interruption_03",
+      "text": "第一个方向是深化现有核心功能的稳定性，第二个方向是探索新的应用场景。",
+      "startMs": 13000,
+      "endMs": 30000,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:low_info_interruption",
+        "messageId": "low-info-interruption-03",
+        "voiceId": "manual"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-low-info-interruption_04",
+      "text": "掌声",
+      "startMs": 30000,
+      "endMs": 31000,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:low_info_interruption",
+        "messageId": "low-info-interruption-04",
+        "voiceId": "manual"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-low-info-interruption_05",
+      "text": "稳定性方面，我们需要把实时转写的断句逻辑做得更精确，减少半句和碎片化输入对后续结构化处理的影响。",
+      "startMs": 31000,
+      "endMs": 52000,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:low_info_interruption",
+        "messageId": "low-info-interruption-05",
+        "voiceId": "manual"
+      }
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": false,
+    "mustContainOneOfTexts": [
+      ["稳定性", "场景"],
+      ["断句", "结构化"]
+    ]
+  }
+}

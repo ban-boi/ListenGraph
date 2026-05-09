@@ -58,6 +58,7 @@ pnpm run test:ext:replay
 
 当前主入口：
 ```powershell
+pnpm run test:ext:real-fixture:check
 pnpm run test:ext:e2e
 pnpm run test:ext:e2e:closure
 pnpm run test:ext:e2e:real:local-bridge
@@ -68,6 +69,13 @@ pnpm run test:ext:e2e:real:sherpa
 - `apps/extension/e2e/extension.local.spec.ts`
 - `apps/extension/e2e/extension.closure.spec.ts`
 - `apps/extension/e2e/extension.real.spec.ts`
+- `apps/extension/e2e/fixtures/fixture-manifest.json`
+- `apps/extension/e2e/fixtures/README.md`
+
+真实 E2E fixture 静态基线检查：
+- `pnpm run test:ext:real-fixture:check`
+- 检查 real fixture manifest、音频文件存在性、WAV 格式、chunk 时长与 acceptance 元数据
+- 这一步不验证 ASR 语义，但能防止“把 fixture 基线资产改坏了还没发现”
 
 真实本地 ASR bridge 的便捷入口：
 - `pnpm run test:ext:e2e:real:local-bridge`

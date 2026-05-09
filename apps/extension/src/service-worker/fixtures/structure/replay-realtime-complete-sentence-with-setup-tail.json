@@ -1,0 +1,52 @@
+{
+  "name": "replay-realtime-complete-sentence-with-setup-tail",
+  "transcripts": [
+    {
+      "chunkId": "replay-realtime-complete-sentence-with-setup-tail_01",
+      "text": "我们先回顾一下上次的讨论结果。",
+      "startMs": 0,
+      "endMs": 8000,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:complete_sentence_with_setup_tail",
+        "messageId": "complete-sentence-setup-tail-01",
+        "voiceId": "manual"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-complete-sentence-with-setup-tail_02",
+      "text": "这个方案现在最核心是确保每个模块都能独立测试。",
+      "startMs": 8000,
+      "endMs": 22000,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:complete_sentence_with_setup_tail",
+        "messageId": "complete-sentence-setup-tail-02",
+        "voiceId": "manual"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-complete-sentence-with-setup-tail_03",
+      "text": "如果只做集成测试而不做单元测试，一旦出问题就很难定位到底层哪里出了错。",
+      "startMs": 22000,
+      "endMs": 40000,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:complete_sentence_with_setup_tail",
+        "messageId": "complete-sentence-setup-tail-03",
+        "voiceId": "manual"
+      }
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": false,
+    "mustContainOneOfTexts": [
+      ["模块", "测试"],
+      ["集成", "单元"],
+      ["定位", "问题"]
+    ]
+  }
+}

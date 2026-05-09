@@ -1,18 +1,21 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+
+// Local test types (self-contained, mirrors __test-helpers__ patterns)
+type WMessage = { type: string; target?: string; payload?: Record<string, unknown> };
+type WMessageSender = { tab?: { id?: number } };
+type WMessageHandler = (message: WMessage, sender: WMessageSender, sendResponse: (response: Record<string, unknown>) => void) => boolean | void;
 
 describe('Service Worker - provider settings', () => {
-  let messageListeners: Array<
-    (message: any, sender: any, sendResponse: (response: any) => void) => boolean | void
-  > = [];
+  let messageListeners: WMessageHandler[] = [];
   let dispatchMessage: (
-    message: any,
-    sender?: { tab?: { id: number } },
+    message: WMessage,
+    sender?: WMessageSender,
   ) => Promise<any>;
   let storageState: Record<string, unknown> = {};
-  let getProviderConfigMock: any;
-  let saveProviderConfigMock: any;
-  let clearProviderSecretsMock: any;
-  let createRuntimeProvidersMock: any;
+  let getProviderConfigMock: Mock;
+  let saveProviderConfigMock: Mock;
+  let clearProviderSecretsMock: Mock;
+  let createRuntimeProvidersMock: Mock;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -43,7 +46,7 @@ describe('Service Worker - provider settings', () => {
       config,
       asr: {
         name: 'openai-asr',
-        transcribeChunk: vi.fn(async ({ sessionId, startMs, endMs }: any) => ({
+        transcribeChunk: vi.fn(async ({ sessionId, startMs, endMs }: { sessionId: string; startMs: number; endMs: number }) => ({
           chunkId: 'chunk_1',
           sessionId,
           text: '真实 provider transcript',
@@ -55,7 +58,7 @@ describe('Service Worker - provider settings', () => {
       structurer: {
         name: 'openai-structurer',
         extractSegmentGraph: vi.fn(
-          async ({ sessionId, transcriptWindow }: any) => ({
+          async ({ sessionId, transcriptWindow }: { sessionId: string; transcriptWindow: Array<{ chunkId: string; text: string; startMs: number; endMs: number }> }) => ({
             segmentId: 'segment_1',
             sessionId,
             startMs: transcriptWindow[0].startMs,
@@ -94,12 +97,12 @@ describe('Service Worker - provider settings', () => {
           language: 'zh',
         },
       }),
-      normalizeProviderConfig: (config: any) => config,
+      normalizeProviderConfig: (config: { asr: Record<string, unknown>; structurer: Record<string, unknown> }) => config,
       createProviderRegistry: () => ({
         createRuntimeProviders: createRuntimeProvidersMock,
       }),
       TencentAsrProvider: class {},
-      redactProviderConfig: (config: any) => ({
+      redactProviderConfig: (config: { asr: Record<string, unknown>; structurer: Record<string, unknown> }) => ({
         asr: {
           type: config.asr.type,
           mode: config.asr.mode,
@@ -170,7 +173,7 @@ describe('Service Worker - provider settings', () => {
       delete storageState[key];
       return Promise.resolve();
     });
-    chromeMock.runtime.onMessage.addListener.mockImplementation((listener: any) => {
+    chromeMock.runtime.onMessage.addListener.mockImplementation((listener: WMessageHandler) => {
       messageListeners.push(listener);
     });
 

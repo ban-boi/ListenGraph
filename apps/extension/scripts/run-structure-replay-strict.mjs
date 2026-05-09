@@ -5,7 +5,10 @@ import { fileURLToPath } from 'node:url';
 
 const extensionRoot = fileURLToPath(new URL('..', import.meta.url));
 const fixtureDir = path.join(extensionRoot, 'src', 'service-worker', 'fixtures', 'structure');
-const artifactDir = path.join(fixtureDir, 'artifacts', 'provider-instability');
+const diagnosticDirArg = process.argv.find((a) => a.startsWith('--diagnostic-dir='));
+const artifactDir = diagnosticDirArg
+  ? path.resolve(extensionRoot, diagnosticDirArg.slice('--diagnostic-dir='.length))
+  : path.join(fixtureDir, 'artifacts', 'provider-instability');
 const isDryRun = process.argv.includes('--dry-run');
 const requestedFixtureFilter = process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_FIXTURE?.trim().toLowerCase();
 
@@ -42,7 +45,7 @@ const baseEnv = {
   LISTEN_GRAPHIC_E2E_STRUCTURER_TIMEOUT_MS:
     process.env.LISTEN_GRAPHIC_E2E_STRUCTURER_TIMEOUT_MS?.trim() || '180000',
   LISTEN_GRAPHIC_E2E_STRUCTURE_DELAY_MS:
-    process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_DELAY_MS?.trim() || '60000',
+    process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_DELAY_MS?.trim() || '10000',
   LISTEN_GRAPHIC_E2E_STRUCTURE_TIMEOUT_COOLDOWN_MS:
     process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_TIMEOUT_COOLDOWN_MS?.trim() || '240000',
   LISTEN_GRAPHIC_E2E_STRUCTURE_RATE_LIMIT_COOLDOWN_MS:
@@ -51,11 +54,20 @@ const baseEnv = {
     process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_EXTERNAL_RETRY_LIMIT?.trim() || '1',
 };
 
+const noAssembler = process.argv.includes('--no-assembler');
+if (noAssembler) {
+  baseEnv.LISTEN_GRAPHIC_STRUCTURE_UNIT_ASSEMBLER_ENABLED = 'false';
+}
+
+const modeLabel = noAssembler ? 'no-assembler' : 'with-assembler';
+console.log(`[strict-replay] mode: ${modeLabel}`);
+
 if (isDryRun) {
   console.log(
     JSON.stringify(
       {
         fixtureNames,
+        mode: modeLabel,
         env: {
           LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP:
             baseEnv.LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP,
@@ -69,6 +81,8 @@ if (isDryRun) {
             baseEnv.LISTEN_GRAPHIC_E2E_STRUCTURE_RATE_LIMIT_COOLDOWN_MS,
           LISTEN_GRAPHIC_E2E_STRUCTURE_EXTERNAL_RETRY_LIMIT:
             baseEnv.LISTEN_GRAPHIC_E2E_STRUCTURE_EXTERNAL_RETRY_LIMIT,
+          LISTEN_GRAPHIC_STRUCTURE_UNIT_ASSEMBLER_ENABLED:
+            baseEnv.LISTEN_GRAPHIC_STRUCTURE_UNIT_ASSEMBLER_ENABLED,
         },
       },
       null,
@@ -85,6 +99,7 @@ const overallSummary = {
   finishedAt: '',
   strict: baseEnv.LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP === '0',
   fixtureCount: fixtureNames.length,
+  mode: modeLabel,
   results: [],
 };
 let hasFailure = false;

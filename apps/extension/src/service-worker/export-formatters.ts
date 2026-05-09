@@ -1,11 +1,13 @@
 import type { SessionRecord } from '@listen-graphic/storage';
-import type { ExportFormat } from '../shared/messages';
+import type { AssemblerRunDebug, ExportFormat, StructureUnitDebug } from '../shared/messages';
 import type { MergedGraph, TranscriptChunk } from '@listen-graphic/schema';
 
 type ExportBundle = {
   session?: SessionRecord;
   transcripts: TranscriptChunk[];
   graph: MergedGraph;
+  assemblerRuns?: AssemblerRunDebug[];
+  structureUnits?: StructureUnitDebug[];
 };
 
 export function buildSessionExport(bundle: ExportBundle, format: ExportFormat) {
@@ -19,6 +21,8 @@ export function buildSessionExport(bundle: ExportBundle, format: ExportFormat) {
             session: bundle.session ?? null,
             transcripts: bundle.transcripts,
             graph: bundle.graph,
+            assemblerRuns: bundle.assemblerRuns ?? [],
+            structureUnits: bundle.structureUnits ?? [],
           },
           null,
           2,
@@ -57,7 +61,7 @@ function toMarkdown(bundle: ExportBundle) {
           '',
           ...bundle.transcripts.map(
             (chunk) =>
-              `- [${formatTime(chunk.startMs)}-${formatTime(chunk.endMs)}] ${chunk.text}`,
+              `- [${formatTime(chunk.startMs)}-${formatTime(chunk.endMs)}] ${sanitizeMarkdownText(chunk.text)}`,
           ),
         ];
 
@@ -69,7 +73,7 @@ function toMarkdown(bundle: ExportBundle) {
           '',
           ...bundle.graph.nodes.map(
             (node) =>
-              `- ${node.id} | ${node.type} | ${formatTime(node.timestampMs)} | ${node.text}`,
+              `- ${node.id} | ${node.type} | ${formatTime(node.timestampMs)} | ${sanitizeMarkdownText(node.text)}`,
           ),
         ];
 
@@ -84,7 +88,43 @@ function toMarkdown(bundle: ExportBundle) {
           ),
         ];
 
-  return [...header, '', ...transcriptLines, '', ...nodeLines, '', ...edgeLines].join('\n');
+  const assemblerLines =
+    !bundle.assemblerRuns?.length
+      ? ['## Assembler Runs', '', '_No assembler runs exported._']
+      : [
+          '## Assembler Runs',
+          '',
+          ...bundle.assemblerRuns.map(
+            (run) =>
+              `- seq=${run.sequence} | ${run.decision} | wait=${run.waitMs}ms | buffer=${run.bufferTranscriptCount} | effectiveChars=${run.effectiveCharCount} | ${sanitizeMarkdownText(run.reason)}`,
+          ),
+        ];
+
+  const structureUnitLines =
+    !bundle.structureUnits?.length
+      ? ['## Structure Units', '', '_No structure units exported._']
+      : [
+          '## Structure Units',
+          '',
+          ...bundle.structureUnits.map(
+            (unit) =>
+              `- ${unit.unitId} | [${formatTime(unit.startMs)}-${formatTime(unit.endMs)}] | chunks=${unit.sourceChunkIds.length} | ${sanitizeMarkdownText(unit.reason)} | ${sanitizeMarkdownText(unit.text)}`,
+          ),
+        ];
+
+  return [
+    ...header,
+    '',
+    ...transcriptLines,
+    '',
+    ...assemblerLines,
+    '',
+    ...structureUnitLines,
+    '',
+    ...nodeLines,
+    '',
+    ...edgeLines,
+  ].join('\n');
 }
 
 function toMermaid(graph: MergedGraph) {
@@ -101,6 +141,10 @@ function toMermaid(graph: MergedGraph) {
   }
 
   return lines.join('\n');
+}
+
+function sanitizeMarkdownText(text: string): string {
+  return text.replace(/\n/g, ' ').replace(/\|/g, '\\|');
 }
 
 function sanitizeId(id: string) {

@@ -1,4 +1,4 @@
-import { mergeSegmentGraph, pickDefaultView, scoreViews, stabilizeGraph } from '@listen-graphic/domain';
+import { pickDefaultView } from '@listen-graphic/domain';
 import {
   createDefaultProviderConfig,
   normalizeProviderConfig,
@@ -30,6 +30,7 @@ import type {
 } from '@listen-graphic/schema';
 import { generateId } from '@listen-graphic/shared-utils';
 import type {
+  AssemblerRunDebug,
   AppMessage,
   AsrStreamErrorPayload,
   AsrStreamFinalPayload,
@@ -41,12 +42,91 @@ import type {
   ReplaySessionData,
   RuntimeSnapshot,
   SessionState,
+  StructureUnitDebug,
   StructurerInjectionSeed,
   StructurerRunDebug,
 } from '../shared/messages';
 import { BUILD_INFO } from '../shared/build-info';
 import { buildSessionExport } from './export-formatters';
 import { createTencentRealtimeSessionConfig } from './tencent-realtime';
+import type {
+  PendingStructureBuffer,
+  StructureUnit,
+  StructureUnitCommitReason,
+  AssemblerSignals,
+  AssemblerDecision,
+} from './assembler-types';
+import {
+  hasEnoughBootstrapContext,
+  hasEnoughBatchBootstrapContext,
+  hasEnoughRealtimeBootstrapContext,
+  getTranscriptWindowDurationMs,
+  getTranscriptWindowCharCount,
+  getEffectiveTranscriptWindowCharCount,
+  shouldSkipIncrementalStructuring,
+  getNormalizedTranscriptCharCount,
+  getEffectiveTranscriptCharCount,
+  isLowInformationTranscript,
+  appendToPendingStructureBuffer,
+  createPendingStructureBuffer,
+  decideAssemblerByScore,
+  scoreAssemblerBoundary,
+  isMergeWithPrevCandidate,
+  looksLikeIncompleteUtterance,
+  looksLikeCompletionAfterPrevious,
+  materializeStructureUnit,
+  expandSegmentEvidenceChunkIds,
+  normalizeAssemblerText,
+  hasTerminalPunctuation,
+  hasIncompleteTailPattern,
+  hasWeakSetupTailPattern,
+} from './assembler-decision';
+import {
+  STRUCTURER_WINDOW_SIZE,
+  STRUCTURER_BOOTSTRAP_MIN_CHUNKS,
+  STRUCTURER_BOOTSTRAP_MIN_DURATION_MS,
+  STRUCTURER_BOOTSTRAP_MIN_CHAR_COUNT,
+  STRUCTURE_UNIT_ASSEMBLER_ENABLED,
+  STRUCTURE_UNIT_SOFT_WAIT_MS,
+  STRUCTURE_UNIT_HARD_WAIT_MS,
+  STRUCTURE_UNIT_MIN_EFFECTIVE_CHARS_FOR_COMMIT,
+  STRUCTURE_UNIT_MAX_BUFFERED_UTTERANCES,
+  STRUCTURE_UNIT_MAX_BUFFERED_CHARS,
+  STRUCTURE_UNIT_SCORE_COMMIT_THRESHOLD,
+  STRUCTURE_UNIT_SCORE_WAIT_THRESHOLD,
+  SCORE_BONUS_CHAR_THRESHOLD,
+  SCORE_PENALTY_CHAR_THRESHOLD,
+  SCORE_BONUS_UTTERANCE_MIN,
+  INCOMPLETE_UTTERANCE_CHAR_LIMIT,
+  COMPLETION_AFTER_PREV_CHAR_LIMIT,
+} from './assembler-types';
+import {
+  isTimeoutProviderError,
+  isSerializableProviderRequestError,
+  serializeProviderError,
+  type SerializeErrorFallbackContext,
+  createProviderConfigError,
+  sanitizeProviderError,
+  normalizeAsrErrorCode,
+  mergeProviderSecrets,
+  constrainProviderConfigToDirectMode,
+  stripProviderRetryOverrides,
+  hasProviderRetryOverrides,
+  stripProviderSecrets,
+  createExtensionDefaultProviderConfig,
+  toRecord,
+} from './provider-config';
+import {
+  createStructurerRunDebug,
+  finalizeStructurerRunDebug,
+  attachStructurerRunDebug,
+  readStructurerRunDebug,
+} from './debug-trace';
+import {
+  mergeTopics,
+  buildMergedGraphFromState,
+  buildDebugTranscriptTraces,
+} from './graph-building';
 
 type ServiceWorkerResponse = {
   success: boolean;
@@ -65,12 +145,18 @@ type ActiveSession = {
 type PersistedRuntimeState = {
   currentSession: ActiveSession | null;
   transcriptWindow: TranscriptChunk[];
+  pendingStructureBuffer: PendingStructureBuffer | null;
+  assemblerRuns: AssemblerRunDebug[];
+  structureUnits: StructureUnitDebug[];
   mergedGraph: MergedGraph | null;
   transcriptSequence?: number;
   chunkIndex: number;
   currentTimeMs: number;
   currentView: RuntimeSnapshot['currentView'];
   currentViewPinned: boolean;
+  structuringSince: number | null;
+  lastTranscriptAt: number | null;
+  lastGraphUpdatedAt: number | null;
   pendingSessionFinalize: { sessionId: string; endedAt: number } | null;
   providerSummary: ProviderRuntimeSummary;
   lastProviderError: SerializableProviderError | null;
@@ -80,17 +166,25 @@ type PersistedRuntimeState = {
 let currentSession: ActiveSession | null = null;
 let recoveredSessionId: string | null = null;
 let transcriptWindow: TranscriptChunk[] = [];
+let pendingStructureBuffer: PendingStructureBuffer | null = null;
+let assemblerRuns: AssemblerRunDebug[] = [];
+let structureUnits: StructureUnitDebug[] = [];
 let mergedGraph: MergedGraph | null = null;
 let transcriptSequence = 0;
 let currentTimeMs = 0;
 let currentView: RuntimeSnapshot['currentView'];
 let currentViewPinned = false;
+let structuringSince: number | null = null;
+let lastTranscriptAt: number | null = null;
+let lastGraphUpdatedAt: number | null = null;
 let pendingSessionFinalize: { sessionId: string; endedAt: number } | null = null;
 let inFlightChunkPromise: Promise<ServiceWorkerResponse> | null = null;
 let chunkQueueTail: Promise<void> = Promise.resolve();
+let pendingChunkWorkCount = 0;
 /** 与 file-chunk 队列独立：实时 ASR 的 processTranscriptChunk 必须入队，供 SESSION_STOP 等待 */
 let inFlightTranscriptPromise: Promise<ServiceWorkerResponse> | null = null;
 let transcriptProcessTail: Promise<void> = Promise.resolve();
+let pendingTranscriptWorkCount = 0;
 let stoppingSessionId: string | null = null;
 let runtimeStateHydrated = false;
 let hydrationPromise: Promise<void> | null = null;
@@ -98,6 +192,7 @@ let activeProviderConfig: ProviderConfig = createExtensionDefaultProviderConfig(
 let providerSummary = redactProviderConfig(activeProviderConfig);
 let lastProviderError: SerializableProviderError | null = null;
 let lastStructurerRun: StructurerRunDebug | null = null;
+let currentStructurerTarget: RuntimeSnapshot['currentStructurerTarget'] = null;
 let asrProvider: AsrProvider;
 let structurerProvider: StructurerProvider;
 
@@ -112,10 +207,6 @@ type LastStoppedSessionPayload = {
   currentViewPinned: boolean;
 };
 const CONTENT_SCRIPT_FILE = 'content-script/content-script.js';
-const STRUCTURER_WINDOW_SIZE = 3;
-const STRUCTURER_BOOTSTRAP_MIN_CHUNKS = 2;
-const STRUCTURER_BOOTSTRAP_MIN_DURATION_MS = 45_000;
-const STRUCTURER_BOOTSTRAP_MIN_CHAR_COUNT = 160;
 const providerRegistry = createProviderRegistry();
 const sessionRepository = createSessionRepository({ sessions: db.sessions });
 const transcriptChunkRepository = createTranscriptChunkRepository({
@@ -268,11 +359,18 @@ async function startSession(tabId: number): Promise<ServiceWorkerResponse> {
   };
   recoveredSessionId = null;
   transcriptWindow = [];
+  resetAssemblerState();
   mergedGraph = null;
   transcriptSequence = 0;
   currentTimeMs = 0;
   currentView = undefined;
   currentViewPinned = false;
+  structuringSince = null;
+  lastTranscriptAt = null;
+  lastGraphUpdatedAt = null;
+  pendingChunkWorkCount = 0;
+  pendingTranscriptWorkCount = 0;
+  currentStructurerTarget = null;
   stoppingSessionId = null;
   asrProvider.reset?.();
   structurerProvider.reset?.();
@@ -306,10 +404,17 @@ async function startSession(tabId: number): Promise<ServiceWorkerResponse> {
     recoveredSessionId = null;
     mergedGraph = null;
     transcriptWindow = [];
+    resetAssemblerState();
     transcriptSequence = 0;
     currentTimeMs = 0;
     currentView = undefined;
     currentViewPinned = false;
+    structuringSince = null;
+    lastTranscriptAt = null;
+    lastGraphUpdatedAt = null;
+    pendingChunkWorkCount = 0;
+    pendingTranscriptWorkCount = 0;
+    currentStructurerTarget = null;
     await clearRuntimeState();
     if (captureStarted) {
       try {
@@ -356,8 +461,22 @@ async function stopSession(sessionId: string): Promise<ServiceWorkerResponse> {
 
   asrProvider.reset?.();
   structurerProvider.reset?.();
+  if (
+    activeSession.state === 'structuring' ||
+    inFlightTranscriptPromise ||
+    inFlightChunkPromise
+  ) {
+    await notifyProviderProgress(
+      'structurer',
+      'Stop requested | waiting for in-flight work to settle',
+    );
+  }
   await waitForChunkQueueToSettle();
   await waitForTranscriptProcessingToSettle();
+  const flushResponse = await flushPendingStructureBuffer('commit_force_flush');
+  if (flushResponse && !flushResponse.success) {
+    return flushResponse;
+  }
 
   await cleanupSession({ sessionId: activeSession.sessionId, state: 'stopped' });
   return { success: true };
@@ -398,6 +517,10 @@ function isMissingReceiverError(error: unknown) {
 }
 
 function enqueueAudioChunk(payload: AudioChunkPayload): Promise<ServiceWorkerResponse> {
+  pendingChunkWorkCount += 1;
+  if (currentSession) {
+    void notifySessionState(currentSession.state);
+  }
   const chunkPromise = chunkQueueTail
     .catch(() => undefined)
     .then(async () => {
@@ -409,6 +532,10 @@ function enqueueAudioChunk(payload: AudioChunkPayload): Promise<ServiceWorkerRes
       } finally {
         if (inFlightChunkPromise === currentPromise) {
           inFlightChunkPromise = null;
+        }
+        pendingChunkWorkCount = Math.max(pendingChunkWorkCount - 1, 0);
+        if (currentSession) {
+          void notifySessionState(currentSession.state);
         }
       }
     });
@@ -432,6 +559,10 @@ async function waitForChunkQueueToSettle() {
 function enqueueTranscriptProcessing(
   work: () => Promise<ServiceWorkerResponse>,
 ): Promise<ServiceWorkerResponse> {
+  pendingTranscriptWorkCount += 1;
+  if (currentSession) {
+    void notifySessionState(currentSession.state);
+  }
   const transcriptPromise = transcriptProcessTail
     .catch(() => undefined)
     .then(async () => {
@@ -443,6 +574,10 @@ function enqueueTranscriptProcessing(
       } finally {
         if (inFlightTranscriptPromise === currentPromise) {
           inFlightTranscriptPromise = null;
+        }
+        pendingTranscriptWorkCount = Math.max(pendingTranscriptWorkCount - 1, 0);
+        if (currentSession) {
+          void notifySessionState(currentSession.state);
         }
       }
     });
@@ -503,7 +638,7 @@ async function handleAudioChunk(
       return { success: false, error: '会话停止中' };
     }
 
-    lastProviderError = serializeProviderError(error);
+    lastProviderError = serializeProviderError(error, getSerializeErrorFallback());
     const message = lastProviderError.message;
     currentSession.state = 'error';
     await notifySessionState('error');
@@ -573,6 +708,7 @@ async function handleAsrStreamPartial(
   await notifyProviderProgress(
     'asr',
     text ? `${providerLabel} ${label}: ${text}` : `${providerLabel} ${label}`,
+    payload.sliceType,
   );
   return { success: true };
 }
@@ -628,6 +764,7 @@ async function processTranscriptChunk(
     }
     appendTranscriptToWindow(transcript);
     currentTimeMs = transcript.endMs;
+    lastTranscriptAt = Date.now();
 
     await broadcastToSidepanel({
       type: 'TRANSCRIPT_READY',
@@ -635,117 +772,20 @@ async function processTranscriptChunk(
       payload: { transcript },
     });
 
-    if (
-      !mergedGraph &&
-      !hasEnoughBootstrapContext(transcriptWindow) &&
-      !shouldForceBootstrapForExternalRealtimeWindow(transcriptWindow) &&
-      !shouldForceBootstrapForCompletedRealtimeInput(transcript, transcriptWindow)
-    ) {
-      await notifyProviderProgress(
-        'structurer',
-        `等待 30 秒上下文或足够长的稳定话语 (${transcriptWindow.length}条/${getTranscriptWindowCharCount(transcriptWindow)}字)`,
-      );
+    const assemblerContext = getStructurerInvocationContextFromAssembler(transcript);
+    if (!assemblerContext) {
       lastProviderError = null;
       await notifySessionState('capturing');
       await persistRuntimeState();
       return { success: true };
     }
 
-    if (mergedGraph && shouldSkipIncrementalStructuring(transcript)) {
-      await notifyProviderProgress(
-        'structurer',
-        `跳过低信息量稳定话语 (${getNormalizedTranscriptCharCount(transcript)}字)`,
-      );
-      lastProviderError = null;
-      await notifySessionState('capturing');
-      await persistRuntimeState();
-      return { success: true };
-    }
-
-    await notifySessionState('structuring');
-    const structurerRun = createStructurerRunDebug({
-      sessionId: currentSession!.sessionId,
-      sequence: transcriptSequence,
-      transcript,
-      transcriptWindow,
-      previousGraph: mergedGraph,
+    return await runStructurerForTranscriptContext({
+      chunkSessionId,
+      transcript: assemblerContext.transcript,
+      structurerWindow: assemblerContext.structurerWindow,
+      evidenceChunkIds: assemblerContext.evidenceChunkIds,
     });
-
-    let segment: SegmentGraph;
-    try {
-      segment = await structurerProvider.extractSegmentGraph({
-        sessionId: currentSession!.sessionId,
-        transcriptWindow,
-        previousGraph: mergedGraph ?? undefined,
-        language: 'zh',
-      });
-    } catch (error) {
-      const providerShape = isSerializableProviderRequestError(error);
-      lastStructurerRun = finalizeStructurerRunDebug(structurerRun, {
-        status: isTimeoutProviderError(error) ? 'timeout' : 'error',
-        errorCode:
-          error instanceof ProviderRequestError
-            ? error.code
-            : providerShape
-              ? error.code
-              : 'STRUCTURE_ERROR',
-        errorMessage:
-          error instanceof Error ? error.message : 'Structurer 请求失败',
-        structurerDiagnostics:
-          error instanceof ProviderRequestError
-            ? error.structurerDiagnostics
-            : providerShape
-              ? error.structurerDiagnostics
-              : undefined,
-      });
-      throw error;
-    }
-
-    if (!currentSession || currentSession.sessionId !== chunkSessionId) {
-      return { success: false, error: '会话已结束' };
-    }
-
-    lastStructurerRun = null;
-    segment = attachStructurerRunDebug(segment, finalizeStructurerRunDebug(structurerRun, {
-      status: 'success',
-      segmentId: segment.segmentId,
-      topic: segment.topic,
-      nodeCount: segment.nodes.length,
-      edgeCount: segment.edges.length,
-      fallbackUsed: segment.nodes.some((node) => node.id.endsWith(':fallback')),
-    }));
-    try {
-      await withIndexedDbRetry(() => segmentGraphRepository.append(segment));
-    } catch (error) {
-      if (!isIndexedDbBackingStoreError(error)) {
-        throw error;
-      }
-      console.warn('[Service Worker] segment graph 持久化暂不可用，保留内存态结果:', error);
-    }
-    const nextMergedGraph = buildMergedGraph(segment);
-    try {
-      await withIndexedDbRetry(() => mergedGraphRepository.save(nextMergedGraph));
-    } catch (error) {
-      if (!isIndexedDbBackingStoreError(error)) {
-        throw error;
-      }
-      console.warn('[Service Worker] merged graph 持久化暂不可用，保留内存态结果:', error);
-    }
-    mergedGraph = nextMergedGraph;
-    if (!currentViewPinned) {
-      currentView = mergedGraph.viewHints?.defaultView ?? pickDefaultView(mergedGraph);
-    }
-
-    await broadcastToSidepanel({
-      type: 'MERGED_GRAPH_UPDATED',
-      target: 'sidepanel',
-      payload: { graph: mergedGraph },
-    });
-
-    lastProviderError = null;
-    await notifySessionState('capturing');
-    await persistRuntimeState();
-    return { success: true };
   } catch (error) {
     if (!currentSession || currentSession.sessionId !== chunkSessionId) {
       return { success: false, error: '会话已结束' };
@@ -755,7 +795,7 @@ async function processTranscriptChunk(
       return { success: false, error: '会话停止中' };
     }
 
-    lastProviderError = serializeProviderError(error);
+    lastProviderError = serializeProviderError(error, getSerializeErrorFallback());
     const message = lastProviderError.message;
     currentSession.state = 'error';
     await notifySessionState('error');
@@ -797,6 +837,7 @@ async function handleTestStructurerSessionRun(payload: {
   };
   recoveredSessionId = null;
   transcriptWindow = [...(payload.seed?.transcriptWindow ?? [])];
+  resetAssemblerState();
   mergedGraph = payload.seed?.mergedGraph ?? null;
   transcriptSequence =
     payload.seed?.transcriptSequence ??
@@ -808,6 +849,12 @@ async function handleTestStructurerSessionRun(payload: {
     0;
   currentView = mergedGraph?.viewHints?.defaultView;
   currentViewPinned = false;
+  structuringSince = null;
+  lastTranscriptAt = null;
+  lastGraphUpdatedAt = null;
+  pendingChunkWorkCount = 0;
+  pendingTranscriptWorkCount = 0;
+  currentStructurerTarget = null;
   pendingSessionFinalize = null;
   stoppingSessionId = null;
   asrProvider.reset?.();
@@ -841,6 +888,10 @@ async function handleTestStructurerSessionRun(payload: {
   }
 
   if (payload.finalizeSession ?? true) {
+    const flushResponse = await flushPendingStructureBuffer('commit_force_flush');
+    if (flushResponse && !flushResponse.success) {
+      return flushResponse;
+    }
     await cleanupSession({
       sessionId,
       state: 'stopped',
@@ -967,6 +1018,8 @@ async function handleExportSession(payload: {
       session,
       transcripts,
       graph,
+      assemblerRuns: getAssemblerRunsForDebugSession(payload.sessionId),
+      structureUnits: getStructureUnitsForDebugSession(payload.sessionId),
     },
     payload.format,
   );
@@ -1044,6 +1097,8 @@ async function loadDebugSessionData(sessionId: string): Promise<DebugSessionData
   const transcripts = await transcriptChunkRepository.listBySession(sessionId);
   const segments = await segmentGraphRepository.listBySession(sessionId);
   const graph = await loadMergedGraphAsset(sessionId, segments);
+  const sessionStructurerRuns = getStructurerRunsForDebugSession(sessionId, segments);
+  const sessionAssemblerRuns = getAssemblerRunsForDebugSession(sessionId);
 
   return {
     session: session ?? null,
@@ -1052,12 +1107,15 @@ async function loadDebugSessionData(sessionId: string): Promise<DebugSessionData
     traces: buildDebugTranscriptTraces(
       transcripts,
       segments,
-      getStructurerRunsForDebugSession(sessionId, segments),
+      sessionStructurerRuns,
+      sessionAssemblerRuns,
     ),
     graph: graph ?? null,
     providerSummary,
     lastProviderError,
-    structurerRuns: getStructurerRunsForDebugSession(sessionId, segments),
+    structurerRuns: sessionStructurerRuns,
+    assemblerRuns: sessionAssemblerRuns,
+    structureUnits: getStructureUnitsForDebugSession(sessionId),
   };
 }
 
@@ -1113,39 +1171,251 @@ function appendTranscriptToWindow(transcript: TranscriptChunk) {
   transcriptWindow = [...transcriptWindow, transcript].slice(-STRUCTURER_WINDOW_SIZE);
 }
 
-function hasEnoughBootstrapContext(window: TranscriptChunk[]) {
-  if (getCurrentAsrTransport() === 'ws') {
-    return hasEnoughRealtimeBootstrapContext(window);
+function getStructurerInvocationContextFromAssembler(transcript: TranscriptChunk): {
+  transcript: TranscriptChunk;
+  structurerWindow: TranscriptChunk[];
+  evidenceChunkIds?: string[];
+} | null {
+  if (!shouldHandleWithStructureUnitAssembler(transcript)) {
+    if (
+      !mergedGraph &&
+      !hasEnoughBootstrapContext(transcriptWindow, getCurrentAsrTransport()) &&
+      !shouldForceBootstrapForExternalRealtimeWindow(transcriptWindow) &&
+      !shouldForceBootstrapForCompletedRealtimeInput(transcript, transcriptWindow)
+    ) {
+      void notifyProviderProgress(
+        'structurer',
+        `等待 30 秒上下文或足够长的稳定话语 (${transcriptWindow.length}条/${getTranscriptWindowCharCount(transcriptWindow)}字)`,
+      );
+      return null;
+    }
+
+    if (mergedGraph && shouldSkipIncrementalStructuring(transcript)) {
+      void notifyProviderProgress(
+        'structurer',
+        `跳过低信息量稳定话语 (${getNormalizedTranscriptCharCount(transcript)}字)`,
+      );
+      return null;
+    }
+
+    return {
+      transcript,
+      structurerWindow: transcriptWindow,
+    };
   }
 
-  return hasEnoughBatchBootstrapContext(window);
+  const lowInformationTranscript = isLowInformationTranscript(transcript);
+  if (lowInformationTranscript && !pendingStructureBuffer) {
+    if (mergedGraph || !shouldForceBootstrapForCompletedRealtimeInput(transcript, transcriptWindow)) {
+      recordAssemblerRunDebug({
+        transcript,
+        decision: 'skip_current',
+        reason: `跳过低信息量稳定话语 (${getNormalizedTranscriptCharCount(transcript)}字)`,
+      });
+      void notifyProviderProgress(
+        'structurer',
+        `跳过低信息量稳定话语 (${getNormalizedTranscriptCharCount(transcript)}字)`,
+      );
+      return null;
+    }
+  }
+
+  if (!lowInformationTranscript) {
+    pendingStructureBuffer = appendToPendingStructureBuffer(pendingStructureBuffer, transcript);
+  }
+
+  const buffer = pendingStructureBuffer;
+  if (!buffer) {
+    return null;
+  }
+
+  const signals = deriveAssemblerSignals(buffer, transcript);
+  const hardDecision = decideAssemblerByHardRules(transcript, buffer, signals);
+  if (hardDecision) {
+    if (hardDecision.type === 'skip_current') {
+      recordAssemblerRunDebug({
+        transcript,
+        decision: 'skip_current',
+        reason: hardDecision.reason,
+      });
+      return null;
+    }
+    if (hardDecision.type === 'wait') {
+      recordAssemblerRunDebug({
+        transcript,
+        decision: 'wait',
+        reason: hardDecision.reason,
+      });
+      void notifyProviderProgress('structurer', hardDecision.reason);
+      return null;
+    }
+    if (hardDecision.type === 'commit') {
+      return materializeAssemblerCommitContext(transcript, hardDecision.reason);
+    }
+  }
+
+  const score = scoreAssemblerBoundary(buffer);
+  const scoreDecision = decideAssemblerByScore(score);
+  if (scoreDecision.type === 'wait') {
+    recordAssemblerRunDebug({
+      transcript,
+      decision: 'wait',
+      reason: scoreDecision.reason,
+      score,
+    });
+    void notifyProviderProgress('structurer', `${scoreDecision.reason} (score=${score})`);
+    return null;
+  }
+
+  if (scoreDecision.type !== 'commit') {
+    return null;
+  }
+  const commitReason = scoreDecision.reason;
+  return materializeAssemblerCommitContext(transcript, commitReason, score);
 }
 
-function hasEnoughBatchBootstrapContext(window: TranscriptChunk[]) {
-  if (window.length >= STRUCTURER_WINDOW_SIZE) {
-    return true;
-  }
+function resetAssemblerState(): void {
+  pendingStructureBuffer = null;
+  assemblerRuns = [];
+  structureUnits = [];
+}
 
-  if (window.length < STRUCTURER_BOOTSTRAP_MIN_CHUNKS) {
-    return false;
-  }
-
+function shouldHandleWithStructureUnitAssembler(transcript: TranscriptChunk) {
   return (
-    getTranscriptWindowDurationMs(window) >= STRUCTURER_BOOTSTRAP_MIN_DURATION_MS ||
-    getTranscriptWindowCharCount(window) >= STRUCTURER_BOOTSTRAP_MIN_CHAR_COUNT
+    STRUCTURE_UNIT_ASSEMBLER_ENABLED &&
+    getCurrentAsrTransport() === 'ws' &&
+    transcript.transport === 'ws'
   );
 }
 
-function hasEnoughRealtimeBootstrapContext(window: TranscriptChunk[]) {
-  if (window.length < STRUCTURER_BOOTSTRAP_MIN_CHUNKS) {
-    return false;
+async function runStructurerForTranscriptContext(params: {
+  chunkSessionId: string;
+  transcript: TranscriptChunk;
+  structurerWindow: TranscriptChunk[];
+  evidenceChunkIds?: string[];
+}): Promise<ServiceWorkerResponse> {
+  if (!currentSession) {
+    return { success: false, error: '没有活动会话' };
+  }
+  await notifySessionState('structuring');
+  const structurerRun = createStructurerRunDebug({
+    sessionId: currentSession.sessionId,
+    sequence: transcriptSequence,
+    transcript: params.transcript,
+    transcriptWindow: params.structurerWindow,
+    previousGraph: mergedGraph,
+  });
+  structuringSince = structurerRun.startedAt;
+  currentStructurerTarget = {
+    transcriptId: structurerRun.latestTranscriptId,
+    transcriptEndMs: structurerRun.transcriptEndMs,
+    transcriptCharCount: structurerRun.latestTranscriptCharCount,
+    transcriptPreview: params.transcript.text.replace(/\s+/g, ' ').trim().slice(0, 48),
+  };
+  await notifyProviderProgress(
+    'structurer',
+    `Structurer started | ${structurerRun.mode} | window=${structurerRun.windowTranscriptCount} | latest=${structurerRun.latestTranscriptCharCount}字`,
+  );
+
+  let segment: SegmentGraph;
+  try {
+    segment = await structurerProvider.extractSegmentGraph({
+      sessionId: currentSession.sessionId,
+      transcriptWindow: params.structurerWindow,
+      previousGraph: mergedGraph ?? undefined,
+      language: 'zh',
+    });
+  } catch (error) {
+    structuringSince = null;
+    currentStructurerTarget = null;
+    const providerShape = isSerializableProviderRequestError(error);
+    lastStructurerRun = finalizeStructurerRunDebug(structurerRun, {
+      status: isTimeoutProviderError(error) ? 'timeout' : 'error',
+      errorCode:
+        error instanceof ProviderRequestError
+          ? error.code
+          : providerShape
+            ? error.code
+            : 'STRUCTURE_ERROR',
+      errorMessage:
+        error instanceof Error ? error.message : 'Structurer 请求失败',
+      structurerDiagnostics:
+        error instanceof ProviderRequestError
+          ? error.structurerDiagnostics
+          : providerShape
+            ? error.structurerDiagnostics
+            : undefined,
+    });
+    await notifyProviderProgress(
+      'structurer',
+      `Structurer failed | ${lastStructurerRun.status} | ${lastStructurerRun.durationMs}ms | ${lastStructurerRun.errorCode ?? 'STRUCTURE_ERROR'}`,
+    );
+    throw error;
   }
 
-  return (
-    getTranscriptWindowDurationMs(window) >= STRUCTURER_BOOTSTRAP_MIN_DURATION_MS ||
-    getEffectiveTranscriptWindowCharCount(window) >= STRUCTURER_BOOTSTRAP_MIN_CHAR_COUNT
+  if (!currentSession || currentSession.sessionId !== params.chunkSessionId) {
+    return { success: false, error: '会话已结束' };
+  }
+
+  if (params.evidenceChunkIds?.length) {
+    segment = expandSegmentEvidenceChunkIds(
+      segment,
+      params.transcript.chunkId,
+      params.evidenceChunkIds,
+    );
+  }
+
+  structuringSince = null;
+  currentStructurerTarget = null;
+  lastStructurerRun = null;
+  const finalizedStructurerRun = finalizeStructurerRunDebug(structurerRun, {
+    status: 'success',
+    segmentId: segment.segmentId,
+    topic: segment.topic,
+    nodeCount: segment.nodes.length,
+    edgeCount: segment.edges.length,
+    fallbackUsed: segment.nodes.some((node) => node.id.endsWith(':fallback')),
+  });
+  await notifyProviderProgress(
+    'structurer',
+    `Structurer finished | ${finalizedStructurerRun.durationMs}ms | nodes=${finalizedStructurerRun.nodeCount ?? 0} | edges=${finalizedStructurerRun.edgeCount ?? 0}`,
   );
+  segment = attachStructurerRunDebug(segment, finalizedStructurerRun);
+  try {
+    await withIndexedDbRetry(() => segmentGraphRepository.append(segment));
+  } catch (error) {
+    if (!isIndexedDbBackingStoreError(error)) {
+      throw error;
+    }
+    console.warn('[Service Worker] segment graph 持久化暂不可用，保留内存态结果:', error);
+  }
+  const nextMergedGraph = buildMergedGraph(segment);
+  try {
+    await withIndexedDbRetry(() => mergedGraphRepository.save(nextMergedGraph));
+  } catch (error) {
+    if (!isIndexedDbBackingStoreError(error)) {
+      throw error;
+    }
+    console.warn('[Service Worker] merged graph 持久化暂不可用，保留内存态结果:', error);
+  }
+  mergedGraph = nextMergedGraph;
+  lastGraphUpdatedAt = Date.now();
+  if (!currentViewPinned) {
+    currentView = mergedGraph.viewHints?.defaultView ?? pickDefaultView(mergedGraph);
+  }
+
+  await broadcastToSidepanel({
+    type: 'MERGED_GRAPH_UPDATED',
+    target: 'sidepanel',
+    payload: { graph: mergedGraph },
+  });
+
+  lastProviderError = null;
+  await notifySessionState('capturing');
+  await persistRuntimeState();
+  return { success: true };
 }
+
 
 function shouldForceBootstrapForCompletedRealtimeInput(
   transcript: TranscriptChunk,
@@ -1184,40 +1454,214 @@ function getCurrentAsrTransport() {
   return activeProviderConfig.asr.transport === 'ws' ? 'ws' : 'batch';
 }
 
-function getTranscriptWindowDurationMs(window: TranscriptChunk[]) {
-  if (window.length === 0) {
-    return 0;
+function deriveAssemblerSignals(
+  buffer: PendingStructureBuffer,
+  transcript: TranscriptChunk,
+): AssemblerSignals {
+  return {
+    waitMs: Math.max(0, Date.now() - buffer.startedAt),
+    hasBootstrapReadyContext: hasEnoughBootstrapContext(transcriptWindow, getCurrentAsrTransport()),
+    forceBootstrapExternal: shouldForceBootstrapForExternalRealtimeWindow(transcriptWindow),
+    forceBootstrapCompleted: shouldForceBootstrapForCompletedRealtimeInput(
+      transcript,
+      transcriptWindow,
+    ),
+    hitHardWait: Date.now() - buffer.startedAt >= STRUCTURE_UNIT_HARD_WAIT_MS,
+    hitMaxBufferedUtterances:
+      buffer.utterances.length >= STRUCTURE_UNIT_MAX_BUFFERED_UTTERANCES,
+    hitMaxBufferedChars: buffer.effectiveChars >= STRUCTURE_UNIT_MAX_BUFFERED_CHARS,
+  };
+}
+
+function decideAssemblerByHardRules(
+  transcript: TranscriptChunk,
+  buffer: PendingStructureBuffer,
+  signals: AssemblerSignals,
+): AssemblerDecision | null {
+  if (signals.hitHardWait) {
+    return { type: 'commit', reason: 'commit_timeout' };
   }
 
-  return Math.max(0, (window[window.length - 1]?.endMs ?? 0) - (window[0]?.startMs ?? 0));
+  if (
+    transcript.finalReason === 'input_finished' ||
+    transcript.finalReason === 'manual_flush'
+  ) {
+    return { type: 'commit', reason: 'commit_force_flush' };
+  }
+
+  if (mergedGraph && (signals.hitMaxBufferedUtterances || signals.hitMaxBufferedChars)) {
+    return { type: 'commit', reason: 'commit_force_flush' };
+  }
+
+  if (mergedGraph && isMergeWithPrevCandidate(buffer)) {
+    return { type: 'commit', reason: 'merge_with_prev' };
+  }
+
+  if (!mergedGraph) {
+    if (signals.forceBootstrapExternal || signals.forceBootstrapCompleted) {
+      return { type: 'commit', reason: 'commit_force_flush' };
+    }
+
+    if (!signals.hasBootstrapReadyContext) {
+      return {
+        type: 'wait',
+        reason: `等待 30 秒上下文或足够长的稳定话语 (${transcriptWindow.length}条/${getTranscriptWindowCharCount(transcriptWindow)}字)`,
+      };
+    }
+
+    if (
+      getTranscriptWindowDurationMs(transcriptWindow) >= STRUCTURER_BOOTSTRAP_MIN_DURATION_MS ||
+      getEffectiveTranscriptWindowCharCount(transcriptWindow) >=
+        STRUCTURER_BOOTSTRAP_MIN_CHAR_COUNT
+    ) {
+      return { type: 'commit', reason: 'commit_rule' };
+    }
+  }
+
+  if (
+    buffer.sawTerminalPunctuation &&
+    buffer.effectiveChars >= STRUCTURE_UNIT_MIN_EFFECTIVE_CHARS_FOR_COMMIT &&
+    !buffer.sawIncompleteTail
+  ) {
+    return { type: 'commit', reason: 'commit_rule' };
+  }
+
+  return null;
 }
 
-function getTranscriptWindowCharCount(window: TranscriptChunk[]) {
-  return window.reduce((sum, chunk) => sum + chunk.text.length, 0);
+function materializeAssemblerCommitContext(
+  transcript: TranscriptChunk,
+  reason: StructureUnitCommitReason,
+  score?: number,
+) {
+  const buffer = pendingStructureBuffer;
+  if (!buffer || buffer.utterances.length === 0) {
+    return null;
+  }
+
+  pendingStructureBuffer = null;
+  if (!mergedGraph || buffer.utterances.length === 1) {
+    const latestTranscript = buffer.utterances[buffer.utterances.length - 1]!;
+    recordAssemblerRunDebug({
+      transcript,
+      decision: 'commit',
+      reason,
+      score,
+    });
+    return {
+      transcript: latestTranscript,
+      structurerWindow: transcriptWindow,
+    };
+  }
+
+  const unit = materializeStructureUnit(buffer, reason);
+  recordStructureUnitDebug(unit);
+  recordAssemblerRunDebug({
+    transcript,
+    decision: 'commit',
+    reason,
+    score,
+    committedUnitId: unit.unitId,
+    committedChunkIds: unit.sourceChunkIds,
+    committedText: unit.text,
+  });
+  return {
+    transcript: unit.transcript,
+    structurerWindow: collapseTranscriptWindowWithStructureUnit(unit),
+    evidenceChunkIds: unit.sourceChunkIds,
+  };
 }
 
-function getEffectiveTranscriptWindowCharCount(window: TranscriptChunk[]) {
-  return window.reduce((sum, chunk) => sum + getEffectiveTranscriptCharCount(chunk), 0);
+async function flushPendingStructureBuffer(
+  reason: StructureUnitCommitReason,
+): Promise<ServiceWorkerResponse | null> {
+  if (!pendingStructureBuffer || !currentSession) {
+    return null;
+  }
+
+  if (pendingStructureBuffer.effectiveChars <= 0) {
+    pendingStructureBuffer = null;
+    await persistRuntimeState();
+    return { success: true };
+  }
+
+  const latestTranscript =
+    pendingStructureBuffer.utterances[pendingStructureBuffer.utterances.length - 1]!;
+  const context = materializeAssemblerCommitContext(latestTranscript, reason);
+  if (!context) {
+    return { success: true };
+  }
+
+  return await runStructurerForTranscriptContext({
+    chunkSessionId: currentSession.sessionId,
+    transcript: context.transcript,
+    structurerWindow: context.structurerWindow,
+    evidenceChunkIds: context.evidenceChunkIds,
+  });
 }
 
-function shouldSkipIncrementalStructuring(transcript: TranscriptChunk) {
-  return isLowInformationTranscript(transcript);
+function recordAssemblerRunDebug(params: {
+  transcript: TranscriptChunk;
+  decision: AssemblerRunDebug['decision'];
+  reason: string;
+  score?: number;
+  committedUnitId?: string;
+  committedChunkIds?: string[];
+  committedText?: string;
+}) {
+  const buffer = pendingStructureBuffer;
+  const bufferUtterances = buffer?.utterances ?? [params.transcript];
+  assemblerRuns = [
+    ...assemblerRuns,
+    {
+      sessionId: currentSession?.sessionId ?? params.transcript.sessionId,
+      sequence: transcriptSequence,
+      latestTranscriptId: params.transcript.chunkId,
+      latestTranscriptEndMs: params.transcript.endMs,
+      decision: params.decision,
+      reason: params.reason,
+      bufferTranscriptIds: bufferUtterances.map((item) => item.chunkId),
+      bufferTranscriptCount: bufferUtterances.length,
+      bufferStartMs: bufferUtterances[0]?.startMs ?? params.transcript.startMs,
+      bufferEndMs: bufferUtterances[bufferUtterances.length - 1]?.endMs ?? params.transcript.endMs,
+      totalCharCount:
+        buffer?.totalChars ?? getNormalizedTranscriptCharCount(params.transcript),
+      effectiveCharCount:
+        buffer?.effectiveChars ?? getEffectiveTranscriptCharCount(params.transcript),
+      waitMs: buffer ? Math.max(0, Date.now() - buffer.startedAt) : 0,
+      sawTerminalPunctuation: buffer?.sawTerminalPunctuation ?? hasTerminalPunctuation(params.transcript.text),
+      sawIncompleteTail: buffer?.sawIncompleteTail ?? hasIncompleteTailPattern(params.transcript.text),
+      score: params.score,
+      committedUnitId: params.committedUnitId,
+      committedChunkIds: params.committedChunkIds,
+      committedText: params.committedText,
+      createdAt: Date.now(),
+    },
+  ].slice(-200);
 }
 
-function getNormalizedTranscriptCharCount(transcript: TranscriptChunk) {
-  return transcript.text.replace(/\s+/g, '').trim().length;
+function recordStructureUnitDebug(unit: StructureUnit) {
+  structureUnits = [
+    ...structureUnits,
+    {
+      unitId: unit.unitId,
+      sessionId: currentSession?.sessionId ?? unit.transcript.sessionId,
+      startMs: unit.startMs,
+      endMs: unit.endMs,
+      text: unit.text,
+      sourceChunkIds: unit.sourceChunkIds,
+      reason: unit.reason,
+      createdAt: Date.now(),
+    },
+  ].slice(-100);
 }
 
-function getEffectiveTranscriptCharCount(transcript: TranscriptChunk) {
-  return isLowInformationTranscript(transcript) ? 0 : getNormalizedTranscriptCharCount(transcript);
-}
-
-function isLowInformationTranscript(transcript: TranscriptChunk) {
-  const normalizedText = transcript.text.replace(/\s+/g, '').trim();
-  return (
-    /声音[。！？]?$/u.test(normalizedText) ||
-    /^(掌声|谢谢|欢迎|好的|好吧|嗯|啊|诶|哎)[。！？]?$/u.test(normalizedText)
+function collapseTranscriptWindowWithStructureUnit(unit: StructureUnit) {
+  const collapsedPrefix = transcriptWindow.slice(
+    0,
+    Math.max(0, transcriptWindow.length - unit.sourceChunkIds.length),
   );
+  return [...collapsedPrefix, unit.transcript];
 }
 
 async function buildContentScriptStartPayload(): Promise<Extract<AppMessage, { type: 'START_CAPTURE' }>['payload']> {
@@ -1301,120 +1745,31 @@ function buildMergedGraph(segment: SegmentGraph): MergedGraph {
   return buildMergedGraphFromState(mergedGraph, segment);
 }
 
-function buildMergedGraphFromState(
-  previousGraph: MergedGraph | null,
-  segment: SegmentGraph,
-): MergedGraph {
-  const baseGraph =
-    previousGraph === null
-      ? {
-          sessionId: segment.sessionId,
-          revision: 1,
-          topics: segment.topic
-            ? [
-                {
-                  topicId: generateId('topic'),
-                  title: segment.topic,
-                  startMs: segment.startMs,
-                  endMs: segment.endMs,
-                },
-              ]
-            : [],
-          nodes: segment.nodes,
-          edges: segment.edges,
-          updatedAt: Date.now(),
-        }
-      : mergeSegmentGraph(mergeTopics(previousGraph, segment), segment);
-
-  const stabilizedGraph = stabilizeGraph(baseGraph);
-  const scores = scoreViews(stabilizedGraph);
-  const defaultView = pickDefaultView(stabilizedGraph);
-
-  return {
-    ...stabilizedGraph,
-    topics: mergeTopics(stabilizedGraph, segment).topics,
-    viewHints: {
-      defaultView,
-      scores,
-    },
-    updatedAt: Date.now(),
-  };
+function getAssemblerRunsForDebugSession(sessionId: string) {
+  return assemblerRuns
+    .filter((run) => run.sessionId === sessionId)
+    .sort((a, b) => a.latestTranscriptEndMs - b.latestTranscriptEndMs || a.createdAt - b.createdAt);
 }
 
-function buildDebugTranscriptTraces(
-  transcripts: TranscriptChunk[],
-  segments: SegmentGraph[],
-  structurerRuns: StructurerRunDebug[],
-): DebugSessionData['traces'] {
-  const remainingSegments = [...segments].sort(
-    (a, b) => a.startMs - b.startMs || a.endMs - b.endMs,
-  );
-  const remainingRuns = [...structurerRuns].sort(
-    (a, b) => a.transcriptEndMs - b.transcriptEndMs || a.startedAt - b.startedAt,
-  );
-  let mergedAfter: MergedGraph | null = null;
-
-  return transcripts.map((transcript, index) => {
-    const transcriptWindow = transcripts.slice(Math.max(0, index - 2), index + 1);
-    const matchedSegmentIndex = remainingSegments.findIndex(
-      (segment) =>
-        segment.endMs === transcript.endMs,
-    );
-    const segment =
-      matchedSegmentIndex >= 0
-        ? remainingSegments.splice(matchedSegmentIndex, 1)[0]
-        : null;
-    const matchedRunIndex = remainingRuns.findIndex(
-      (run) => run.transcriptEndMs === transcript.endMs,
-    );
-    const structurerRun =
-      matchedRunIndex >= 0
-        ? remainingRuns.splice(matchedRunIndex, 1)[0]
-        : null;
-
-    if (segment) {
-      mergedAfter = buildMergedGraphFromState(mergedAfter, segment);
-    }
-
-    return {
-      sequence: index + 1,
-      transcript,
-      transcriptWindow,
-      segment,
-      structurerRun,
-      mergedGraphAfter: mergedAfter,
-    };
-  });
+function getStructureUnitsForDebugSession(sessionId: string) {
+  return structureUnits
+    .filter((unit) => unit.sessionId === sessionId)
+    .sort((a, b) => a.endMs - b.endMs || a.createdAt - b.createdAt);
 }
 
-function mergeTopics(graph: MergedGraph, segment: SegmentGraph): MergedGraph {
-  const hasSameTopic =
-    segment.topic &&
-    graph.topics.some((topic) => topic.title === segment.topic);
+function getPendingTranscriptCount() {
+  return Math.max(
+    pendingTranscriptWorkCount - (inFlightTranscriptPromise ? 1 : 0),
+    0,
+  );
+}
 
-  if (!segment.topic || hasSameTopic) {
-    return {
-      ...graph,
-      topics: graph.topics.map((topic, index) =>
-        index === graph.topics.length - 1
-          ? { ...topic, endMs: Math.max(topic.endMs, segment.endMs) }
-          : topic,
-      ),
-    };
-  }
+function getPendingWorkCount() {
+  return pendingChunkWorkCount + pendingTranscriptWorkCount;
+}
 
-  return {
-    ...graph,
-    topics: [
-      ...graph.topics,
-      {
-        topicId: generateId('topic'),
-        title: segment.topic,
-        startMs: segment.startMs,
-        endMs: segment.endMs,
-      },
-    ],
-  };
+function getStopDrainPendingCount() {
+  return stoppingSessionId ? getPendingWorkCount() : 0;
 }
 
 async function notifySessionState(state: SessionState) {
@@ -1428,6 +1783,10 @@ async function notifySessionState(state: SessionState) {
     payload: {
       sessionId: currentSession?.sessionId ?? null,
       state,
+      pendingTranscriptCount: getPendingTranscriptCount(),
+      pendingWorkCount: getPendingWorkCount(),
+      stopDrainPendingCount: getStopDrainPendingCount(),
+      currentStructurerTarget,
     },
   });
 }
@@ -1449,15 +1808,22 @@ async function ensureHydrated() {
         currentSession = state.currentSession;
         recoveredSessionId = state.currentSession?.sessionId ?? null;
         transcriptWindow = state.transcriptWindow ?? [];
+        pendingStructureBuffer = state.pendingStructureBuffer ?? null;
+        assemblerRuns = state.assemblerRuns ?? [];
+        structureUnits = state.structureUnits ?? [];
         mergedGraph = state.mergedGraph;
         transcriptSequence = state.transcriptSequence ?? state.chunkIndex ?? 0;
         currentTimeMs = state.currentTimeMs ?? 0;
         currentView = state.currentView;
         currentViewPinned = state.currentViewPinned ?? false;
+        structuringSince = state.structuringSince ?? null;
+        lastTranscriptAt = state.lastTranscriptAt ?? null;
+        lastGraphUpdatedAt = state.lastGraphUpdatedAt ?? null;
         pendingSessionFinalize = state.pendingSessionFinalize ?? null;
         providerSummary = state.providerSummary ?? providerSummary;
         lastProviderError = state.lastProviderError ?? null;
         lastStructurerRun = state.lastStructurerRun ?? null;
+        currentStructurerTarget = null;
       } else {
         const latestSession = (await sessionRepository.listRecent()).find(
           (session) => typeof session.endedAt === 'number',
@@ -1470,11 +1836,18 @@ async function ensureHydrated() {
 
           recoveredSessionId = latestSession.sessionId;
           transcriptWindow = recoveredChunks.slice(-3);
+          resetAssemblerState();
           mergedGraph = recoveredGraph ?? null;
           transcriptSequence = recoveredChunks.length;
           currentTimeMs = recoveredChunks[recoveredChunks.length - 1]?.endMs ?? 0;
           currentView = recoveredGraph?.viewHints?.defaultView;
           currentViewPinned = false;
+          structuringSince = null;
+          lastTranscriptAt = null;
+          lastGraphUpdatedAt = null;
+          pendingChunkWorkCount = 0;
+          pendingTranscriptWorkCount = 0;
+          currentStructurerTarget = null;
           lastStructurerRun = null;
         }
       }
@@ -1530,12 +1903,18 @@ async function persistRuntimeState() {
       [RUNTIME_STATE_KEY]: {
         currentSession,
         transcriptWindow,
+        pendingStructureBuffer,
+        assemblerRuns: assemblerRuns.slice(-50),
+        structureUnits: structureUnits.slice(-30),
         mergedGraph,
         transcriptSequence,
         chunkIndex: transcriptSequence,
         currentTimeMs,
         currentView,
         currentViewPinned,
+        structuringSince,
+        lastTranscriptAt,
+        lastGraphUpdatedAt,
         pendingSessionFinalize,
         providerSummary,
         lastProviderError,
@@ -1585,11 +1964,18 @@ async function cleanupSession(payload: {
     currentSession = null;
     recoveredSessionId = null;
     transcriptWindow = [];
+    resetAssemblerState();
     mergedGraph = null;
     transcriptSequence = 0;
     currentTimeMs = 0;
     currentView = undefined;
     currentViewPinned = false;
+    structuringSince = null;
+    lastTranscriptAt = null;
+    lastGraphUpdatedAt = null;
+    pendingChunkWorkCount = 0;
+    pendingTranscriptWorkCount = 0;
+    currentStructurerTarget = null;
     lastStructurerRun = null;
     if (pendingSessionFinalize) {
       await persistRuntimeState();
@@ -1677,6 +2063,41 @@ function getRuntimeSnapshot(): RuntimeSnapshot {
     currentViewPinned,
     providerSummary,
     lastProviderError,
+    lastStructurerRun,
+    structuringSince,
+    lastTranscriptAt,
+    lastGraphUpdatedAt,
+    pendingTranscriptCount: getPendingTranscriptCount(),
+    pendingWorkCount: getPendingWorkCount(),
+    stopDrainPendingCount: getStopDrainPendingCount(),
+    currentStructurerTarget,
+    currentAssemblerState: pendingStructureBuffer
+      ? {
+          enabled: true,
+          pendingUtteranceCount: pendingStructureBuffer.utterances.length,
+          pendingEffectiveCharCount: pendingStructureBuffer.effectiveChars,
+          pendingWaitMs: Math.max(0, Date.now() - pendingStructureBuffer.startedAt),
+          pendingPreview: pendingStructureBuffer.utterances
+            .map((item) => item.text.trim())
+            .filter(Boolean)
+            .join(' ')
+            .slice(0, 96),
+        }
+      : {
+          enabled: shouldHandleWithStructureUnitAssembler({
+            chunkId: '',
+            sessionId: currentSession?.sessionId ?? recoveredSessionId ?? '',
+            text: '',
+            startMs: 0,
+            endMs: 0,
+            provider: '',
+            transport: getCurrentAsrTransport(),
+          }),
+          pendingUtteranceCount: 0,
+          pendingEffectiveCharCount: 0,
+          pendingWaitMs: 0,
+          pendingPreview: '',
+        },
     workerBuild: BUILD_INFO,
   };
 }
@@ -1707,68 +2128,6 @@ async function getRuntimeSnapshotForSidepanel(): Promise<RuntimeSnapshot> {
   return base;
 }
 
-function createStructurerRunDebug(params: {
-  sessionId: string;
-  sequence: number;
-  transcript: TranscriptChunk;
-  transcriptWindow: TranscriptChunk[];
-  previousGraph: MergedGraph | null;
-}): Omit<StructurerRunDebug, 'completedAt' | 'durationMs' | 'status'> {
-  return {
-    sessionId: params.sessionId,
-    sequence: params.sequence,
-    mode: params.previousGraph ? 'incremental' : 'bootstrap',
-    transcriptEndMs: params.transcript.endMs,
-    latestTranscriptId: params.transcript.chunkId,
-    latestChunkId: params.transcript.chunkId,
-    windowStartMs: params.transcriptWindow[0]?.startMs ?? params.transcript.startMs,
-    windowEndMs:
-      params.transcriptWindow[params.transcriptWindow.length - 1]?.endMs ?? params.transcript.endMs,
-    windowTranscriptCount: params.transcriptWindow.length,
-    windowChunkCount: params.transcriptWindow.length,
-    windowCharCount: params.transcriptWindow.reduce((sum, chunk) => sum + chunk.text.length, 0),
-    latestTranscriptCharCount: params.transcript.text.length,
-    latestChunkCharCount: params.transcript.text.length,
-    recentNodeCount: params.previousGraph?.nodes.length ?? 0,
-    recentEdgeCount: params.previousGraph?.edges.length ?? 0,
-    startedAt: Date.now(),
-  };
-}
-
-function finalizeStructurerRunDebug(
-  run: Omit<StructurerRunDebug, 'completedAt' | 'durationMs' | 'status'>,
-  result: Pick<
-    StructurerRunDebug,
-    | 'status'
-    | 'segmentId'
-    | 'topic'
-    | 'nodeCount'
-    | 'edgeCount'
-    | 'fallbackUsed'
-    | 'errorCode'
-    | 'errorMessage'
-    | 'structurerDiagnostics'
-  >,
-): StructurerRunDebug {
-  const completedAt = Date.now();
-  return {
-    ...run,
-    ...result,
-    completedAt,
-    durationMs: completedAt - run.startedAt,
-  };
-}
-
-function attachStructurerRunDebug(segment: SegmentGraph, run: StructurerRunDebug): SegmentGraph {
-  return {
-    ...segment,
-    raw: {
-      providerResponse: segment.raw,
-      debug: run,
-    },
-  };
-}
-
 function getStructurerRunsForDebugSession(
   sessionId: string,
   segments: SegmentGraph[],
@@ -1789,31 +2148,12 @@ function getStructurerRunsForDebugSession(
   );
 }
 
-function readStructurerRunDebug(segment: SegmentGraph): StructurerRunDebug | null {
-  if (!segment.raw || typeof segment.raw !== 'object') {
-    return null;
-  }
-
-  const debug = (segment.raw as { debug?: Partial<StructurerRunDebug> }).debug;
-  if (!debug) {
-    return null;
-  }
-
-  return {
-    ...debug,
-    latestTranscriptId: debug.latestTranscriptId ?? debug.latestChunkId ?? '',
-    latestChunkId: debug.latestChunkId ?? debug.latestTranscriptId ?? '',
-    windowTranscriptCount: debug.windowTranscriptCount ?? debug.windowChunkCount ?? 0,
-    windowChunkCount: debug.windowChunkCount ?? debug.windowTranscriptCount ?? 0,
-    latestTranscriptCharCount:
-      debug.latestTranscriptCharCount ?? debug.latestChunkCharCount ?? 0,
-    latestChunkCharCount:
-      debug.latestChunkCharCount ?? debug.latestTranscriptCharCount ?? 0,
-  } as StructurerRunDebug;
-}
-
-function isTimeoutProviderError(error: unknown) {
-  return error instanceof ProviderRequestError && error.code === 'TIMEOUT_ERROR';
+function getSerializeErrorFallback(): SerializeErrorFallbackContext {
+  const stage = currentSession?.state === 'structuring' || lastStructurerRun ? 'structurer' as const : 'asr' as const;
+  const providerName = stage === 'structurer'
+    ? structurerProvider?.name ?? 'unknown-provider'
+    : asrProvider?.name ?? 'unknown-provider';
+  return { stage, providerName };
 }
 
 async function notifyError(code: string, message: string) {
@@ -1827,11 +2167,12 @@ async function notifyError(code: string, message: string) {
 async function notifyProviderProgress(
   stage: 'asr' | 'structurer',
   message: string,
+  asrSliceType?: 0 | 1,
 ) {
   await broadcastToSidepanel({
     type: 'PROVIDER_PROGRESS',
     target: 'sidepanel',
-    payload: { stage, message },
+    payload: { stage, message, asrSliceType },
   });
 }
 
@@ -1882,223 +2223,3 @@ function commitProviderRuntime(
   }
 }
 
-function isSerializableProviderRequestError(
-  error: unknown,
-): error is SerializableProviderError & Error {
-  if (!error || typeof error !== 'object' || !(error instanceof Error)) {
-    return false;
-  }
-  const e = error as unknown as Record<string, unknown>;
-  return (
-    typeof e.code === 'string' &&
-    typeof e.provider === 'string' &&
-    typeof e.stage === 'string' &&
-    typeof e.retriable === 'boolean'
-  );
-}
-
-function serializeProviderError(error: unknown): SerializableProviderError {
-  if (error instanceof ProviderRequestError) {
-    return sanitizeProviderError(error.toJSON());
-  }
-
-  if (isSerializableProviderRequestError(error)) {
-    return sanitizeProviderError({
-      code: error.code,
-      message: error.message,
-      provider: error.provider,
-      stage: error.stage,
-      retriable: error.retriable,
-      status: error.status,
-      attemptCount: error.attemptCount,
-      structurerDiagnostics: error.structurerDiagnostics,
-    });
-  }
-
-  const stage =
-    currentSession?.state === 'structuring' || lastStructurerRun ? 'structurer' : 'asr';
-  const provider =
-    stage === 'structurer'
-      ? structurerProvider?.name ?? 'unknown-provider'
-      : asrProvider?.name ?? 'unknown-provider';
-  const code = stage === 'structurer' ? 'STRUCTURE_ERROR' : 'TRANSCRIBE_ERROR';
-
-  return sanitizeProviderError({
-    code,
-    message:
-      error instanceof Error ? error.message : 'Provider 请求发生未知错误',
-    provider,
-    stage,
-    retriable: false,
-  });
-}
-
-function createProviderConfigError(message: string): SerializableProviderError {
-  const normalizedMessage = message || '读取 provider 配置失败';
-  const normalizedLowerMessage = normalizedMessage.toLowerCase();
-  const stage =
-    normalizedLowerMessage.includes('asr') || normalizedLowerMessage.includes('transcrib')
-      ? 'asr'
-      : 'structurer';
-
-  return sanitizeProviderError({
-    code: 'CONFIG_ERROR',
-    message: normalizedMessage,
-    provider: 'provider-config',
-    stage,
-    retriable: false,
-  });
-}
-
-function mergeProviderSecrets(
-  nextConfig: ProviderConfig,
-  existingConfig?: ProviderConfig,
-): ProviderConfig {
-  if (!existingConfig) {
-    return nextConfig;
-  }
-
-  return {
-    asr: {
-      ...nextConfig.asr,
-      apiKey:
-        nextConfig.asr.apiKey ??
-        (nextConfig.asr.type === existingConfig.asr.type ? existingConfig.asr.apiKey : undefined),
-      sessionToken:
-        nextConfig.asr.sessionToken ??
-        (nextConfig.asr.type === existingConfig.asr.type &&
-        nextConfig.asr.mode === existingConfig.asr.mode
-          ? existingConfig.asr.sessionToken
-          : undefined),
-      bridgeAuthToken:
-        nextConfig.asr.bridgeAuthToken ??
-        (nextConfig.asr.type === existingConfig.asr.type &&
-        nextConfig.asr.type === 'external' &&
-        nextConfig.asr.mode === existingConfig.asr.mode
-          ? existingConfig.asr.bridgeAuthToken
-          : undefined),
-      secretId:
-        nextConfig.asr.secretId ??
-        (nextConfig.asr.type === existingConfig.asr.type &&
-        nextConfig.asr.type === 'tencent' &&
-        nextConfig.asr.mode === 'direct'
-          ? existingConfig.asr.secretId
-          : undefined),
-      secretKey:
-        nextConfig.asr.secretKey ??
-        (nextConfig.asr.type === existingConfig.asr.type &&
-        nextConfig.asr.type === 'tencent' &&
-        nextConfig.asr.mode === 'direct'
-          ? existingConfig.asr.secretKey
-          : undefined),
-    },
-    structurer: {
-      ...nextConfig.structurer,
-      apiKey:
-        nextConfig.structurer.apiKey ??
-        (nextConfig.structurer.type === existingConfig.structurer.type
-          ? existingConfig.structurer.apiKey
-          : undefined),
-      sessionToken:
-        nextConfig.structurer.sessionToken ??
-        (nextConfig.structurer.type === existingConfig.structurer.type &&
-        nextConfig.structurer.mode === existingConfig.structurer.mode
-          ? existingConfig.structurer.sessionToken
-          : undefined),
-    },
-  };
-}
-
-function constrainProviderConfigToDirectMode(config: ProviderConfig): ProviderConfig {
-  return {
-    asr: {
-      ...config.asr,
-      mode: 'direct',
-      sessionToken: undefined,
-    },
-    structurer: {
-      ...config.structurer,
-      mode: 'direct',
-      sessionToken: undefined,
-    },
-  };
-}
-
-function stripProviderRetryOverrides(config: ProviderConfig): ProviderConfig {
-  return {
-    asr: {
-      ...config.asr,
-      retry: undefined,
-    },
-    structurer: {
-      ...config.structurer,
-      retry: undefined,
-    },
-  };
-}
-
-function hasProviderRetryOverrides(config: Partial<ProviderConfig> | null | undefined) {
-  return Boolean(config?.asr?.retry || config?.structurer?.retry);
-}
-
-function stripProviderSecrets(config: ProviderConfig): ProviderConfig {
-  return {
-    asr: {
-      ...config.asr,
-      apiKey: undefined,
-      sessionToken: undefined,
-      bridgeAuthToken: undefined,
-      secretId: undefined,
-      secretKey: undefined,
-    },
-    structurer: {
-      ...config.structurer,
-      apiKey: undefined,
-      sessionToken: undefined,
-    },
-  };
-}
-
-function sanitizeProviderError(error: SerializableProviderError): SerializableProviderError {
-  return {
-    ...error,
-    message: error.message || 'Provider request failed',
-  };
-}
-
-function createExtensionDefaultProviderConfig(): ProviderConfig {
-  return normalizeProviderConfig({
-    asr: {
-      type: 'tencent',
-      mode: 'direct',
-      transport: 'ws',
-      model: '16k_zh',
-      needVad: true,
-      language: 'zh',
-    },
-    structurer: {
-      type: 'aliyun',
-      mode: 'direct',
-      language: 'zh',
-    },
-  });
-}
-
-function normalizeAsrErrorCode(code: string): SerializableProviderError['code'] {
-  switch (code) {
-    case 'AUTH_ERROR':
-    case 'RATE_LIMIT_ERROR':
-    case 'NETWORK_ERROR':
-    case 'TIMEOUT_ERROR':
-    case 'INVALID_RESPONSE':
-    case 'CONFIG_ERROR':
-    case 'TRANSCRIBE_ERROR':
-      return code;
-    default:
-      return 'TRANSCRIBE_ERROR';
-  }
-}
-
-function toRecord(value: unknown): Record<string, unknown> {
-  return typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
-}

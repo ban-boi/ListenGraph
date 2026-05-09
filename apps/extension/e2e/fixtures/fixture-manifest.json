@@ -1,4 +1,20 @@
 {
+  "fixtureSetId": "local-bridge-baseline-v1",
+  "purpose": "Headless real E2E baseline for Local ASR Bridge providers. This fixture set is curated to favor short, endpoint-friendly stable utterances so external ws bridges can reliably produce final transcripts and graph output.",
+  "provenance": {
+    "source": "sherpa-onnx-streaming-paraformer-bilingual-zh-en/test_wavs",
+    "sourceFiles": ["0.wav", "1.wav", "2.wav", "3.wav"],
+    "selectionReason": [
+      "Current sherpa reference bridge can consistently emit endpoint finals for these clips.",
+      "The clips cover short utterances, mixed zh-en content, and multiple final boundaries.",
+      "They are better suited for Local ASR Bridge regression than the previous English-only synthetic fixture."
+    ]
+  },
+  "baselineNotes": [
+    "This fixture is a local-bridge-friendly baseline, not a semantic gold transcript corpus.",
+    "Real acceptance is intentionally anchored on keyword groups and graph production, not exact verbatim text.",
+    "If you replace the audio, you must rerun the real local-bridge E2E and refresh keyword anchors."
+  ],
   "captureMode": "fixture-chunks",
   "language": "en",
   "chunkDelayMs": 25,
@@ -6,25 +22,25 @@
     {
       "url": "/audio/chunk-1.wav",
       "startMs": 0,
-      "endMs": 4000,
+      "endMs": 10053,
       "audioMimeType": "audio/wav"
     },
     {
       "url": "/audio/chunk-2.wav",
-      "startMs": 4000,
-      "endMs": 8000,
+      "startMs": 10053,
+      "endMs": 15153,
       "audioMimeType": "audio/wav"
     },
     {
       "url": "/audio/chunk-3.wav",
-      "startMs": 8000,
-      "endMs": 12000,
+      "startMs": 15153,
+      "endMs": 19842,
       "audioMimeType": "audio/wav"
     },
     {
       "url": "/audio/chunk-4.wav",
-      "startMs": 12000,
-      "endMs": 16000,
+      "startMs": 19842,
+      "endMs": 28673,
       "audioMimeType": "audio/wav"
     }
   ],
@@ -44,6 +60,13 @@
       ["always"],
       ["频繁", "frequently", "free quently"],
       ["一般现代式", "现代式"]
+    ]
+  },
+  "verification": {
+    "staticCommand": "pnpm --filter extension test:real-fixture:check",
+    "runtimeCommands": [
+      "pnpm run test:ext:e2e:real:local-bridge",
+      "pnpm run test:ext:e2e:real:sherpa"
     ]
   }
 }

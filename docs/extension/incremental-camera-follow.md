@@ -116,7 +116,7 @@ sidepanel 的图在一个 session 内默认被视为持续长出的阅读对象�
 
 - 绝对可读阈值
   - 目标镜头再小也不能低于绝对可读底线
-  - 当前参数：`AUTO_TOUR_ABSOLUTE_READABLE_ZOOM = 0.75`
+  - 当前参数：`AUTO_TOUR_ABSOLUTE_READABLE_ZOOM = 0.9`
 - 相对缩放阈值
   - 即使目标镜头绝对上“还能读”，如果相对当前镜头突然缩小太多，也不允许并入同一段
   - 第一段允许稍微宽一点，因为它还要承担上下文建立
@@ -126,8 +126,8 @@ sidepanel 的图在一个 session 内默认被视为持续长出的阅读对象�
 
 具体判断口径是：
 
-- 第一段要求：`targetZoom >= max(0.75, currentZoom * 0.8)`
-- 后续段要求：`targetZoom >= max(0.75, currentZoom * 0.85)`
+- 第一段要求：`targetZoom >= max(0.9, currentZoom * 0.8)`
+- 后续段要求：`targetZoom >= max(0.9, currentZoom * 0.85)`
 
 这里的 `currentZoom` 不是始终拿导览开始前的那个 zoom，而是逐段推进：
 
@@ -259,6 +259,7 @@ sidepanel 的图在一个 session 内默认被视为持续长出的阅读对象�
   - 导览暂停后无进一步交互多久自动恢复
 - `AUTO_TOUR_ABSOLUTE_READABLE_ZOOM`
   - 单段导览允许的最低绝对可读缩放阈值
+  - 实际导览目标框的最小上下文尺寸也受这个值约束，避免用户当前在远景时把目标框扩到文字不可读
 - `AUTO_TOUR_FIRST_BATCH_RELATIVE_RATIO`
   - 第一段相对当前镜头允许的最小缩放比例
 - `AUTO_TOUR_RELATIVE_READABLE_RATIO`

@@ -1,0 +1,85 @@
+{
+  "name": "replay-realtime-merge-with-prev-boundary",
+  "transcripts": [
+    {
+      "chunkId": "replay-realtime-merge-with-prev-boundary_01",
+      "text": "我们先把这个实时转写系统的背景说明清楚。它现在已经可以稳定拿到语音识别结果，也可以把这些结果交给结构化器生成图谱，但是中间的输入边界还需要进一步收紧，否则结构化器会经常拿到不完整的语义片段。",
+      "startMs": 0,
+      "endMs": 24000,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:merge_with_prev_boundary",
+        "messageId": "merge-with-prev-boundary-01",
+        "voiceId": "manual"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-merge-with-prev-boundary_02",
+      "text": "所以这次改造的目标不是让大模型承担所有断句工作，而是在进入结构化器之前，先用一个轻量的 assembler 把稳定话语聚成更适合抽取图谱的 structure unit。",
+      "startMs": 24000,
+      "endMs": 50000,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:merge_with_prev_boundary",
+        "messageId": "merge-with-prev-boundary-02",
+        "voiceId": "manual"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-merge-with-prev-boundary_03",
+      "text": "这个方案现在最核心的问题在于",
+      "startMs": 50000,
+      "endMs": 51200,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:merge_with_prev_boundary",
+        "messageId": "merge-with-prev-boundary-03",
+        "voiceId": "manual"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-merge-with-prev-boundary_04",
+      "text": "它需要先把实时转写和结构化输入的边界分清楚。",
+      "startMs": 51200,
+      "endMs": 53600,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:merge_with_prev_boundary",
+        "messageId": "merge-with-prev-boundary-04",
+        "voiceId": "manual"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-merge-with-prev-boundary_05",
+      "text": "第一阶段先用程序规则完成缓冲和提交，后续再评估是否需要小模型仲裁。",
+      "startMs": 53600,
+      "endMs": 65000,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:merge_with_prev_boundary",
+        "messageId": "merge-with-prev-boundary-05",
+        "voiceId": "manual"
+      }
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": false,
+    "mustContainOneOfTexts": [
+      [
+        "实时转写",
+        "语音识别"
+      ],
+      [
+        "结构化器",
+        "structure unit"
+      ],
+      [
+        "边界",
+        "assembler"
+      ]
+    ]
+  }
+}

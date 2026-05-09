@@ -139,3 +139,4 @@ structurer 当前仍保持：
 - [扩展当前运行现状](C:\Users\finni\Desktop\ListenGraph\docs\extension\current-runtime.md)
 - [扩展 Structurer 运行时行为](C:\Users\finni\Desktop\ListenGraph\docs\extension\structurer-runtime.md)
 - [扩展运行时主链路基线](C:\Users\finni\Desktop\ListenGraph\docs\extension\runtime-mainline.md)
+- [图谱几何与 dagre/elk 布局器备忘](C:/Users/finni/Desktop/ListenGraph/docs/extension/graph-layout-dagre-elk-memo.md)（边锚点、专用布局器选型与不重排策略的备忘）

@@ -1,0 +1,64 @@
+{
+  "name": "replay-realtime-consecutive-incomplete",
+  "transcripts": [
+    {
+      "chunkId": "replay-realtime-consecutive-incomplete_01",
+      "text": "但是",
+      "startMs": 0,
+      "endMs": 1500,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:consecutive_incomplete",
+        "messageId": "consecutive-incomplete-01",
+        "voiceId": "manual"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-consecutive-incomplete_02",
+      "text": "我觉得",
+      "startMs": 1500,
+      "endMs": 3000,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:consecutive_incomplete",
+        "messageId": "consecutive-incomplete-02",
+        "voiceId": "manual"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-consecutive-incomplete_03",
+      "text": "这个问题",
+      "startMs": 3000,
+      "endMs": 4500,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:consecutive_incomplete",
+        "messageId": "consecutive-incomplete-03",
+        "voiceId": "manual"
+      }
+    },
+    {
+      "chunkId": "replay-realtime-consecutive-incomplete_04",
+      "text": "其实根源在于我们没有把边界条件考虑清楚，所以每次遇到类似情况都会出现同样的错误。",
+      "startMs": 4500,
+      "endMs": 18000,
+      "raw": {
+        "source": "synthetic-realtime-replay",
+        "artifactFixtureName": "manual:consecutive_incomplete",
+        "messageId": "consecutive-incomplete-04",
+        "voiceId": "manual"
+      }
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "mustContainOneOfTexts": [
+      ["边界", "条件"],
+      ["错误", "问题"],
+      ["根源", "考虑"]
+    ]
+  }
+}

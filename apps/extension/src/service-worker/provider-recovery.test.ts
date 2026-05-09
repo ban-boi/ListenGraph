@@ -1,18 +1,21 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+
+// Local test types (self-contained, mirrors __test-helpers__ patterns)
+type PMessage = { type: string; target?: string; payload?: Record<string, unknown> };
+type PMessageSender = { tab?: { id?: number } };
+type PMessageHandler = (message: PMessage, sender: PMessageSender, sendResponse: (response: Record<string, unknown>) => void) => boolean | void;
 
 describe('Service Worker - provider recovery', () => {
-  let messageListeners: Array<
-    (message: any, sender: any, sendResponse: (response: any) => void) => boolean | void
-  > = [];
+  let messageListeners: PMessageHandler[] = [];
   let dispatchMessage: (
-    message: any,
-    sender?: { tab?: { id: number } },
+    message: PMessage,
+    sender?: PMessageSender,
   ) => Promise<any>;
   let storageState: Record<string, unknown> = {};
-  let createRuntimeProvidersMock: any;
+  let createRuntimeProvidersMock: Mock;
   /** 与 worker 内 structurerProvider 同一引用，便于断言调用次数（勿在 factory 内联 new vi.fn，否则易与 runtime 脱节） */
-  let extractSegmentGraphMock: any;
-  let transcribeChunkMock: any;
+  let extractSegmentGraphMock: Mock;
+  let transcribeChunkMock: Mock;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -20,7 +23,7 @@ describe('Service Worker - provider recovery', () => {
     messageListeners = [];
     storageState = {};
 
-    transcribeChunkMock = vi.fn(async ({ sessionId, startMs, endMs, audio }: any) => ({
+    transcribeChunkMock = vi.fn(async ({ sessionId, startMs, endMs, audio }: { sessionId: string; startMs: number; endMs: number; audio?: ArrayBuffer | Blob }) => ({
       chunkId: `chunk_${startMs}`,
       sessionId,
       text: `恢复片段@${startMs}-${endMs}`,
@@ -34,7 +37,7 @@ describe('Service Worker - provider recovery', () => {
     }));
 
     extractSegmentGraphMock = vi.fn(
-      async ({ sessionId, transcriptWindow, previousGraph }: any) => ({
+      async ({ sessionId, transcriptWindow, previousGraph }: { sessionId: string; transcriptWindow: Array<{ chunkId: string; text: string; startMs: number; endMs: number }>; previousGraph?: { nodes?: Array<{ id: string }> } | null }) => ({
         segmentId: `segment_${transcriptWindow.length}`,
         sessionId,
         startMs: transcriptWindow[transcriptWindow.length - 1].startMs,
@@ -52,7 +55,7 @@ describe('Service Worker - provider recovery', () => {
           },
         ],
         edges:
-          previousGraph?.nodes?.length > 0
+          previousGraph?.nodes && previousGraph.nodes.length > 0
             ? [
                 {
                   id: 'edge_mock',
@@ -68,7 +71,7 @@ describe('Service Worker - provider recovery', () => {
       }),
     );
 
-    createRuntimeProvidersMock = vi.fn((config: any) => ({
+    createRuntimeProvidersMock = vi.fn((config: Record<string, unknown>) => ({
       config,
       asr: {
         name: 'mock-asr',
@@ -99,12 +102,12 @@ describe('Service Worker - provider recovery', () => {
           language: 'zh',
         },
       }),
-      normalizeProviderConfig: (config: any) => config,
+      normalizeProviderConfig: (config: { asr: Record<string, unknown>; structurer: Record<string, unknown> }) => config,
       createProviderRegistry: () => ({
         createRuntimeProviders: createRuntimeProvidersMock,
       }),
       TencentAsrProvider: class {},
-      redactProviderConfig: (config: any) => ({
+      redactProviderConfig: (config: { asr: Record<string, unknown>; structurer: Record<string, unknown> }) => ({
         asr: {
           type: config.asr.type,
           mode: config.asr.mode,
@@ -187,12 +190,12 @@ describe('Service Worker - provider recovery', () => {
       return Promise.resolve();
     });
 
-    chromeMock.runtime.onMessage.addListener.mockImplementation((listener: any) => {
+    chromeMock.runtime.onMessage.addListener.mockImplementation((listener: PMessageHandler) => {
       messageListeners.push(listener);
     });
     chromeMock.runtime.sendMessage.mockImplementation(
-      (message: any, callback?: (response: any) => void) => {
-        const sendResponse = (response: any) => {
+      (message: PMessage, callback?: (response: Record<string, unknown>) => void) => {
+        const sendResponse = (response: Record<string, unknown>) => {
           callback?.(response);
         };
 

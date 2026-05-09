@@ -41,6 +41,31 @@ pnpm --filter extension test:structure:real:full:part1
 pnpm --filter extension test:structure:real:full:part2
 ```
 
+### Realtime assembler KPI
+```powershell
+pnpm --filter extension test:structure:ws:kpi
+```
+
+它只离线读取 `replay-realtime-*` fixture，不调用真实 structurer API。用途是快速检查：
+- assembler 的 commit / wait / skip 节奏
+- `merge_with_prev` 是否误触发
+- 首图延迟
+- 每分钟 structurer 调用次数
+- 每个 commit 聚合的 utterance 数
+- 已有 diagnostic artifact 覆盖下的 `emptyOutputRatio`
+
+### Realtime assembler strict replay
+```powershell
+pnpm --filter extension test:structure:real:replay:strict
+```
+
+它会对全部 `replay-realtime-*` fixture 调用真实 structurer，并写入 diagnostic artifacts。单条 fixture 调试可用：
+
+```powershell
+$env:LISTEN_GRAPHIC_E2E_STRUCTURE_FIXTURE='merge-with-prev-boundary'
+pnpm --filter extension test:structure:real:replay:strict
+```
+
 ### 单条 fixture 调试
 ```powershell
 $env:LISTEN_GRAPHIC_E2E_STRUCTURE_FIXTURE='bootstrap-basic'
@@ -97,6 +122,11 @@ fixture 不是标准答案全文，而是：
 - 职业路径后悔与因果链
 - 冲突 / 反驳
 - 低新颖度输入
+- realtime structure unit assembler
+- 明显半句 + 补完句的 `merge_with_prev`
+- setup-tail 反例
+- 连续极短半句反例
+- 低信息 utterance 插入中间
 
 ## 本轮已经落到生产代码里的优化
 
@@ -105,6 +135,14 @@ fixture 不是标准答案全文，而是：
 - graph/export 缺失时可从 persisted segments 重建并回写
 - provider timeout 配置真正透传到运行时
 - provider error / status / body 诊断更完整
+- realtime WS 路径加入 structure unit assembler
+- assembler debug/export/runtime snapshot 可观测
+- `merge_with_prev` 会把 structure unit 的 evidence chunk ids 展开回 source chunks
+
+### assembler replay
+- 新增 `report-structure-unit-ws-kpis.mjs`
+- 新增 `replay-realtime-*` KPI 统计
+- 新增 `merge_with_prev` 正样本与 3 条边界反例 fixture
 
 ### structurer provider
 - incremental prompt 更明确要求新理由挂回旧节点
@@ -116,18 +154,23 @@ fixture 不是标准答案全文，而是：
 - `test:structure`
 - `full-part1`
 - `full-part2`
+- `test:structure:real:replay:strict` 的 8 条 `replay-realtime-*` fixture
 
 这说明：
 - 这批样本稳定暴露出来的问题，阶段性已经被处理完
+- assembler Phase 1/2 对现有 replay 样本无明显回归
+- `merge_with_prev` 仅在专用半句 + 补完场景触发，边界反例未出现误合并
 
 但不说明：
 - 更广泛的真实 transcript 分布下不会再出现新问题
+- `emptyOutputRatio` 不可以直接归因给 assembler；没有 no-assembler A/B baseline 时，它只能作为观测指标
 
 ## 下一步怎么扩
 - 继续引入风格明显不同的新 transcript
 - 每份只抽 1 到 2 条高价值片段
 - 先跑 strict real suite
 - 只有当某个问题稳定复现，再改 prompt / normalize / merge 逻辑
+- 若要判断 assembler 是否影响空输出率，需要补 no-assembler A/B baseline，而不是只看单侧 `emptyOutputRatio`
 
 当前不建议继续只围绕现有几份文本打磨，否则容易过拟合。
 

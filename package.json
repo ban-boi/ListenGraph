@@ -12,6 +12,7 @@
     "typecheck": "turbo run typecheck",
     "test:ext:contract": "pnpm --filter extension test:run -- src/service-worker/index.test.ts",
     "test:ext:replay": "pnpm --filter extension test:structure",
+    "test:ext:real-fixture:check": "pnpm --filter extension test:real-fixture:check",
     "test:ext:e2e": "pnpm --filter extension test:e2e",
     "test:ext:e2e:closure": "pnpm --filter extension exec playwright test e2e/extension.closure.spec.ts",
     "test:ext:e2e:real:local-bridge": "pnpm --filter extension test:e2e:real:local-bridge",

@@ -17,6 +17,8 @@
 - [扩展增量图稳定性](C:/Users/finni/Desktop/ListenGraph/docs/extension/incremental-graph-stability.md)
   - session 内图为何表现为“持续长出”而非每次重算
   - 当前 view / fitView / 布局缓存 / 语义冻结的产品决策
+- [图谱几何与 dagre/elk 布局器备忘](C:/Users/finni/Desktop/ListenGraph/docs/extension/graph-layout-dagre-elk-memo.md)
+  - 手写稳定排版 vs 四向边锚点；专用布局器收益、语义边界、与增量稳定的重排策略（备忘，非实现权威）
 - [扩展增量相机跟随](C:/Users/finni/Desktop/ListenGraph/docs/extension/incremental-camera-follow.md)
   - 图增量更新后 viewport 为什么会自动聚焦
   - 当前目标区域、多段自动导览、双阈值分段、动画跟随与用户冷却期的产品决策
@@ -32,13 +34,16 @@
 ### Structurer 行为与回归
 - [扩展 Structurer 运行时行为](C:/Users/finni/Desktop/ListenGraph/docs/extension/structurer-runtime.md)
   - 当前 structurer 窗口、bootstrap、prompt 合约、归一化和调试语义
+- [扩展 Structure Unit Assembler 方案](C:/Users/finni/Desktop/ListenGraph/docs/extension/structure-unit-assembler.md)
+  - 在 ASR stable utterance 与 structurer 之间增加组装层
+  - 当前 Phase 1/2 实现状态、programmatic assembler、`merge_with_prev`、KPI 与 replay 验证结论
 - [Extension 测试入口](C:/Users/finni/Desktop/ListenGraph/docs/testing/README.md)
   - 当前三层测试结构
   - contract / replay / thin E2E 推荐入口
   - **本仓库不附带**本地 Sherpa/ONNX 模型；`test:ext:e2e:real:sherpa` 的默认本机模型路径与 `LISTEN_GRAPHIC_SHERPA_*` 等前提见文内「本仓库与本地 ASR 模型」一节（避免误以为克隆即可跑真实 ASR）
 - [Structure 回归说明](C:/Users/finni/Desktop/ListenGraph/docs/testing/structure-regression.md)
   - 当前 structure-focused fixture 体系
-  - smoke / full / strict real suite 入口
+  - smoke / full / strict real suite 入口，以及 realtime assembler KPI / replay 验证入口
 
 ### Provider 目录
 - [Provider 文档导航](C:/Users/finni/Desktop/ListenGraph/docs/providers/README.md)

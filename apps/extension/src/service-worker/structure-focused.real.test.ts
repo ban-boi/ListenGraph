@@ -315,7 +315,7 @@ describeReal('Structure-focused real structurer', () => {
           trace.status = response.status;
           trace.ok = response.ok;
           try {
-            trace.responseBody = (await response.clone().text()).slice(0, 800);
+            trace.responseBody = (await response.clone().text()).slice(0, 50_000);
           } catch (error) {
             trace.responseBody =
               error instanceof Error ? `<failed to read body: ${error.message}>` : '<failed to read body>';
