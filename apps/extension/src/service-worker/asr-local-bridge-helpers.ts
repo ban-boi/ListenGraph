@@ -59,7 +59,10 @@ export async function runLocalBridgeRealtimeFixture(params: {
   const utterances: BridgeUtterance[] = [];
 
   return new Promise((resolve, reject) => {
-    const ws = new WebSocket(params.endpoint);
+    const wsUrl = params.authToken
+      ? `${params.endpoint}${params.endpoint.includes('?') ? '&' : '?'}token=${encodeURIComponent(params.authToken)}`
+      : params.endpoint;
+    const ws = new WebSocket(wsUrl);
     const timeout = setTimeout(() => {
       safeClose(ws);
       reject(new Error(`本地 bridge 超时 (${params.timeoutMs}ms)`));

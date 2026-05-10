@@ -17,7 +17,7 @@ import {
 const bridgeEndpoint = process.env.LISTEN_GRAPHIC_LOCAL_BRIDGE_ENDPOINT?.trim() || 'ws://127.0.0.1:15377/ws';
 const bridgeHealthUrl = process.env.LISTEN_GRAPHIC_LOCAL_BRIDGE_HEALTH_URL?.trim() || 'http://127.0.0.1:15377/healthz';
 const bridgeAuthToken = process.env.LISTEN_GRAPHIC_LOCAL_BRIDGE_AUTH_TOKEN?.trim() || undefined;
-const requestedFixtureFilter = process.env.LISTEN_GRAPHIC_E2E_ASR_FIXTURE?.trim().toLowerCase();
+const requestedFixtureFilter = process.env.LISTEN_GRAPHIC_E2E_ASR_FIXTURE?.trim().toLowerCase() || undefined;
 const realtimeTimeoutMs = Number.parseInt(process.env.LISTEN_GRAPHIC_E2E_ASR_TIMEOUT_MS?.trim() || '', 10);
 const effectiveTimeoutMs = Number.isFinite(realtimeTimeoutMs) ? realtimeTimeoutMs : 90_000;
 
