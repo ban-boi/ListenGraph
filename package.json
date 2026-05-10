@@ -16,7 +16,9 @@
     "test:ext:e2e": "pnpm --filter extension test:e2e",
     "test:ext:e2e:closure": "pnpm --filter extension exec playwright test e2e/extension.closure.spec.ts",
     "test:ext:e2e:real:local-bridge": "pnpm --filter extension test:e2e:real:local-bridge",
-    "test:ext:e2e:real:sherpa": "pnpm --filter extension test:e2e:real:sherpa"
+    "test:ext:e2e:real:sherpa": "pnpm --filter extension test:e2e:real:sherpa",
+    "test:ext:asr:local-bridge": "pnpm --filter extension test:asr:local-bridge",
+    "test:ext:asr:local-bridge:mock": "pnpm --filter extension test:asr:local-bridge:mock"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

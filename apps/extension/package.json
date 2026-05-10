@@ -30,6 +30,8 @@
     "test:structure:full": "pnpm run test:structure:mock && pnpm run test:structure:real:full",
     "test:asr:real": "vitest run src/service-worker/asr-realtime.real.test.ts",
     "test:asr:compare": "vitest run src/service-worker/asr-transport-compare.real.test.ts",
+    "test:asr:local-bridge": "vitest run src/service-worker/asr-realtime.local-bridge.test.ts",
+    "test:asr:local-bridge:mock": "node ./scripts/run-asr-local-bridge-test.mjs",
     "test:real-fixture:check": "node ./scripts/check-real-e2e-fixture-baseline.mjs",
     "test:contract": "vitest run src/service-worker/index.test.ts",
     "test:e2e": "playwright test e2e/extension.local.spec.ts",
