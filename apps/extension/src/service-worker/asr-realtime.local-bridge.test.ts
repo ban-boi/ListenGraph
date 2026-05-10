@@ -30,7 +30,7 @@ beforeAll(async () => {
   bridgeAvailable = await isBridgeHealthy(bridgeHealthUrl);
 });
 
-describe.skipIf(() => !bridgeAvailable)('ASR 本地 bridge fixture 测试', () => {
+describe('ASR 本地 bridge fixture 测试', () => {
   const fixtures = loadAsrRealtimeFixtures(requestedFixtureFilter);
 
   for (const fixture of fixtures) {
@@ -38,6 +38,10 @@ describe.skipIf(() => !bridgeAvailable)('ASR 本地 bridge fixture 测试', () =
       fixture.name,
       { timeout: effectiveTimeoutMs + 30_000 },
       async () => {
+        if (!bridgeAvailable) {
+          test.skip();
+          return;
+        }
         const audioPath = resolveAudioPath(fixture.name, fixture.audioFile);
         const wavBytes = fs.readFileSync(audioPath);
         const pcmPayload = readPcm16MonoWav(wavBytes, fixture.audioClipDurationMs);
