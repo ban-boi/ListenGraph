@@ -51,6 +51,7 @@ import {
   isIndexedDbBackingStoreError,
   persistRuntimeState,
   clearRuntimeState,
+  persistAssemblerTrace,
   type PersistenceDeps,
 } from './state-persistence';
 import {
@@ -191,6 +192,7 @@ const sessionLifecycleCallbacks: SessionLifecycleCallbacks = {
   runtimeStateKey: RUNTIME_STATE_KEY,
   lastStoppedSessionKey: LAST_STOPPED_SESSION_KEY,
   notifyProviderProgress,
+  persistAssemblerTrace,
 };
 
 // ─── 初始化 ─────────────────────────────────────────────────────────────────

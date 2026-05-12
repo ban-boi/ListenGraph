@@ -185,3 +185,40 @@ export async function clearRuntimeState(
     console.warn('[Service Worker] runtime state 清理暂不可用，等待下次 hydration 覆盖:', error);
   }
 }
+
+export async function persistAssemblerTrace(
+  sessionId: string,
+  assemblerRuns: unknown[],
+  structureUnits: unknown[],
+): Promise<void> {
+  try {
+    const { db } = await import('@listen-graphic/storage');
+    await db.assemblerTraces.put({
+      sessionId,
+      assemblerRuns,
+      structureUnits,
+      savedAt: Date.now(),
+    });
+  } catch (error) {
+    console.warn('[Service Worker] assembler trace 持久化失败:', error);
+  }
+}
+
+export async function loadAssemblerTrace(
+  sessionId: string,
+): Promise<{ assemblerRuns: unknown[]; structureUnits: unknown[] } | null> {
+  try {
+    const { db } = await import('@listen-graphic/storage');
+    const record = await db.assemblerTraces.get(sessionId);
+    if (!record) {
+      return null;
+    }
+    return {
+      assemblerRuns: record.assemblerRuns,
+      structureUnits: record.structureUnits,
+    };
+  } catch (error) {
+    console.warn('[Service Worker] 加载 assembler trace 失败:', error);
+    return null;
+  }
+}

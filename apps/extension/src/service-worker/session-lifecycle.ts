@@ -51,6 +51,11 @@ export interface SessionLifecycleCallbacks {
   };
   runtimeStateKey: string;
   lastStoppedSessionKey: string;
+  persistAssemblerTrace: (
+    sessionId: string,
+    assemblerRuns: unknown[],
+    structureUnits: unknown[],
+  ) => Promise<void>;
 }
 
 export async function startSession(
@@ -212,6 +217,18 @@ export async function cleanupSession(
   const lastTimeMs = S.currentTimeMs;
   const lastView = S.currentView;
   const lastViewPinned = S.currentViewPinned;
+
+  // 在 reset 前持久化 assembler trace
+  const assemblerRunsToSave = S.assemblerRuns;
+  const structureUnitsToSave = S.structureUnits;
+  if (assemblerRunsToSave.length > 0 || structureUnitsToSave.length > 0) {
+    await callbacks.persistAssemblerTrace(
+      payload.sessionId,
+      assemblerRunsToSave,
+      structureUnitsToSave,
+    );
+  }
+
   try {
     await callbacks.sessionRepository.markEnded(payload.sessionId, endedAt);
     S.pendingSessionFinalize = null;
