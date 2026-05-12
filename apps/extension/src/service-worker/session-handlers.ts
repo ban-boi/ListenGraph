@@ -9,10 +9,12 @@ import type {
 } from '@listen-graphic/schema';
 import type {
   AppMessage,
+  AssemblerRunDebug,
   DebugSessionData,
   ExportFormat,
   ReplaySessionData,
   RuntimeSnapshot,
+  StructureUnitDebug,
   StructurerInjectionSeed,
 } from '../shared/messages';
 import { generateId } from '@listen-graphic/shared-utils';
@@ -28,9 +30,28 @@ import {
 import {
   withIndexedDbRetry,
   isIndexedDbBackingStoreError,
+  loadAssemblerTrace,
 } from './state-persistence';
 import { getAssemblerRunsForDebugSession, getStructureUnitsForDebugSession } from './assembler-machine';
 import type { ServiceWorkerResponse } from './sw-types';
+
+async function getAssemblerTraceForSession(
+  sessionId: string,
+  S: RuntimeStateContainer,
+): Promise<{ assemblerRuns: AssemblerRunDebug[]; structureUnits: StructureUnitDebug[] }> {
+  let assemblerRuns = getAssemblerRunsForDebugSession(sessionId, S);
+  let structureUnits = getStructureUnitsForDebugSession(sessionId, S);
+
+  if (assemblerRuns.length === 0 && structureUnits.length === 0) {
+    const persisted = await loadAssemblerTrace(sessionId);
+    if (persisted) {
+      assemblerRuns = persisted.assemblerRuns as AssemblerRunDebug[];
+      structureUnits = persisted.structureUnits as StructureUnitDebug[];
+    }
+  }
+
+  return { assemblerRuns, structureUnits };
+}
 
 export async function handleNodeClicked(
   payload: {
@@ -138,13 +159,15 @@ export async function handleExportSession(
     return { success: false, error: '缺少 graph 资产，无法导出' };
   }
 
+  const trace = await getAssemblerTraceForSession(payload.sessionId, S);
+
   const exportData = deps.buildSessionExport(
     {
       session,
       transcripts,
       graph,
-      assemblerRuns: getAssemblerRunsForDebugSession(payload.sessionId, S),
-      structureUnits: getStructureUnitsForDebugSession(payload.sessionId, S),
+      assemblerRuns: trace.assemblerRuns,
+      structureUnits: trace.structureUnits,
     },
     payload.format,
   );
@@ -196,7 +219,8 @@ export async function loadDebugSessionData(
   const segments = await deps.segmentGraphRepository.listBySession(sessionId);
   const graph = await deps.loadMergedGraphAsset(sessionId, segments);
   const sessionStructurerRuns = getStructurerRunsForDebugSession(sessionId, segments, S);
-  const sessionAssemblerRuns = getAssemblerRunsForDebugSession(sessionId, S);
+  const { assemblerRuns: sessionAssemblerRuns, structureUnits: sessionStructureUnits } =
+    await getAssemblerTraceForSession(sessionId, S);
 
   return {
     session: session ?? null,
@@ -213,7 +237,7 @@ export async function loadDebugSessionData(
     lastProviderError: S.lastProviderError,
     structurerRuns: sessionStructurerRuns,
     assemblerRuns: sessionAssemblerRuns,
-    structureUnits: getStructureUnitsForDebugSession(sessionId, S),
+    structureUnits: sessionStructureUnits,
   };
 }
 
