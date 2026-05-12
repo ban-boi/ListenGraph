@@ -408,7 +408,7 @@ describe('App - 图谱更新', () => {
     expect(screen.getByRole('button', { name: '节点二' }).dataset.nodePosition).toBe(secondPosition);
     expect(reactFlowFitViewSpy).toHaveBeenCalledTimes(initialFitViewCalls);
     expect(reactFlowFitBoundsSpy).not.toHaveBeenCalled();
-    expect(screen.getByText(/图更新: 仅新增连线 \+1/)).toBeInTheDocument();
+    expect(screen.getByText(/连线 \+1/)).toBeInTheDocument();
   });
 
   it('新增节点更新时会使用动画 fitBounds 跟随新区域', async () => {

@@ -37,9 +37,9 @@ describe('ASR 本地 bridge fixture 测试', () => {
     test(
       fixture.name,
       { timeout: effectiveTimeoutMs + 30_000 },
-      async () => {
+      async (ctx) => {
         if (!bridgeAvailable) {
-          test.skip();
+          ctx.skip();
           return;
         }
         const audioPath = resolveAudioPath(fixture.name, fixture.audioFile);

@@ -51,6 +51,9 @@
 - 当前权威行为说明不在单独 provider 文档，而在：
   - [扩展当前运行现状](C:/Users/finni/Desktop/ListenGraph/docs/extension/current-runtime.md)
   - [扩展 Structurer 运行时行为](C:/Users/finni/Desktop/ListenGraph/docs/extension/structurer-runtime.md)
+- [Aliyun Qwen3.5-397B Structurer 基准测试](C:/Users/finni/Desktop/ListenGraph/docs/providers/aliyun-qwen35-397b-structurer-benchmark.md)
+  - 2026-05-11 选型评估：模型能力合格但强制推理导致延迟不可接受
+  - 适合看大模型在实时场景的延迟瓶颈分析
 
 ## 历史参考
 
