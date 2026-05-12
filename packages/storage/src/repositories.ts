@@ -1,5 +1,5 @@
 import type { MergedGraph, ProviderConfig, SegmentGraph, TranscriptChunk } from '@listen-graphic/schema';
-import type { SessionRecord, SettingRecord } from './indexeddb';
+import type { SessionRecord, SettingRecord, AssemblerTraceRecord } from './indexeddb';
 
 type TableLike<T, Key> = {
   put(value: T): Promise<unknown>;
@@ -146,6 +146,24 @@ export function createSettingsRepository(tables: {
           sessionToken: undefined,
         },
       });
+    },
+  };
+}
+
+export function createAssemblerTraceRepository(tables: {
+  assemblerTraces: TableLike<AssemblerTraceRecord, string>;
+}) {
+  return {
+    async save(trace: AssemblerTraceRecord) {
+      await tables.assemblerTraces.put(trace);
+    },
+    async get(sessionId: string) {
+      return tables.assemblerTraces.get(sessionId);
+    },
+    async delete(sessionId: string) {
+      if ('delete' in tables.assemblerTraces && typeof tables.assemblerTraces.delete === 'function') {
+        await tables.assemblerTraces.delete(sessionId);
+      }
     },
   };
 }

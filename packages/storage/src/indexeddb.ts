@@ -15,12 +15,20 @@ export interface SettingRecord<T = unknown> {
   updatedAt: number;
 }
 
+export interface AssemblerTraceRecord {
+  sessionId: string;
+  assemblerRuns: unknown[];
+  structureUnits: unknown[];
+  savedAt: number;
+}
+
 export class ListenGraphicDB extends Dexie {
   sessions!: Table<SessionRecord, string>;
   transcriptChunks!: Table<TranscriptChunk, string>;
   segmentGraphs!: Table<SegmentGraph, string>;
   mergedGraphs!: Table<MergedGraph, string>;
   settings!: Table<SettingRecord, string>;
+  assemblerTraces!: Table<AssemblerTraceRecord, string>;
 
   constructor() {
     super('listen-graphic-db');
@@ -38,6 +46,10 @@ export class ListenGraphicDB extends Dexie {
       segmentGraphs: 'segmentId, sessionId, startMs, endMs',
       mergedGraphs: 'sessionId, revision, updatedAt',
       settings: 'key, updatedAt',
+    });
+
+    this.version(3).stores({
+      assemblerTraces: 'sessionId, savedAt',
     });
   }
 }
