@@ -43,7 +43,7 @@ import {
   VIEW_LABELS,
   isDevMode,
 } from './constants';
-import { formatGraphDeltaLog, downloadTextFile, buildDebugExportPayload } from './debug-export-utils';
+import { formatGraphDeltaLog, downloadTextFile, buildDebugExportPayload, buildAssemblerLogPayload } from './debug-export-utils';
 import { GraphNodeCard } from './GraphNodeCard';
 import { StatusCards } from './StatusCards';
 import { LogPanel } from './LogPanel';
@@ -152,6 +152,8 @@ export default function App() {
     onReset: resetLayoutCache,
   });
 
+  const exportSessionId = panel.sessionId ?? (panel.graph.nodes.length > 0 ? panel.graph.sessionId : null);
+
   const {
     replayOpen,
     replayPlaying,
@@ -160,7 +162,7 @@ export default function App() {
     handleReplayTogglePlay,
     handleReplayScrub,
   } = useReplay({
-    sessionId: panel.sessionId,
+    sessionId: exportSessionId,
     currentTimeMs: panel.currentTimeMs,
     graph: panel.graph,
     addLog,
@@ -361,21 +363,21 @@ export default function App() {
   // ===== 导出 =====
   const isRunning = ['capturing', 'transcribing', 'structuring'].includes(panel.sessionState);
   const canExport =
-    Boolean(panel.sessionId) &&
+    Boolean(exportSessionId) &&
     panel.graph.nodes.length > 0 &&
     !panel.stopPending &&
     !['transcribing', 'structuring', 'error'].includes(panel.sessionState);
   const canReplay =
-    Boolean(panel.sessionId) && panel.graph.nodes.length > 0 && !panel.stopPending && !isRunning;
+    Boolean(exportSessionId) && panel.graph.nodes.length > 0 && !panel.stopPending && !isRunning;
 
   const handleExport = useCallback(
     async (format: ExportFormat) => {
-      if (!panel.sessionId || !canExport) return;
+      if (!exportSessionId || !canExport) return;
       try {
         const response = (await chrome.runtime.sendMessage({
           type: 'EXPORT_SESSION',
           target: 'service-worker',
-          payload: { sessionId: panel.sessionId, format },
+          payload: { sessionId: exportSessionId, format },
         } as AppMessage)) as
           | { success: true; exportData: { filename: string; mimeType: string; content: string } }
           | { success: false; error?: string };
@@ -390,17 +392,17 @@ export default function App() {
         addLog(`导出失败: ${error instanceof Error ? error.message : '未知错误'}`);
       }
     },
-    [addLog, canExport, panel.sessionId],
+    [addLog, canExport, exportSessionId],
   );
 
   // ===== 调试 =====
   const loadDebugSession = useCallback(async () => {
-    if (!panel.sessionId) { setDebugData(null); return; }
+    if (!exportSessionId) { setDebugData(null); return; }
     try {
       const response = (await chrome.runtime.sendMessage({
         type: 'GET_DEBUG_SESSION',
         target: 'service-worker',
-        payload: { sessionId: panel.sessionId },
+        payload: { sessionId: exportSessionId },
       } as AppMessage)) as
         | { success: true; debugData: DebugSessionData }
         | { success: false; error?: string };
@@ -410,7 +412,7 @@ export default function App() {
     } catch (error) {
       addLog(`调试数据加载失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
-  }, [addLog, panel.sessionId]);
+  }, [addLog, exportSessionId]);
 
   useEffect(() => {
     if (!debugOpen || isDevMode) return;
@@ -534,33 +536,56 @@ export default function App() {
 
   const slimDebugExportPayload = useMemo(
     () => buildDebugExportPayload({
-      mode: 'slim', sessionId: panel.sessionId, sessionState: panel.sessionState,
+      mode: 'slim', sessionId: exportSessionId, sessionState: panel.sessionState,
       currentView, workerBuildLabel: panel.workerBuildLabel, providerSummary,
       logs: exportLogLines, debugData, derivedViews: debugViewArtifacts,
     }),
-    [currentView, panel.sessionId, panel.sessionState, panel.workerBuildLabel,
+    [currentView, exportSessionId, panel.sessionState, panel.workerBuildLabel,
       debugData, debugViewArtifacts, exportLogLines, providerSummary],
   );
 
   const fullDebugExportPayload = useMemo(
     () => buildDebugExportPayload({
-      mode: 'full', sessionId: panel.sessionId, sessionState: panel.sessionState,
+      mode: 'full', sessionId: exportSessionId, sessionState: panel.sessionState,
       currentView, workerBuildLabel: panel.workerBuildLabel, providerSummary,
       logs: exportLogLines, debugData, derivedViews: debugViewArtifacts,
     }),
-    [currentView, panel.sessionId, panel.sessionState, panel.workerBuildLabel,
+    [currentView, exportSessionId, panel.sessionState, panel.workerBuildLabel,
       debugData, debugViewArtifacts, exportLogLines, providerSummary],
   );
 
   const handleExportDebug = useCallback(
     (mode: DebugExportMode) => {
       if (!debugData) { addLog('调试数据为空，无法导出'); return; }
-      const debugSessionId = debugData.session?.sessionId ?? panel.sessionId ?? 'listen-graphic';
-      const filename = mode === 'full' ? `${debugSessionId}-debug-full.json` : `${debugSessionId}-debug.json`;
+      const debugSessionId = debugData.session?.sessionId ?? exportSessionId ?? 'listen-graphic';
+      const filename = mode === 'full' ? `${debugSessionId}-debug-full.json` : `${debugSessionId}-debug-summary.json`;
       downloadTextFile(filename, JSON.stringify(mode === 'full' ? fullDebugExportPayload : slimDebugExportPayload, null, 2), 'application/json');
       addLog(`已导出: ${filename}`);
     },
-    [addLog, debugData, fullDebugExportPayload, panel.sessionId, slimDebugExportPayload],
+    [addLog, debugData, exportSessionId, fullDebugExportPayload, slimDebugExportPayload],
+  );
+
+  const handleExportAssemblerLog = useCallback(
+    () => {
+      const runs = debugData?.assemblerRuns ?? [];
+      const units = debugData?.structureUnits ?? [];
+      if (!runs.length && !units.length) {
+        addLog('assembler 决策数据为空，无法导出');
+        return;
+      }
+      const debugSessionId = debugData?.session?.sessionId ?? exportSessionId ?? 'listen-graphic';
+      const traceSource = debugData?.traceSource ?? 'empty';
+      const payload = buildAssemblerLogPayload({
+        assemblerRuns: runs,
+        structureUnits: units,
+        sessionId: debugSessionId,
+        traceSource,
+      });
+      const filename = `${debugSessionId}-assembler-log.json`;
+      downloadTextFile(filename, JSON.stringify(payload, null, 2), 'application/json');
+      addLog(`已导出: ${filename}`);
+    },
+    [addLog, debugData, exportSessionId],
   );
 
   // ===== Active replay transcript =====
@@ -716,8 +741,9 @@ export default function App() {
         </div>
         <LogPanel logPanelHeight={logPanelHeight} timelineEvents={panel.timelineEvents} />
         {debugOpen && (
-          <DebugPanel debugData={debugData} sessionId={panel.sessionId}
-            slimDebugExportPayload={slimDebugExportPayload} onExportDebug={handleExportDebug} />
+          <DebugPanel debugData={debugData} sessionId={exportSessionId}
+            onExportDebug={handleExportDebug}
+            onExportAssemblerLog={handleExportAssemblerLog} />
         )}
         {replayOpen && (
           <ReplayPanel replayData={replayData} replayPlaying={replayPlaying}

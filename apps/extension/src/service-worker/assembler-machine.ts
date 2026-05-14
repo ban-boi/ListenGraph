@@ -363,6 +363,7 @@ export function recordAssemblerRunDebug(
       sequence: S.transcriptSequence,
       latestTranscriptId: params.transcript.chunkId,
       latestTranscriptEndMs: params.transcript.endMs,
+      latestTranscriptText: params.transcript.text,
       decision: params.decision,
       reason: params.reason,
       bufferTranscriptIds: bufferUtterances.map((item) => item.chunkId),

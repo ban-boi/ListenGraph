@@ -4,15 +4,15 @@ import type { DebugExportMode } from './types';
 export type DebugPanelProps = {
   debugData: DebugSessionData | null;
   sessionId: string | null;
-  slimDebugExportPayload: unknown;
   onExportDebug: (mode: DebugExportMode) => void;
+  onExportAssemblerLog: () => void;
 };
 
 export function DebugPanel({
   debugData,
   sessionId,
-  slimDebugExportPayload,
   onExportDebug,
+  onExportAssemblerLog,
 }: DebugPanelProps) {
   return (
     <div
@@ -36,7 +36,7 @@ export function DebugPanel({
           marginBottom: 6,
         }}
       >
-        <div style={{ fontWeight: 600 }}>Debug</div>
+        <div style={{ fontWeight: 600 }}>调试资产</div>
         <button
           data-testid="debug-export-button"
           type="button"
@@ -52,7 +52,7 @@ export function DebugPanel({
             cursor: debugData ? 'pointer' : 'not-allowed',
           }}
         >
-          导出调试 JSON
+          导出调试摘要
         </button>
         <button
           data-testid="debug-export-full-button"
@@ -69,8 +69,28 @@ export function DebugPanel({
             cursor: debugData ? 'pointer' : 'not-allowed',
           }}
         >
-          导出完整调试 JSON
+          导出完整调试包
         </button>
+        <button
+          data-testid="debug-export-assembler-button"
+          type="button"
+          onClick={onExportAssemblerLog}
+          disabled={!debugData?.assemblerRuns?.length}
+          style={{
+            padding: '2px 8px',
+            borderRadius: 4,
+            border: '1px solid #cbd5e1',
+            backgroundColor: debugData?.assemblerRuns?.length ? 'white' : '#e2e8f0',
+            color: '#334155',
+            fontSize: 11,
+            cursor: debugData?.assemblerRuns?.length ? 'pointer' : 'not-allowed',
+          }}
+        >
+          导出 Assembler 日志
+        </button>
+      </div>
+      <div style={{ marginBottom: 6, color: '#64748b' }}>
+        摘要会去掉 ASR/provider 原始大字段；完整包保留 raw/tokens，适合深度排查。
       </div>
       <div style={{ marginBottom: 6 }}>
         sessionId: {debugData?.session?.sessionId ?? sessionId ?? 'none'}
@@ -88,6 +108,12 @@ export function DebugPanel({
         structurer runs: {debugData?.structurerRuns?.length ?? 0}
       </div>
       <div style={{ marginBottom: 6 }}>
+        assembler decisions: {debugData?.assemblerRuns?.length ?? 0}
+      </div>
+      <div style={{ marginBottom: 6 }}>
+        structure units: {debugData?.structureUnits?.length ?? 0}
+      </div>
+      <div style={{ marginBottom: 6 }}>
         merged graph nodes: {debugData?.graph?.nodes.length ?? 0}
       </div>
       <pre
@@ -99,7 +125,18 @@ export function DebugPanel({
           fontFamily: 'monospace',
         }}
       >
-        {JSON.stringify(slimDebugExportPayload, null, 2)}
+        {debugData
+          ? JSON.stringify({
+              sessionId: debugData.session?.sessionId ?? sessionId ?? 'none',
+              transcripts: debugData.transcripts.length,
+              segments: debugData.segments.length,
+              traces: debugData.traces.length,
+              assemblerRuns: debugData.assemblerRuns?.length ?? 0,
+              structureUnits: debugData.structureUnits?.length ?? 0,
+              graphNodes: debugData.graph?.nodes.length ?? 0,
+              traceSource: debugData.traceSource,
+            }, null, 2)
+          : '{}'}
       </pre>
     </div>
   );

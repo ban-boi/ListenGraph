@@ -263,8 +263,8 @@ describe('App - 调试与回放', () => {
     expect(within(debugPanel).getByText(/structurer segments: 1/)).toBeInTheDocument();
     expect(within(debugPanel).getByText(/transcript traces: 1/)).toBeInTheDocument();
     expect(within(debugPanel).getByText(/structurer runs: 1/)).toBeInTheDocument();
-    expect(within(debugPanel).getByText(/第一段调试转写/)).toBeInTheDocument();
-    expect(within(debugPanel).getByText(/调试图节点/)).toBeInTheDocument();
+    // 摘要 JSON 只包含计数，不包含完整文本内容
+    expect(within(debugPanel).getByTestId('debug-json')).toBeInTheDocument();
   });
 
   it('调试面板支持导出包含派生视图的 debug JSON', async () => {
@@ -348,7 +348,35 @@ describe('App - 调试与回放', () => {
                   },
                 },
               ],
-              traces: [],
+              traces: [
+                {
+                  sequence: 1,
+                  transcript: {
+                    chunkId: 'chunk_1',
+                    sessionId: 'session_debug_export',
+                    text: '导出调试转写',
+                    startMs: 0,
+                    endMs: 30000,
+                    provider: 'mock-asr',
+                  },
+                  transcriptWindow: [],
+                  segment: null,
+                  structurerRun: null,
+                  assemblerRun: {
+                    sessionId: 'session_debug_export',
+                    sequence: 1,
+                    transcriptEndMs: 30000,
+                    latestTranscriptId: 'chunk_1',
+                    decision: 'commit',
+                    reason: 'commit_rule',
+                    waitMs: 0,
+                    bufferTranscriptCount: 1,
+                    effectiveCharCount: 6,
+                    createdAt: 200,
+                  },
+                  mergedGraphAfter: null,
+                },
+              ],
               graph: {
                 sessionId: 'session_debug_export',
                 revision: 1,
@@ -365,6 +393,32 @@ describe('App - 调试与回放', () => {
                 edges: [],
                 updatedAt: 200,
               },
+              assemblerRuns: [
+                {
+                  sessionId: 'session_debug_export',
+                  sequence: 1,
+                  transcriptEndMs: 30000,
+                  latestTranscriptId: 'chunk_1',
+                  decision: 'commit',
+                  reason: 'commit_rule',
+                  waitMs: 0,
+                  bufferTranscriptCount: 1,
+                  effectiveCharCount: 6,
+                  createdAt: 200,
+                },
+              ],
+              structureUnits: [
+                {
+                  unitId: 'unit_1',
+                  sessionId: 'session_debug_export',
+                  startMs: 0,
+                  endMs: 30000,
+                  text: '导出调试转写',
+                  sourceChunkIds: ['chunk_1'],
+                  reason: 'commit_rule',
+                  createdAt: 200,
+                },
+              ],
             },
           });
         }
@@ -387,7 +441,16 @@ describe('App - 调试与回放', () => {
     const slimJson = await slimBlob.text();
 
     expect(anchorClickSpy).toHaveBeenCalled();
+    expect(slimJson).toContain('"schemaVersion": 2');
+    expect(slimJson).toContain('"meta"');
+    expect(slimJson).toContain('"session"');
+    expect(slimJson).toContain('"runtime"');
+    expect(slimJson).toContain('"data"');
+    expect(slimJson).toContain('"ui"');
     expect(slimJson).toContain('"segments"');
+    expect(slimJson).toContain('"assemblerRuns"');
+    expect(slimJson).toContain('"structureUnits"');
+    expect(slimJson).toContain('"assemblerRun"');
     expect(slimJson).toContain('"derivedViews"');
     expect(slimJson).toContain('"layoutDiagnostics"');
     expect(slimJson).toContain('"reusedPositions"');
@@ -397,6 +460,10 @@ describe('App - 调试与回放', () => {
     expect(slimJson).not.toContain('"raw"');
     expect(slimJson).toContain('"tokenCount": 1');
     expect(slimJson).toContain('"hasRaw": true');
+    expect(slimJson).not.toContain('"debugData"');
+    expect(slimJson).not.toContain('"exportMode"');
+    expect(slimJson).not.toContain('"workerBuildLabel"');
+    expect(slimJson).not.toContain('"logCount"');
 
     await act(async () => {
       await user.click(await screen.findByTestId('debug-export-full-button'));
@@ -406,6 +473,67 @@ describe('App - 调试与回放', () => {
     const fullJson = await fullBlob.text();
     expect(fullJson).toContain('"tokens"');
     expect(fullJson).toContain('"raw"');
+  });
+
+  it('停止后 runtime snapshot 只有 graph sessionId 时仍可导出会话图', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string; payload?: { sessionId?: string } }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: null,
+              state: 'stopped',
+              currentTimeMs: 30000,
+              currentView: 'timeline',
+              currentViewPinned: false,
+              graph: {
+                sessionId: 'session_graph_only',
+                revision: 1,
+                topics: [],
+                nodes: [
+                  {
+                    id: 'n1',
+                    type: 'claim',
+                    text: '停止后仍可导出',
+                    timestampMs: 0,
+                    status: 'confirmed',
+                  },
+                ],
+                edges: [],
+                updatedAt: 200,
+              },
+            },
+          });
+        }
+        if (message?.type === 'EXPORT_SESSION') {
+          return Promise.resolve({
+            success: true,
+            exportData: {
+              filename: `${message.payload?.sessionId}.json`,
+              mimeType: 'application/json',
+              content: '{"ok":true}',
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    const user = userEvent.setup();
+    await renderApp();
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^导出 JSON$/ }));
+    });
+
+    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'EXPORT_SESSION',
+        payload: { sessionId: 'session_graph_only', format: 'json' },
+      }),
+    );
+    expect(anchorClickSpy).toHaveBeenCalled();
   });
 
   it('点击回放后会拉取回放资产并显示当前片段', async () => {
@@ -718,5 +846,107 @@ describe('App - 调试与回放', () => {
       resolveStart({ success: true, sessionId: 'session_live_new' });
       await Promise.resolve();
     });
+  });
+
+  it('调试面板支持导出 Assembler 决策日志', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: 'session_debug_export',
+              state: 'stopped',
+              currentTimeMs: 30000,
+              currentView: 'timeline',
+              currentViewPinned: false,
+              graph: {
+                sessionId: 'session_debug_export',
+                revision: 1,
+                topics: [],
+                nodes: [{ id: 'n1', type: 'claim', text: '测试', timestampMs: 0, status: 'confirmed' }],
+                edges: [],
+                viewHints: { defaultView: 'timeline', scores: { timeline: 3, causal: 1, comparison: 2, flow: 0, hierarchy: 0 } },
+                updatedAt: 200,
+              },
+            },
+          });
+        }
+        if (message?.type === 'GET_DEBUG_SESSION') {
+          return Promise.resolve({
+            success: true,
+            debugData: {
+              session: { sessionId: 'session_debug_export', sourceType: 'tab', createdAt: 100 },
+              transcripts: [],
+              segments: [],
+              traces: [],
+              graph: null,
+              assemblerRuns: [
+                {
+                  sessionId: 'session_debug_export',
+                  sequence: 1,
+                  latestTranscriptId: 't1',
+                  latestTranscriptEndMs: 1000,
+                  latestTranscriptText: '测试文本',
+                  decision: 'commit',
+                  reason: 'commit_rule',
+                  score: 3,
+                  bufferTranscriptCount: 1,
+                  effectiveCharCount: 4,
+                  waitMs: 200,
+                  createdAt: 200,
+                },
+              ],
+              structureUnits: [
+                {
+                  unitId: 'u1',
+                  sessionId: 'session_debug_export',
+                  startMs: 0,
+                  endMs: 1000,
+                  text: '测试文本',
+                  sourceChunkIds: ['t1'],
+                  reason: 'commit_rule',
+                  createdAt: 200,
+                },
+              ],
+              traceSource: 'memory',
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    renderApp();
+    const user = userEvent.setup();
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^调试$/ }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('debug-panel')).toBeDefined();
+    });
+
+    const assemblerButton = await screen.findByTestId('debug-export-assembler-button');
+    expect(assemblerButton).not.toBeDisabled();
+    await user.click(assemblerButton);
+
+    await waitFor(() => {
+      expect(anchorClickSpy).toHaveBeenCalled();
+    });
+
+    const blob = createObjectURLSpy.mock.calls.at(-1)?.[0] as Blob;
+    expect(blob.type).toBe('application/json');
+
+    const json = await blob.text();
+    const parsed = JSON.parse(json);
+    expect(parsed.schemaVersion).toBe(1);
+    expect(parsed.meta.sessionId).toBe('session_debug_export');
+    expect(parsed.summary.totalRuns).toBe(1);
+    expect(parsed.runs).toHaveLength(1);
+    expect(parsed.runs[0].decision).toBe('commit');
+    expect(parsed.units).toHaveLength(1);
+    expect(parsed.units[0].reason).toBe('commit_rule');
   });
 });

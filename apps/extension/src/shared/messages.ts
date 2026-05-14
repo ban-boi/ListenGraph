@@ -205,6 +205,8 @@ export interface AssemblerRunDebug {
   latestTranscriptId: string;
   /** 最新转写的结束时间（毫秒） */
   latestTranscriptEndMs: number;
+  /** 触发本次决策的转写文本 */
+  latestTranscriptText: string;
   /** 决策类型：跳过当前、等待更多上下文、提交 structurer */
   decision: 'skip_current' | 'wait' | 'commit';
   /** 决策原因描述 */
@@ -283,6 +285,8 @@ export interface DebugSessionData {
   structurerRuns?: StructurerRunDebug[];
   assemblerRuns?: AssemblerRunDebug[];
   structureUnits?: StructureUnitDebug[];
+  /** trace 数据来源：memory=内存中，indexeddb=从 IndexedDB 恢复，empty=无数据 */
+  traceSource?: 'memory' | 'indexeddb' | 'empty';
 }
 
 export interface ReplaySessionData {
