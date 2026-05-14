@@ -40,7 +40,22 @@ const STABLE_LAYOUT_BRANCH_OFFSET_X = 280;
 const STABLE_LAYOUT_ROW_GAP = 168;
 const STABLE_LAYOUT_BRANCH_GAP = 148;
 const STABLE_LAYOUT_COLLISION_GAP = 24;
-const EDGE_AXIS_DOMINANCE_RATIO = 1.25;
+const VISIBLE_HANDLE_COMBINATIONS = [
+  { sourceHandle: 'source-bottom', targetHandle: 'target-top' },
+  { sourceHandle: 'source-bottom', targetHandle: 'target-left' },
+  { sourceHandle: 'source-right', targetHandle: 'target-top' },
+  { sourceHandle: 'source-right', targetHandle: 'target-left' },
+] as const;
+
+const EXIT_DIRECTIONS: Record<string, [number, number]> = {
+  'source-bottom': [0, 1],
+  'source-right': [1, 0],
+};
+
+const ENTRY_DIRECTIONS: Record<string, [number, number]> = {
+  'target-top': [0, 1],
+  'target-left': [1, 0],
+};
 
 // ============ 布局工具函数 ============
 
@@ -181,6 +196,18 @@ function getRectCenter(rect: ReturnType<typeof getNodeRect>) {
   };
 }
 
+function getHandlePosition(
+  rect: { left: number; right: number; top: number; bottom: number },
+  handleId: string,
+): { x: number; y: number } {
+  const cx = (rect.left + rect.right) / 2;
+  const cy = (rect.top + rect.bottom) / 2;
+  if (handleId === 'source-bottom' || handleId === 'target-bottom') return { x: cx, y: rect.bottom };
+  if (handleId === 'source-top' || handleId === 'target-top') return { x: cx, y: rect.top };
+  if (handleId === 'source-right' || handleId === 'target-right') return { x: rect.right, y: cy };
+  return { x: rect.left, y: cy };
+}
+
 export function resolveEdgeHandles(
   sourcePosition: StableNodePosition,
   targetPosition: StableNodePosition,
@@ -190,26 +217,39 @@ export function resolveEdgeHandles(
 } {
   const sourceRect = getNodeRect(sourcePosition);
   const targetRect = getNodeRect(targetPosition);
-  const sourceCenter = getRectCenter(sourceRect);
-  const targetCenter = getRectCenter(targetRect);
-  const deltaX = targetCenter.x - sourceCenter.x;
-  const deltaY = targetCenter.y - sourceCenter.y;
-  const absDeltaX = Math.abs(deltaX);
-  const absDeltaY = Math.abs(deltaY);
 
-  if (absDeltaY >= absDeltaX * EDGE_AXIS_DOMINANCE_RATIO) {
-    return deltaY >= 0
-      ? { sourceHandle: 'source-bottom', targetHandle: 'target-top' }
-      : { sourceHandle: 'source-top', targetHandle: 'target-bottom' };
+  let bestScore = -Infinity;
+  let bestCombo = VISIBLE_HANDLE_COMBINATIONS[0];
+  let bestDist = Infinity;
+
+  for (const combo of VISIBLE_HANDLE_COMBINATIONS) {
+    const hs = getHandlePosition(sourceRect, combo.sourceHandle);
+    const ht = getHandlePosition(targetRect, combo.targetHandle);
+
+    const dx = ht.x - hs.x;
+    const dy = ht.y - hs.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist === 0) continue;
+
+    const nx = dx / dist;
+    const ny = dy / dist;
+
+    const [ex, ey] = EXIT_DIRECTIONS[combo.sourceHandle];
+    const [tx, ty] = ENTRY_DIRECTIONS[combo.targetHandle];
+
+    const score = (nx * ex + ny * ey) + (nx * tx + ny * ty);
+
+    if (score > bestScore || (score === bestScore && dist < bestDist)) {
+      bestScore = score;
+      bestCombo = combo;
+      bestDist = dist;
+    }
   }
 
-  if (absDeltaX >= absDeltaY * EDGE_AXIS_DOMINANCE_RATIO) {
-    return deltaX >= 0
-      ? { sourceHandle: 'source-right', targetHandle: 'target-left' }
-      : { sourceHandle: 'source-left', targetHandle: 'target-right' };
-  }
-
-  return { sourceHandle: 'source-bottom', targetHandle: 'target-top' };
+  return {
+    sourceHandle: bestCombo.sourceHandle as SourceHandleId,
+    targetHandle: bestCombo.targetHandle as TargetHandleId,
+  };
 }
 
 function buildStableReactFlowDebugGraph(params: {
