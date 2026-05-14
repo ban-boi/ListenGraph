@@ -53,7 +53,6 @@ export const VIEW_TYPES: ViewType[] = [
   'causal',
   'timeline',
   'comparison',
-  'flow',
   'hierarchy',
 ];
 
@@ -62,7 +61,6 @@ export const VIEW_LABELS: Record<ViewType, string> = {
   timeline: '时间线',
   comparison: '对比',
   hierarchy: '层级',
-  flow: '流程',
 };
 
 // ===== 开发模式与 UI 常量 =====

@@ -14,7 +14,6 @@ import {
   toTimelineRendererGraph,
   toComparisonRendererGraph,
   toHierarchyRendererGraph,
-  toFlowRendererGraph,
   type RendererGraph,
 } from '@listen-graphic/graph-renderers';
 import type {
@@ -64,7 +63,6 @@ function createEmptyStableLayoutCache(): StableLayoutCache {
     timeline: { positions: {} },
     causal: { positions: {} },
     comparison: { positions: {} },
-    flow: { positions: {} },
     hierarchy: { positions: {} },
   };
 }
@@ -77,8 +75,6 @@ function getRendererGraph(graph: MergedGraph, view: ViewType): RendererGraph {
       return toComparisonRendererGraph(graph);
     case 'hierarchy':
       return toHierarchyRendererGraph(graph);
-    case 'flow':
-      return toFlowRendererGraph(graph);
     default:
       return toCausalRendererGraph(graph);
   }

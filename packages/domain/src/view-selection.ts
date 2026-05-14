@@ -5,14 +5,12 @@ export function scoreViews(graph: MergedGraph): Record<ViewType, number> {
     timeline: 0,
     causal: 0,
     comparison: 0,
-    flow: 0,
     hierarchy: 0,
   };
 
   for (const edge of graph.edges) {
     if (edge.type === 'follows') {
       scores.timeline += 2;
-      scores.flow += 2;
     }
     if (edge.type === 'causes') {
       scores.causal += 3;

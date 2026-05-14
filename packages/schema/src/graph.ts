@@ -18,7 +18,6 @@ export type ViewType =
   | 'timeline'
   | 'causal'
   | 'comparison'
-  | 'flow'
   | 'hierarchy';
 
 export interface GraphNode {

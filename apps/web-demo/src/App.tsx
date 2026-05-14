@@ -24,7 +24,6 @@ import {
   toTimelineRendererGraph,
   toComparisonRendererGraph,
   toHierarchyRendererGraph,
-  toFlowRendererGraph,
 } from '@listen-graphic/graph-renderers';
 
 // ============ 工具函数 ============
@@ -204,8 +203,6 @@ function getRendererGraph(viewType: string, graph: MergedGraph) {
       return toComparisonRendererGraph(graph);
     case 'hierarchy':
       return toHierarchyRendererGraph(graph);
-    case 'flow':
-      return toFlowRendererGraph(graph);
     case 'causal':
     default:
       return toCausalRendererGraph(graph);
@@ -237,10 +234,6 @@ function getLayoutedElements(
       case 'hierarchy':
         x = 100 + (i % 4) * 200;
         y = Math.floor(i / 4) * 160;
-        break;
-      case 'flow':
-        x = 100;
-        y = i * 120;
         break;
       case 'causal':
       default:
@@ -304,7 +297,6 @@ const VIEW_LABELS: Record<string, string> = {
   timeline: '时间线',
   comparison: '对比图',
   hierarchy: '层级图',
-  flow: '流程图',
 };
 
 export default function App() {
