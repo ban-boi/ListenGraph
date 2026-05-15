@@ -103,14 +103,13 @@ function getLaneX(
   view: ViewType,
   nodeType: ReactFlowDebugNodeData['nodeType'] | NodeType,
   speaker: string | undefined,
-  speakersInGraph?: Set<string>,
+  sortedSpeakers?: string[],
 ) {
   switch (view) {
     case 'comparison': {
-      if (!speaker || !speakersInGraph || speakersInGraph.size <= 1) {
+      if (!speaker || !sortedSpeakers || sortedSpeakers.length <= 1) {
         return STABLE_LAYOUT_MAIN_X;
       }
-      const sortedSpeakers = Array.from(speakersInGraph).sort();
       const isFirstSpeaker = speaker === sortedSpeakers[0];
       return isFirstSpeaker
         ? STABLE_LAYOUT_MAIN_X
@@ -290,11 +289,14 @@ function buildStableReactFlowDebugGraph(params: {
   let newPositions = 0;
   let movedPositions = 0;
 
-  // 收集所有 speaker 用于 comparison 车道分配
+  // 收集并排序所有 speaker，用于 comparison 车道分配
+  // 字母序排序确保车道分配在跨渲染间保持确定性：
+  // 第一个 speaker（字母序）走左车道，其余走右车道
   const speakersInGraph = new Set<string>();
   for (const node of params.rendererGraph.nodes) {
     if (node.speaker) speakersInGraph.add(node.speaker);
   }
+  const sortedSpeakers = Array.from(speakersInGraph).sort();
 
   for (const node of params.rendererGraph.nodes) {
     const existingPosition = params.previousLayoutState.positions[node.id];
@@ -324,14 +326,14 @@ function buildStableReactFlowDebugGraph(params: {
       const anchorPosition = positions[anchorId];
       const branchCount = branchCountByAnchor.get(anchorId) ?? 0;
       basePosition = {
-        x: getLaneX(params.view, node.type, node.speaker, speakersInGraph) === anchorPosition.x
+        x: getLaneX(params.view, node.type, node.speaker, sortedSpeakers) === anchorPosition.x
           ? anchorPosition.x + STABLE_LAYOUT_BRANCH_OFFSET_X
-          : getLaneX(params.view, node.type, node.speaker, speakersInGraph),
+          : getLaneX(params.view, node.type, node.speaker, sortedSpeakers),
         y: anchorPosition.y + STABLE_LAYOUT_BRANCH_GAP * (branchCount + 1),
       };
       branchCountByAnchor.set(anchorId, branchCount + 1);
     } else {
-      const laneX = getLaneX(params.view, node.type, node.speaker, speakersInGraph);
+      const laneX = getLaneX(params.view, node.type, node.speaker, sortedSpeakers);
       basePosition = {
         x: laneX,
         y: getMaxYForLane(positions, params.view === 'comparison' ? laneX : undefined) +
