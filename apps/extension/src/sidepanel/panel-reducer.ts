@@ -360,7 +360,9 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
       const { graph: nextGraph, shouldPreserveView } = action.payload;
       const nextCurrentView = shouldPreserveView
         ? state.currentView
-        : (nextGraph.viewHints?.defaultView ?? 'causal');
+        : (nextGraph.viewHints?.defaultView === 'timeline'
+            ? 'causal'
+            : (nextGraph.viewHints?.defaultView ?? 'causal'));
 
       const timelineEvent = createTimelineEvent({
         stage: 'graph',
@@ -422,7 +424,9 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
 
       if (snapshot.graph) {
         nextGraph = snapshot.graph;
-        nextCurrentView = action.payload.preferredView;
+        nextCurrentView = action.payload.preferredView === 'timeline'
+          ? 'causal'
+          : action.payload.preferredView;
       } else {
         nextGraph = createEmptyGraph();
         nextCurrentView = 'causal';

@@ -224,7 +224,13 @@ export default function App() {
   useEffect(() => {
     if (panel.currentView !== prevReducerViewRef.current) {
       prevReducerViewRef.current = panel.currentView;
-      setUserViewOverride(null);
+      // 防御：reducer 返回 timeline 时映射为 causal + chronological
+      if (panel.currentView === 'timeline') {
+        setUserViewOverride('causal');
+        setNodeSortMode('chronological');
+      } else {
+        setUserViewOverride(null);
+      }
     }
   }, [panel.currentView]);
 
@@ -311,11 +317,17 @@ export default function App() {
       if (disposed || !response?.success) return;
 
       const snapshot = response.snapshot;
-      const preferredView = snapshot.graph
+      const rawPreferredView = snapshot.graph
         ? (snapshot.currentView ?? snapshot.graph.viewHints?.defaultView ?? 'causal')
         : 'causal';
+      // timeline 在 UI 中不可选，映射为 causal + chronological 排序
+      const preferredView: ViewType = rawPreferredView === 'timeline' ? 'causal' : rawPreferredView;
 
       dispatch({ type: 'HYDRATE_SNAPSHOT', payload: { ...snapshot, preferredView } });
+
+      if (rawPreferredView === 'timeline') {
+        setNodeSortMode('chronological');
+      }
 
       if (snapshot.providerSummary) {
         setProviderSummary(snapshot.providerSummary);
