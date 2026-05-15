@@ -203,7 +203,8 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
             nextCurrentTimeMs = p.currentTimeMs;
           }
           if (!p.shouldPreserveView) {
-            nextCurrentView = p.currentView ?? mergedGraph.viewHints?.defaultView ?? 'causal';
+            const rawDefault = mergedGraph.viewHints?.defaultView ?? 'causal';
+            nextCurrentView = p.currentView ?? (rawDefault === 'timeline' ? 'causal' : rawDefault);
           }
         } else {
           nextGraph = createEmptyGraph();
