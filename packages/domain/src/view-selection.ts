@@ -35,10 +35,12 @@ function countUniqueSpeakers(graph: MergedGraph): number {
   return speakers.size;
 }
 
-/** 检测是否存在 claim 节点拥有 2+ 个子节点（出边 targets） */
+/** 检测是否存在 claim 节点拥有 2+ 个结构性子节点（出边 targets，排除 follows） */
 function hasClaimWithMultipleChildren(graph: MergedGraph): boolean {
+  const structuralTypes = new Set(['causes', 'supports', 'example_of']);
   const childCounts = new Map<string, number>();
   for (const edge of graph.edges) {
+    if (!structuralTypes.has(edge.type)) continue;
     childCounts.set(edge.source, (childCounts.get(edge.source) ?? 0) + 1);
   }
   const claimIds = new Set(
@@ -98,12 +100,9 @@ export function scoreViews(graph: MergedGraph): Record<ViewType, number> {
   if (hasMultiHopCausalChain(graph)) {
     scores.causal += 3;
   }
-  if (hasCrossSpeakerEdges(graph)) {
-    scores.comparison += 2;
-  }
-  if (countUniqueSpeakers(graph) >= 2) {
-    scores.comparison += 3;
-  }
+  // speaker 相关奖励已移除：当前 ASR 无可靠 speaker diarization，
+  // 多 speaker 信号不应驱动 comparison 视图选择。
+  // 当 ASR 能力补齐后，可基于 "跨 speaker + opposes/stance" 重新启用。
   if (hasClaimWithMultipleChildren(graph)) {
     scores.hierarchy += 2;
   }
@@ -134,10 +133,11 @@ export function pickDefaultView(graph: MergedGraph): ViewType {
     return 'causal';
   }
 
-  // 取分数最高的视图；tie-break 时 causal 优先
-  for (const [view, score] of candidates) {
-    if (score === maxScore) {
-      return view;
+  // 取分数最高的视图；tie-break 时 causal > comparison > hierarchy
+  const TIE_BREAK_ORDER: ViewType[] = ['causal', 'comparison', 'hierarchy'];
+  for (const preferred of TIE_BREAK_ORDER) {
+    if (scores[preferred] === maxScore) {
+      return preferred;
     }
   }
 

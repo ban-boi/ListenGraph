@@ -115,6 +115,30 @@ describe('scoreViews', () => {
     expect(scores.causal).toBeGreaterThan(5);
   });
 
+  it('多 speaker + 纯 follows：comparison 分数不应高于 causal', () => {
+    const graph = makeGraph(
+      [
+        { id: 'e1', source: 'a', target: 'b', type: 'follows' },
+        { id: 'e2', source: 'b', target: 'c', type: 'follows' },
+      ],
+      { a: 'Alice', b: 'Bob', c: 'Charlie' },
+    );
+
+    const scores = scoreViews(graph);
+    expect(scores.comparison).toBeLessThanOrEqual(scores.causal);
+  });
+
+  it('有 opposes 但无多 speaker：comparison 分数仍应最高', () => {
+    const graph = makeGraph([
+      { id: 'e1', source: 'a', target: 'b', type: 'opposes' },
+      { id: 'e2', source: 'b', target: 'c', type: 'opposes' },
+    ]);
+
+    const scores = scoreViews(graph);
+    expect(scores.comparison).toBeGreaterThan(scores.causal);
+    expect(scores.comparison).toBeGreaterThan(scores.hierarchy);
+  });
+
   it('空边图不抛异常且所有分数 >= 0', () => {
     const graph: MergedGraph = {
       sessionId: 'test',
