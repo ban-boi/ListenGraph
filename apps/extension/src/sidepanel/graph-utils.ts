@@ -102,13 +102,20 @@ function getRendererGraph(
 function getLaneX(
   view: ViewType,
   nodeType: ReactFlowDebugNodeData['nodeType'] | NodeType,
-  speaker?: string,
+  speaker: string | undefined,
+  speakersInGraph?: Set<string>,
 ) {
   switch (view) {
-    case 'comparison':
-      return speaker === '嘉宾B'
-        ? STABLE_LAYOUT_COMPARISON_RIGHT_X
-        : STABLE_LAYOUT_MAIN_X;
+    case 'comparison': {
+      if (!speaker || !speakersInGraph || speakersInGraph.size <= 1) {
+        return STABLE_LAYOUT_MAIN_X;
+      }
+      const sortedSpeakers = Array.from(speakersInGraph).sort();
+      const isFirstSpeaker = speaker === sortedSpeakers[0];
+      return isFirstSpeaker
+        ? STABLE_LAYOUT_MAIN_X
+        : STABLE_LAYOUT_COMPARISON_RIGHT_X;
+    }
     case 'hierarchy':
       return nodeType === 'claim' || nodeType === 'conclusion'
         ? STABLE_LAYOUT_MAIN_X
@@ -283,6 +290,12 @@ function buildStableReactFlowDebugGraph(params: {
   let newPositions = 0;
   let movedPositions = 0;
 
+  // 收集所有 speaker 用于 comparison 车道分配
+  const speakersInGraph = new Set<string>();
+  for (const node of params.rendererGraph.nodes) {
+    if (node.speaker) speakersInGraph.add(node.speaker);
+  }
+
   for (const node of params.rendererGraph.nodes) {
     const existingPosition = params.previousLayoutState.positions[node.id];
     if (!existingPosition) {
@@ -311,14 +324,14 @@ function buildStableReactFlowDebugGraph(params: {
       const anchorPosition = positions[anchorId];
       const branchCount = branchCountByAnchor.get(anchorId) ?? 0;
       basePosition = {
-        x: getLaneX(params.view, node.type, node.speaker) === anchorPosition.x
+        x: getLaneX(params.view, node.type, node.speaker, speakersInGraph) === anchorPosition.x
           ? anchorPosition.x + STABLE_LAYOUT_BRANCH_OFFSET_X
-          : getLaneX(params.view, node.type, node.speaker),
+          : getLaneX(params.view, node.type, node.speaker, speakersInGraph),
         y: anchorPosition.y + STABLE_LAYOUT_BRANCH_GAP * (branchCount + 1),
       };
       branchCountByAnchor.set(anchorId, branchCount + 1);
     } else {
-      const laneX = getLaneX(params.view, node.type, node.speaker);
+      const laneX = getLaneX(params.view, node.type, node.speaker, speakersInGraph);
       basePosition = {
         x: laneX,
         y: getMaxYForLane(positions, params.view === 'comparison' ? laneX : undefined) +
