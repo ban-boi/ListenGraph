@@ -71,7 +71,8 @@ describe('App - 渲染', () => {
 
     // 检查视图按钮是否存在
     expect(screen.getByText('因果')).toBeInTheDocument();
-    expect(screen.getByText('时间线')).toBeInTheDocument();
+    // timeline 已降级为排序选项，不再作为独立视图按钮显示
+    expect(screen.queryByText('时间线')).not.toBeInTheDocument();
   });
 
   it('应该渲染底部状态栏', async () => {

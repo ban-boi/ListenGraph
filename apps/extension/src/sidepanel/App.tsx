@@ -41,8 +41,10 @@ import {
   SPEAKERS,
   VIEW_TYPES,
   VIEW_LABELS,
+  SORT_MODE_LABELS,
   isDevMode,
 } from './constants';
+import type { NodeSortMode } from './constants';
 import { formatGraphDeltaLog, downloadTextFile, buildDebugExportPayload, buildAssemblerLogPayload } from './debug-export-utils';
 import { GraphNodeCard } from './GraphNodeCard';
 import { StatusCards } from './StatusCards';
@@ -78,6 +80,7 @@ export default function App() {
   const [debugData, setDebugData] = useState<DebugSessionData | null>(null);
   const [statusNowMs, setStatusNowMs] = useState(() => Date.now());
   const [userViewOverride, setUserViewOverride] = useState<ViewType | null>(null);
+  const [nodeSortMode, setNodeSortMode] = useState<NodeSortMode>('default');
   const currentView = userViewOverride ?? panel.currentView;
 
   // ===== Refs =====
@@ -428,8 +431,9 @@ export default function App() {
       currentTimeMs: panel.currentTimeMs,
       selectedNodeId: panel.selectedNodeId,
       previousLayoutCache: layoutCacheRef.current,
+      sortMode: nodeSortMode,
     }),
-    [panel.currentTimeMs, panel.graph, panel.selectedNodeId],
+    [panel.currentTimeMs, panel.graph, panel.selectedNodeId, nodeSortMode],
   );
   const debugViewArtifacts = layoutBuild.artifacts;
 
@@ -666,8 +670,8 @@ export default function App() {
         autoTourStatusText={autoTourStatusText}
       />
       {/* 视图切换 */}
-      <div style={{ padding: '6px 12px', borderBottom: '1px solid #e5e7eb', display: 'flex', gap: 6, flexShrink: 0 }}>
-        {VIEW_TYPES.map((v) => (
+      <div style={{ padding: '6px 12px', borderBottom: '1px solid #e5e7eb', display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+        {VIEW_TYPES.filter((v) => v !== 'timeline').map((v) => (
           <button key={v}
             onClick={() => {
               lastUserViewportChangeAtRef.current = Date.now();
@@ -693,6 +697,24 @@ export default function App() {
             <span style={{ marginLeft: 3, fontSize: 9, color: '#9ca3af' }}>({viewScores[v]})</span>
           </button>
         ))}
+        {/* 排序切换 */}
+        <div style={{ display: 'flex', gap: 2, marginLeft: 8 }}>
+          {(['default', 'chronological'] as NodeSortMode[]).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setNodeSortMode(mode)}
+              style={{
+                padding: '2px 6px', borderRadius: 3, fontSize: 10,
+                border: nodeSortMode === mode ? '1.5px solid #6b7280' : '1px solid #e5e7eb',
+                backgroundColor: nodeSortMode === mode ? '#f3f4f6' : 'white',
+                color: '#6b7280',
+                cursor: 'pointer',
+              }}
+            >
+              {SORT_MODE_LABELS[mode]}
+            </button>
+          ))}
+        </div>
       </div>
       {settingsOpen && (
         <SettingsPanel

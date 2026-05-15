@@ -1,4 +1,5 @@
 import type { EdgeType, NodeType, ViewType, MergedGraph } from '@listen-graphic/schema';
+import type { EdgePriority } from './types';
 
 // ===== 初始空 Graph =====
 
@@ -63,6 +64,37 @@ export const VIEW_LABELS: Record<ViewType, string> = {
   hierarchy: '层级',
 };
 
+export const VIEW_EDGE_PRIORITIES: Record<ViewType, Record<string, EdgePriority>> = {
+  causal: {
+    causes: 'primary',
+    supports: 'primary',
+    opposes: 'secondary',
+    example_of: 'secondary',
+    follows: 'hidden',
+  },
+  comparison: {
+    opposes: 'primary',
+    supports: 'primary',
+    causes: 'secondary',
+    example_of: 'hidden',
+    follows: 'hidden',
+  },
+  hierarchy: {
+    example_of: 'primary',
+    supports: 'primary',
+    causes: 'secondary',
+    opposes: 'hidden',
+    follows: 'hidden',
+  },
+  timeline: {
+    follows: 'primary',
+    causes: 'primary',
+    supports: 'secondary',
+    opposes: 'secondary',
+    example_of: 'secondary',
+  },
+};
+
 // ===== 开发模式与 UI 常量 =====
 
 export const isDevMode = false;
@@ -95,3 +127,12 @@ export const AUTO_TOUR_NODE_DWELL_MS = 220;
 export const AUTO_TOUR_EDGE_DWELL_MS = 90;
 export const AUTO_TOUR_MIN_DWELL_MS = 1800;
 export const AUTO_TOUR_MAX_DWELL_MS = 5000;
+
+// ===== 排序模式 =====
+
+export type NodeSortMode = 'default' | 'chronological';
+
+export const SORT_MODE_LABELS: Record<NodeSortMode, string> = {
+  default: '默认',
+  chronological: '按时间',
+};

@@ -27,7 +27,8 @@ import type {
   TargetHandleId,
   ReactFlowDebugNodeData,
 } from './types';
-import { VIEW_TYPES } from './constants';
+import { VIEW_TYPES, VIEW_EDGE_PRIORITIES } from './constants';
+import type { NodeSortMode } from './constants';
 
 // ============ 布局常量 ============
 
@@ -67,17 +68,35 @@ function createEmptyStableLayoutCache(): StableLayoutCache {
   };
 }
 
-function getRendererGraph(graph: MergedGraph, view: ViewType): RendererGraph {
+function getRendererGraph(
+  graph: MergedGraph,
+  view: ViewType,
+  sortMode: NodeSortMode = 'default',
+): RendererGraph {
+  let rendererGraph: RendererGraph;
   switch (view) {
     case 'timeline':
-      return toTimelineRendererGraph(graph);
+      rendererGraph = toTimelineRendererGraph(graph);
+      break;
     case 'comparison':
-      return toComparisonRendererGraph(graph);
+      rendererGraph = toComparisonRendererGraph(graph);
+      break;
     case 'hierarchy':
-      return toHierarchyRendererGraph(graph);
+      rendererGraph = toHierarchyRendererGraph(graph);
+      break;
     default:
-      return toCausalRendererGraph(graph);
+      rendererGraph = toCausalRendererGraph(graph);
+      break;
   }
+
+  if (sortMode === 'chronological') {
+    const sortedNodes = [...rendererGraph.nodes].sort(
+      (a, b) => a.timestampMs - b.timestampMs,
+    );
+    return { ...rendererGraph, nodes: sortedNodes };
+  }
+
+  return rendererGraph;
 }
 
 function getLaneX(
@@ -215,7 +234,7 @@ export function resolveEdgeHandles(
   const targetRect = getNodeRect(targetPosition);
 
   let bestScore = -Infinity;
-  let bestCombo = VISIBLE_HANDLE_COMBINATIONS[0];
+  let bestCombo: typeof VISIBLE_HANDLE_COMBINATIONS[number] = VISIBLE_HANDLE_COMBINATIONS[0];
   let bestDist = Infinity;
 
   for (const combo of VISIBLE_HANDLE_COMBINATIONS) {
@@ -340,15 +359,23 @@ function buildStableReactFlowDebugGraph(params: {
       },
     }));
 
+  const edgePriorities = VIEW_EDGE_PRIORITIES[params.view] ?? VIEW_EDGE_PRIORITIES.causal;
+
   const edges: ReactFlowDebugEdge[] = params.rendererGraph.edges
-    .filter((edge) => positions[edge.source] && positions[edge.target])
+    .filter((edge) => {
+      if (!positions[edge.source] || !positions[edge.target]) return false;
+      const priority = edgePriorities[edge.relation];
+      return priority !== 'hidden';
+    })
     .map((edge) => {
       const handles = resolveEdgeHandles(positions[edge.source], positions[edge.target]);
+      const priority = edgePriorities[edge.relation] ?? 'secondary';
+      const isPrimary = priority === 'primary';
       return {
         id: edge.id,
         source: edge.source,
         target: edge.target,
-        type: 'default',
+        type: 'default' as const,
         sourceHandle: handles.sourceHandle,
         targetHandle: handles.targetHandle,
         label: edge.relation,
@@ -361,8 +388,9 @@ function buildStableReactFlowDebugGraph(params: {
                 : edge.relation === 'causes'
                   ? '#f59e0b'
                   : '#6b7280',
+          opacity: isPrimary ? 1 : 0.35,
         },
-        animated: edge.relation === 'causes',
+        animated: edge.relation === 'causes' && isPrimary,
       };
     });
 
@@ -418,10 +446,11 @@ function buildDebugViewArtifacts(params: {
   currentTimeMs: number;
   selectedNodeId: string | null;
   previousLayoutCache: StableLayoutCache;
+  sortMode: NodeSortMode;
 }) {
   const rendererGraphs = VIEW_TYPES.reduce(
     (acc, view) => {
-      acc[view] = getRendererGraph(params.graph, view);
+      acc[view] = getRendererGraph(params.graph, view, params.sortMode);
       return acc;
     },
     {} as Record<ViewType, RendererGraph>,

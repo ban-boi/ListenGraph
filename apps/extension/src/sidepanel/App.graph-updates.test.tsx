@@ -189,7 +189,7 @@ describe('App - 图谱更新', () => {
               sessionId: 'session_locked_view',
               state: 'capturing',
               currentTimeMs: 30000,
-              currentView: 'timeline',
+              currentView: 'comparison',
               currentViewPinned: false,
               graph: {
                 sessionId: 'session_locked_view',
@@ -206,11 +206,11 @@ describe('App - 图谱更新', () => {
                 ],
                 edges: [],
                 viewHints: {
-                  defaultView: 'timeline',
+                  defaultView: 'comparison',
                   scores: {
-                    timeline: 3,
+                    timeline: 0,
                     causal: 0,
-                    comparison: 0,
+                    comparison: 3,
                     flow: 0,
                     hierarchy: 0,
                   },
@@ -226,7 +226,7 @@ describe('App - 图谱更新', () => {
 
     await renderApp();
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /时间线/ })).toHaveStyle({
+      expect(screen.getByRole('button', { name: /对比/ })).toHaveStyle({
         backgroundColor: '#eff6ff',
       }),
     );
@@ -281,7 +281,7 @@ describe('App - 图谱更新', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByRole('button', { name: /时间线/ })).toHaveStyle({
+    expect(screen.getByRole('button', { name: /对比/ })).toHaveStyle({
       backgroundColor: '#eff6ff',
     });
     expect(screen.getByRole('button', { name: /层级/ })).not.toHaveStyle({
