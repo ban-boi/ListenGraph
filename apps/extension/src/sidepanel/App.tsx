@@ -226,6 +226,7 @@ export default function App() {
       prevReducerViewRef.current = panel.currentView;
       // 防御：reducer 返回 timeline 时映射为 causal + chronological
       if (panel.currentView === 'timeline') {
+        console.warn('timeline 视图被 reducer 返回，已映射为 causal + chronological');
         setUserViewOverride('causal');
         setNodeSortMode('chronological');
       } else {
@@ -719,6 +720,7 @@ export default function App() {
               onClick={() => {
                 setNodeSortMode(mode);
                 layoutCacheRef.current = createEmptyStableLayoutCache();
+                hasAutoFitRef.current = false;
               }}
               style={{
                 padding: '2px 6px', borderRadius: 3, fontSize: 10,
