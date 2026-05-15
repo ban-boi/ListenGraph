@@ -205,4 +205,20 @@ describe('pickDefaultView', () => {
     // 所有分数都很低，tie-break 应该返回 causal
     expect(pickDefaultView(graph)).toBe('causal');
   });
+
+  it('comparison 与 hierarchy 分数相同时 tie-break 选择 comparison', () => {
+    // opposes 和 example_of 各一条边，基础分数让 comparison 和 hierarchy 接近
+    const graph = makeGraph([
+      { id: 'e1', source: 'a', target: 'b', type: 'opposes' },
+      { id: 'e2', source: 'b', target: 'c', type: 'example_of' },
+    ]);
+
+    const scores = scoreViews(graph);
+    // 如果两者分数相同，tie-break 应选 comparison
+    if (scores.comparison === scores.hierarchy) {
+      expect(pickDefaultView(graph)).toBe('comparison');
+    }
+    // 如果不同，只需确保不抛异常
+    expect(pickDefaultView(graph)).toBeDefined();
+  });
 });

@@ -11,6 +11,7 @@ function hasMultiHopCausalChain(graph: MergedGraph): boolean {
   return causesEdges.some((e) => targetsSet.has(e.source));
 }
 
+// TODO: 当 ASR speaker diarization 可靠后，基于 "跨 speaker + opposes/stance" 重新启用
 /** 检测是否存在跨 speaker 的边（边的 source 和 target 节点 speaker 不同） */
 function hasCrossSpeakerEdges(graph: MergedGraph): boolean {
   const speakerMap = new Map<string, string | undefined>();
@@ -24,6 +25,7 @@ function hasCrossSpeakerEdges(graph: MergedGraph): boolean {
   });
 }
 
+// TODO: 同上，当 ASR speaker diarization 可靠后重新启用
 /** 统计图中不同的 speaker 数量 */
 function countUniqueSpeakers(graph: MergedGraph): number {
   const speakers = new Set<string>();
@@ -35,7 +37,8 @@ function countUniqueSpeakers(graph: MergedGraph): number {
   return speakers.size;
 }
 
-/** 检测是否存在 claim 节点拥有 2+ 个结构性子节点（出边 targets，排除 follows） */
+/** 检测是否存在 claim 节点拥有 2+ 个结构性子节点（出边 targets，排除 follows）
+ *  follows 是时序关系而非结构关系，不应参与 hierarchy 加分判断 */
 function hasClaimWithMultipleChildren(graph: MergedGraph): boolean {
   const structuralTypes = new Set(['causes', 'supports', 'example_of']);
   const childCounts = new Map<string, number>();
@@ -110,6 +113,9 @@ export function scoreViews(graph: MergedGraph): Record<ViewType, number> {
   return scores;
 }
 
+// tie-break 优先级：causal > comparison > hierarchy
+const TIE_BREAK_ORDER: ViewType[] = ['causal', 'comparison', 'hierarchy'];
+
 export function pickDefaultView(graph: MergedGraph): ViewType {
   // 空图或无节点时返回 causal
   if (graph.nodes.length === 0) {
@@ -118,15 +124,8 @@ export function pickDefaultView(graph: MergedGraph): ViewType {
 
   const scores = scoreViews(graph);
 
-  // 收集非 timeline 的候选视图
-  const candidates = (Object.entries(scores) as Array<[ViewType, number]>)
-    .filter(([view]) => view !== 'timeline');
-
-  // 找到最高分
-  let maxScore = -Infinity;
-  for (const [, score] of candidates) {
-    if (score > maxScore) maxScore = score;
-  }
+  // 在非 timeline 候选中找最高分
+  const maxScore = Math.max(...TIE_BREAK_ORDER.map((v) => scores[v]));
 
   // 所有分数 <= 0 时兜底返回 causal（例如纯 follows 边且无拓扑奖励）
   if (maxScore <= 0) {
@@ -134,7 +133,6 @@ export function pickDefaultView(graph: MergedGraph): ViewType {
   }
 
   // 取分数最高的视图；tie-break 时 causal > comparison > hierarchy
-  const TIE_BREAK_ORDER: ViewType[] = ['causal', 'comparison', 'hierarchy'];
   for (const preferred of TIE_BREAK_ORDER) {
     if (scores[preferred] === maxScore) {
       return preferred;
