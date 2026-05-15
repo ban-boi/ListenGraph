@@ -716,7 +716,10 @@ export default function App() {
           {SORT_MODES.map((mode) => (
             <button
               key={mode}
-              onClick={() => setNodeSortMode(mode)}
+              onClick={() => {
+                setNodeSortMode(mode);
+                layoutCacheRef.current = createEmptyStableLayoutCache();
+              }}
               style={{
                 padding: '2px 6px', borderRadius: 3, fontSize: 10,
                 border: nodeSortMode === mode ? '1.5px solid #6b7280' : '1px solid #e5e7eb',
