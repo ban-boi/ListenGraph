@@ -57,6 +57,9 @@ export const VIEW_TYPES: ViewType[] = [
   'hierarchy',
 ];
 
+// UI 中实际展示的视图（timeline 仅在内部/渲染层使用）
+export const VISIBLE_VIEW_TYPES = VIEW_TYPES.filter((v) => v !== 'timeline');
+
 export const VIEW_LABELS: Record<ViewType, string> = {
   causal: '因果',
   timeline: '时间线',
@@ -64,7 +67,7 @@ export const VIEW_LABELS: Record<ViewType, string> = {
   hierarchy: '层级',
 };
 
-export const VIEW_EDGE_PRIORITIES: Record<ViewType, Record<string, EdgePriority>> = {
+export const VIEW_EDGE_PRIORITIES: Record<ViewType, Record<EdgeType, EdgePriority>> = {
   causal: {
     causes: 'primary',
     supports: 'primary',
@@ -136,3 +139,5 @@ export const SORT_MODE_LABELS: Record<NodeSortMode, string> = {
   default: '默认',
   chronological: '按时间',
 };
+
+export const SORT_MODES: NodeSortMode[] = ['default', 'chronological'];

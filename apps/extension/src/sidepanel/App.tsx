@@ -41,7 +41,9 @@ import {
   SPEAKERS,
   VIEW_TYPES,
   VIEW_LABELS,
+  VISIBLE_VIEW_TYPES,
   SORT_MODE_LABELS,
+  SORT_MODES,
   isDevMode,
 } from './constants';
 import type { NodeSortMode } from './constants';
@@ -420,7 +422,7 @@ export default function App() {
   useEffect(() => {
     if (!debugOpen || isDevMode) return;
     void loadDebugSession();
-  }, [debugOpen, panel.graph.revision, loadDebugSession, panel.sessionState]);
+  }, [debugOpen, loadDebugSession, panel.sessionState]);
 
   // ===== 图谱布局 =====
   const viewScores = useMemo(() => scoreViews(panel.graph), [panel.graph]);
@@ -671,7 +673,7 @@ export default function App() {
       />
       {/* 视图切换 */}
       <div style={{ padding: '6px 12px', borderBottom: '1px solid #e5e7eb', display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
-        {VIEW_TYPES.filter((v) => v !== 'timeline').map((v) => (
+        {VISIBLE_VIEW_TYPES.map((v) => (
           <button key={v}
             onClick={() => {
               lastUserViewportChangeAtRef.current = Date.now();
@@ -699,7 +701,7 @@ export default function App() {
         ))}
         {/* 排序切换 */}
         <div style={{ display: 'flex', gap: 2, marginLeft: 8 }}>
-          {(['default', 'chronological'] as NodeSortMode[]).map((mode) => (
+          {SORT_MODES.map((mode) => (
             <button
               key={mode}
               onClick={() => setNodeSortMode(mode)}

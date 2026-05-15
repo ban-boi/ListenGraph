@@ -341,6 +341,6 @@ export async function handleCaptureEnded(
     S,
     callbacks,
   );
-  console.log('[Service Worker] 捕获已结束:', reason);
+  console.info('[Service Worker] 捕获已结束:', reason);
   return { success: true };
 }

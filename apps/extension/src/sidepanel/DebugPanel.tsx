@@ -113,6 +113,9 @@ export function DebugPanel({
       <div style={{ marginBottom: 6 }}>
         structure units: {debugData?.structureUnits?.length ?? 0}
       </div>
+      <div style={{ marginBottom: 6, color: '#64748b' }}>
+        assembler 数据来源: {debugData?.traceSource === 'memory' ? '内存' : debugData?.traceSource === 'indexeddb' ? 'IndexedDB' : '空'}
+      </div>
       <div style={{ marginBottom: 6 }}>
         merged graph nodes: {debugData?.graph?.nodes.length ?? 0}
       </div>

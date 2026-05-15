@@ -77,3 +77,37 @@ describe('resolveEdgeHandles', () => {
     expect(result.targetHandle).not.toBe('target-right');
   });
 });
+
+import type { EdgeType } from '@listen-graphic/schema';
+import { VIEW_EDGE_PRIORITIES } from './constants';
+import type { ViewType } from '@listen-graphic/schema';
+
+describe('VIEW_EDGE_PRIORITIES', () => {
+  it('causal 视图隐藏 follows 边', () => {
+    expect(VIEW_EDGE_PRIORITIES.causal.follows).toBe('hidden');
+  });
+
+  it('causal 视图将 causes 设为 primary', () => {
+    expect(VIEW_EDGE_PRIORITIES.causal.causes).toBe('primary');
+  });
+
+  it('hierarchy 视图隐藏 opposes 和 follows', () => {
+    expect(VIEW_EDGE_PRIORITIES.hierarchy.opposes).toBe('hidden');
+    expect(VIEW_EDGE_PRIORITIES.hierarchy.follows).toBe('hidden');
+  });
+
+  it('comparison 视图隐藏 follows 和 example_of', () => {
+    expect(VIEW_EDGE_PRIORITIES.comparison.follows).toBe('hidden');
+    expect(VIEW_EDGE_PRIORITIES.comparison.example_of).toBe('hidden');
+  });
+
+  it('每个视图的五种边类型都有定义', () => {
+    const edgeTypes: EdgeType[] = ['supports', 'opposes', 'causes', 'follows', 'example_of'];
+    const views: ViewType[] = ['causal', 'timeline', 'comparison', 'hierarchy'];
+    for (const view of views) {
+      for (const et of edgeTypes) {
+        expect(VIEW_EDGE_PRIORITIES[view][et]).toBeDefined();
+      }
+    }
+  });
+});
