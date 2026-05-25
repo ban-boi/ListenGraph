@@ -1,18 +1,18 @@
 /**
  * status-cards.ts
  *
- * 从 App.tsx 提取的纯函数，根据当前面板状态计算 ASR / Structurer / Graph 状态卡片数据。
+ * 从 App.tsx 提取的纯函数，根据当前面板状态计算 ASR / Structurer 状态卡片数据。
+ * Graph 摘要由 App.tsx 直接读取 panel 原始字段渲染。
  */
 
-import type { RuntimeSnapshot } from '../shared/messages';
 import type { StatusCardData } from './types';
-import type { PanelState, BridgeHealth } from './panel-reducer';
+import type { PanelState } from './panel-reducer';
 import {
   formatRelativeAge,
   formatTime,
   bridgeHealthToTone,
 } from './timeline-utils';
-import { STRUCTURER_DELAYED_MS, GRAPH_JUST_UPDATED_MS } from './constants';
+import { STRUCTURER_DELAYED_MS } from './constants';
 
 interface StatusCardInputs {
   panel: PanelState;
@@ -169,22 +169,5 @@ export function computeStructurerStatusCard({
     status: graph.nodes.length > 0 ? 'idle' : 'waiting',
     detail: graph.nodes.length > 0 ? '等待下一轮增量' : '等待可结构化上下文',
     tone: graph.nodes.length > 0 ? 'neutral' : 'waiting',
-  };
-}
-
-/** 计算 Graph 状态卡片 */
-export function computeGraphStatusCard({
-  panel,
-  statusNowMs,
-}: StatusCardInputs): StatusCardData {
-  const { lastGraphUpdatedAt, graph } = panel;
-  const isFresh =
-    typeof lastGraphUpdatedAt === 'number' &&
-    statusNowMs - lastGraphUpdatedAt <= GRAPH_JUST_UPDATED_MS;
-  return {
-    label: 'Graph',
-    status: isFresh ? 'updated just now' : graph.nodes.length > 0 ? 'stable' : 'empty',
-    detail: `${graph.nodes.length} nodes | ${graph.edges.length} edges | 上次更新 ${formatRelativeAge(lastGraphUpdatedAt, statusNowMs)}`,
-    tone: isFresh ? 'success' : 'neutral',
   };
 }

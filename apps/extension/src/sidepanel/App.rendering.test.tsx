@@ -6,6 +6,7 @@ import {
   renderApp,
   setupAppTests,
   teardownAppTests,
+  openOverflowMenu,
 } from './__test-helpers__/app-test-helpers';
 
 describe('App - 渲染', () => {
@@ -40,7 +41,7 @@ describe('App - 渲染', () => {
     expect(screen.getByTestId('runtime-status-cards')).toBeInTheDocument();
     expect(screen.getByTestId('status-card-asr')).toBeInTheDocument();
     expect(screen.getByTestId('status-card-structurer')).toBeInTheDocument();
-    expect(screen.getByTestId('graph-view-status')).toBeInTheDocument();
+    expect(screen.queryByTestId('graph-view-summary')).not.toBeInTheDocument();
   });
 
   it('拖动日志分割条时会调整日志面板高度', async () => {
@@ -71,16 +72,16 @@ describe('App - 渲染', () => {
 
     // 检查视图按钮是否存在
     expect(screen.getByText('因果')).toBeInTheDocument();
-    // timeline 已降级为排序选项，不再作为独立视图按钮显示
-    expect(screen.queryByText('时间线')).not.toBeInTheDocument();
+    expect(screen.getByText('时间线')).toBeInTheDocument();
+    expect(screen.getByText('对比')).toBeInTheDocument();
+    expect(screen.getByText('层级')).toBeInTheDocument();
   });
 
   it('应该渲染底部状态栏', async () => {
     await renderApp();
 
-    // 检查状态栏
-    expect(screen.getByText(/节点: 0/)).toBeInTheDocument();
-    expect(screen.getByText(/边: 0/)).toBeInTheDocument();
+    expect(screen.getByText(/会话:/)).toBeInTheDocument();
+    expect(screen.getByText(/当前时间:/)).toBeInTheDocument();
   });
 
   it('应该显示 UI 和 Worker 的构建标识', async () => {
@@ -107,6 +108,7 @@ describe('App - 渲染', () => {
     );
 
     await renderApp();
+    await openOverflowMenu();
 
     expect(screen.getByTestId('build-info')).toHaveTextContent(
       /UI .* \| Worker v0\.0\.1#20260330173000/,

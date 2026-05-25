@@ -31,6 +31,8 @@ import {
   formatErrorStageLabel,
   timelineEventsToExportLines,
   formatTime,
+  formatRelativeAge,
+  getStatusCardStyles,
 } from './timeline-utils';
 import { createEmptyStableLayoutCache, buildDebugViewArtifacts } from './graph-utils';
 import {
@@ -42,14 +44,11 @@ import {
   VIEW_TYPES,
   VIEW_LABELS,
   VISIBLE_VIEW_TYPES,
-  SORT_MODE_LABELS,
-  SORT_MODES,
   isDevMode,
 } from './constants';
-import type { NodeSortMode } from './constants';
 import { formatGraphDeltaLog, downloadTextFile, buildDebugExportPayload, buildAssemblerLogPayload } from './debug-export-utils';
 import { GraphNodeCard } from './GraphNodeCard';
-import { StatusCards } from './StatusCards';
+import { OverflowMenu } from './OverflowMenu';
 import { LogPanel } from './LogPanel';
 import { DebugPanel } from './DebugPanel';
 import { ReplayPanel } from './ReplayPanel';
@@ -59,6 +58,7 @@ import { panelReducer, initialPanelState } from './panel-reducer';
 import { useTimeline } from './hooks/useTimeline';
 import { useAutoTour } from './hooks/useAutoTour';
 import { useProviderSettings } from './hooks/useProviderSettings';
+import { useGraphDisplaySettings } from './hooks/useGraphDisplaySettings';
 import { useChromeMessages } from './hooks/useChromeMessages';
 import { useReplay } from './hooks/useReplay';
 import { useLogResize } from './hooks/useLogResize';
@@ -66,10 +66,18 @@ import { useSessionControl } from './hooks/useSessionControl';
 import {
   computeAsrStatusCard,
   computeStructurerStatusCard,
-  computeGraphStatusCard,
 } from './status-cards';
 
 const nodeTypes = { graphNode: GraphNodeCard };
+
+// 节点正文基准字号（与 GraphNodeCard.tsx 的 fontSize 保持同步）
+const GRAPH_NODE_BODY_FONT_PX = 12;
+const AUTO_FIT_PADDING = 0.16;
+const AUTO_FIT_DURATION_MS = 240;
+
+function getReadableAutoFitMinZoom(readableFontPx: number) {
+  return readableFontPx / GRAPH_NODE_BODY_FONT_PX;
+}
 
 // ============ 主组件 ============
 
@@ -82,7 +90,6 @@ export default function App() {
   const [debugData, setDebugData] = useState<DebugSessionData | null>(null);
   const [statusNowMs, setStatusNowMs] = useState(() => Date.now());
   const [userViewOverride, setUserViewOverride] = useState<ViewType | null>(null);
-  const [nodeSortMode, setNodeSortMode] = useState<NodeSortMode>('default');
   const currentView = userViewOverride ?? panel.currentView;
 
   // ===== Refs =====
@@ -125,14 +132,26 @@ export default function App() {
     handleClearSecrets,
   } = useProviderSettings({ addLog, dispatch });
 
+  const {
+    graphDisplaySettings,
+    graphDisplaySettingsSaving,
+    loadGraphDisplaySettings,
+    updateAutoFitMinReadableFontPx,
+    saveGraphDisplaySettings,
+  } = useGraphDisplaySettings({ addLog });
+
   const providerAsrType = providerConfig.asr.type;
 
   // ===== Layout cache reset =====
-  const resetLayoutCache = useCallback(() => {
+  const resetLayoutCacheData = useCallback(() => {
     layoutCacheRef.current = createEmptyStableLayoutCache();
+  }, []);
+
+  const resetLayoutCache = useCallback(() => {
+    resetLayoutCacheData();
     layoutCacheSessionRef.current = null;
     hasAutoFitRef.current = false;
-  }, []);
+  }, [resetLayoutCacheData]);
 
   // ===== Auto-tour refs（通过 ref 传入避免陈旧闭包）=====
   const debugViewArtifactsRef = useRef<Record<ViewType, any>>({} as any);
@@ -141,12 +160,16 @@ export default function App() {
   const {
     autoTourStatus,
     autoTourProgress,
+    activeAutoTourStage,
     lastUserViewportChangeAtRef,
     userViewportInteractingRef,
     resetAutoTourState,
     pauseAutoTour,
     maybeStartAutoTour,
     setAutoTourSeed,
+    withProgrammaticViewportChange,
+    handleViewportMoveStart,
+    handleViewportMoveEnd,
   } = useAutoTour({
     graph: panel.graph,
     currentView,
@@ -154,6 +177,8 @@ export default function App() {
     flowEdgesRef,
     flowContainerRef,
     reactFlowInstanceRef,
+    autoFitMinReadableFontPx: graphDisplaySettings.autoFitMinReadableFontPx,
+    graphNodeBodyFontPx: GRAPH_NODE_BODY_FONT_PX,
     onReset: resetLayoutCache,
   });
 
@@ -192,6 +217,24 @@ export default function App() {
     graphRef,
   });
 
+  // ===== 图谱显示设置挂载加载（dev mode 跳过：使用模拟数据，无持久化）=====
+  useEffect(() => {
+    if (isDevMode) return;
+    void loadGraphDisplaySettings();
+  }, [loadGraphDisplaySettings]);
+
+  // ===== 组合设置开关/保存 =====
+  const handleToggleAllSettings = useCallback(async () => {
+    await handleToggleSettings();
+    // 幂等加载：每次打开时刷新设置，关闭时无副作用
+    await loadGraphDisplaySettings();
+  }, [handleToggleSettings, loadGraphDisplaySettings]);
+
+  const handleSaveAllSettings = useCallback(async () => {
+    await handleSaveSettings();
+    await saveGraphDisplaySettings();
+  }, [handleSaveSettings, saveGraphDisplaySettings]);
+
   // ===== Chrome 消息监听 =====
   useChromeMessages({
     dispatch,
@@ -224,14 +267,7 @@ export default function App() {
   useEffect(() => {
     if (panel.currentView !== prevReducerViewRef.current) {
       prevReducerViewRef.current = panel.currentView;
-      // 防御：reducer 返回 timeline 时映射为 causal + chronological
-      if (panel.currentView === 'timeline') {
-        console.warn('timeline 视图被 reducer 返回，已映射为 causal + chronological');
-        setUserViewOverride('causal');
-        setNodeSortMode('chronological');
-      } else {
-        setUserViewOverride(null);
-      }
+      setUserViewOverride(null);
     }
   }, [panel.currentView]);
 
@@ -321,14 +357,9 @@ export default function App() {
       const rawPreferredView = snapshot.graph
         ? (snapshot.currentView ?? snapshot.graph.viewHints?.defaultView ?? 'causal')
         : 'causal';
-      // timeline 在 UI 中不可选，映射为 causal + chronological 排序
-      const preferredView: ViewType = rawPreferredView === 'timeline' ? 'causal' : rawPreferredView;
+      const preferredView: ViewType = rawPreferredView;
 
       dispatch({ type: 'HYDRATE_SNAPSHOT', payload: { ...snapshot, preferredView } });
-
-      if (rawPreferredView === 'timeline') {
-        setNodeSortMode('chronological');
-      }
 
       if (snapshot.providerSummary) {
         setProviderSummary(snapshot.providerSummary);
@@ -354,7 +385,7 @@ export default function App() {
     });
   }, [addLog]);
 
-  // ===== layout cache reset =====
+  // ===== layout cache reset（useEffect 在 useLayoutEffect 之后运行，不可在此清 auto-tour seed）=====
   useEffect(() => {
     if (!panel.graph.nodes.length) {
       resetLayoutCache();
@@ -362,11 +393,10 @@ export default function App() {
       return;
     }
     if (layoutCacheSessionRef.current !== panel.graph.sessionId) {
-      resetLayoutCache();
-      resetAutoTourState();
+      resetLayoutCacheData();
       layoutCacheSessionRef.current = panel.graph.sessionId;
     }
-  }, [panel.graph.nodes.length, panel.graph.sessionId, resetAutoTourState, resetLayoutCache]);
+  }, [panel.graph.nodes.length, panel.graph.sessionId, resetAutoTourState, resetLayoutCache, resetLayoutCacheData]);
 
   // ===== 状态卡片 =====
   const statusCardInputs = useMemo(
@@ -375,7 +405,6 @@ export default function App() {
   );
   const asrStatusCard = useMemo(() => computeAsrStatusCard(statusCardInputs), [statusCardInputs]);
   const structurerStatusCard = useMemo(() => computeStructurerStatusCard(statusCardInputs), [statusCardInputs]);
-  const graphStatusCard = useMemo(() => computeGraphStatusCard(statusCardInputs), [statusCardInputs]);
   const primaryStatusCards = useMemo(() => [asrStatusCard, structurerStatusCard], [asrStatusCard, structurerStatusCard]);
 
   // ===== 导出 =====
@@ -446,9 +475,8 @@ export default function App() {
       currentTimeMs: panel.currentTimeMs,
       selectedNodeId: panel.selectedNodeId,
       previousLayoutCache: layoutCacheRef.current,
-      sortMode: nodeSortMode,
     }),
-    [panel.currentTimeMs, panel.graph, panel.selectedNodeId, nodeSortMode],
+    [panel.currentTimeMs, panel.graph, panel.selectedNodeId],
   );
   const debugViewArtifacts = layoutBuild.artifacts;
 
@@ -467,18 +495,35 @@ export default function App() {
 
   // ===== Auto fit =====
   const requestAutoFit = useCallback(
-    (sizeHint?: { width: number; height: number }) => {
-      if (!panel.graph.nodes.length || hasAutoFitRef.current) return;
+    (options?: {
+      sizeHint?: { width: number; height: number };
+      force?: boolean;
+    }) => {
+      if (!panel.graph.nodes.length || (!options?.force && hasAutoFitRef.current)) return;
       const inst = reactFlowInstanceRef.current;
       if (!inst?.fitView) return;
       const el = flowContainerRef.current;
-      const w = sizeHint?.width ?? el?.clientWidth ?? 0;
-      const h = sizeHint?.height ?? el?.clientHeight ?? 0;
+      const w = options?.sizeHint?.width ?? el?.clientWidth ?? 0;
+      const h = options?.sizeHint?.height ?? el?.clientHeight ?? 0;
       if (w < 2 || h < 2) return;
-      inst.fitView({ padding: 0.16, duration: 240 });
+      withProgrammaticViewportChange(() => {
+        inst.fitView({
+          padding: AUTO_FIT_PADDING,
+          duration: AUTO_FIT_DURATION_MS,
+          minZoom: getReadableAutoFitMinZoom(
+            graphDisplaySettings.autoFitMinReadableFontPx,
+          ),
+        });
+      });
       hasAutoFitRef.current = true;
+      maybeStartAutoTour();
     },
-    [panel.graph.nodes.length],
+    [
+      graphDisplaySettings.autoFitMinReadableFontPx,
+      maybeStartAutoTour,
+      panel.graph.nodes.length,
+      withProgrammaticViewportChange,
+    ],
   );
 
   // ===== Node click / time click =====
@@ -521,20 +566,40 @@ export default function App() {
     [dispatch, pauseAutoTour, panel.graph, sendSeekMessage],
   );
 
+  const activeTourNodeIds = useMemo(
+    () => new Set(activeAutoTourStage?.nodeIds ?? []),
+    [activeAutoTourStage],
+  );
+  const activeTourAnchorIds = useMemo(
+    () => new Set(activeAutoTourStage?.anchorNodeIds ?? []),
+    [activeAutoTourStage],
+  );
+
   const flowNodes = useMemo<Node[]>(
     () =>
-      debugViewArtifacts[currentView].reactFlow.nodes.map((node) => ({
-        ...node,
-        data: { ...node.data, onClickTime: handleTimeClick },
-      })),
-    [currentView, debugViewArtifacts, handleTimeClick],
+      debugViewArtifacts[currentView].reactFlow.nodes.map((node) => {
+        const isTourAdded = activeTourNodeIds.has(node.id);
+        const isTourAnchor = activeTourAnchorIds.has(node.id);
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            onClickTime: handleTimeClick,
+            displayMode: isTourAdded || isTourAnchor
+              ? activeAutoTourStage?.displayMode ?? 'readable'
+              : 'readable',
+            isTourAdded,
+            isTourAnchor,
+          },
+        };
+      }),
+    [activeAutoTourStage, activeTourAnchorIds, activeTourNodeIds, currentView, debugViewArtifacts, handleTimeClick],
   );
 
   // ===== Layout effects =====
   useLayoutEffect(() => { requestAutoFit(); }, [requestAutoFit]);
 
   useLayoutEffect(() => {
-    if (!hasAutoFitRef.current) return;
     maybeStartAutoTour();
   }, [flowNodes, panel.graph.revision, maybeStartAutoTour]);
 
@@ -544,7 +609,12 @@ export default function App() {
     const ro = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry) return;
-      requestAutoFit({ width: entry.contentRect.width, height: entry.contentRect.height });
+      requestAutoFit({
+        sizeHint: {
+          width: entry.contentRect.width,
+          height: entry.contentRect.height,
+        },
+      });
     });
     ro.observe(el);
     return () => { ro.disconnect(); };
@@ -629,36 +699,31 @@ export default function App() {
 
   const bridgeHealth = panel.bridgeHealth.status !== 'idle' ? panel.bridgeHealth : localBridgeHealth;
 
+  const graphSummaryText =
+    panel.graph.nodes.length > 0
+      ? `${panel.graph.nodes.length}n · ${panel.graph.edges.length}e · 更新 ${formatRelativeAge(panel.lastGraphUpdatedAt, statusNowMs)}`
+      : null;
+
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <style>{`@keyframes listen-graphic-tour-pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.82); } 100% { opacity: 1; transform: scale(1); } }`}</style>
       {/* 顶部栏 */}
       <div style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
         <span style={{ fontWeight: 600, fontSize: 14 }}>Listen Graphic</span>
-        <button onClick={() => void handleExport('json')} disabled={!canExport}
-          style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #d1d5db', backgroundColor: canExport ? 'white' : '#f3f4f6', color: '#374151', fontSize: 11, cursor: canExport ? 'pointer' : 'not-allowed' }}>
-          导出 JSON
-        </button>
-        <button onClick={() => void handleExport('markdown')} disabled={!canExport}
-          style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #d1d5db', backgroundColor: canExport ? 'white' : '#f3f4f6', color: '#374151', fontSize: 11, cursor: canExport ? 'pointer' : 'not-allowed' }}>
-          导出 Markdown
-        </button>
-        <button onClick={() => void handleExport('mermaid')} disabled={!canExport}
-          style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #d1d5db', backgroundColor: canExport ? 'white' : '#f3f4f6', color: '#374151', fontSize: 11, cursor: canExport ? 'pointer' : 'not-allowed' }}>
-          导出 Mermaid
-        </button>
-        <button onClick={() => void handleToggleSettings()}
+        <button onClick={() => void handleToggleAllSettings()}
           style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #d1d5db', backgroundColor: settingsOpen ? '#eff6ff' : 'white', color: settingsOpen ? '#1d4ed8' : '#374151', fontSize: 11, cursor: 'pointer' }}>
           设置
         </button>
-        <button onClick={() => setDebugOpen((p) => !p)}
-          style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #d1d5db', backgroundColor: debugOpen ? '#eff6ff' : 'white', color: debugOpen ? '#1d4ed8' : '#374151', fontSize: 11, cursor: 'pointer' }}>
-          调试
-        </button>
-        <button onClick={() => void handleToggleReplay()} disabled={!canReplay}
-          style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #d1d5db', backgroundColor: canReplay ? (replayOpen ? '#eff6ff' : 'white') : '#f3f4f6', color: replayOpen ? '#1d4ed8' : '#374151', fontSize: 11, cursor: canReplay ? 'pointer' : 'not-allowed' }}>
-          回放
-        </button>
+        <OverflowMenu
+          canExport={canExport}
+          canReplay={canReplay}
+          debugOpen={debugOpen}
+          replayOpen={replayOpen}
+          buildInfo={{ uiLabel: BUILD_INFO.label, workerLabel: panel.workerBuildLabel }}
+          onExport={handleExport}
+          onToggleDebug={() => setDebugOpen((p) => !p)}
+          onToggleReplay={() => void handleToggleReplay()}
+        />
         <button onClick={isRunning ? handleStop : handleStart}
           style={{ marginLeft: 'auto', padding: '4px 12px', borderRadius: 4, border: 'none', backgroundColor: isRunning ? '#ef4444' : '#3b82f6', color: 'white', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
           {isRunning ? '停止' : '开始'}
@@ -674,16 +739,114 @@ export default function App() {
           <span style={{ color: '#7f1d1d' }}>{panel.recentProviderError.message}</span>
         </div>
       )}
-      <StatusCards
-        primaryStatusCards={primaryStatusCards}
-        graphViewStatus={graphStatusCard}
-        currentView={currentView}
-        autoTourStatus={autoTourStatus}
-        autoTourProgress={autoTourProgress}
-        isRunning={isRunning}
-        autoTourIndicatorColor={autoTourIndicatorColor}
-        autoTourStatusText={autoTourStatusText}
-      />
+      <div
+        data-testid="runtime-status-cards"
+        style={{
+          padding: '6px 12px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+          gap: 8,
+          flexShrink: 0,
+        }}
+      >
+        {primaryStatusCards.map((card) => {
+          const styles = getStatusCardStyles(card.tone);
+          const isStructurer = card.label === 'Structurer';
+          return (
+            <div
+              key={card.label}
+              data-testid={`status-card-${card.label.toLowerCase()}`}
+              style={{
+                border: `1px solid ${styles.borderColor}`,
+                borderRadius: 8,
+                backgroundColor: styles.backgroundColor,
+                padding: '4px 8px',
+                display: 'grid',
+                gap: 2,
+                minWidth: 0,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: styles.statusColor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  minWidth: 0,
+                }}
+              >
+                <span style={{ color: styles.titleColor, fontSize: 10, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  {card.label}
+                </span>
+                <span style={{ color: '#94a3b8' }}>·</span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.status}</span>
+              </div>
+              <div
+                title={card.detail}
+                style={{
+                  fontSize: 10,
+                  color: styles.detailColor,
+                  lineHeight: 1.3,
+                  overflow: 'hidden',
+                  ...(isStructurer
+                    ? {
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical' as const,
+                      }
+                    : {
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }),
+                }}
+              >
+                {card.detail}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {graphSummaryText && (
+        <div
+          data-testid="graph-view-summary"
+          style={{
+            margin: '0 12px 6px',
+            padding: '5px 10px',
+            border: '1px solid #dbe4ee',
+            borderRadius: 8,
+            backgroundColor: '#f8fafc',
+            color: '#475569',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+            flexWrap: 'wrap',
+            flexShrink: 0,
+            fontSize: 11,
+          }}
+        >
+          <span>{graphSummaryText}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span
+              data-testid="auto-tour-indicator"
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                backgroundColor: autoTourIndicatorColor,
+                animation:
+                  autoTourStatus === 'touring'
+                    ? 'listen-graphic-tour-pulse 1s ease-in-out infinite'
+                    : 'none',
+                display: 'inline-block',
+              }}
+            />
+            <span data-testid="auto-tour-status">{autoTourStatusText}</span>
+          </div>
+        </div>
+      )}
       {/* 视图切换 */}
       <div style={{ padding: '6px 12px', borderBottom: '1px solid #e5e7eb', display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
         {VISIBLE_VIEW_TYPES.map((v) => (
@@ -709,41 +872,36 @@ export default function App() {
             }}
           >
             {VIEW_LABELS[v]}
-            <span style={{ marginLeft: 3, fontSize: 9, color: '#9ca3af' }}>({viewScores[v]})</span>
+            <span style={{ marginLeft: 3, fontSize: 9, color: '#9ca3af' }}>({viewScores[v].toFixed(2)})</span>
           </button>
         ))}
-        {/* 排序切换 */}
-        <div style={{ display: 'flex', gap: 2, marginLeft: 8 }}>
-          {SORT_MODES.map((mode) => (
-            <button
-              key={mode}
-              onClick={() => {
-                setNodeSortMode(mode);
-                layoutCacheRef.current = createEmptyStableLayoutCache();
-                hasAutoFitRef.current = false;
-              }}
-              style={{
-                padding: '2px 6px', borderRadius: 3, fontSize: 10,
-                border: nodeSortMode === mode ? '1.5px solid #6b7280' : '1px solid #e5e7eb',
-                backgroundColor: nodeSortMode === mode ? '#f3f4f6' : 'white',
-                color: '#6b7280',
-                cursor: 'pointer',
-              }}
-            >
-              {SORT_MODE_LABELS[mode]}
-            </button>
-          ))}
-        </div>
+        <button
+          onClick={() => requestAutoFit({ force: true })}
+          disabled={panel.graph.nodes.length === 0}
+          style={{
+            padding: '2px 6px',
+            borderRadius: 3,
+            fontSize: 10,
+            border: '1px solid #e5e7eb',
+            backgroundColor: panel.graph.nodes.length === 0 ? '#f3f4f6' : 'white',
+            color: '#6b7280',
+            cursor: panel.graph.nodes.length === 0 ? 'not-allowed' : 'pointer',
+          }}
+        >
+          适配视图
+        </button>
       </div>
       {settingsOpen && (
         <SettingsPanel
           providerConfig={providerConfig}
           providerSummary={providerSummary}
-          settingsSaving={settingsSaving}
+          settingsSaving={settingsSaving || graphDisplaySettingsSaving}
           bridgeHealth={bridgeHealth}
+          graphDisplaySettings={graphDisplaySettings}
           onUpdateProviderEntry={updateProviderEntry}
           onProviderTypeChange={handleProviderTypeChange}
-          onSaveSettings={handleSaveSettings}
+          onUpdateAutoFitMinReadableFontPx={updateAutoFitMinReadableFontPx}
+          onSaveSettings={handleSaveAllSettings}
           onClearSecrets={handleClearSecrets}
         />
       )}
@@ -754,16 +912,8 @@ export default function App() {
           edges={flowEdges}
           nodeTypes={nodeTypes}
           onNodeClick={handleNodeClick}
-          onMoveStart={() => {
-            userViewportInteractingRef.current = true;
-            lastUserViewportChangeAtRef.current = Date.now();
-            pauseAutoTour();
-          }}
-          onMoveEnd={() => {
-            userViewportInteractingRef.current = false;
-            lastUserViewportChangeAtRef.current = Date.now();
-            pauseAutoTour();
-          }}
+          onMoveStart={handleViewportMoveStart}
+          onMoveEnd={handleViewportMoveEnd}
           onInit={(instance) => {
             reactFlowInstanceRef.current = instance;
             queueMicrotask(() => requestAutoFit());
@@ -797,10 +947,6 @@ export default function App() {
       <div style={{ padding: '6px 12px', borderTop: '1px solid #e5e7eb', fontSize: 11, color: '#6b7280', flexShrink: 0, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <span>会话: {panel.sessionId || '无'}</span>
         <span>当前时间: {formatTime(panel.currentTimeMs)}</span>
-        <span>节点: {panel.graph.nodes.length} | 边: {panel.graph.edges.length}</span>
-        <span data-testid="build-info" style={{ fontFamily: 'monospace' }}>
-          {`UI ${BUILD_INFO.label} | Worker ${panel.workerBuildLabel}`}
-        </span>
       </div>
     </div>
   );

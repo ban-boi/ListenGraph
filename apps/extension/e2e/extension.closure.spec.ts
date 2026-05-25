@@ -6,6 +6,7 @@ import type { ProviderConfig } from '@listen-graphic/schema';
 import {
   applyProviderSettings,
   FIXTURE_ROOT,
+  clickOverflowMenuItem,
   closeStaticServer,
   createStaticServer,
   exportSession,
@@ -13,6 +14,7 @@ import {
   getReplaySession,
   getRuntimeSnapshot,
   launchExtensionContext,
+  openOverflowMenu,
   openSidepanelPage,
   resolveTabId,
   saveProviderSettings,
@@ -128,15 +130,17 @@ test.describe('Extension local closure validation', () => {
 
       await expect
         .poll(async () => {
-          return await sidepanelPage.getByRole('button', { name: /^回放$/ }).isEnabled();
+          await openOverflowMenu(sidepanelPage);
+          return await sidepanelPage.getByTestId('overflow-menu-replay').isEnabled();
         })
         .toBe(true);
-      await expect(sidepanelPage.getByRole('button', { name: /^导出 JSON$/ })).toBeEnabled();
+      await openOverflowMenu(sidepanelPage);
+      await expect(sidepanelPage.getByTestId('overflow-menu-export-json')).toBeEnabled();
 
-      await sidepanelPage.getByRole('button', { name: /^调试$/ }).click();
+      await clickOverflowMenuItem(sidepanelPage, 'overflow-menu-debug');
       await expect(sidepanelPage.getByTestId('debug-panel')).toBeVisible();
 
-      await sidepanelPage.getByRole('button', { name: /^回放$/ }).click();
+      await clickOverflowMenuItem(sidepanelPage, 'overflow-menu-replay');
       await expect(sidepanelPage.getByTestId('replay-panel')).toBeVisible();
 
       const runtimeSnapshot = await getRuntimeSnapshot(sidepanelPage);

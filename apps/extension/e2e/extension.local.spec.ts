@@ -7,12 +7,14 @@ import {
   EXTENSION_PATH,
   FIXTURE_ROOT,
   captureSessionDiagnostics,
+  clickOverflowMenuItem,
   closeStaticServer,
   createStaticServer,
   exportSession,
   getReplaySession,
   getRuntimeSnapshot,
   launchExtensionContext,
+  openOverflowMenu,
   openSidepanelPage,
   resolveTabId,
   startSession,
@@ -114,11 +116,11 @@ test.describe('Extension local regression', () => {
         fixtureManifest.localAcceptance.minGraphEdges,
       );
 
-      await sidepanelPage.getByRole('button', { name: /^调试$/ }).click();
+      await clickOverflowMenuItem(sidepanelPage, 'overflow-menu-debug');
       await expect(sidepanelPage.getByTestId('debug-panel')).toBeVisible();
       await expect(sidepanelPage.getByText(/transcript units: 4/)).toBeVisible();
       await expect(sidepanelPage.getByText(/structurer segments: 2/)).toBeVisible();
-      await expect(sidepanelPage.getByText(/mock-asr/)).toBeVisible();
+      await expect(sidepanelPage.getByText(/merged graph nodes:/)).toBeVisible();
 
       const exportData = await exportSession(sidepanelPage, sessionId, 'json');
       const exportedSession = JSON.parse(exportData.content) as {
@@ -140,11 +142,12 @@ test.describe('Extension local regression', () => {
 
       await expect
         .poll(async () => {
-          return await sidepanelPage.getByRole('button', { name: /^回放$/ }).isEnabled();
+          await openOverflowMenu(sidepanelPage);
+          return await sidepanelPage.getByTestId('overflow-menu-replay').isEnabled();
         })
         .toBe(true);
 
-      await sidepanelPage.getByRole('button', { name: /^回放$/ }).click();
+      await clickOverflowMenuItem(sidepanelPage, 'overflow-menu-replay');
       await expect(sidepanelPage.getByTestId('replay-panel')).toBeVisible();
 
       const replayData = await getReplaySession(sidepanelPage, sessionId);

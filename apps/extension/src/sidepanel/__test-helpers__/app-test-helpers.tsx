@@ -1,5 +1,6 @@
 import { vi, type MockInstance } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import type { UserEvent } from '@testing-library/user-event';
 import { act, useEffect, type ReactNode } from 'react';
 
 // —— ReactFlow mock spies ——
@@ -7,6 +8,60 @@ export const reactFlowFitViewSpy = vi.fn();
 export const reactFlowFitBoundsSpy = vi.fn();
 export const reactFlowGetViewportSpy = vi.fn();
 export let reactFlowViewport = { x: 0, y: 0, zoom: 1 };
+/** immediate：mount 后立刻 onInit；deferred：等 triggerDeferredReactFlowInit() */
+let reactFlowInitModeState: 'immediate' | 'deferred' = 'immediate';
+/** 为 true 时 fitView/fitBounds 会同步触发 onMoveStart/onMoveEnd，模拟真实 React Flow */
+let reactFlowSimulateMoveOnFitState = false;
+let reactFlowSimulateAsyncMoveOnFitState = false;
+let capturedOnMoveStart: ((event?: unknown) => void) | null = null;
+let capturedOnMoveEnd: ((event?: unknown) => void) | null = null;
+
+export function setReactFlowInitMode(mode: 'immediate' | 'deferred') {
+  reactFlowInitModeState = mode;
+}
+export function setReactFlowSimulateMoveOnFit(enabled: boolean) {
+  reactFlowSimulateMoveOnFitState = enabled;
+}
+export function setReactFlowSimulateAsyncMoveOnFit(enabled: boolean) {
+  reactFlowSimulateAsyncMoveOnFitState = enabled;
+}
+export function getReactFlowInitMode() {
+  return reactFlowInitModeState;
+}
+let deferredReactFlowOnInit:
+  | ((instance: {
+      fitView: typeof reactFlowFitViewSpy;
+      fitBounds: typeof reactFlowFitBoundsSpy;
+      getViewport: typeof reactFlowGetViewportSpy;
+    }) => void)
+  | null = null;
+
+export function triggerDeferredReactFlowInit() {
+  if (!deferredReactFlowOnInit) {
+    return;
+  }
+  deferredReactFlowOnInit({
+    fitView: reactFlowFitViewSpy,
+    fitBounds: reactFlowFitBoundsSpy,
+    getViewport: reactFlowGetViewportSpy,
+  });
+  deferredReactFlowOnInit = null;
+}
+
+function fireSimulatedViewportMove() {
+  if (reactFlowSimulateAsyncMoveOnFitState) {
+    window.setTimeout(() => {
+      capturedOnMoveStart?.();
+      capturedOnMoveEnd?.();
+    }, 0);
+    return;
+  }
+  if (!reactFlowSimulateMoveOnFitState) {
+    return;
+  }
+  capturedOnMoveStart?.();
+  capturedOnMoveEnd?.();
+}
 
 vi.mock('reactflow', () => ({
   ReactFlow: ({
@@ -25,7 +80,7 @@ vi.mock('reactflow', () => ({
       id: string;
       type?: string;
       position?: { x: number; y: number };
-      data?: { label?: string; timestampMs?: number };
+      data?: { label?: string; timestampMs?: number; displayMode?: string; isTourAnchor?: boolean; isTourAdded?: boolean };
     }>;
     edges?: Array<{
       id: string;
@@ -43,26 +98,34 @@ vi.mock('reactflow', () => ({
       getViewport: typeof reactFlowGetViewportSpy;
     }) => void;
     onNodeClick?: (_event: React.MouseEvent, node: { id: string; type?: string; position?: { x: number; y: number }; data?: Record<string, unknown> }) => void;
-    onMoveStart?: () => void;
-    onMoveEnd?: () => void;
+    onMoveStart?: (event?: unknown) => void;
+    onMoveEnd?: (event?: unknown) => void;
   }) => {
+    capturedOnMoveStart = onMoveStart ?? null;
+    capturedOnMoveEnd = onMoveEnd ?? null;
+
     useEffect(() => {
-      onInit?.({
+      const instance = {
         fitView: reactFlowFitViewSpy,
         fitBounds: reactFlowFitBoundsSpy,
         getViewport: reactFlowGetViewportSpy,
-      });
+      };
+      if (reactFlowInitModeState === 'immediate') {
+        onInit?.(instance);
+        return;
+      }
+      deferredReactFlowOnInit = onInit ?? null;
     }, [onInit]);
 
     return (
       <div
         data-testid="reactflow-mock"
         data-fit-view-prop={fitView ? 'true' : 'false'}
-        onMouseDown={() => onMoveStart?.()}
-        onMouseUp={() => onMoveEnd?.()}
-        onWheel={() => {
-          onMoveStart?.();
-          onMoveEnd?.();
+        onMouseDown={(event) => onMoveStart?.(event)}
+        onMouseUp={(event) => onMoveEnd?.(event)}
+        onWheel={(event) => {
+          onMoveStart?.(event);
+          onMoveEnd?.(event);
         }}
       >
         {nodes.map((node) => (
@@ -71,6 +134,9 @@ vi.mock('reactflow', () => ({
               type="button"
               data-node-id={node.id}
               data-node-position={`${node.position?.x ?? 0},${node.position?.y ?? 0}`}
+              data-node-display-mode={node.data?.displayMode ?? ''}
+              data-node-tour-anchor={node.data?.isTourAnchor ? 'true' : 'false'}
+              data-node-tour-added={node.data?.isTourAdded ? 'true' : 'false'}
               onClick={(event) => onNodeClick?.(event as unknown as React.MouseEvent, node)}
             >
               {node.data?.label}
@@ -155,12 +221,22 @@ export let clientHeightGetter: MockInstance;
 
 export function setupAppTests() {
   vi.clearAllMocks();
+  setReactFlowInitMode('immediate');
+  setReactFlowSimulateMoveOnFit(false);
+  setReactFlowSimulateAsyncMoveOnFit(false);
+  capturedOnMoveStart = null;
+  capturedOnMoveEnd = null;
+  deferredReactFlowOnInit = null;
   reactFlowFitViewSpy.mockReset();
   reactFlowFitBoundsSpy.mockReset();
   reactFlowGetViewportSpy.mockReset();
   reactFlowViewport = { x: 0, y: 0, zoom: 1 };
   reactFlowGetViewportSpy.mockImplementation(() => reactFlowViewport);
+  reactFlowFitViewSpy.mockImplementation(() => {
+    fireSimulatedViewportMove();
+  });
   reactFlowFitBoundsSpy.mockImplementation((bounds: { x: number; y: number; width: number; height: number }) => {
+    fireSimulatedViewportMove();
     reactFlowViewport = {
       x: -bounds.x,
       y: -bounds.y,
@@ -213,6 +289,14 @@ export function setupAppTests() {
           },
         });
       }
+      if (message?.type === 'GET_GRAPH_DISPLAY_SETTINGS') {
+        return Promise.resolve({
+          success: true,
+          graphDisplaySettings: {
+            autoFitMinReadableFontPx: 12,
+          },
+        });
+      }
       return Promise.resolve({ success: true });
     },
   );
@@ -225,6 +309,23 @@ export function setupAppTests() {
     .mockImplementation(() => {});
   clientWidthGetter = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(960);
   clientHeightGetter = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(720);
+}
+
+export async function openOverflowMenu() {
+  if (screen.queryByTestId('overflow-menu-export-json')) {
+    return;
+  }
+  await act(async () => {
+    fireEvent.click(screen.getByTestId('overflow-menu-toggle'));
+  });
+  screen.getByTestId('overflow-menu-export-json');
+}
+
+export async function clickOverflowMenuItem(user: UserEvent, testId: string) {
+  await openOverflowMenu();
+  await act(async () => {
+    fireEvent.click(screen.getByTestId(testId));
+  });
 }
 
 export function teardownAppTests() {

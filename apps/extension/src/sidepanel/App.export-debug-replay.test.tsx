@@ -8,6 +8,7 @@ import {
   teardownAppTests,
   createObjectURLSpy,
   anchorClickSpy,
+  clickOverflowMenuItem,
 } from './__test-helpers__/app-test-helpers';
 
 describe('App - 调试与回放', () => {
@@ -247,9 +248,7 @@ describe('App - 调试与回放', () => {
     const user = userEvent.setup();
 
     await renderApp();
-    await act(async () => {
-      await user.click(screen.getByRole('button', { name: /^调试$/ }));
-    });
+    await clickOverflowMenuItem(user, 'overflow-menu-debug');
 
     expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -429,9 +428,7 @@ describe('App - 调试与回放', () => {
     const user = userEvent.setup();
     await renderApp();
 
-    await act(async () => {
-      await user.click(screen.getByRole('button', { name: /^调试$/ }));
-    });
+    await clickOverflowMenuItem(user, 'overflow-menu-debug');
 
     await act(async () => {
       await user.click(await screen.findByTestId('debug-export-button'));
@@ -523,9 +520,7 @@ describe('App - 调试与回放', () => {
     const user = userEvent.setup();
     await renderApp();
 
-    await act(async () => {
-      await user.click(screen.getByRole('button', { name: /^导出 JSON$/ }));
-    });
+    await clickOverflowMenuItem(user, 'overflow-menu-export-json');
 
     expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -641,9 +636,7 @@ describe('App - 调试与回放', () => {
     const user = userEvent.setup();
 
     await renderApp();
-    await act(async () => {
-      await user.click(screen.getByRole('button', { name: /^回放$/ }));
-    });
+    await clickOverflowMenuItem(user, 'overflow-menu-replay');
 
     expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -660,6 +653,7 @@ describe('App - 调试与回放', () => {
 
   it('开始回放后会推进当前时间', async () => {
     vi.useFakeTimers();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
       (message: { type?: string }) => {
         if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
@@ -754,10 +748,7 @@ describe('App - 调试与回放', () => {
       },
     );
     await renderApp();
-    await act(async () => {
-      screen.getByRole('button', { name: /^回放$/ }).click();
-      await Promise.resolve();
-    });
+    await clickOverflowMenuItem(user, 'overflow-menu-replay');
     await act(async () => {
       screen.getByRole('button', { name: /^播放$/ }).click();
       await Promise.resolve();
@@ -831,7 +822,7 @@ describe('App - 调试与回放', () => {
 
     expect(screen.getByText(/会话: 无/)).toBeInTheDocument();
     expect(screen.getByText(/当前时间: 0:00/)).toBeInTheDocument();
-    expect(screen.getByText(/节点: 0/)).toBeInTheDocument();
+    expect(screen.getByText(/会话:/)).toBeInTheDocument();
 
     await act(async () => {
       await user.click(screen.getByRole('button', { name: /^停止$/ }));
@@ -920,9 +911,7 @@ describe('App - 调试与回放', () => {
     renderApp();
     const user = userEvent.setup();
 
-    await act(async () => {
-      await user.click(screen.getByRole('button', { name: /^调试$/ }));
-    });
+    await clickOverflowMenuItem(user, 'overflow-menu-debug');
 
     await waitFor(() => {
       expect(screen.getByTestId('debug-panel')).toBeDefined();

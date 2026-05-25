@@ -7,6 +7,8 @@ import {
   setupAppTests,
   teardownAppTests,
   anchorClickSpy,
+  clickOverflowMenuItem,
+  openOverflowMenu,
 } from './__test-helpers__/app-test-helpers';
 
 describe('App - 会话与导出', () => {
@@ -75,9 +77,7 @@ describe('App - 会话与导出', () => {
     const user = userEvent.setup();
 
     await renderApp();
-    await act(async () => {
-      await user.click(screen.getByRole('button', { name: /导出 JSON/i }));
-    });
+    await clickOverflowMenuItem(user, 'overflow-menu-export-json');
 
     expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -198,9 +198,7 @@ describe('App - 会话与导出', () => {
     });
 
     expect(screen.getByText(/会话: session_live/)).toBeInTheDocument();
-    await act(async () => {
-      await user.click(screen.getByRole('button', { name: /导出 JSON/i }));
-    });
+    await clickOverflowMenuItem(user, 'overflow-menu-export-json');
     expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'EXPORT_SESSION',
@@ -279,7 +277,8 @@ describe('App - 会话与导出', () => {
       await user.click(screen.getByRole('button', { name: /^停止$/ }));
     });
 
-    expect(screen.getByRole('button', { name: /导出 JSON/i })).toBeDisabled();
+    await openOverflowMenu();
+    expect(screen.getByTestId('overflow-menu-export-json')).toBeDisabled();
 
     const stoppedGraph = {
       sessionId: 'session_stop_flow',
@@ -323,9 +322,10 @@ describe('App - 会话与导出', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByRole('button', { name: /导出 JSON/i })).not.toBeDisabled();
+    await openOverflowMenu();
+    expect(screen.getByTestId('overflow-menu-export-json')).not.toBeDisabled();
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /导出 JSON/i }));
+      await clickOverflowMenuItem(user, 'overflow-menu-export-json');
     });
     expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -384,9 +384,11 @@ describe('App - 会话与导出', () => {
     );
 
     await renderApp();
+    const user = userEvent.setup();
+    await openOverflowMenu();
 
-    expect(screen.getByRole('button', { name: /导出 JSON/i })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /导出 Markdown/i })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /导出 Mermaid/i })).toBeDisabled();
+    expect(screen.getByTestId('overflow-menu-export-json')).toBeDisabled();
+    expect(screen.getByTestId('overflow-menu-export-markdown')).toBeDisabled();
+    expect(screen.getByTestId('overflow-menu-export-mermaid')).toBeDisabled();
   });
 });

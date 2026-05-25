@@ -231,6 +231,18 @@ export async function exportSession(page: Page, sessionId: string, format: Expor
   return response.exportData;
 }
 
+export async function openOverflowMenu(page: Page) {
+  if (await page.getByTestId('overflow-menu-export-json').count()) {
+    return;
+  }
+  await page.getByRole('button', { name: /^更多$/ }).click();
+}
+
+export async function clickOverflowMenuItem(page: Page, testId: string) {
+  await openOverflowMenu(page);
+  await page.getByTestId(testId).click();
+}
+
 export async function waitForGraph(page: Page, minimumNodeCount: number, timeout = 15_000) {
   await expect
     .poll(async () => {
