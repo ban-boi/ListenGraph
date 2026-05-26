@@ -15,6 +15,7 @@ import type {
   DebugViewArtifact,
   DebugExportMode,
 } from './types';
+import type { AutoTourTraceEvent } from './auto-tour-trace';
 
 export function summarizeTranscriptUnit(
   transcript: DebugSessionData['transcripts'][number],
@@ -138,6 +139,7 @@ export function buildDebugExportPayload(params: {
   workerBuildLabel: string;
   providerSummary: ProviderRuntimeSummary;
   logs: string[];
+  autoTourTrace?: AutoTourTraceEvent[];
   debugData: DebugSessionData | null;
   derivedViews: Record<ViewType, DebugViewArtifact>;
 }) {
@@ -179,6 +181,9 @@ export function buildDebugExportPayload(params: {
     },
     ui: {
       logs: params.mode === 'full' ? params.logs : params.logs.slice(0, 20),
+      autoTourTrace: params.mode === 'full'
+        ? params.autoTourTrace ?? []
+        : (params.autoTourTrace ?? []).slice(-50),
       derivedViews: params.derivedViews,
     },
   };

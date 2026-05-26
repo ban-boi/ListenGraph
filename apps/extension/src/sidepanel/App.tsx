@@ -47,6 +47,7 @@ import {
   isDevMode,
 } from './constants';
 import { formatGraphDeltaLog, downloadTextFile, buildDebugExportPayload, buildAssemblerLogPayload } from './debug-export-utils';
+import { getAutoTourTrace } from './auto-tour-trace';
 import { GraphNodeCard } from './GraphNodeCard';
 import { OverflowMenu } from './OverflowMenu';
 import { LogPanel } from './LogPanel';
@@ -623,35 +624,37 @@ export default function App() {
   // ===== 导出 payload =====
   const exportLogLines = useMemo(() => timelineEventsToExportLines(panel.timelineEvents), [panel.timelineEvents]);
 
-  const slimDebugExportPayload = useMemo(
-    () => buildDebugExportPayload({
-      mode: 'slim', sessionId: exportSessionId, sessionState: panel.sessionState,
-      currentView, workerBuildLabel: panel.workerBuildLabel, providerSummary,
-      logs: exportLogLines, debugData, derivedViews: debugViewArtifacts,
-    }),
-    [currentView, exportSessionId, panel.sessionState, panel.workerBuildLabel,
-      debugData, debugViewArtifacts, exportLogLines, providerSummary],
-  );
-
-  const fullDebugExportPayload = useMemo(
-    () => buildDebugExportPayload({
-      mode: 'full', sessionId: exportSessionId, sessionState: panel.sessionState,
-      currentView, workerBuildLabel: panel.workerBuildLabel, providerSummary,
-      logs: exportLogLines, debugData, derivedViews: debugViewArtifacts,
-    }),
-    [currentView, exportSessionId, panel.sessionState, panel.workerBuildLabel,
-      debugData, debugViewArtifacts, exportLogLines, providerSummary],
-  );
-
   const handleExportDebug = useCallback(
     (mode: DebugExportMode) => {
       if (!debugData) { addLog('调试数据为空，无法导出'); return; }
       const debugSessionId = debugData.session?.sessionId ?? exportSessionId ?? 'listen-graphic';
       const filename = mode === 'full' ? `${debugSessionId}-debug-full.json` : `${debugSessionId}-debug-summary.json`;
-      downloadTextFile(filename, JSON.stringify(mode === 'full' ? fullDebugExportPayload : slimDebugExportPayload, null, 2), 'application/json');
+      const payload = buildDebugExportPayload({
+        mode,
+        sessionId: exportSessionId,
+        sessionState: panel.sessionState,
+        currentView,
+        workerBuildLabel: panel.workerBuildLabel,
+        providerSummary,
+        logs: exportLogLines,
+        autoTourTrace: getAutoTourTrace(),
+        debugData,
+        derivedViews: debugViewArtifacts,
+      });
+      downloadTextFile(filename, JSON.stringify(payload, null, 2), 'application/json');
       addLog(`已导出: ${filename}`);
     },
-    [addLog, debugData, exportSessionId, fullDebugExportPayload, slimDebugExportPayload],
+    [
+      addLog,
+      currentView,
+      debugData,
+      debugViewArtifacts,
+      exportLogLines,
+      exportSessionId,
+      panel.sessionState,
+      panel.workerBuildLabel,
+      providerSummary,
+    ],
   );
 
   const handleExportAssemblerLog = useCallback(
