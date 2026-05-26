@@ -10,6 +10,9 @@ export type ReactFlowDebugNodeData = {
   timestampMs: number;
   status: 'draft' | 'confirmed';
   isActive: boolean;
+  displayMode?: AutoTourDisplayMode;
+  isTourAnchor?: boolean;
+  isTourAdded?: boolean;
 };
 
 export type ReactFlowDebugNode = {
@@ -27,7 +30,7 @@ export type ReactFlowDebugEdge = {
   type: 'default';
   sourceHandle: SourceHandleId;
   targetHandle: TargetHandleId;
-  style: { stroke: string };
+  style: { stroke: string; opacity?: number };
   animated: boolean;
 };
 
@@ -81,6 +84,8 @@ export type StableNodePosition = {
   y: number;
 };
 
+export type EdgePriority = 'primary' | 'secondary' | 'hidden';
+
 export type EdgeHandleId = 'top' | 'bottom' | 'left' | 'right';
 export type SourceHandleId = `source-${EdgeHandleId}`;
 export type TargetHandleId = `target-${EdgeHandleId}`;
@@ -100,6 +105,10 @@ export type ViewBounds = {
 
 // ===== 自动导览 =====
 
+export type AutoTourDisplayMode = 'compact' | 'readable';
+
+export type AutoTourStageKind = 'structure' | 'reading';
+
 export type AutoTourSeed = {
   sessionId: string;
   revision: number;
@@ -113,6 +122,17 @@ export type AutoTourBatch = {
   dwellMs: number;
 };
 
+export type AutoTourStage = AutoTourBatch & {
+  kind: AutoTourStageKind;
+  displayMode: AutoTourDisplayMode;
+};
+
+export type AutoTourUnit = {
+  sessionId: string;
+  revision: number;
+  stages: AutoTourStage[];
+};
+
 export type AutoTourStatus = 'idle' | 'touring' | 'paused';
 
 // ===== 自定义节点 =====
@@ -124,5 +144,9 @@ export interface GraphNodeData {
   timestampMs: number;
   status: 'draft' | 'confirmed';
   isActive: boolean;
+  displayMode?: AutoTourDisplayMode;
+  isTourAnchor?: boolean;
+  isTourAdded?: boolean;
   onClickTime: (ms: number) => void;
 }
+

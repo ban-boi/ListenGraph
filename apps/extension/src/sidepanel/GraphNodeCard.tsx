@@ -29,7 +29,7 @@ function getTypeLabel(type: string): string {
 
 // ============ 自定义节点组件 ============
 
-export function GraphNodeCard({ data }: NodeProps<GraphNodeData>) {
+export function GraphNodeCard({ data, id }: NodeProps<GraphNodeData>) {
   const {
     label,
     nodeType,
@@ -37,23 +37,34 @@ export function GraphNodeCard({ data }: NodeProps<GraphNodeData>) {
     timestampMs,
     status,
     isActive,
+    displayMode = 'readable',
+    isTourAnchor = false,
+    isTourAdded = false,
     onClickTime,
   } = data;
   const color = getTypeColor(nodeType);
+  const isCompact = displayMode === 'compact';
+  const displayLabel = isCompact && label.length > 56
+    ? `${label.slice(0, 54)}…`
+    : label;
 
   return (
     <div
+      data-testid={`graph-node-card-${id}`}
+      data-display-mode={displayMode}
+      data-tour-anchor={isTourAnchor ? 'true' : 'false'}
+      data-tour-added={isTourAdded ? 'true' : 'false'}
       style={{
-        padding: '10px 12px',
+        padding: isCompact ? '6px 8px' : '10px 12px',
         borderRadius: 6,
-        border: `2px solid ${isActive ? '#f59e0b' : color}`,
-        backgroundColor: isActive ? '#fffbeb' : '#ffffff',
-        boxShadow: isActive
+        border: `2px solid ${isActive || isTourAdded ? '#f59e0b' : color}`,
+        backgroundColor: isActive || isTourAdded ? '#fffbeb' : '#ffffff',
+        boxShadow: isActive || isTourAdded
           ? '0 0 8px rgba(245, 158, 11, 0.4)'
           : '0 1px 4px rgba(0,0,0,0.1)',
-        minWidth: 140,
-        maxWidth: 200,
-        opacity: status === 'draft' ? 0.6 : 1,
+        minWidth: isCompact ? 112 : 140,
+        maxWidth: isCompact ? 168 : 200,
+        opacity: status === 'draft' ? 0.6 : isTourAnchor ? 0.72 : 1,
         transition: 'all 0.2s ease',
       }}
     >
@@ -119,8 +130,18 @@ export function GraphNodeCard({ data }: NodeProps<GraphNodeData>) {
         )}
       </div>
 
-      <div style={{ fontSize: 12, lineHeight: 1.3, marginBottom: 6 }}>
-        {label}
+      <div
+        style={{
+          fontSize: isCompact ? 11 : 12,
+          lineHeight: isCompact ? 1.25 : 1.3,
+          marginBottom: isCompact ? 4 : 6,
+          display: '-webkit-box',
+          WebkitLineClamp: isCompact ? 2 : 3,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        }}
+      >
+        {displayLabel}
       </div>
 
       <div
@@ -128,7 +149,7 @@ export function GraphNodeCard({ data }: NodeProps<GraphNodeData>) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          fontSize: 10,
+          fontSize: isCompact ? 9 : 10,
           color: '#6b7280',
         }}
       >
@@ -145,7 +166,7 @@ export function GraphNodeCard({ data }: NodeProps<GraphNodeData>) {
             cursor: 'pointer',
             fontFamily: 'monospace',
             padding: 0,
-            fontSize: 10,
+            fontSize: isCompact ? 9 : 10,
           }}
         >
           {formatTime(timestampMs)}
