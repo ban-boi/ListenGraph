@@ -1,4 +1,5 @@
 import type { ProviderConfig, ProviderRuntimeSummary } from '@listen-graphic/schema';
+import type { GraphDisplaySettings } from '../shared/messages';
 import type { StatusCardData } from './types';
 import {
   renderSecretHint,
@@ -14,6 +15,7 @@ export type SettingsPanelProps = {
     status: 'idle' | 'connecting' | 'connected' | 'listening' | 'closing' | 'closed' | 'error';
     detail?: string;
   };
+  graphDisplaySettings: GraphDisplaySettings;
   onUpdateProviderEntry: (
     stage: keyof ProviderConfig,
     field: keyof ProviderConfig['asr'],
@@ -23,6 +25,7 @@ export type SettingsPanelProps = {
     stage: keyof ProviderConfig,
     nextType: string,
   ) => void;
+  onUpdateAutoFitMinReadableFontPx: (value: string) => void;
   onSaveSettings: () => void;
   onClearSecrets: () => void;
 };
@@ -32,8 +35,10 @@ export function SettingsPanel({
   providerSummary,
   settingsSaving,
   bridgeHealth,
+  graphDisplaySettings,
   onUpdateProviderEntry,
   onProviderTypeChange,
+  onUpdateAutoFitMinReadableFontPx,
   onSaveSettings,
   onClearSecrets,
 }: SettingsPanelProps) {
@@ -408,6 +413,37 @@ export function SettingsPanel({
           </label>
         </div>;
       })}
+      <div
+        style={{
+          gridColumn: '1 / -1',
+          border: '1px solid #dbe4ee',
+          borderRadius: 6,
+          padding: 10,
+          backgroundColor: 'white',
+          display: 'grid',
+          gap: 6,
+        }}
+      >
+        <div style={{ fontWeight: 600 }}>图谱显示</div>
+        <label style={{ display: 'grid', gap: 4 }}>
+          <span>自动适配最小字号</span>
+          <select
+            aria-label="自动适配最小字号"
+            value={String(graphDisplaySettings.autoFitMinReadableFontPx)}
+            onChange={(event) =>
+              onUpdateAutoFitMinReadableFontPx(event.target.value)
+            }
+          >
+            <option value="10">10px</option>
+            <option value="12">12px</option>
+            <option value="14">14px</option>
+            <option value="16">16px</option>
+          </select>
+        </label>
+        <div style={{ color: '#64748b', fontSize: 10, lineHeight: 1.5 }}>
+          只影响首次自动适配和手动适配视图；鼠标滚轮、触控板和 React Flow 控件缩放不受限制。
+        </div>
+      </div>
       <div
         style={{
           gridColumn: '1 / -1',

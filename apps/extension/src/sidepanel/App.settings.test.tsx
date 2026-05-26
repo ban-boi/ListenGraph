@@ -881,7 +881,7 @@ describe('App - 设置面板', () => {
     });
 
     expect(within(settingsPanel).getByTestId('local-bridge-health')).toHaveTextContent('Bridge 状态: idle');
-    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenLastCalledWith(
+    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'SAVE_PROVIDER_SETTINGS',
         payload: {
@@ -970,5 +970,69 @@ describe('App - 设置面板', () => {
     expect(secretKeyInput.value).toBe('');
     expect(secretIdInput.placeholder).toContain('已保存');
     expect(screen.getByText(/已保存 Secret ID \/ Secret Key，留空则保持不变/)).toBeInTheDocument();
+  });
+
+  it('设置面板可以加载并保存自动适配最小字号', async () => {
+    const user = userEvent.setup();
+    const messages: Array<{ type?: string; payload?: unknown }> = [];
+
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string; payload?: unknown }) => {
+        messages.push(message);
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: null,
+              state: 'idle',
+              graph: null,
+              currentTimeMs: 0,
+            },
+          });
+        }
+        if (message?.type === 'GET_PROVIDER_SETTINGS') {
+          return Promise.resolve({
+            success: true,
+            config: {
+              asr: { type: 'mock', mode: 'direct', model: 'mock-asr', language: 'zh' },
+              structurer: { type: 'mock', mode: 'direct', model: 'mock-structurer', language: 'zh' },
+            },
+          });
+        }
+        if (message?.type === 'GET_GRAPH_DISPLAY_SETTINGS') {
+          return Promise.resolve({
+            success: true,
+            graphDisplaySettings: {
+              autoFitMinReadableFontPx: 14,
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    await renderApp();
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^设置$/ }));
+    });
+
+    const settingsPanel = await screen.findByTestId('settings-panel');
+    const readableFontSelect = within(settingsPanel).getByLabelText('自动适配最小字号');
+    expect(readableFontSelect).toHaveValue('14');
+
+    await act(async () => {
+      await user.selectOptions(readableFontSelect, '12');
+      await user.click(within(settingsPanel).getByRole('button', { name: /保存设置/i }));
+    });
+
+    expect(messages).toContainEqual({
+      type: 'SAVE_GRAPH_DISPLAY_SETTINGS',
+      target: 'service-worker',
+      payload: {
+        settings: {
+          autoFitMinReadableFontPx: 12,
+        },
+      },
+    });
   });
 });
