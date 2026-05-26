@@ -57,8 +57,8 @@ export const VIEW_TYPES: ViewType[] = [
   'hierarchy',
 ];
 
-// UI 中实际展示的视图（timeline 仅在内部/渲染层使用）
-export const VISIBLE_VIEW_TYPES = VIEW_TYPES.filter((v) => v !== 'timeline');
+// UI 中实际展示的视图。保持单一维度：选择什么视图，就使用该视图的边过滤与节点顺序。
+export const VISIBLE_VIEW_TYPES = VIEW_TYPES;
 
 export const VIEW_LABELS: Record<ViewType, string> = {
   causal: '因果',
@@ -120,7 +120,7 @@ export const USER_VIEWPORT_COOLDOWN_MS = 1800;
 
 // ===== 自动导览 =====
 
-export const AUTO_TOUR_RESUME_DELAY_MS = 3000;
+export const AUTO_TOUR_RESUME_DELAY_MS = 7000;
 export const AUTO_TOUR_ABSOLUTE_READABLE_ZOOM = 0.9;
 export const AUTO_TOUR_FIRST_BATCH_RELATIVE_RATIO = 0.8;
 export const AUTO_TOUR_RELATIVE_READABLE_RATIO = 0.85;
@@ -131,13 +131,3 @@ export const AUTO_TOUR_EDGE_DWELL_MS = 90;
 export const AUTO_TOUR_MIN_DWELL_MS = 1800;
 export const AUTO_TOUR_MAX_DWELL_MS = 5000;
 
-// ===== 排序模式 =====
-
-export type NodeSortMode = 'default' | 'chronological';
-
-export const SORT_MODE_LABELS: Record<NodeSortMode, string> = {
-  default: '默认',
-  chronological: '按时间',
-};
-
-export const SORT_MODES: NodeSortMode[] = ['default', 'chronological'];

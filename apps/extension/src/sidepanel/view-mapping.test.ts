@@ -12,8 +12,13 @@ function makeGraph(defaultView: string): MergedGraph {
   };
 }
 
-describe('timeline 视图映射（reducer 路径）', () => {
-  it('MERGED_GRAPH_UPDATED: defaultView=timeline 映射为 causal', () => {
+const MINIMAL_PROVIDER_SUMMARY = {
+  asr: { type: 'mock', mode: 'direct' as const, apiKeyConfigured: false, sessionTokenConfigured: false },
+  structurer: { type: 'mock', mode: 'direct' as const, apiKeyConfigured: false, sessionTokenConfigured: false },
+};
+
+describe('timeline 视图保持为独立视图（reducer 路径）', () => {
+  it('MERGED_GRAPH_UPDATED: defaultView=timeline 保持 timeline', () => {
     const graph = makeGraph('timeline');
     const action: PanelAction = {
       type: 'MERGED_GRAPH_UPDATED',
@@ -26,10 +31,10 @@ describe('timeline 视图映射（reducer 路径）', () => {
       },
     };
     const next = panelReducer(initialPanelState, action);
-    expect(next.currentView).toBe('causal');
+    expect(next.currentView).toBe('timeline');
   });
 
-  it('HYDRATE_SNAPSHOT: preferredView=timeline 映射为 causal', () => {
+  it('HYDRATE_SNAPSHOT: preferredView=timeline 保持 timeline', () => {
     const action: PanelAction = {
       type: 'HYDRATE_SNAPSHOT',
       payload: {
@@ -38,10 +43,11 @@ describe('timeline 视图映射（reducer 路径）', () => {
         graph: makeGraph('timeline'),
         currentTimeMs: 0,
         preferredView: 'timeline',
+        providerSummary: MINIMAL_PROVIDER_SUMMARY,
       },
     };
     const next = panelReducer(initialPanelState, action);
-    expect(next.currentView).toBe('causal');
+    expect(next.currentView).toBe('timeline');
   });
 
   it('非 timeline 视图通过 MERGED_GRAPH_UPDATED 保持不变', () => {
@@ -72,6 +78,7 @@ describe('timeline 视图映射（reducer 路径）', () => {
           graph: makeGraph(view),
           currentTimeMs: 0,
           preferredView: view,
+          providerSummary: MINIMAL_PROVIDER_SUMMARY,
         },
       };
       const next = panelReducer(initialPanelState, action);

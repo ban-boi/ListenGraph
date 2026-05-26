@@ -28,7 +28,6 @@ import type {
   ReactFlowDebugNodeData,
 } from './types';
 import { VIEW_TYPES, VIEW_EDGE_PRIORITIES } from './constants';
-import type { NodeSortMode } from './constants';
 
 // ============ 布局常量 ============
 
@@ -71,32 +70,17 @@ function createEmptyStableLayoutCache(): StableLayoutCache {
 function getRendererGraph(
   graph: MergedGraph,
   view: ViewType,
-  sortMode: NodeSortMode = 'default',
 ): RendererGraph {
-  let rendererGraph: RendererGraph;
   switch (view) {
     case 'timeline':
-      rendererGraph = toTimelineRendererGraph(graph);
-      break;
+      return toTimelineRendererGraph(graph);
     case 'comparison':
-      rendererGraph = toComparisonRendererGraph(graph);
-      break;
+      return toComparisonRendererGraph(graph);
     case 'hierarchy':
-      rendererGraph = toHierarchyRendererGraph(graph);
-      break;
+      return toHierarchyRendererGraph(graph);
     default:
-      rendererGraph = toCausalRendererGraph(graph);
-      break;
+      return toCausalRendererGraph(graph);
   }
-
-  if (sortMode === 'chronological') {
-    const sortedNodes = [...rendererGraph.nodes].sort(
-      (a, b) => a.timestampMs - b.timestampMs,
-    );
-    return { ...rendererGraph, nodes: sortedNodes };
-  }
-
-  return rendererGraph;
 }
 
 function getLaneX(
@@ -461,11 +445,10 @@ function buildDebugViewArtifacts(params: {
   currentTimeMs: number;
   selectedNodeId: string | null;
   previousLayoutCache: StableLayoutCache;
-  sortMode: NodeSortMode;
 }) {
   const rendererGraphs = VIEW_TYPES.reduce(
     (acc, view) => {
-      acc[view] = getRendererGraph(params.graph, view, params.sortMode);
+      acc[view] = getRendererGraph(params.graph, view);
       return acc;
     },
     {} as Record<ViewType, RendererGraph>,
