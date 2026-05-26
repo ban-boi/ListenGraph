@@ -9,7 +9,7 @@ import { getViewportForBounds } from 'reactflow';
 
 import type { MergedGraph } from '@listen-graphic/schema';
 
-import type { ViewBounds, AutoTourSeed, AutoTourBatch } from './types';
+import type { ViewBounds, AutoTourSeed, AutoTourBatch, AutoTourStage } from './types';
 import {
   STABLE_LAYOUT_CARD_WIDTH,
   STABLE_LAYOUT_CARD_HEIGHT,
@@ -189,6 +189,7 @@ export function buildAutoTourBatches(params: {
   containerWidth: number;
   containerHeight: number;
   currentZoom: number;
+  minReadableZoom?: number;
 }) {
   const nodeMap = new Map(params.flowNodes.map((node) => [node.id, node]));
   const addedNodes = params.seed.nodeIds
@@ -319,7 +320,9 @@ export function buildAutoTourBatches(params: {
       ? AUTO_TOUR_FIRST_BATCH_RELATIVE_RATIO
       : AUTO_TOUR_RELATIVE_READABLE_RATIO;
     const allowedMinZoom = Math.max(
-      AUTO_TOUR_ABSOLUTE_READABLE_ZOOM,
+      typeof params.minReadableZoom === 'number' && params.minReadableZoom > 0
+        ? params.minReadableZoom
+        : AUTO_TOUR_ABSOLUTE_READABLE_ZOOM,
       effectiveCurrentZoom * relativeRatio,
     );
     return viewport.zoom >= allowedMinZoom;
@@ -367,4 +370,103 @@ export function buildAutoTourBatches(params: {
   finalizeBatch(currentBatch, batches.length === 0);
 
   return batches;
+}
+
+// ===== 两阶段导览 =====
+
+/** 只保留与新增节点通过边真实相连的候选锚点。 */
+export function getValidAutoTourAnchorNodeIds(params: {
+  addedNodeIds: string[];
+  candidateAnchorNodeIds: string[];
+  flowEdges: Edge[];
+}) {
+  const addedNodeSet = new Set(params.addedNodeIds);
+  const candidateAnchorSet = new Set(params.candidateAnchorNodeIds);
+  const validAnchors = new Set<string>();
+
+  for (const edge of params.flowEdges) {
+    if (addedNodeSet.has(edge.source) && candidateAnchorSet.has(edge.target)) {
+      validAnchors.add(edge.target);
+    }
+    if (addedNodeSet.has(edge.target) && candidateAnchorSet.has(edge.source)) {
+      validAnchors.add(edge.source);
+    }
+  }
+
+  return params.candidateAnchorNodeIds.filter((nodeId) => validAnchors.has(nodeId));
+}
+
+/** 检测新增节点之间是否存在可见的内部边。 */
+export function hasVisibleAddedInternalEdge(params: {
+  addedNodeIds: string[];
+  flowEdges: Edge[];
+}) {
+  const addedNodeSet = new Set(params.addedNodeIds);
+  return params.flowEdges.some(
+    (edge) => addedNodeSet.has(edge.source) && addedNodeSet.has(edge.target),
+  );
+}
+
+/** 构建两阶段导览计划：结构揭示 + 阅读聚焦。 */
+export function buildTwoStageAutoTourStages(params: {
+  seed: AutoTourSeed;
+  flowNodes: Node[];
+  flowEdges: Edge[];
+  containerWidth: number;
+  containerHeight: number;
+  currentZoom: number;
+  minReadableZoom: number;
+}) {
+  const validAnchorNodeIds = getValidAutoTourAnchorNodeIds({
+    addedNodeIds: params.seed.nodeIds,
+    candidateAnchorNodeIds: params.seed.anchorNodeIds,
+    flowEdges: params.flowEdges,
+  });
+
+  const hasInternalEdges = hasVisibleAddedInternalEdge({
+    addedNodeIds: params.seed.nodeIds,
+    flowEdges: params.flowEdges,
+  });
+
+  const stages: AutoTourStage[] = [];
+  if (validAnchorNodeIds.length > 0 || hasInternalEdges) {
+    const structureNodeIds = new Set([...params.seed.nodeIds, ...validAnchorNodeIds]);
+    stages.push({
+      kind: 'structure',
+      displayMode: 'compact',
+      nodeIds: params.seed.nodeIds,
+      anchorNodeIds: validAnchorNodeIds,
+      dwellMs: estimateAutoTourDwellMs({
+        nodeCount: params.seed.nodeIds.length + validAnchorNodeIds.length,
+        edgeCount: params.flowEdges.filter(
+          (edge) => structureNodeIds.has(edge.source) && structureNodeIds.has(edge.target),
+        ).length,
+        charCount: 0,
+      }),
+    });
+  }
+
+  const readingBatches = buildAutoTourBatches({
+    seed: {
+      ...params.seed,
+      anchorNodeIds: [],
+    },
+    flowNodes: params.flowNodes,
+    flowEdges: params.flowEdges,
+    containerWidth: params.containerWidth,
+    containerHeight: params.containerHeight,
+    currentZoom: params.currentZoom,
+    minReadableZoom: params.minReadableZoom,
+  });
+
+  stages.push(
+    ...readingBatches.map((batch): AutoTourStage => ({
+      ...batch,
+      anchorNodeIds: [],
+      kind: 'reading',
+      displayMode: 'readable',
+    })),
+  );
+
+  return stages;
 }
