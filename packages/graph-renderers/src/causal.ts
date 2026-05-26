@@ -32,7 +32,10 @@ export function topologicalSort(
   const queue: string[] = nodes
     .filter((n) => (inDegree.get(n.id) ?? 0) === 0)
     .map((n) => n.id)
-    .sort((a, b) => (nodeMap.get(a)?.timestampMs ?? 0) - (nodeMap.get(b)?.timestampMs ?? 0));
+    .sort((a, b) => {
+      const diff = (nodeMap.get(a)?.timestampMs ?? 0) - (nodeMap.get(b)?.timestampMs ?? 0);
+      return diff !== 0 ? diff : a.localeCompare(b);
+    });
 
   const sorted: string[] = [];
   const visited = new Set<string>();
@@ -51,10 +54,11 @@ export function topologicalSort(
         queue.push(neighbor);
       }
     }
-    // 按时间戳排序队列保证稳定
-    queue.sort(
-      (a, b) => (nodeMap.get(a)?.timestampMs ?? 0) - (nodeMap.get(b)?.timestampMs ?? 0),
-    );
+    // 按时间戳排序队列保证稳定，同时间戳按 id 排序
+    queue.sort((a, b) => {
+      const diff = (nodeMap.get(a)?.timestampMs ?? 0) - (nodeMap.get(b)?.timestampMs ?? 0);
+      return diff !== 0 ? diff : a.localeCompare(b);
+    });
   }
 
   // 环中的节点追加到末尾（按时间戳）

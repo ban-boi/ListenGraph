@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { topologicalSort } from './causal';
-import type { RendererNode, RendererEdge } from './types';
+import { topologicalSort } from '@listen-graphic/graph-renderers';
+import type { RendererNode, RendererEdge } from '@listen-graphic/graph-renderers';
 
 function n(id: string, ms: number): RendererNode {
   return { id, label: id, type: 'claim', speaker: undefined, timestampMs: ms, status: 'draft' };
