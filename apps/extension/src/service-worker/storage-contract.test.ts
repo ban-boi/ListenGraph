@@ -209,4 +209,18 @@ describe('storage repositories contract', () => {
       }),
     });
   });
+
+  it('settings repository 可以保存图谱显示配置', async () => {
+    const repository = createSettingsRepository({
+      settings: settingsTable,
+    });
+
+    await repository.saveGraphDisplaySettings({
+      autoFitMinReadableFontPx: 14,
+    });
+
+    await expect(repository.getGraphDisplaySettings()).resolves.toEqual({
+      autoFitMinReadableFontPx: 14,
+    });
+  });
 });

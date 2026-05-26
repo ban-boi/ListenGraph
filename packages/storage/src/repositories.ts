@@ -1,4 +1,4 @@
-import type { MergedGraph, ProviderConfig, SegmentGraph, TranscriptChunk } from '@listen-graphic/schema';
+import type { GraphDisplaySettings, MergedGraph, ProviderConfig, SegmentGraph, TranscriptChunk } from '@listen-graphic/schema';
 import type { SessionRecord, SettingRecord, AssemblerTraceRecord } from './indexeddb';
 
 type TableLike<T, Key> = {
@@ -92,6 +92,7 @@ export function createMergedGraphRepository(tables: {
 }
 
 const PROVIDER_CONFIG_KEY = 'provider-config';
+const GRAPH_DISPLAY_SETTINGS_KEY = 'graph-display-settings';
 
 export function createSettingsRepository(tables: {
   settings: TableLike<SettingRecord, string>;
@@ -147,23 +148,12 @@ export function createSettingsRepository(tables: {
         },
       });
     },
+    async getGraphDisplaySettings() {
+      return this.get<GraphDisplaySettings>(GRAPH_DISPLAY_SETTINGS_KEY);
+    },
+    async saveGraphDisplaySettings(settings: GraphDisplaySettings) {
+      await this.set(GRAPH_DISPLAY_SETTINGS_KEY, settings);
+    },
   };
 }
 
-export function createAssemblerTraceRepository(tables: {
-  assemblerTraces: TableLike<AssemblerTraceRecord, string>;
-}) {
-  return {
-    async save(trace: AssemblerTraceRecord) {
-      await tables.assemblerTraces.put(trace);
-    },
-    async get(sessionId: string) {
-      return tables.assemblerTraces.get(sessionId);
-    },
-    async delete(sessionId: string) {
-      if ('delete' in tables.assemblerTraces && typeof tables.assemblerTraces.delete === 'function') {
-        await tables.assemblerTraces.delete(sessionId);
-      }
-    },
-  };
-}
