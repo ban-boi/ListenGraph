@@ -1,13 +1,11 @@
 import type { SessionRecord } from '@listen-graphic/storage';
-import type { AssemblerRunDebug, ExportFormat, StructureUnitDebug } from '../shared/messages';
+import type { ExportFormat } from '../shared/messages';
 import type { MergedGraph, TranscriptChunk } from '@listen-graphic/schema';
 
 type ExportBundle = {
   session?: SessionRecord;
   transcripts: TranscriptChunk[];
   graph: MergedGraph;
-  assemblerRuns?: AssemblerRunDebug[];
-  structureUnits?: StructureUnitDebug[];
 };
 
 export function buildSessionExport(bundle: ExportBundle, format: ExportFormat) {
@@ -21,8 +19,6 @@ export function buildSessionExport(bundle: ExportBundle, format: ExportFormat) {
             session: bundle.session ?? null,
             transcripts: bundle.transcripts,
             graph: bundle.graph,
-            assemblerRuns: bundle.assemblerRuns ?? [],
-            structureUnits: bundle.structureUnits ?? [],
           },
           null,
           2,
@@ -88,38 +84,10 @@ function toMarkdown(bundle: ExportBundle) {
           ),
         ];
 
-  const assemblerLines =
-    !bundle.assemblerRuns?.length
-      ? ['## Assembler Runs', '', '_No assembler runs exported._']
-      : [
-          '## Assembler Runs',
-          '',
-          ...bundle.assemblerRuns.map(
-            (run) =>
-              `- seq=${run.sequence} | ${run.decision} | wait=${run.waitMs}ms | buffer=${run.bufferTranscriptCount} | effectiveChars=${run.effectiveCharCount} | ${sanitizeMarkdownText(run.reason)}`,
-          ),
-        ];
-
-  const structureUnitLines =
-    !bundle.structureUnits?.length
-      ? ['## Structure Units', '', '_No structure units exported._']
-      : [
-          '## Structure Units',
-          '',
-          ...bundle.structureUnits.map(
-            (unit) =>
-              `- ${unit.unitId} | [${formatTime(unit.startMs)}-${formatTime(unit.endMs)}] | chunks=${unit.sourceChunkIds.length} | ${sanitizeMarkdownText(unit.reason)} | ${sanitizeMarkdownText(unit.text)}`,
-          ),
-        ];
-
   return [
     ...header,
     '',
     ...transcriptLines,
-    '',
-    ...assemblerLines,
-    '',
-    ...structureUnitLines,
     '',
     ...nodeLines,
     '',

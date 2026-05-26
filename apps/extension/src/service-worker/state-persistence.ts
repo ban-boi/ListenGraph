@@ -146,6 +146,9 @@ export async function persistRuntimeState(
         currentSession: S.currentSession,
         transcriptWindow: S.transcriptWindow,
         pendingStructureBuffer: S.pendingStructureBuffer,
+        // chrome.storage.session 容量有限，截断保留最近条目
+        // 注意：内存中保留 200/100 条（assembler-machine.ts），此处仅保留 50/30 条
+        // SW 重启后恢复的数据量会小于运行时峰值
         assemblerRuns: S.assemblerRuns.slice(-50),
         structureUnits: S.structureUnits.slice(-30),
         mergedGraph: S.mergedGraph,
@@ -193,6 +196,10 @@ export async function persistAssemblerTrace(
 ): Promise<void> {
   try {
     const { db } = await import('@listen-graphic/storage');
+    // 防御：DB 升级未完成或版本回退时 table 可能不可用
+    if (!db.assemblerTraces) {
+      return;
+    }
     await db.assemblerTraces.put({
       sessionId,
       assemblerRuns,
@@ -200,7 +207,11 @@ export async function persistAssemblerTrace(
       savedAt: Date.now(),
     });
   } catch (error) {
-    console.warn('[Service Worker] assembler trace 持久化失败:', error);
+    // 非致命：trace 持久化失败不影响会话清理，但 debug 导出将缺少 assembler 数据
+    console.warn(
+      '[Service Worker] assembler trace 持久化失败 (debug 导出将缺少 trace 数据):',
+      error instanceof Error ? error.message : error,
+    );
   }
 }
 
@@ -209,6 +220,10 @@ export async function loadAssemblerTrace(
 ): Promise<{ assemblerRuns: unknown[]; structureUnits: unknown[] } | null> {
   try {
     const { db } = await import('@listen-graphic/storage');
+    // 防御：DB 升级未完成或版本回退时 table 可能不可用
+    if (!db.assemblerTraces) {
+      return null;
+    }
     const record = await db.assemblerTraces.get(sessionId);
     if (!record) {
       return null;

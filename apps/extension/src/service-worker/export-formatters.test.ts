@@ -41,12 +41,18 @@ const graph = {
 
 describe('export formatters', () => {
   it('生成 JSON 导出内容', () => {
-    const result = buildSessionExport({ session, transcripts, graph }, 'json');
+    const result = buildSessionExport({
+      session,
+      transcripts,
+      graph,
+    }, 'json');
 
     expect(result.filename).toBe('session_export.json');
     expect(result.mimeType).toBe('application/json');
     expect(result.content).toContain('"sessionId": "session_export"');
     expect(result.content).toContain('"第一段转写"');
+    expect(result.content).not.toContain('assemblerRuns');
+    expect(result.content).not.toContain('structureUnits');
   });
 
   it('生成 Markdown 导出内容', () => {
@@ -58,6 +64,8 @@ describe('export formatters', () => {
     expect(result.content).toContain('第一段转写');
     expect(result.content).toContain('## Nodes');
     expect(result.content).toContain('节点文本');
+    expect(result.content).not.toContain('## Assembler Runs');
+    expect(result.content).not.toContain('## Structure Units');
   });
 
   it('生成 Mermaid 导出内容', () => {

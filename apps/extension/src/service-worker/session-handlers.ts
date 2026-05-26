@@ -35,22 +35,56 @@ import {
 import { getAssemblerRunsForDebugSession, getStructureUnitsForDebugSession } from './assembler-machine';
 import type { ServiceWorkerResponse } from './sw-types';
 
-async function getAssemblerTraceForSession(
+// ===== IDB 数据运行时校验 =====
+// 仅检查结构上必需的标识字段，用于过滤 IDB 中的损坏/垃圾数据。
+// 非完整的 schema 验证——这是 IDB 过滤的务实最低要求，而非 Zod 全量校验。
+
+function isValidAssemblerRun(item: unknown): item is AssemblerRunDebug {
+  if (typeof item !== 'object' || item === null) return false;
+  const obj = item as Record<string, unknown>;
+  return (
+    typeof obj.sessionId === 'string' &&
+    typeof obj.sequence === 'number' &&
+    typeof obj.decision === 'string' &&
+    typeof obj.reason === 'string'
+  );
+}
+
+function isValidStructureUnit(item: unknown): item is StructureUnitDebug {
+  if (typeof item !== 'object' || item === null) return false;
+  const obj = item as Record<string, unknown>;
+  return (
+    typeof obj.unitId === 'string' &&
+    typeof obj.sessionId === 'string' &&
+    typeof obj.reason === 'string'
+  );
+}
+
+export { isValidAssemblerRun, isValidStructureUnit };
+
+export async function getAssemblerTraceForSession(
   sessionId: string,
   S: RuntimeStateContainer,
-): Promise<{ assemblerRuns: AssemblerRunDebug[]; structureUnits: StructureUnitDebug[] }> {
+): Promise<{
+  assemblerRuns: AssemblerRunDebug[];
+  structureUnits: StructureUnitDebug[];
+  traceSource: 'memory' | 'indexeddb' | 'empty';
+}> {
   let assemblerRuns = getAssemblerRunsForDebugSession(sessionId, S);
   let structureUnits = getStructureUnitsForDebugSession(sessionId, S);
 
-  if (assemblerRuns.length === 0 && structureUnits.length === 0) {
-    const persisted = await loadAssemblerTrace(sessionId);
-    if (persisted) {
-      assemblerRuns = persisted.assemblerRuns as AssemblerRunDebug[];
-      structureUnits = persisted.structureUnits as StructureUnitDebug[];
-    }
+  if (assemblerRuns.length > 0 || structureUnits.length > 0) {
+    return { assemblerRuns, structureUnits, traceSource: 'memory' };
   }
 
-  return { assemblerRuns, structureUnits };
+  const persisted = await loadAssemblerTrace(sessionId);
+  if (persisted) {
+    assemblerRuns = persisted.assemblerRuns.filter(isValidAssemblerRun);
+    structureUnits = persisted.structureUnits.filter(isValidStructureUnit);
+    return { assemblerRuns, structureUnits, traceSource: 'indexeddb' };
+  }
+
+  return { assemblerRuns, structureUnits, traceSource: 'empty' };
 }
 
 export async function handleNodeClicked(
@@ -159,15 +193,11 @@ export async function handleExportSession(
     return { success: false, error: '缺少 graph 资产，无法导出' };
   }
 
-  const trace = await getAssemblerTraceForSession(payload.sessionId, S);
-
   const exportData = deps.buildSessionExport(
     {
       session,
       transcripts,
       graph,
-      assemblerRuns: trace.assemblerRuns,
-      structureUnits: trace.structureUnits,
     },
     payload.format,
   );
@@ -219,8 +249,11 @@ export async function loadDebugSessionData(
   const segments = await deps.segmentGraphRepository.listBySession(sessionId);
   const graph = await deps.loadMergedGraphAsset(sessionId, segments);
   const sessionStructurerRuns = getStructurerRunsForDebugSession(sessionId, segments, S);
-  const { assemblerRuns: sessionAssemblerRuns, structureUnits: sessionStructureUnits } =
-    await getAssemblerTraceForSession(sessionId, S);
+  const {
+    assemblerRuns: sessionAssemblerRuns,
+    structureUnits: sessionStructureUnits,
+    traceSource,
+  } = await getAssemblerTraceForSession(sessionId, S);
 
   return {
     session: session ?? null,
@@ -238,6 +271,7 @@ export async function loadDebugSessionData(
     structurerRuns: sessionStructurerRuns,
     assemblerRuns: sessionAssemblerRuns,
     structureUnits: sessionStructureUnits,
+    traceSource,
   };
 }
 

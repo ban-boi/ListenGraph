@@ -337,7 +337,7 @@ describe('Service Worker - 导出、调试与回放', () => {
     expect(exportResponse.exportData.content).toContain('"导出节点"');
   });
 
-  it('导出的 JSON 资产包含 assembler 调试数据', async () => {
+  it('会话图导出不会混入 assembler 调试数据', async () => {
     const storedTranscripts: Record<string, unknown>[] = [];
     const storedSegments: Record<string, unknown>[] = [];
     let storedGraph: Record<string, unknown> | undefined;
@@ -403,9 +403,19 @@ describe('Service Worker - 导出、调试与回放', () => {
 
     expect(exportResponse.success).toBe(true);
     const parsed = JSON.parse(exportResponse.exportData.content);
-    expect(parsed.assemblerRuns.length).toBeGreaterThanOrEqual(4);
-    expect(parsed.structureUnits).toHaveLength(1);
-    expect(parsed.structureUnits[0].sourceChunkIds).toEqual([
+    expect(parsed.assemblerRuns).toBeUndefined();
+    expect(parsed.structureUnits).toBeUndefined();
+
+    const debugResponse = await dispatchMessage({
+      type: 'GET_DEBUG_SESSION',
+      target: 'service-worker',
+      payload: { sessionId },
+    });
+
+    expect(debugResponse.success).toBe(true);
+    expect(debugResponse.debugData.assemblerRuns.length).toBeGreaterThanOrEqual(4);
+    expect(debugResponse.debugData.structureUnits).toHaveLength(1);
+    expect(debugResponse.debugData.structureUnits[0].sourceChunkIds).toEqual([
       storedTranscripts[2]?.chunkId,
       storedTranscripts[3]?.chunkId,
     ]);
