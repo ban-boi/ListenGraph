@@ -17,6 +17,8 @@
 - [LG-ASR-WS v1 协议草案](C:/Users/finni/Desktop/ListenGraph/docs/providers/lg-asr-ws-v1.md)
   - ListenGraph 面向本地 / 外部流式 ASR 的统一 WebSocket 协议
   - 定义 `partial/final/status/error` 四类产品语义
+- [ASR 流式日志合并（utteranceId dedup）](C:/Users/finni/Desktop/ListenGraph/docs/extension/asr-stream-log-dedup.md)
+  - sidepanel 如何消费 `utteranceId` 合并 partial 日志；adapter 映射表与实现范围（proposal）
 - [Local ASR Bridge 最小接入规范](C:/Users/finni/Desktop/ListenGraph/docs/providers/local-asr-bridge-min-spec.md)
   - 面向第三方 bridge 作者的最小实现要求
   - 重点是“最少做到什么，ListenGraph 才能吃”

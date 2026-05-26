@@ -22,6 +22,9 @@ test-results/
 .omc/
 */.omc/
 
+# Superpowers (visual companion)
+.superpowers/
+
 # 本地配置文件
 *.local.json
 .claude/settings.local.json

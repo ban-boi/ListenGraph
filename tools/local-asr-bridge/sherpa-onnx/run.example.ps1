@@ -1,13 +1,16 @@
 $ErrorActionPreference = 'Stop'
 
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..\..')
+$modelDir = Join-Path $repoRoot '.tmp\sherpa-model\sherpa-onnx-streaming-paraformer-bilingual-zh-en'
+
 # Copy this file or edit it in place for your own machine.
 # Only these three paths usually need to be changed.
-$encoder = 'D:\models\sherpa-onnx-streaming-paraformer-bilingual-zh-en\encoder.int8.onnx'
-$decoder = 'D:\models\sherpa-onnx-streaming-paraformer-bilingual-zh-en\decoder.int8.onnx'
-$tokens = 'D:\models\sherpa-onnx-streaming-paraformer-bilingual-zh-en\tokens.txt'
+$encoder = Join-Path $modelDir 'encoder.int8.onnx'
+$decoder = Join-Path $modelDir 'decoder.int8.onnx'
+$tokens = Join-Path $modelDir 'tokens.txt'
 
 $modelName = 'sherpa-onnx-streaming-paraformer-bilingual-zh-en'
-$host = '127.0.0.1'
+$bindHost = '127.0.0.1'
 $port = 15377
 $protocolPath = '/ws'
 $numThreads = 4
@@ -17,12 +20,11 @@ $rule3MaxUtterance = 20.0
 $provider = 'cpu'
 # $authToken = 'my-local-token'
 
-$repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..\..')
 $bridgeScript = Join-Path $repoRoot 'tools\sherpa-onnx-bridge.py'
 
 $arguments = @(
   $bridgeScript
-  '--host', $host
+  '--host', $bindHost
   '--port', "$port"
   '--path', $protocolPath
   '--encoder', $encoder

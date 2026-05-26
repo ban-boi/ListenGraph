@@ -13,5 +13,8 @@
   "dependencies": {
     "@listen-graphic/schema": "workspace:*",
     "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0"
   }
 }

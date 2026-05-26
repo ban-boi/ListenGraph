@@ -22,6 +22,9 @@
 - [扩展增量相机跟随](C:/Users/finni/Desktop/ListenGraph/docs/extension/incremental-camera-follow.md)
   - 图增量更新后 viewport 为什么会自动聚焦
   - 当前目标区域、多段自动导览、双阈值分段、动画跟随与用户冷却期的产品决策
+- [ASR 流式日志合并（utteranceId dedup）](C:/Users/finni/Desktop/ListenGraph/docs/extension/asr-stream-log-dedup.md)
+  - sidepanel 如何用 `utteranceId` 合并 partial、替换正则与 `slice_type` 计数
+  - Local ASR Bridge / 腾讯 realtime / 未来流式 adapter 的统一 dedup 规则（proposal）
 
 ### ASR 联调与回归
 - [腾讯 ASR 联调 Checklist](C:/Users/finni/Desktop/ListenGraph/docs/providers/tencent-asr-smoke.md)

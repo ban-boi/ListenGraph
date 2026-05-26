@@ -179,4 +179,5 @@ dagre / elk 的第一层收益，是把**全局结构**纳入考虑，使父子�
 
 ## 相关文档
 
+- [Edge Handle 评分选优算法](C:/Users/finni/Desktop/ListenGraph/docs/extension/edge-handle-scoring.md) — 2026-05 实现的 handle 选择算法，解决了隐藏 handle 泄漏和对角线死区问题
 - [扩展增量图稳定性](C:/Users/finni/Desktop/ListenGraph/docs/extension/incremental-graph-stability.md)

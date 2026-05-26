@@ -5,7 +5,7 @@ $decoder = 'D:\models\sherpa-onnx-streaming-paraformer-bilingual-zh-en\decoder.i
 $tokens = 'D:\models\sherpa-onnx-streaming-paraformer-bilingual-zh-en\tokens.txt'
 
 $modelName = 'sherpa-onnx-streaming-paraformer-bilingual-zh-en'
-$host = '127.0.0.1'
+$bindHost = '127.0.0.1'
 $port = 15377
 $protocolPath = '/ws'
 $numThreads = 4
@@ -19,7 +19,7 @@ $bridgeScript = Join-Path $scriptDir 'sherpa-onnx-bridge.py'
 
 $arguments = @(
   $bridgeScript
-  '--host', $host
+  '--host', $bindHost
   '--port', "$port"
   '--path', $protocolPath
   '--encoder', $encoder

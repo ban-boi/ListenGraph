@@ -448,6 +448,7 @@ LG 内部建议采用以下规则：
 - `TranscriptChunk` 持久化主记录只保存 `final`
 - `partial/status/error` 默认进入 debug trace，不进入 structurer 主输入
 - structurer bootstrap / incremental 规则继续以“stable utterance”作为最小单位
+- sidepanel 日志区对同一 `utteranceId` 的 `partial` 应覆盖更新一行，句末 `final` 就地转为转写行；详见 [ASR 流式日志合并（utteranceId dedup）](../extension/asr-stream-log-dedup.md)
 
 这与当前腾讯 realtime 主链路一致，只是把腾讯特有逻辑抽象成通用语义。
 
