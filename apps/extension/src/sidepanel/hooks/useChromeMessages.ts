@@ -149,16 +149,14 @@ export function useChromeMessages({
           graphRef.current = nextGraph;
           activeViewSessionRef.current = nextGraph.sessionId;
 
-          setAutoTourSeed(
-            addedNodeIds.length > 0
-              ? {
-                  sessionId: nextGraph.sessionId,
-                  revision: nextGraph.revision,
-                  nodeIds: addedNodeIds,
-                  anchorNodeIds,
-                }
-              : null,
-          );
+          if (addedNodeIds.length > 0) {
+            setAutoTourSeed({
+              sessionId: nextGraph.sessionId,
+              revision: nextGraph.revision,
+              nodeIds: addedNodeIds,
+              anchorNodeIds,
+            });
+          }
           break;
         }
         case 'PLAYBACK_TIME_UPDATED':
