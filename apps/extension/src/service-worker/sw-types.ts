@@ -12,6 +12,7 @@ export type ServiceWorkerResponse = {
   providerError?: any;
   snapshot?: import('../shared/messages').RuntimeSnapshot;
   config?: import('@listen-graphic/schema').ProviderConfig;
+  graphDisplaySettings?: import('../shared/messages').GraphDisplaySettings;
   debugData?: any;
   replayData?: any;
   exportData?: { filename: string; mimeType: string; content: string };

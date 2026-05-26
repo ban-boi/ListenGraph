@@ -109,6 +109,10 @@ import {
   type WorkQueueCallbacks,
 } from './work-queues';
 import type { ServiceWorkerResponse } from './sw-types';
+import {
+  handleGetGraphDisplaySettings,
+  handleSaveGraphDisplaySettings,
+} from './graph-display-settings';
 
 // ─── 常量与单例 ─────────────────────────────────────────────────────────────
 
@@ -269,6 +273,12 @@ async function handleMessage(
       return handleSaveProviderSettings(message.payload.config, providerDeps);
     case 'CLEAR_PROVIDER_SECRETS':
       return handleClearProviderSecrets(providerDeps);
+    case 'GET_GRAPH_DISPLAY_SETTINGS':
+      return handleGetGraphDisplaySettings({ settingsRepository });
+    case 'SAVE_GRAPH_DISPLAY_SETTINGS':
+      return handleSaveGraphDisplaySettings(message.payload.settings, {
+        settingsRepository,
+      });
     case 'VIEW_SELECTED':
       return handleViewSelected(
         message.payload,

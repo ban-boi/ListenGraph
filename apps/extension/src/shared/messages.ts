@@ -1,4 +1,5 @@
 import type {
+  GraphDisplaySettings,
   MergedGraph,
   ProviderConfig,
   ProviderRuntimeSummary,
@@ -9,6 +10,8 @@ import type {
 } from '@listen-graphic/schema';
 import type { ViewType } from '@listen-graphic/schema';
 import type { BuildInfo } from './build-info';
+
+export type { GraphDisplaySettings };
 
 export type SessionState =
   | 'idle'
@@ -466,4 +469,14 @@ export type AppMessage =
       type: 'PROVIDER_PROGRESS';
       target: 'sidepanel';
       payload: { stage: 'asr' | 'structurer'; message: string; asrSliceType?: 0 | 1 };
+    }
+  | {
+      type: 'GET_GRAPH_DISPLAY_SETTINGS';
+      target: 'service-worker';
+      payload: {};
+    }
+  | {
+      type: 'SAVE_GRAPH_DISPLAY_SETTINGS';
+      target: 'service-worker';
+      payload: { settings: GraphDisplaySettings };
     };
