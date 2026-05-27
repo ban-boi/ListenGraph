@@ -19,6 +19,9 @@ export function useGraphDisplaySettings({
   const graphDisplaySettingsRef = useRef(graphDisplaySettings);
   graphDisplaySettingsRef.current = graphDisplaySettings;
 
+  // dirty 追踪：记录最近一次已保存（或已加载）的快照
+  const initialDisplayRef = useRef<GraphDisplaySettings | null>(null);
+
   const loadGraphDisplaySettings = useCallback(async () => {
     try {
       const response = (await chrome.runtime.sendMessage({
@@ -34,9 +37,9 @@ export function useGraphDisplaySettings({
         return;
       }
 
-      setGraphDisplaySettings(
-        normalizeGraphDisplaySettings(response.graphDisplaySettings),
-      );
+      const loaded = normalizeGraphDisplaySettings(response.graphDisplaySettings);
+      setGraphDisplaySettings(loaded);
+      initialDisplayRef.current = loaded;
     } catch (error) {
       const message =
         error instanceof Error ? error.message : '读取图谱显示设置失败';
@@ -53,7 +56,9 @@ export function useGraphDisplaySettings({
     );
   }, []);
 
-  const saveGraphDisplaySettings = useCallback(async () => {
+  type SaveResult = { ok: true } | { ok: false; error: string };
+
+  const saveGraphDisplaySettings = useCallback(async (): Promise<SaveResult> => {
     setGraphDisplaySettingsSaving(true);
     try {
       const response = (await chrome.runtime.sendMessage({
@@ -67,18 +72,21 @@ export function useGraphDisplaySettings({
         | { success: false; error?: string };
 
       if (!response?.success) {
-        addLog(`保存图谱显示设置失败: ${response?.error || '未知错误'}`);
-        return;
+        const error = response?.error || '未知错误';
+        addLog(`保存图谱显示设置失败: ${error}`);
+        return { ok: false, error };
       }
 
-      setGraphDisplaySettings(
-        normalizeGraphDisplaySettings(response.graphDisplaySettings),
-      );
+      const saved = normalizeGraphDisplaySettings(response.graphDisplaySettings);
+      setGraphDisplaySettings(saved);
+      initialDisplayRef.current = saved; // 更新快照，清除 dirty
       addLog('图谱显示设置已保存');
+      return { ok: true };
     } catch (error) {
       const message =
         error instanceof Error ? error.message : '保存图谱显示设置失败';
       addLog(`保存图谱显示设置失败: ${message}`);
+      return { ok: false, error: message };
     } finally {
       setGraphDisplaySettingsSaving(false);
     }
@@ -90,5 +98,6 @@ export function useGraphDisplaySettings({
     loadGraphDisplaySettings,
     updateAutoFitMinReadableFontPx,
     saveGraphDisplaySettings,
+    initialDisplayRef,
   };
 }

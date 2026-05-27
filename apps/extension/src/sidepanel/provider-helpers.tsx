@@ -2,25 +2,6 @@ import type { ProviderConfig, ProviderRuntimeSummary } from '@listen-graphic/sch
 import { normalizeProviderConfig } from '@listen-graphic/providers';
 import { ZHIPU_ENDPOINT_CODING_PLAN } from './constants';
 
-export function renderSecretHint(params: {
-  configured: boolean;
-  label: string;
-}) {
-  if (!params.configured) {
-    return (
-      <div style={{ fontSize: 10, color: '#64748b' }}>
-        未保存 {params.label}
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ fontSize: 10, color: '#0369a1' }}>
-      已保存 {params.label}，留空则保持不变
-    </div>
-  );
-}
-
 export function getStageCredentialState(
   summary: ProviderRuntimeSummary,
   stageKey: keyof ProviderConfig,

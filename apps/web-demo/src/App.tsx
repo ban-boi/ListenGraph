@@ -18,7 +18,8 @@ import type {
   EdgeType,
   NodeType,
 } from '@listen-graphic/schema';
-import { scoreViews, pickDefaultView } from '@listen-graphic/domain';
+import { pickDefaultView, scoreViews } from '@listen-graphic/domain';
+import { useGraphFixtureSequence } from './useGraphFixtureSequence';
 import {
   toCausalRendererGraph,
   toTimelineRendererGraph,
@@ -300,6 +301,7 @@ const VIEW_LABELS: Record<string, string> = {
 };
 
 export default function App() {
+  const fixtureSeq = useGraphFixtureSequence();
   const [sessionState, setSessionState] = useState<SessionState>('idle');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<string>('causal');
@@ -307,6 +309,10 @@ export default function App() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [graph, setGraph] = useState<MergedGraph>(createEmptyGraph);
   const [logs, setLogs] = useState<string[]>([]);
+
+  const displayGraph =
+    fixtureSeq.active && fixtureSeq.graph ? fixtureSeq.graph : graph;
+  const isFixturePreview = fixtureSeq.active;
 
   // 用于生成唯一 ID 和随机选择
   const transcriptIndexRef = useRef(0);
@@ -317,8 +323,28 @@ export default function App() {
     setLogs((prev) => [`[${time}] ${msg}`, ...prev.slice(0, 49)]);
   }, []);
 
+  useEffect(() => {
+    if (!fixtureSeq.active || !fixtureSeq.graph) return;
+    setCurrentView(pickDefaultView(fixtureSeq.graph));
+  }, [fixtureSeq.active, fixtureSeq.graph, fixtureSeq.stepIndex]);
+
+  useEffect(() => {
+    if (!fixtureSeq.active || !fixtureSeq.graph || !fixtureSeq.sequenceId) return;
+    const stepGraph = fixtureSeq.graph;
+    addLog(
+      `[fixture] ${fixtureSeq.sequenceId} ${fixtureSeq.stepIndex + 1}/${fixtureSeq.total} | rev=${stepGraph.revision} | nodes=${stepGraph.nodes.length}`,
+    );
+  }, [
+    fixtureSeq.active,
+    fixtureSeq.sequenceId,
+    fixtureSeq.stepIndex,
+    fixtureSeq.total,
+    fixtureSeq.graph,
+    addLog,
+  ]);
+
   // 计算视图分数
-  const viewScores = useMemo(() => scoreViews(graph), [graph]);
+  const viewScores = useMemo(() => scoreViews(displayGraph), [displayGraph]);
 
   // 处理节点点击
   const handleNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
@@ -330,26 +356,26 @@ export default function App() {
   const handleTimeClick = useCallback(
     (ms: number) => {
       setCurrentTimeMs(ms);
-      const nearestNode = graph.nodes.reduce((prev, curr) =>
+      const nearestNode = displayGraph.nodes.reduce((prev, curr) =>
         Math.abs(curr.timestampMs - ms) < Math.abs(prev.timestampMs - ms)
           ? curr
           : prev,
       );
       setSelectedNodeId(nearestNode.id);
     },
-    [graph.nodes],
+    [displayGraph.nodes],
   );
 
   // 生成布局节点
   const { nodes: layoutNodes, edges: layoutEdges } = useMemo(() => {
     return getLayoutedElements(
       currentView,
-      graph,
+      displayGraph,
       currentTimeMs,
       selectedNodeId,
       handleTimeClick,
     );
-  }, [currentView, graph, currentTimeMs, selectedNodeId, handleTimeClick]);
+  }, [currentView, displayGraph, currentTimeMs, selectedNodeId, handleTimeClick]);
 
   // ============ 会话控制 ============
 
@@ -386,7 +412,7 @@ export default function App() {
   // ============ 模拟音频捕获（每30秒生成一个节点）============
 
   useEffect(() => {
-    if (sessionState !== 'capturing') return;
+    if (isFixturePreview || sessionState !== 'capturing') return;
 
     const generateNode = () => {
       const elapsedMs = Date.now() - sessionStartTimeRef.current;
@@ -456,9 +482,9 @@ export default function App() {
     const interval = setInterval(generateNode, 30000);
 
     return () => clearInterval(interval);
-  }, [sessionState, addLog]);
+  }, [isFixturePreview, sessionState, addLog]);
 
-  const isRunning = sessionState === 'capturing';
+  const isRunning = sessionState === 'capturing' && !isFixturePreview;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -476,6 +502,20 @@ export default function App() {
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
           Listen Graphic
         </h2>
+
+        {fixtureSeq.sequenceId && (
+          <span
+            style={{
+              fontSize: 12,
+              color: fixtureSeq.error ? '#b91c1c' : '#4b5563',
+            }}
+          >
+            {fixtureSeq.error ??
+              (fixtureSeq.active
+                ? `sequence step ${fixtureSeq.stepIndex + 1}/${fixtureSeq.total}`
+                : `sequence: ${fixtureSeq.sequenceId}`)}
+          </span>
+        )}
 
         {/* 状态指示器 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -495,13 +535,15 @@ export default function App() {
         {/* 开始/停止按钮 */}
         <button
           onClick={isRunning ? handleStop : handleStart}
+          disabled={isFixturePreview}
           style={{
             padding: '6px 16px',
             borderRadius: 6,
             border: 'none',
             backgroundColor: isRunning ? '#ef4444' : '#3b82f6',
             color: 'white',
-            cursor: 'pointer',
+            cursor: isFixturePreview ? 'not-allowed' : 'pointer',
+            opacity: isFixturePreview ? 0.5 : 1,
             fontWeight: 600,
             fontSize: 13,
           }}
@@ -625,7 +667,7 @@ export default function App() {
       >
         <span>会话: {sessionId || '无'}</span>
         <span>
-          节点: {graph.nodes.length} | 边: {graph.edges.length}
+          节点: {displayGraph.nodes.length} | 边: {displayGraph.edges.length}
         </span>
       </div>
     </div>

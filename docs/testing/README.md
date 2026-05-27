@@ -2,6 +2,8 @@
 
 本文档定义 extension 当前的三层测试结构，目的是减少“这个问题该补哪层”的歧义。
 
+**图谱排版 / revision 序列 fixture（DEV 控制台、Vitest、web-demo 预览）** 见 [graph-layout-fixtures.md](./graph-layout-fixtures.md)。
+
 ## 本仓库与本地 ASR 模型（避免误解）
 
 - **本仓库不附带** Sherpa/ONNX 权重、词表等二进制资产；**克隆/拉代码后不会自动拥有**可跑本地流式 ASR 所需的文件。

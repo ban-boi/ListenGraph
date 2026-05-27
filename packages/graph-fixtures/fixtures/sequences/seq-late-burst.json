@@ -1,0 +1,664 @@
+{
+  "id": "seq-late-burst",
+  "kind": "sequence",
+  "description": "Late burst of ~15 nodes",
+  "sessionId": "fixture-seq-late-burst",
+  "playback": {
+    "preserveView": true
+  },
+  "steps": [
+    {
+      "label": "rev-1",
+      "graph": {
+        "sessionId": "fixture-seq-late-burst",
+        "revision": 1,
+        "topics": [],
+        "nodes": [],
+        "edges": [],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5
+          }
+        },
+        "updatedAt": 1000
+      }
+    },
+    {
+      "label": "rev-2",
+      "graph": {
+        "sessionId": "fixture-seq-late-burst",
+        "revision": 2,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "Seed claim",
+            "timestampMs": 0,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5
+          }
+        },
+        "updatedAt": 2000
+      }
+    },
+    {
+      "label": "rev-3",
+      "graph": {
+        "sessionId": "fixture-seq-late-burst",
+        "revision": 3,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "Seed claim",
+            "timestampMs": 0,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "Burst node 2",
+            "timestampMs": 200,
+            "status": "confirmed"
+          },
+          {
+            "id": "n3",
+            "type": "reason",
+            "text": "Burst node 3",
+            "timestampMs": 300,
+            "status": "confirmed"
+          },
+          {
+            "id": "n4",
+            "type": "reason",
+            "text": "Burst node 4",
+            "timestampMs": 400,
+            "status": "confirmed"
+          },
+          {
+            "id": "n5",
+            "type": "reason",
+            "text": "Burst node 5",
+            "timestampMs": 500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n6",
+            "type": "reason",
+            "text": "Burst node 6",
+            "timestampMs": 600,
+            "status": "confirmed"
+          },
+          {
+            "id": "n7",
+            "type": "reason",
+            "text": "Burst node 7",
+            "timestampMs": 700,
+            "status": "confirmed"
+          },
+          {
+            "id": "n8",
+            "type": "reason",
+            "text": "Burst node 8",
+            "timestampMs": 800,
+            "status": "confirmed"
+          },
+          {
+            "id": "n9",
+            "type": "reason",
+            "text": "Burst node 9",
+            "timestampMs": 900,
+            "status": "confirmed"
+          },
+          {
+            "id": "n10",
+            "type": "reason",
+            "text": "Burst node 10",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n11",
+            "type": "reason",
+            "text": "Burst node 11",
+            "timestampMs": 1100,
+            "status": "confirmed"
+          },
+          {
+            "id": "n12",
+            "type": "reason",
+            "text": "Burst node 12",
+            "timestampMs": 1200,
+            "status": "confirmed"
+          },
+          {
+            "id": "n13",
+            "type": "reason",
+            "text": "Burst node 13",
+            "timestampMs": 1300,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "supports"
+          },
+          {
+            "id": "e2",
+            "source": "n1",
+            "target": "n3",
+            "type": "supports"
+          },
+          {
+            "id": "e3",
+            "source": "n1",
+            "target": "n4",
+            "type": "supports"
+          },
+          {
+            "id": "e4",
+            "source": "n1",
+            "target": "n5",
+            "type": "supports"
+          },
+          {
+            "id": "e5",
+            "source": "n1",
+            "target": "n6",
+            "type": "supports"
+          },
+          {
+            "id": "e6",
+            "source": "n1",
+            "target": "n7",
+            "type": "supports"
+          },
+          {
+            "id": "e7",
+            "source": "n1",
+            "target": "n8",
+            "type": "supports"
+          },
+          {
+            "id": "e8",
+            "source": "n1",
+            "target": "n9",
+            "type": "supports"
+          },
+          {
+            "id": "e9",
+            "source": "n1",
+            "target": "n10",
+            "type": "supports"
+          },
+          {
+            "id": "e10",
+            "source": "n1",
+            "target": "n11",
+            "type": "supports"
+          },
+          {
+            "id": "e11",
+            "source": "n1",
+            "target": "n12",
+            "type": "supports"
+          },
+          {
+            "id": "e12",
+            "source": "n1",
+            "target": "n13",
+            "type": "supports"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5
+          }
+        },
+        "updatedAt": 3000
+      }
+    },
+    {
+      "label": "rev-4",
+      "graph": {
+        "sessionId": "fixture-seq-late-burst",
+        "revision": 4,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "Seed claim",
+            "timestampMs": 0,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "Burst node 2",
+            "timestampMs": 200,
+            "status": "confirmed"
+          },
+          {
+            "id": "n3",
+            "type": "reason",
+            "text": "Burst node 3",
+            "timestampMs": 300,
+            "status": "confirmed"
+          },
+          {
+            "id": "n4",
+            "type": "reason",
+            "text": "Burst node 4",
+            "timestampMs": 400,
+            "status": "confirmed"
+          },
+          {
+            "id": "n5",
+            "type": "reason",
+            "text": "Burst node 5",
+            "timestampMs": 500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n6",
+            "type": "reason",
+            "text": "Burst node 6",
+            "timestampMs": 600,
+            "status": "confirmed"
+          },
+          {
+            "id": "n7",
+            "type": "reason",
+            "text": "Burst node 7",
+            "timestampMs": 700,
+            "status": "confirmed"
+          },
+          {
+            "id": "n8",
+            "type": "reason",
+            "text": "Burst node 8",
+            "timestampMs": 800,
+            "status": "confirmed"
+          },
+          {
+            "id": "n9",
+            "type": "reason",
+            "text": "Burst node 9",
+            "timestampMs": 900,
+            "status": "confirmed"
+          },
+          {
+            "id": "n10",
+            "type": "reason",
+            "text": "Burst node 10",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n11",
+            "type": "reason",
+            "text": "Burst node 11",
+            "timestampMs": 1100,
+            "status": "confirmed"
+          },
+          {
+            "id": "n12",
+            "type": "reason",
+            "text": "Burst node 12",
+            "timestampMs": 1200,
+            "status": "confirmed"
+          },
+          {
+            "id": "n13",
+            "type": "reason",
+            "text": "Burst node 13",
+            "timestampMs": 1300,
+            "status": "confirmed"
+          },
+          {
+            "id": "n14",
+            "type": "example",
+            "text": "Burst tail 14",
+            "timestampMs": 1400,
+            "status": "confirmed"
+          },
+          {
+            "id": "n15",
+            "type": "example",
+            "text": "Burst tail 15",
+            "timestampMs": 1500,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "supports"
+          },
+          {
+            "id": "e2",
+            "source": "n1",
+            "target": "n3",
+            "type": "supports"
+          },
+          {
+            "id": "e3",
+            "source": "n1",
+            "target": "n4",
+            "type": "supports"
+          },
+          {
+            "id": "e4",
+            "source": "n1",
+            "target": "n5",
+            "type": "supports"
+          },
+          {
+            "id": "e5",
+            "source": "n1",
+            "target": "n6",
+            "type": "supports"
+          },
+          {
+            "id": "e6",
+            "source": "n1",
+            "target": "n7",
+            "type": "supports"
+          },
+          {
+            "id": "e7",
+            "source": "n1",
+            "target": "n8",
+            "type": "supports"
+          },
+          {
+            "id": "e8",
+            "source": "n1",
+            "target": "n9",
+            "type": "supports"
+          },
+          {
+            "id": "e9",
+            "source": "n1",
+            "target": "n10",
+            "type": "supports"
+          },
+          {
+            "id": "e10",
+            "source": "n1",
+            "target": "n11",
+            "type": "supports"
+          },
+          {
+            "id": "e11",
+            "source": "n1",
+            "target": "n12",
+            "type": "supports"
+          },
+          {
+            "id": "e12",
+            "source": "n1",
+            "target": "n13",
+            "type": "supports"
+          },
+          {
+            "id": "e13",
+            "source": "n13",
+            "target": "n14",
+            "type": "follows"
+          },
+          {
+            "id": "e14",
+            "source": "n14",
+            "target": "n15",
+            "type": "follows"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5
+          }
+        },
+        "updatedAt": 4000
+      }
+    },
+    {
+      "label": "rev-5",
+      "graph": {
+        "sessionId": "fixture-seq-late-burst",
+        "revision": 5,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "Seed claim",
+            "timestampMs": 0,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "Burst node 2",
+            "timestampMs": 200,
+            "status": "confirmed"
+          },
+          {
+            "id": "n3",
+            "type": "reason",
+            "text": "Burst node 3",
+            "timestampMs": 300,
+            "status": "confirmed"
+          },
+          {
+            "id": "n4",
+            "type": "reason",
+            "text": "Burst node 4",
+            "timestampMs": 400,
+            "status": "confirmed"
+          },
+          {
+            "id": "n5",
+            "type": "reason",
+            "text": "Burst node 5",
+            "timestampMs": 500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n6",
+            "type": "reason",
+            "text": "Burst node 6",
+            "timestampMs": 600,
+            "status": "confirmed"
+          },
+          {
+            "id": "n7",
+            "type": "reason",
+            "text": "Burst node 7",
+            "timestampMs": 700,
+            "status": "confirmed"
+          },
+          {
+            "id": "n8",
+            "type": "reason",
+            "text": "Burst node 8",
+            "timestampMs": 800,
+            "status": "confirmed"
+          },
+          {
+            "id": "n9",
+            "type": "reason",
+            "text": "Burst node 9",
+            "timestampMs": 900,
+            "status": "confirmed"
+          },
+          {
+            "id": "n10",
+            "type": "reason",
+            "text": "Burst node 10",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n11",
+            "type": "reason",
+            "text": "Burst node 11",
+            "timestampMs": 1100,
+            "status": "confirmed"
+          },
+          {
+            "id": "n12",
+            "type": "reason",
+            "text": "Burst node 12",
+            "timestampMs": 1200,
+            "status": "confirmed"
+          },
+          {
+            "id": "n13",
+            "type": "reason",
+            "text": "Burst node 13",
+            "timestampMs": 1300,
+            "status": "confirmed"
+          },
+          {
+            "id": "n14",
+            "type": "example",
+            "text": "Burst tail 14",
+            "timestampMs": 1400,
+            "status": "confirmed"
+          },
+          {
+            "id": "n15",
+            "type": "example",
+            "text": "Burst tail 15",
+            "timestampMs": 1500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n16",
+            "type": "conclusion",
+            "text": "Burst finale",
+            "timestampMs": 1600,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "supports"
+          },
+          {
+            "id": "e2",
+            "source": "n1",
+            "target": "n3",
+            "type": "supports"
+          },
+          {
+            "id": "e3",
+            "source": "n1",
+            "target": "n4",
+            "type": "supports"
+          },
+          {
+            "id": "e4",
+            "source": "n1",
+            "target": "n5",
+            "type": "supports"
+          },
+          {
+            "id": "e5",
+            "source": "n1",
+            "target": "n6",
+            "type": "supports"
+          },
+          {
+            "id": "e6",
+            "source": "n1",
+            "target": "n7",
+            "type": "supports"
+          },
+          {
+            "id": "e7",
+            "source": "n1",
+            "target": "n8",
+            "type": "supports"
+          },
+          {
+            "id": "e8",
+            "source": "n1",
+            "target": "n9",
+            "type": "supports"
+          },
+          {
+            "id": "e9",
+            "source": "n1",
+            "target": "n10",
+            "type": "supports"
+          },
+          {
+            "id": "e10",
+            "source": "n1",
+            "target": "n11",
+            "type": "supports"
+          },
+          {
+            "id": "e11",
+            "source": "n1",
+            "target": "n12",
+            "type": "supports"
+          },
+          {
+            "id": "e12",
+            "source": "n1",
+            "target": "n13",
+            "type": "supports"
+          },
+          {
+            "id": "e13",
+            "source": "n13",
+            "target": "n14",
+            "type": "follows"
+          },
+          {
+            "id": "e14",
+            "source": "n14",
+            "target": "n15",
+            "type": "follows"
+          },
+          {
+            "id": "e15",
+            "source": "n15",
+            "target": "n16",
+            "type": "causes"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5
+          }
+        },
+        "updatedAt": 5000
+      }
+    }
+  ]
+}

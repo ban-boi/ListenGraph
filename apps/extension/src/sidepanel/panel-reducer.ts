@@ -81,6 +81,8 @@ export interface PanelState {
   bridgeHealth: BridgeHealth;
   /** 时间轴事件列表 */
   timelineEvents: TimelineEvent[];
+  /** DEV fixture lab：当前 armed 的 sequence id */
+  fixtureLabId: string | null;
 }
 
 // ===== 初始状态 =====
@@ -105,6 +107,7 @@ export const initialPanelState: PanelState = {
   workerBuildLabel: 'waiting',
   bridgeHealth: { status: 'idle' },
   timelineEvents: [],
+  fixtureLabId: null,
 };
 
 // ===== 辅助类型：SESSION_STATE_CHANGED payload =====
@@ -178,7 +181,12 @@ export type PanelAction =
       payload: { transientKey: string; updates: Partial<TimelineEvent> };
     }
   | { type: 'SET_STOP_PENDING'; payload: { stopPending: boolean } }
-  | { type: 'SELECT_NODE'; payload: { nodeId: string | null } };
+  | { type: 'SELECT_NODE'; payload: { nodeId: string | null } }
+  | {
+      type: 'FIXTURE_SEQUENCE_ARM';
+      payload: { sessionId: string; initialGraph: MergedGraph };
+    }
+  | { type: 'FIXTURE_SEQUENCE_DISARM' };
 
 // ===== Reducer =====
 
@@ -526,6 +534,40 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
       return {
         ...state,
         selectedNodeId: action.payload.nodeId,
+      };
+    }
+
+    // ---- FIXTURE_SEQUENCE_ARM ----
+    case 'FIXTURE_SEQUENCE_ARM': {
+      const { sessionId, initialGraph } = action.payload;
+      const nextView =
+        initialGraph.viewHints?.defaultView ?? state.currentView;
+      return {
+        ...state,
+        sessionId,
+        graph: initialGraph,
+        currentView: nextView,
+        sessionState: 'stopped',
+        currentTimeMs: 0,
+        selectedNodeId: null,
+        stopPending: false,
+        fixtureLabId: sessionId,
+        lastGraphUpdatedAt: Date.now(),
+        lastStructurerRun: null,
+        structuringSince: null,
+        lastTranscriptAt: null,
+        pendingTranscriptCount: 0,
+        pendingWorkCount: 0,
+        stopDrainPendingCount: 0,
+        currentStructurerTarget: null,
+      };
+    }
+
+    // ---- FIXTURE_SEQUENCE_DISARM ----
+    case 'FIXTURE_SEQUENCE_DISARM': {
+      return {
+        ...state,
+        fixtureLabId: null,
       };
     }
 

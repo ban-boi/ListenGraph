@@ -1,0 +1,1246 @@
+{
+  "id": "seq-incremental-growth",
+  "kind": "sequence",
+  "description": "8 steps, nodes grow 2→~22",
+  "sessionId": "fixture-seq-incremental-growth",
+  "playback": {
+    "preserveView": true
+  },
+  "steps": [
+    {
+      "label": "rev-1",
+      "graph": {
+        "sessionId": "fixture-seq-incremental-growth",
+        "revision": 1,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "Incremental node 1",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "Incremental node 2",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "causes"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5
+          }
+        },
+        "updatedAt": 1000
+      }
+    },
+    {
+      "label": "rev-2",
+      "graph": {
+        "sessionId": "fixture-seq-incremental-growth",
+        "revision": 2,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "Incremental node 1",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "Incremental node 2",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n3",
+            "type": "example",
+            "text": "Incremental node 3",
+            "timestampMs": 3000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n4",
+            "type": "question",
+            "text": "Incremental node 4",
+            "timestampMs": 4000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "causes"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "type": "supports"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "type": "causes"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5
+          }
+        },
+        "updatedAt": 2000
+      }
+    },
+    {
+      "label": "rev-3",
+      "graph": {
+        "sessionId": "fixture-seq-incremental-growth",
+        "revision": 3,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "Incremental node 1",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "Incremental node 2",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n3",
+            "type": "example",
+            "text": "Incremental node 3",
+            "timestampMs": 3000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n4",
+            "type": "question",
+            "text": "Incremental node 4",
+            "timestampMs": 4000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n5",
+            "type": "conclusion",
+            "text": "Incremental node 5",
+            "timestampMs": 5000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n6",
+            "type": "claim",
+            "text": "Incremental node 6",
+            "timestampMs": 6000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n7",
+            "type": "reason",
+            "text": "Incremental node 7",
+            "timestampMs": 7000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "causes"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "type": "supports"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "type": "causes"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "type": "supports"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6",
+            "type": "causes"
+          },
+          {
+            "id": "e6",
+            "source": "n6",
+            "target": "n7",
+            "type": "follows"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5
+          }
+        },
+        "updatedAt": 3000
+      }
+    },
+    {
+      "label": "rev-4",
+      "graph": {
+        "sessionId": "fixture-seq-incremental-growth",
+        "revision": 4,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "Incremental node 1",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "Incremental node 2",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n3",
+            "type": "example",
+            "text": "Incremental node 3",
+            "timestampMs": 3000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n4",
+            "type": "question",
+            "text": "Incremental node 4",
+            "timestampMs": 4000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n5",
+            "type": "conclusion",
+            "text": "Incremental node 5",
+            "timestampMs": 5000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n6",
+            "type": "claim",
+            "text": "Incremental node 6",
+            "timestampMs": 6000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n7",
+            "type": "reason",
+            "text": "Incremental node 7",
+            "timestampMs": 7000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n8",
+            "type": "example",
+            "text": "Incremental node 8",
+            "timestampMs": 8000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n9",
+            "type": "question",
+            "text": "Incremental node 9",
+            "timestampMs": 9000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "causes"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "type": "supports"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "type": "causes"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "type": "supports"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6",
+            "type": "causes"
+          },
+          {
+            "id": "e6",
+            "source": "n6",
+            "target": "n7",
+            "type": "follows"
+          },
+          {
+            "id": "e7",
+            "source": "n7",
+            "target": "n8",
+            "type": "causes"
+          },
+          {
+            "id": "e8",
+            "source": "n8",
+            "target": "n9",
+            "type": "follows"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5
+          }
+        },
+        "updatedAt": 4000
+      }
+    },
+    {
+      "label": "rev-5",
+      "graph": {
+        "sessionId": "fixture-seq-incremental-growth",
+        "revision": 5,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "Incremental node 1",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "Incremental node 2",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n3",
+            "type": "example",
+            "text": "Incremental node 3",
+            "timestampMs": 3000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n4",
+            "type": "question",
+            "text": "Incremental node 4",
+            "timestampMs": 4000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n5",
+            "type": "conclusion",
+            "text": "Incremental node 5",
+            "timestampMs": 5000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n6",
+            "type": "claim",
+            "text": "Incremental node 6",
+            "timestampMs": 6000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n7",
+            "type": "reason",
+            "text": "Incremental node 7",
+            "timestampMs": 7000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n8",
+            "type": "example",
+            "text": "Incremental node 8",
+            "timestampMs": 8000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n9",
+            "type": "question",
+            "text": "Incremental node 9",
+            "timestampMs": 9000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n10",
+            "type": "conclusion",
+            "text": "Incremental node 10",
+            "timestampMs": 10000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n11",
+            "type": "claim",
+            "text": "Incremental node 11",
+            "timestampMs": 11000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n12",
+            "type": "reason",
+            "text": "Incremental node 12",
+            "timestampMs": 12000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "causes"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "type": "supports"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "type": "causes"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "type": "supports"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6",
+            "type": "causes"
+          },
+          {
+            "id": "e6",
+            "source": "n6",
+            "target": "n7",
+            "type": "follows"
+          },
+          {
+            "id": "e7",
+            "source": "n7",
+            "target": "n8",
+            "type": "causes"
+          },
+          {
+            "id": "e8",
+            "source": "n8",
+            "target": "n9",
+            "type": "follows"
+          },
+          {
+            "id": "e9",
+            "source": "n9",
+            "target": "n10",
+            "type": "causes"
+          },
+          {
+            "id": "e10",
+            "source": "n10",
+            "target": "n11",
+            "type": "follows"
+          },
+          {
+            "id": "e11",
+            "source": "n11",
+            "target": "n12",
+            "type": "supports"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5
+          }
+        },
+        "updatedAt": 5000
+      }
+    },
+    {
+      "label": "rev-6",
+      "graph": {
+        "sessionId": "fixture-seq-incremental-growth",
+        "revision": 6,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "Incremental node 1",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "Incremental node 2",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n3",
+            "type": "example",
+            "text": "Incremental node 3",
+            "timestampMs": 3000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n4",
+            "type": "question",
+            "text": "Incremental node 4",
+            "timestampMs": 4000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n5",
+            "type": "conclusion",
+            "text": "Incremental node 5",
+            "timestampMs": 5000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n6",
+            "type": "claim",
+            "text": "Incremental node 6",
+            "timestampMs": 6000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n7",
+            "type": "reason",
+            "text": "Incremental node 7",
+            "timestampMs": 7000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n8",
+            "type": "example",
+            "text": "Incremental node 8",
+            "timestampMs": 8000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n9",
+            "type": "question",
+            "text": "Incremental node 9",
+            "timestampMs": 9000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n10",
+            "type": "conclusion",
+            "text": "Incremental node 10",
+            "timestampMs": 10000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n11",
+            "type": "claim",
+            "text": "Incremental node 11",
+            "timestampMs": 11000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n12",
+            "type": "reason",
+            "text": "Incremental node 12",
+            "timestampMs": 12000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n13",
+            "type": "example",
+            "text": "Incremental node 13",
+            "timestampMs": 13000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n14",
+            "type": "question",
+            "text": "Incremental node 14",
+            "timestampMs": 14000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "causes"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "type": "supports"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "type": "causes"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "type": "supports"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6",
+            "type": "causes"
+          },
+          {
+            "id": "e6",
+            "source": "n6",
+            "target": "n7",
+            "type": "follows"
+          },
+          {
+            "id": "e7",
+            "source": "n7",
+            "target": "n8",
+            "type": "causes"
+          },
+          {
+            "id": "e8",
+            "source": "n8",
+            "target": "n9",
+            "type": "follows"
+          },
+          {
+            "id": "e9",
+            "source": "n9",
+            "target": "n10",
+            "type": "causes"
+          },
+          {
+            "id": "e10",
+            "source": "n10",
+            "target": "n11",
+            "type": "follows"
+          },
+          {
+            "id": "e11",
+            "source": "n11",
+            "target": "n12",
+            "type": "supports"
+          },
+          {
+            "id": "e12",
+            "source": "n12",
+            "target": "n13",
+            "type": "follows"
+          },
+          {
+            "id": "e13",
+            "source": "n13",
+            "target": "n14",
+            "type": "supports"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5
+          }
+        },
+        "updatedAt": 6000
+      }
+    },
+    {
+      "label": "rev-7",
+      "graph": {
+        "sessionId": "fixture-seq-incremental-growth",
+        "revision": 7,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "Incremental node 1",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "Incremental node 2",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n3",
+            "type": "example",
+            "text": "Incremental node 3",
+            "timestampMs": 3000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n4",
+            "type": "question",
+            "text": "Incremental node 4",
+            "timestampMs": 4000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n5",
+            "type": "conclusion",
+            "text": "Incremental node 5",
+            "timestampMs": 5000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n6",
+            "type": "claim",
+            "text": "Incremental node 6",
+            "timestampMs": 6000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n7",
+            "type": "reason",
+            "text": "Incremental node 7",
+            "timestampMs": 7000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n8",
+            "type": "example",
+            "text": "Incremental node 8",
+            "timestampMs": 8000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n9",
+            "type": "question",
+            "text": "Incremental node 9",
+            "timestampMs": 9000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n10",
+            "type": "conclusion",
+            "text": "Incremental node 10",
+            "timestampMs": 10000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n11",
+            "type": "claim",
+            "text": "Incremental node 11",
+            "timestampMs": 11000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n12",
+            "type": "reason",
+            "text": "Incremental node 12",
+            "timestampMs": 12000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n13",
+            "type": "example",
+            "text": "Incremental node 13",
+            "timestampMs": 13000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n14",
+            "type": "question",
+            "text": "Incremental node 14",
+            "timestampMs": 14000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n15",
+            "type": "conclusion",
+            "text": "Incremental node 15",
+            "timestampMs": 15000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n16",
+            "type": "claim",
+            "text": "Incremental node 16",
+            "timestampMs": 16000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n17",
+            "type": "reason",
+            "text": "Incremental node 17",
+            "timestampMs": 17000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "causes"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "type": "supports"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "type": "causes"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "type": "supports"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6",
+            "type": "causes"
+          },
+          {
+            "id": "e6",
+            "source": "n6",
+            "target": "n7",
+            "type": "follows"
+          },
+          {
+            "id": "e7",
+            "source": "n7",
+            "target": "n8",
+            "type": "causes"
+          },
+          {
+            "id": "e8",
+            "source": "n8",
+            "target": "n9",
+            "type": "follows"
+          },
+          {
+            "id": "e9",
+            "source": "n9",
+            "target": "n10",
+            "type": "causes"
+          },
+          {
+            "id": "e10",
+            "source": "n10",
+            "target": "n11",
+            "type": "follows"
+          },
+          {
+            "id": "e11",
+            "source": "n11",
+            "target": "n12",
+            "type": "supports"
+          },
+          {
+            "id": "e12",
+            "source": "n12",
+            "target": "n13",
+            "type": "follows"
+          },
+          {
+            "id": "e13",
+            "source": "n13",
+            "target": "n14",
+            "type": "supports"
+          },
+          {
+            "id": "e14",
+            "source": "n14",
+            "target": "n15",
+            "type": "follows"
+          },
+          {
+            "id": "e15",
+            "source": "n15",
+            "target": "n16",
+            "type": "supports"
+          },
+          {
+            "id": "e16",
+            "source": "n16",
+            "target": "n17",
+            "type": "causes"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5
+          }
+        },
+        "updatedAt": 7000
+      }
+    },
+    {
+      "label": "rev-8",
+      "graph": {
+        "sessionId": "fixture-seq-incremental-growth",
+        "revision": 8,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "Incremental node 1",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "Incremental node 2",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n3",
+            "type": "example",
+            "text": "Incremental node 3",
+            "timestampMs": 3000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n4",
+            "type": "question",
+            "text": "Incremental node 4",
+            "timestampMs": 4000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n5",
+            "type": "conclusion",
+            "text": "Incremental node 5",
+            "timestampMs": 5000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n6",
+            "type": "claim",
+            "text": "Incremental node 6",
+            "timestampMs": 6000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n7",
+            "type": "reason",
+            "text": "Incremental node 7",
+            "timestampMs": 7000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n8",
+            "type": "example",
+            "text": "Incremental node 8",
+            "timestampMs": 8000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n9",
+            "type": "question",
+            "text": "Incremental node 9",
+            "timestampMs": 9000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n10",
+            "type": "conclusion",
+            "text": "Incremental node 10",
+            "timestampMs": 10000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n11",
+            "type": "claim",
+            "text": "Incremental node 11",
+            "timestampMs": 11000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n12",
+            "type": "reason",
+            "text": "Incremental node 12",
+            "timestampMs": 12000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n13",
+            "type": "example",
+            "text": "Incremental node 13",
+            "timestampMs": 13000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n14",
+            "type": "question",
+            "text": "Incremental node 14",
+            "timestampMs": 14000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n15",
+            "type": "conclusion",
+            "text": "Incremental node 15",
+            "timestampMs": 15000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n16",
+            "type": "claim",
+            "text": "Incremental node 16",
+            "timestampMs": 16000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n17",
+            "type": "reason",
+            "text": "Incremental node 17",
+            "timestampMs": 17000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n18",
+            "type": "example",
+            "text": "Incremental node 18",
+            "timestampMs": 18000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n19",
+            "type": "question",
+            "text": "Incremental node 19",
+            "timestampMs": 19000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n20",
+            "type": "conclusion",
+            "text": "Incremental node 20",
+            "timestampMs": 20000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n21",
+            "type": "claim",
+            "text": "Incremental node 21",
+            "timestampMs": 21000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n22",
+            "type": "reason",
+            "text": "Incremental node 22",
+            "timestampMs": 22000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "causes"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "type": "supports"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "type": "causes"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "type": "supports"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6",
+            "type": "causes"
+          },
+          {
+            "id": "e6",
+            "source": "n6",
+            "target": "n7",
+            "type": "follows"
+          },
+          {
+            "id": "e7",
+            "source": "n7",
+            "target": "n8",
+            "type": "causes"
+          },
+          {
+            "id": "e8",
+            "source": "n8",
+            "target": "n9",
+            "type": "follows"
+          },
+          {
+            "id": "e9",
+            "source": "n9",
+            "target": "n10",
+            "type": "causes"
+          },
+          {
+            "id": "e10",
+            "source": "n10",
+            "target": "n11",
+            "type": "follows"
+          },
+          {
+            "id": "e11",
+            "source": "n11",
+            "target": "n12",
+            "type": "supports"
+          },
+          {
+            "id": "e12",
+            "source": "n12",
+            "target": "n13",
+            "type": "follows"
+          },
+          {
+            "id": "e13",
+            "source": "n13",
+            "target": "n14",
+            "type": "supports"
+          },
+          {
+            "id": "e14",
+            "source": "n14",
+            "target": "n15",
+            "type": "follows"
+          },
+          {
+            "id": "e15",
+            "source": "n15",
+            "target": "n16",
+            "type": "supports"
+          },
+          {
+            "id": "e16",
+            "source": "n16",
+            "target": "n17",
+            "type": "causes"
+          },
+          {
+            "id": "e17",
+            "source": "n17",
+            "target": "n18",
+            "type": "supports"
+          },
+          {
+            "id": "e18",
+            "source": "n18",
+            "target": "n19",
+            "type": "causes"
+          },
+          {
+            "id": "e19",
+            "source": "n19",
+            "target": "n20",
+            "type": "follows"
+          },
+          {
+            "id": "e20",
+            "source": "n20",
+            "target": "n21",
+            "type": "supports"
+          },
+          {
+            "id": "e21",
+            "source": "n21",
+            "target": "n22",
+            "type": "causes"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5
+          }
+        },
+        "updatedAt": 8000
+      }
+    }
+  ]
+}

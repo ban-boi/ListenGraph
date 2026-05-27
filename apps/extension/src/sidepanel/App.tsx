@@ -54,6 +54,8 @@ import { LogPanel } from './LogPanel';
 import { DebugPanel } from './DebugPanel';
 import { ReplayPanel } from './ReplayPanel';
 import { SettingsPanel } from './SettingsPanel';
+import { pinProviderConfigToDirectMode } from './provider-helpers';
+import { normalizeProviderConfig } from '@listen-graphic/providers';
 
 import { panelReducer, initialPanelState } from './panel-reducer';
 import { useTimeline } from './hooks/useTimeline';
@@ -102,6 +104,7 @@ export default function App() {
   const layoutCacheRef = useRef<StableLayoutCache>(createEmptyStableLayoutCache());
   const layoutCacheSessionRef = useRef<string | null>(null);
   const activeViewSessionRef = useRef<string | null>(null);
+  const fixtureLabIdRef = useRef<string | null>(null);
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const flowContainerRef = useRef<HTMLDivElement | null>(null);
   const hasAutoFitRef = useRef(false);
@@ -126,6 +129,7 @@ export default function App() {
     settingsOpen,
     settingsSaving,
     localBridgeHealth,
+    initialConfigRef,
     updateProviderEntry,
     handleProviderTypeChange,
     handleToggleSettings,
@@ -139,6 +143,7 @@ export default function App() {
     loadGraphDisplaySettings,
     updateAutoFitMinReadableFontPx,
     saveGraphDisplaySettings,
+    initialDisplayRef,
   } = useGraphDisplaySettings({ addLog });
 
   const providerAsrType = providerConfig.asr.type;
@@ -182,6 +187,61 @@ export default function App() {
     graphNodeBodyFontPx: GRAPH_NODE_BODY_FONT_PX,
     onReset: resetLayoutCache,
   });
+
+  const onFixtureLabReset = useCallback(
+    (sessionId: string) => {
+      fixtureLabIdRef.current = sessionId;
+      resetLayoutCache();
+      hasAutoFitRef.current = false;
+      resetAutoTourState();
+      lastUserViewportChangeAtRef.current = 0;
+      userPinnedViewRef.current = false;
+      activeViewSessionRef.current = sessionId;
+    },
+    [resetAutoTourState, resetLayoutCache],
+  );
+
+  const fixtureLabDepsRef = useRef({
+    dispatch,
+    graphRef,
+    activeViewSessionRef,
+    addLog,
+    setAutoTourSeed,
+    onFixtureLabReset,
+    onFixtureLabDisarm: () => {
+      fixtureLabIdRef.current = null;
+    },
+  });
+  fixtureLabDepsRef.current = {
+    dispatch,
+    graphRef,
+    activeViewSessionRef,
+    addLog,
+    setAutoTourSeed,
+    onFixtureLabReset,
+    onFixtureLabDisarm: () => {
+      fixtureLabIdRef.current = null;
+    },
+  };
+
+  useEffect(() => {
+    if (!import.meta.env.DEV && import.meta.env.VITE_FIXTURE_LAB !== 'true') {
+      return undefined;
+    }
+
+    let disposed = false;
+
+    void (async () => {
+      const { installFixtureSequenceDev } = await import('./fixture-sequence-dev');
+      if (disposed) return;
+      installFixtureSequenceDev(fixtureLabDepsRef);
+    })();
+
+    return () => {
+      disposed = true;
+      delete globalThis.__listenGraphicFixture;
+    };
+  }, []);
 
   const exportSessionId = panel.sessionId ?? (panel.graph.nodes.length > 0 ? panel.graph.sessionId : null);
 
@@ -231,9 +291,28 @@ export default function App() {
     await loadGraphDisplaySettings();
   }, [handleToggleSettings, loadGraphDisplaySettings]);
 
-  const handleSaveAllSettings = useCallback(async () => {
-    await handleSaveSettings();
-    await saveGraphDisplaySettings();
+  // ===== dirty 追踪 =====
+  const isDirty = useMemo(() => {
+    const providerDirty = (() => {
+      if (!initialConfigRef.current) return false;
+      return JSON.stringify(pinProviderConfigToDirectMode(normalizeProviderConfig(providerConfig)))
+        !== JSON.stringify(initialConfigRef.current);
+    })();
+    const displayDirty = (() => {
+      if (!initialDisplayRef.current) return false;
+      return JSON.stringify(graphDisplaySettings) !== JSON.stringify(initialDisplayRef.current);
+    })();
+    return providerDirty || displayDirty;
+  }, [providerConfig, graphDisplaySettings]);
+
+  type SaveResult = { ok: true } | { ok: false; error: string };
+
+  const handleSaveAllSettings = useCallback(async (): Promise<SaveResult> => {
+    const providerResult = await handleSaveSettings();
+    if (!providerResult.ok) return providerResult;
+    const displayResult = await saveGraphDisplaySettings();
+    if (!displayResult.ok) return displayResult;
+    return { ok: true };
   }, [handleSaveSettings, saveGraphDisplaySettings]);
 
   // ===== Chrome 消息监听 =====
@@ -262,6 +341,10 @@ export default function App() {
   useEffect(() => {
     graphRef.current = panel.graph;
   }, [panel.graph]);
+
+  useEffect(() => {
+    fixtureLabIdRef.current = panel.fixtureLabId;
+  }, [panel.fixtureLabId]);
 
   // ===== reducer 更新 currentView 时清除用户覆盖 =====
   const prevReducerViewRef = useRef(panel.currentView);
@@ -353,6 +436,7 @@ export default function App() {
         | { success: false; error?: string };
 
       if (disposed || !response?.success) return;
+      if (fixtureLabIdRef.current) return;
 
       const snapshot = response.snapshot;
       const rawPreferredView = snapshot.graph
@@ -373,7 +457,7 @@ export default function App() {
 
     void hydrateSnapshot();
     return () => { disposed = true; };
-  }, [resetAutoTourState]);
+  }, []);
 
   // ===== 获取当前 tab =====
   useEffect(() => {
@@ -707,6 +791,26 @@ export default function App() {
       ? `${panel.graph.nodes.length}n · ${panel.graph.edges.length}e · 更新 ${formatRelativeAge(panel.lastGraphUpdatedAt, statusNowMs)}`
       : null;
 
+  // ===== 条件渲染：设置面板全页覆盖 =====
+  if (settingsOpen) {
+    return (
+      <SettingsPanel
+        providerConfig={providerConfig}
+        providerSummary={providerSummary}
+        settingsSaving={settingsSaving || graphDisplaySettingsSaving}
+        bridgeHealth={bridgeHealth}
+        graphDisplaySettings={graphDisplaySettings}
+        isDirty={isDirty}
+        onUpdateProviderEntry={updateProviderEntry}
+        onProviderTypeChange={handleProviderTypeChange}
+        onUpdateAutoFitMinReadableFontPx={updateAutoFitMinReadableFontPx}
+        onSaveSettings={handleSaveAllSettings}
+        onClearSecrets={handleClearSecrets}
+        onClose={() => void handleToggleAllSettings()}
+      />
+    );
+  }
+
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <style>{`@keyframes listen-graphic-tour-pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.82); } 100% { opacity: 1; transform: scale(1); } }`}</style>
@@ -894,20 +998,6 @@ export default function App() {
           适配视图
         </button>
       </div>
-      {settingsOpen && (
-        <SettingsPanel
-          providerConfig={providerConfig}
-          providerSummary={providerSummary}
-          settingsSaving={settingsSaving || graphDisplaySettingsSaving}
-          bridgeHealth={bridgeHealth}
-          graphDisplaySettings={graphDisplaySettings}
-          onUpdateProviderEntry={updateProviderEntry}
-          onProviderTypeChange={handleProviderTypeChange}
-          onUpdateAutoFitMinReadableFontPx={updateAutoFitMinReadableFontPx}
-          onSaveSettings={handleSaveAllSettings}
-          onClearSecrets={handleClearSecrets}
-        />
-      )}
       {/* 图表区域 */}
       <div ref={flowContainerRef} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         <ReactFlow

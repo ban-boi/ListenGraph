@@ -1,0 +1,506 @@
+{
+  "id": "seq-view-switch-mid",
+  "kind": "sequence",
+  "description": "Mid-sequence defaultView change",
+  "sessionId": "fixture-seq-view-switch-mid",
+  "playback": {
+    "preserveView": true
+  },
+  "steps": [
+    {
+      "label": "rev-1",
+      "graph": {
+        "sessionId": "fixture-seq-view-switch-mid",
+        "revision": 1,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "View switch node 1",
+            "timestampMs": 500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "View switch node 2",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "causes"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5,
+            "comparison": 3
+          }
+        },
+        "updatedAt": 1000
+      }
+    },
+    {
+      "label": "rev-2",
+      "graph": {
+        "sessionId": "fixture-seq-view-switch-mid",
+        "revision": 2,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "View switch node 1",
+            "timestampMs": 500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "View switch node 2",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n3",
+            "type": "reason",
+            "text": "View switch node 3",
+            "timestampMs": 1500,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "causes"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "type": "causes"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5,
+            "comparison": 3
+          }
+        },
+        "updatedAt": 2000
+      }
+    },
+    {
+      "label": "rev-3",
+      "graph": {
+        "sessionId": "fixture-seq-view-switch-mid",
+        "revision": 3,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "View switch node 1",
+            "timestampMs": 500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "View switch node 2",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n3",
+            "type": "reason",
+            "text": "View switch node 3",
+            "timestampMs": 1500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n4",
+            "type": "reason",
+            "text": "View switch node 4",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "causes"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "type": "causes"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "type": "causes"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5,
+            "comparison": 3
+          }
+        },
+        "updatedAt": 3000
+      }
+    },
+    {
+      "label": "rev-4",
+      "graph": {
+        "sessionId": "fixture-seq-view-switch-mid",
+        "revision": 4,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "View switch node 1",
+            "timestampMs": 500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "View switch node 2",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n3",
+            "type": "reason",
+            "text": "View switch node 3",
+            "timestampMs": 1500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n4",
+            "type": "reason",
+            "text": "View switch node 4",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n5",
+            "type": "reason",
+            "text": "View switch node 5",
+            "timestampMs": 2500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n6",
+            "type": "reason",
+            "text": "View switch node 6",
+            "timestampMs": 3000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "causes"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "type": "causes"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "type": "causes"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "type": "follows"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6",
+            "type": "follows"
+          },
+          {
+            "id": "e-opp",
+            "source": "n1",
+            "target": "n5",
+            "type": "opposes"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "timeline",
+          "scores": {
+            "timeline": 5,
+            "causal": 3,
+            "comparison": 3
+          }
+        },
+        "updatedAt": 4000
+      }
+    },
+    {
+      "label": "rev-5",
+      "graph": {
+        "sessionId": "fixture-seq-view-switch-mid",
+        "revision": 5,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "View switch node 1",
+            "timestampMs": 500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "View switch node 2",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n3",
+            "type": "reason",
+            "text": "View switch node 3",
+            "timestampMs": 1500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n4",
+            "type": "reason",
+            "text": "View switch node 4",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n5",
+            "type": "reason",
+            "text": "View switch node 5",
+            "timestampMs": 2500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n6",
+            "type": "reason",
+            "text": "View switch node 6",
+            "timestampMs": 3000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n7",
+            "type": "reason",
+            "text": "View switch node 7",
+            "timestampMs": 3500,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "causes"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "type": "causes"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "type": "causes"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "type": "follows"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6",
+            "type": "follows"
+          },
+          {
+            "id": "e-opp",
+            "source": "n1",
+            "target": "n5",
+            "type": "opposes"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7",
+            "type": "follows"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "timeline",
+          "scores": {
+            "timeline": 5,
+            "causal": 3,
+            "comparison": 3
+          }
+        },
+        "updatedAt": 5000
+      }
+    },
+    {
+      "label": "rev-6",
+      "graph": {
+        "sessionId": "fixture-seq-view-switch-mid",
+        "revision": 6,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "claim",
+            "text": "View switch node 1",
+            "timestampMs": 500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n2",
+            "type": "reason",
+            "text": "View switch node 2",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n3",
+            "type": "reason",
+            "text": "View switch node 3",
+            "timestampMs": 1500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n4",
+            "type": "reason",
+            "text": "View switch node 4",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n5",
+            "type": "reason",
+            "text": "View switch node 5",
+            "timestampMs": 2500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n6",
+            "type": "reason",
+            "text": "View switch node 6",
+            "timestampMs": 3000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n7",
+            "type": "reason",
+            "text": "View switch node 7",
+            "timestampMs": 3500,
+            "status": "confirmed"
+          },
+          {
+            "id": "n8",
+            "type": "reason",
+            "text": "View switch node 8",
+            "timestampMs": 4000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2",
+            "type": "causes"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "type": "causes"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "type": "causes"
+          },
+          {
+            "id": "e4",
+            "source": "n4",
+            "target": "n5",
+            "type": "follows"
+          },
+          {
+            "id": "e5",
+            "source": "n5",
+            "target": "n6",
+            "type": "follows"
+          },
+          {
+            "id": "e-opp",
+            "source": "n1",
+            "target": "n5",
+            "type": "opposes"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7",
+            "type": "follows"
+          },
+          {
+            "id": "e8",
+            "source": "n7",
+            "target": "n8",
+            "type": "follows"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "timeline",
+          "scores": {
+            "timeline": 5,
+            "causal": 3,
+            "comparison": 3
+          }
+        },
+        "updatedAt": 6000
+      }
+    }
+  ]
+}

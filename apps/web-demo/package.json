@@ -15,6 +15,7 @@
     "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
+    "@listen-graphic/graph-fixtures": "workspace:*",
     "@listen-graphic/graph-renderers": "workspace:*",
     "@listen-graphic/schema": "workspace:*",
     "dagre": "^0.8.5",

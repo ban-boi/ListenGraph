@@ -6,7 +6,7 @@
  * - provider settings 回调函数
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { ProviderConfig } from '@listen-graphic/schema';
 import { normalizeProviderConfig, redactProviderConfig } from '@listen-graphic/providers';
 import type { AppMessage } from '../../shared/messages';
@@ -37,6 +37,9 @@ export function useProviderSettings({ addLog, dispatch }: UseProviderSettingsOpt
   const [localBridgeHealth, setLocalBridgeHealth] = useState<BridgeHealth>({
     status: 'idle',
   });
+
+  // dirty 追踪：记录最近一次已保存（或已加载）的快照
+  const initialConfigRef = useRef<ProviderConfig | null>(null);
 
   const updateProviderEntry = useCallback(
     (
@@ -120,9 +123,9 @@ export function useProviderSettings({ addLog, dispatch }: UseProviderSettingsOpt
         return;
       }
 
-      setProviderConfig(
-        pinProviderConfigToDirectMode(normalizeProviderConfig(response.config)),
-      );
+      const loaded = pinProviderConfigToDirectMode(normalizeProviderConfig(response.config));
+      setProviderConfig(loaded);
+      initialConfigRef.current = loaded;
       if (response.config.asr.type !== 'external') {
         setLocalBridgeHealth({ status: 'idle' });
       }
@@ -132,7 +135,9 @@ export function useProviderSettings({ addLog, dispatch }: UseProviderSettingsOpt
     }
   }, [addLog, settingsOpen]);
 
-  const handleSaveSettings = useCallback(async () => {
+  type SaveResult = { ok: true } | { ok: false; error: string };
+
+  const handleSaveSettings = useCallback(async (): Promise<SaveResult> => {
     setSettingsSaving(true);
     try {
       const normalized = pinProviderConfigToDirectMode(
@@ -147,18 +152,20 @@ export function useProviderSettings({ addLog, dispatch }: UseProviderSettingsOpt
       } as AppMessage);
 
       if (!response?.success) {
-        addLog(`保存设置失败: ${response?.error || '未知错误'}`);
+        const error = response?.error || '保存失败';
+        addLog(`保存设置失败: ${error}`);
         if (normalized.asr.type === 'external') {
           setLocalBridgeHealth({
             status: 'error',
-            detail: response?.error || '保存 Local ASR Bridge 设置失败',
+            detail: error,
           });
         }
-        return;
+        return { ok: false, error };
       }
 
       setProviderConfig(normalized);
       setProviderSummary(redactProviderConfig(normalized));
+      initialConfigRef.current = normalized; // 更新快照，清除 dirty
       if (normalized.asr.type === 'external') {
         setLocalBridgeHealth({
           status: 'idle',
@@ -168,12 +175,14 @@ export function useProviderSettings({ addLog, dispatch }: UseProviderSettingsOpt
         setLocalBridgeHealth({ status: 'idle' });
       }
       addLog('provider 设置已保存');
+      return { ok: true };
     } catch (error) {
       const message = error instanceof Error ? error.message : '保存 provider 设置失败';
       if (providerConfig.asr.type === 'external') {
         setLocalBridgeHealth({ status: 'error', detail: message });
       }
       addLog(`保存设置失败: ${message}`);
+      return { ok: false, error: message };
     } finally {
       setSettingsSaving(false);
     }
@@ -210,6 +219,7 @@ export function useProviderSettings({ addLog, dispatch }: UseProviderSettingsOpt
     settingsSaving,
     localBridgeHealth,
     setLocalBridgeHealth,
+    initialConfigRef,
     updateProviderEntry,
     handleProviderTypeChange,
     handleToggleSettings,

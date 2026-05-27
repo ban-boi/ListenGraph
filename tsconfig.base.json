@@ -18,7 +18,9 @@
       "@listen-graphic/graph-renderers": ["packages/graph-renderers/src"],
       "@listen-graphic/storage": ["packages/storage/src"],
       "@listen-graphic/ui": ["packages/ui/src"],
-      "@listen-graphic/shared-utils": ["packages/shared-utils/src"]
+      "@listen-graphic/shared-utils": ["packages/shared-utils/src"],
+      "@listen-graphic/graph-fixtures": ["packages/graph-fixtures/src"],
+      "@listen-graphic/graph-fixtures/*": ["packages/graph-fixtures/src/*"]
     }
   }
 }

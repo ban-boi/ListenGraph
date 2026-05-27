@@ -116,6 +116,11 @@ export default defineConfig({
         __dirname,
         '../../packages/shared-utils/src',
       ),
+      '@listen-graphic/graph-fixtures': resolve(
+        __dirname,
+        '../../packages/graph-fixtures/src',
+      ),
+      '@listen-graphic/graph-fixtures/': `${resolve(__dirname, '../../packages/graph-fixtures/src')}/`,
     },
   },
 });

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:chrome": "vite build --watch --mode development",
     "build": "tsc -b && vite build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
@@ -44,6 +45,7 @@
   },
   "dependencies": {
     "@listen-graphic/domain": "workspace:*",
+    "@listen-graphic/graph-fixtures": "workspace:*",
     "@listen-graphic/graph-renderers": "workspace:*",
     "@listen-graphic/providers": "workspace:*",
     "@listen-graphic/schema": "workspace:*",

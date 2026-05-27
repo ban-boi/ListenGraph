@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "sequences": [
+    {
+      "id": "seq-incremental-growth",
+      "file": "sequences/seq-incremental-growth.json",
+      "tags": [
+        "growth",
+        "autofit"
+      ],
+      "primaryView": "causal",
+      "description": "8 steps, nodes grow 2→~24"
+    },
+    {
+      "id": "seq-late-burst",
+      "file": "sequences/seq-late-burst.json",
+      "tags": [
+        "burst",
+        "auto-tour"
+      ],
+      "primaryView": "causal",
+      "description": "Late burst of ~15 nodes"
+    },
+    {
+      "id": "seq-view-switch-mid",
+      "file": "sequences/seq-view-switch-mid.json",
+      "tags": [
+        "view-switch"
+      ],
+      "primaryView": "causal",
+      "description": "Mid-sequence defaultView change"
+    }
+  ],
+  "snapshots": []
+}

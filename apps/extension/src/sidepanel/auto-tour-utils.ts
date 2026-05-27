@@ -7,8 +7,6 @@
 import type { Node, Edge } from 'reactflow';
 import { getViewportForBounds } from 'reactflow';
 
-import type { MergedGraph } from '@listen-graphic/schema';
-
 import type { ViewBounds, AutoTourSeed, AutoTourBatch, AutoTourStage } from './types';
 import {
   STABLE_LAYOUT_CARD_WIDTH,
@@ -33,41 +31,7 @@ import {
 
 // ===== 节点差异 =====
 
-/** 返回 nextGraph 中新增（previousGraph 不存在）的节点 id 列表。 */
-export function getAddedNodeIds(previousGraph: MergedGraph | null, nextGraph: MergedGraph) {
-  const previousNodeIds = new Set(previousGraph?.nodes.map((node) => node.id) ?? []);
-  return nextGraph.nodes
-    .filter((node) => !previousNodeIds.has(node.id))
-    .map((node) => node.id);
-}
-
-/** 返回与新增节点相连、且已存在于 previousGraph 中的锚点节点 id 列表。 */
-export function getAutoRevealAnchorNodeIds(params: {
-  addedNodeIds: string[];
-  previousGraph: MergedGraph | null;
-  nextGraph: MergedGraph;
-}) {
-  if (!params.addedNodeIds.length) {
-    return [];
-  }
-
-  const previousNodeIds = new Set(params.previousGraph?.nodes.map((node) => node.id) ?? []);
-  const addedNodeSet = new Set(params.addedNodeIds);
-  const anchorIds = new Set<string>();
-
-  for (const edge of params.nextGraph.edges) {
-    const sourceIsAdded = addedNodeSet.has(edge.source);
-    const targetIsAdded = addedNodeSet.has(edge.target);
-    if (sourceIsAdded && previousNodeIds.has(edge.target)) {
-      anchorIds.add(edge.target);
-    }
-    if (targetIsAdded && previousNodeIds.has(edge.source)) {
-      anchorIds.add(edge.source);
-    }
-  }
-
-  return Array.from(anchorIds);
-}
+export { getAddedNodeIds, getAutoRevealAnchorNodeIds } from '@listen-graphic/graph-fixtures/graph-diff';
 
 // ===== 视口几何 =====
 

@@ -41,6 +41,9 @@ importers:
       '@listen-graphic/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@listen-graphic/graph-fixtures':
+        specifier: workspace:*
+        version: link:../../packages/graph-fixtures
       '@listen-graphic/graph-renderers':
         specifier: workspace:*
         version: link:../../packages/graph-renderers
@@ -117,6 +120,9 @@ importers:
 
   apps/web-demo:
     dependencies:
+      '@listen-graphic/graph-fixtures':
+        specifier: workspace:*
+        version: link:../../packages/graph-fixtures
       '@listen-graphic/graph-renderers':
         specifier: workspace:*
         version: link:../../packages/graph-renderers
@@ -174,6 +180,19 @@ importers:
         version: 1.6.0(@types/node@20.19.37)(jsdom@29.0.1)
 
   packages/domain:
+    dependencies:
+      '@listen-graphic/schema':
+        specifier: workspace:*
+        version: link:../schema
+      zod:
+        specifier: ^3.0.0
+        version: 3.25.76
+    devDependencies:
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.0(@types/node@20.19.37)(jsdom@29.0.1)
+
+  packages/graph-fixtures:
     dependencies:
       '@listen-graphic/schema':
         specifier: workspace:*

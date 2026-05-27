@@ -8,6 +8,14 @@ import {
   teardownAppTests,
 } from './__test-helpers__/app-test-helpers';
 
+// ── Tab 切换辅助函数 ──
+// 新版设置面板使用竖排 Tab 导航（语音识别 / 结构化 / 显示）
+// 默认激活「语音识别」Tab，查询其他 Tab 内容前需先切换
+async function switchToTab(tabName: string) {
+  const tab = screen.getByRole('button', { name: tabName });
+  fireEvent.click(tab);
+}
+
 describe('App - 设置面板', () => {
   beforeEach(() => {
     setupAppTests();
@@ -101,12 +109,15 @@ describe('App - 设置面板', () => {
 
     const settingsPanel = await screen.findByTestId('settings-panel');
     expect(settingsPanel).toBeInTheDocument();
+    // ASR Tab 是默认激活的，ASR 字段可以直接查询
     expect(
       within(settingsPanel).getAllByDisplayValue('https://api.openai.com/v1').length,
     ).toBeGreaterThanOrEqual(1);
     expect(
       within(settingsPanel).getByDisplayValue('gpt-4o-mini-transcribe'),
     ).toBeInTheDocument();
+    // 「智谱 GLM」在 Structurer Tab 下，需要先切换
+    await switchToTab('结构化');
     expect(
       within(settingsPanel).getByRole('option', { name: '智谱 GLM' }),
     ).toBeInTheDocument();
@@ -375,16 +386,20 @@ describe('App - 设置面板', () => {
     });
 
     const settingsPanel = await screen.findByTestId('settings-panel');
-    const providerTypeSelects = within(settingsPanel).getAllByLabelText(/Provider Type/i);
-    const endpointInputs = within(settingsPanel).getAllByLabelText(/Endpoint/i);
-    const modelInputs = within(settingsPanel).getAllByLabelText(/Model/i);
+
+    // 切换到「结构化」Tab 来操作 Structurer 字段
+    await switchToTab('结构化');
+
+    const providerTypeSelect = within(settingsPanel).getByLabelText(/Structurer Provider Type/i);
+    const endpointInput = within(settingsPanel).getByLabelText('Structurer Endpoint');
+    const modelInput = within(settingsPanel).getByLabelText('Structurer Model');
 
     await act(async () => {
-      await user.selectOptions(providerTypeSelects[1], 'zhipu');
+      await user.selectOptions(providerTypeSelect, 'zhipu');
     });
 
-    expect(endpointInputs[1]).toHaveValue('https://open.bigmodel.cn/api/paas/v4');
-    expect(modelInputs[1]).toHaveValue('glm-4.7-flash');
+    expect(endpointInput).toHaveValue('https://open.bigmodel.cn/api/paas/v4');
+    expect(modelInput).toHaveValue('glm-4.7-flash');
     expect(
       within(settingsPanel).queryByLabelText('Structurer Endpoint Preset'),
     ).not.toBeInTheDocument();
@@ -453,16 +468,20 @@ describe('App - 设置面板', () => {
     });
 
     const settingsPanel = await screen.findByTestId('settings-panel');
-    const providerTypeSelects = within(settingsPanel).getAllByLabelText(/Provider Type/i);
-    const endpointInputs = within(settingsPanel).getAllByLabelText(/Endpoint/i);
-    const modelInputs = within(settingsPanel).getAllByLabelText(/Model/i);
+
+    // 切换到「结构化」Tab 来操作 Structurer 字段
+    await switchToTab('结构化');
+
+    const providerTypeSelect = within(settingsPanel).getByLabelText(/Structurer Provider Type/i);
+    const endpointInput = within(settingsPanel).getByLabelText('Structurer Endpoint');
+    const modelInput = within(settingsPanel).getByLabelText('Structurer Model');
 
     await act(async () => {
-      await user.selectOptions(providerTypeSelects[1], 'baidu');
+      await user.selectOptions(providerTypeSelect, 'baidu');
     });
 
-    expect(endpointInputs[1]).toHaveValue('https://qianfan.baidubce.com/v2');
-    expect(modelInputs[1]).toHaveValue('ernie-speed-8k');
+    expect(endpointInput).toHaveValue('https://qianfan.baidubce.com/v2');
+    expect(modelInput).toHaveValue('ernie-speed-8k');
   });
 
   it('切换到阿里云百炼后会自动回填默认 endpoint 和 model', async () => {
@@ -528,16 +547,20 @@ describe('App - 设置面板', () => {
     });
 
     const settingsPanel = await screen.findByTestId('settings-panel');
-    const providerTypeSelects = within(settingsPanel).getAllByLabelText(/Provider Type/i);
-    const endpointInputs = within(settingsPanel).getAllByLabelText(/Endpoint/i);
-    const modelInputs = within(settingsPanel).getAllByLabelText(/Model/i);
+
+    // 切换到「结构化」Tab 来操作 Structurer 字段
+    await switchToTab('结构化');
+
+    const providerTypeSelect = within(settingsPanel).getByLabelText(/Structurer Provider Type/i);
+    const endpointInput = within(settingsPanel).getByLabelText('Structurer Endpoint');
+    const modelInput = within(settingsPanel).getByLabelText('Structurer Model');
 
     await act(async () => {
-      await user.selectOptions(providerTypeSelects[1], 'aliyun');
+      await user.selectOptions(providerTypeSelect, 'aliyun');
     });
 
-    expect(endpointInputs[1]).toHaveValue('https://dashscope.aliyuncs.com/compatible-mode/v1');
-    expect(modelInputs[1]).toHaveValue('qwen-plus');
+    expect(endpointInput).toHaveValue('https://dashscope.aliyuncs.com/compatible-mode/v1');
+    expect(modelInput).toHaveValue('qwen-plus');
   });
 
   it('Structurer provider type 可以直接切换到智谱 GLM（Coding Plan）', async () => {
@@ -603,10 +626,14 @@ describe('App - 设置面板', () => {
     });
 
     const settingsPanel = await screen.findByTestId('settings-panel');
-    const providerTypeSelects = within(settingsPanel).getAllByLabelText(/Provider Type/i);
+
+    // 切换到「结构化」Tab 来操作 Structurer 字段
+    await switchToTab('结构化');
+
+    const providerTypeSelect = within(settingsPanel).getByLabelText(/Structurer Provider Type/i);
 
     await act(async () => {
-      await user.selectOptions(providerTypeSelects[1], 'zhipu-coding-plan');
+      await user.selectOptions(providerTypeSelect, 'zhipu-coding-plan');
     });
 
     const endpointInput = within(settingsPanel).getByLabelText('Structurer Endpoint');
@@ -679,7 +706,8 @@ describe('App - 设置面板', () => {
     });
 
     const settingsPanel = await screen.findByTestId('settings-panel');
-    const providerTypeSelect = within(settingsPanel).getAllByLabelText(/Provider Type/i)[0];
+    // ASR Tab 默认激活，直接使用 ASR Provider Type
+    const providerTypeSelect = within(settingsPanel).getByLabelText('ASR Provider Type');
 
     await act(async () => {
       await user.selectOptions(providerTypeSelect, 'tencent');
