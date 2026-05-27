@@ -192,18 +192,19 @@ describe('App - 设置面板', () => {
     });
 
     const settingsPanel = await screen.findByTestId('settings-panel');
-    const endpointInputs = within(settingsPanel).getAllByLabelText(/Endpoint/i);
-    const modelInputs = within(settingsPanel).getAllByLabelText(/Model/i);
-    const apiKeyInputs = within(settingsPanel).getAllByLabelText(/API Key/i);
+    // ASR Tab 默认激活，所有字段都是 ASR 相关
+    const endpointInput = within(settingsPanel).getByLabelText('ASR Endpoint');
+    const modelInput = within(settingsPanel).getByLabelText('ASR Model');
+    const apiKeyInput = within(settingsPanel).getByLabelText('ASR API Key');
 
     await act(async () => {
-      await user.selectOptions(within(settingsPanel).getAllByLabelText(/Provider Type/i)[0], 'openai');
-      await user.clear(endpointInputs[0]);
-      await user.type(endpointInputs[0], 'https://api.openai.com/v1');
-      await user.clear(modelInputs[0]);
-      await user.type(modelInputs[0], 'gpt-4o-mini-transcribe');
-      await user.clear(apiKeyInputs[0]);
-      await user.type(apiKeyInputs[0], 'asr-secret');
+      await user.selectOptions(within(settingsPanel).getByLabelText('ASR Provider Type'), 'openai');
+      await user.clear(endpointInput);
+      await user.type(endpointInput, 'https://api.openai.com/v1');
+      await user.clear(modelInput);
+      await user.type(modelInput, 'gpt-4o-mini-transcribe');
+      await user.clear(apiKeyInput);
+      await user.type(apiKeyInput, 'asr-secret');
       await user.click(within(settingsPanel).getByRole('button', { name: /保存设置/i }));
     });
 
@@ -809,6 +810,15 @@ describe('App - 设置面板', () => {
     await act(async () => {
       await user.selectOptions(within(settingsPanel).getByLabelText('Tencent Transport'), 'ws');
       await user.type(within(settingsPanel).getByLabelText('Tencent App ID'), '1250000000');
+    });
+
+    // 高级参数在 CollapsibleSection 中，默认折叠，需要先展开
+    // 必须拆分为独立 act 块，让 React 在点击后重新渲染
+    await act(async () => {
+      fireEvent.click(within(settingsPanel).getByText('高级参数'));
+    });
+
+    await act(async () => {
       await user.selectOptions(within(settingsPanel).getByLabelText('Tencent Need VAD'), 'true');
       await user.type(within(settingsPanel).getByLabelText('Tencent VAD Silence Time'), '1200');
       await user.click(within(settingsPanel).getByRole('button', { name: /保存设置/i }));
@@ -897,7 +907,7 @@ describe('App - 设置面板', () => {
     const settingsPanel = await screen.findByTestId('settings-panel');
 
     await act(async () => {
-      await user.selectOptions(within(settingsPanel).getAllByLabelText(/Provider Type/i)[0], 'external');
+      await user.selectOptions(within(settingsPanel).getByLabelText('ASR Provider Type'), 'external');
       await user.clear(within(settingsPanel).getByLabelText('ASR Endpoint'));
       await user.type(within(settingsPanel).getByLabelText('ASR Endpoint'), 'ws://127.0.0.1:15377/ws');
       await user.clear(within(settingsPanel).getByLabelText('ASR Model'));
@@ -997,7 +1007,9 @@ describe('App - 设置面板', () => {
     expect(secretIdInput.value).toBe('');
     expect(secretKeyInput.value).toBe('');
     expect(secretIdInput.placeholder).toContain('已保存');
-    expect(screen.getByText(/已保存 Secret ID \/ Secret Key，留空则保持不变/)).toBeInTheDocument();
+    // 新版 SecretField 为每个密钥字段单独显示提示
+    expect(screen.getByText(/已保存Secret ID，留空则保持不变/)).toBeInTheDocument();
+    expect(screen.getByText(/已保存Secret Key，留空则保持不变/)).toBeInTheDocument();
   });
 
   it('设置面板可以加载并保存自动适配最小字号', async () => {
@@ -1045,6 +1057,10 @@ describe('App - 设置面板', () => {
     });
 
     const settingsPanel = await screen.findByTestId('settings-panel');
+
+    // 切换到「显示」Tab 来操作显示设置
+    await switchToTab('显示');
+
     const readableFontSelect = within(settingsPanel).getByLabelText('自动适配最小字号');
     expect(readableFontSelect).toHaveValue('14');
 
