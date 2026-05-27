@@ -48,6 +48,7 @@ import {
 } from './constants';
 import { formatGraphDeltaLog, downloadTextFile, buildDebugExportPayload, buildAssemblerLogPayload } from './debug-export-utils';
 import { getAutoTourTrace } from './auto-tour-trace';
+import { getAutoTourStageKindLabel } from './auto-tour-utils';
 import { GraphNodeCard } from './GraphNodeCard';
 import { OverflowMenu } from './OverflowMenu';
 import { LogPanel } from './LogPanel';
@@ -779,10 +780,18 @@ export default function App() {
     autoTourStatus === 'touring' ? '#10b981'
       : autoTourStatus === 'paused' ? '#ef4444'
         : isRunning ? '#10b981' : '#d1d5db';
+  const autoTourPhaseSuffix =
+    activeAutoTourStage?.kind != null
+      ? ` (${getAutoTourStageKindLabel(activeAutoTourStage.kind)})`
+      : '';
   const autoTourStatusText =
-    autoTourStatus === 'touring' ? `自动导览 ${autoTourProgress.current}/${autoTourProgress.total}`
-      : autoTourStatus === 'paused' ? `导览暂停 ${autoTourProgress.current}/${autoTourProgress.total}`
-        : isRunning ? '运行中' : '空闲';
+    autoTourStatus === 'touring'
+      ? `自动导览 ${autoTourProgress.current}/${autoTourProgress.total}${autoTourPhaseSuffix}`
+      : autoTourStatus === 'paused'
+        ? `导览暂停 ${autoTourProgress.current}/${autoTourProgress.total}${autoTourPhaseSuffix}`
+        : isRunning
+          ? '运行中'
+          : '空闲';
 
   const bridgeHealth = panel.bridgeHealth.status !== 'idle' ? panel.bridgeHealth : localBridgeHealth;
 

@@ -870,14 +870,14 @@ describe('App - 图谱更新', () => {
     });
 
     expect(reactFlowFitBoundsSpy).toHaveBeenCalledTimes(1);
-    expect(screen.getByTestId('auto-tour-status')).toHaveTextContent(/自动导览 1\/2/);
+    expect(screen.getByTestId('auto-tour-status')).toHaveTextContent(/自动导览 1\/2 \(全览\)/);
 
     await act(async () => {
       vi.advanceTimersByTime(3500);
     });
 
     expect(reactFlowFitBoundsSpy).toHaveBeenCalledTimes(2);
-    expect(screen.getByTestId('auto-tour-status')).toHaveTextContent(/自动导览 2\/2/);
+    expect(screen.getByTestId('auto-tour-status')).toHaveTextContent(/自动导览 2\/2 \(阅读\)/);
   });
 
   it('新增节点即使已在当前视口内也会聚焦跟随并放大到目标区域', async () => {
@@ -1110,6 +1110,10 @@ describe('App - 图谱更新', () => {
     const pauseCurrent = parseInt(pauseMatch![1], 10);
     expect(pauseCurrent).toBe(2);
     expect(pauseTotal).toBeGreaterThanOrEqual(2);
+    // 暂停时 progress 已指向下一段，但 activeAutoTourStage 仍为正在播放的结构段
+    expect(screen.getByTestId('auto-tour-status')).toHaveTextContent(
+      new RegExp(`导览暂停 ${pauseCurrent}/${pauseTotal} \\(全览\\)`),
+    );
 
     await act(async () => {
       vi.advanceTimersByTime(6999);
@@ -1121,7 +1125,7 @@ describe('App - 图谱更新', () => {
     });
     expect(reactFlowFitBoundsSpy).toHaveBeenCalledTimes(2);
     expect(screen.getByTestId('auto-tour-status')).toHaveTextContent(
-      new RegExp(`自动导览 ${pauseCurrent}/${pauseTotal}`),
+      new RegExp(`自动导览 ${pauseCurrent}/${pauseTotal} \\(阅读\\)`),
     );
   });
 
@@ -1257,6 +1261,7 @@ describe('App - 图谱更新', () => {
     });
 
     expect(reactFlowFitBoundsSpy).toHaveBeenCalled();
+    expect(screen.getByTestId('auto-tour-status')).toHaveTextContent(/自动导览 1\/1 \(阅读\)/);
     expect(screen.getByTestId('graph-node-card-n1')).toHaveAttribute('data-display-mode', 'readable');
     expect(screen.getByTestId('graph-node-card-n1')).toHaveAttribute('data-tour-added', 'true');
   });

@@ -7,7 +7,13 @@
 import type { Node, Edge } from 'reactflow';
 import { getViewportForBounds } from 'reactflow';
 
-import type { ViewBounds, AutoTourSeed, AutoTourBatch, AutoTourStage } from './types';
+import type {
+  ViewBounds,
+  AutoTourSeed,
+  AutoTourBatch,
+  AutoTourStage,
+  AutoTourStageKind,
+} from './types';
 import {
   STABLE_LAYOUT_CARD_WIDTH,
   STABLE_LAYOUT_CARD_HEIGHT,
@@ -433,4 +439,14 @@ export function buildTwoStageAutoTourStages(params: {
   );
 
   return stages;
+}
+
+const AUTO_TOUR_STAGE_KIND_LABELS: Record<AutoTourStageKind, string> = {
+  structure: '全览',
+  reading: '阅读',
+};
+
+/** 将导览 stage kind 转为状态条括号内显示的中文标签。 */
+export function getAutoTourStageKindLabel(kind: AutoTourStageKind): string {
+  return AUTO_TOUR_STAGE_KIND_LABELS[kind];
 }

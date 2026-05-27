@@ -3,6 +3,7 @@ import type { Edge, Node } from 'reactflow';
 
 import {
   buildTwoStageAutoTourStages,
+  getAutoTourStageKindLabel,
   getValidAutoTourAnchorNodeIds,
   hasVisibleAddedInternalEdge,
 } from './auto-tour-utils';
@@ -161,5 +162,12 @@ describe('auto-tour two-stage utilities', () => {
 
     expect(stages.map((stage) => stage.kind)).toEqual(['reading', 'reading', 'reading']);
     expect(stages.map((stage) => stage.nodeIds)).toEqual([['n1'], ['n2'], ['n3']]);
+  });
+});
+
+describe('getAutoTourStageKindLabel', () => {
+  it('maps structure to 全览 and reading to 阅读', () => {
+    expect(getAutoTourStageKindLabel('structure')).toBe('全览');
+    expect(getAutoTourStageKindLabel('reading')).toBe('阅读');
   });
 });
