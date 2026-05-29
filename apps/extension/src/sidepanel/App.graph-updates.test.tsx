@@ -232,9 +232,7 @@ describe('App - 图谱更新', () => {
 
     await renderApp();
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /对比/ })).toHaveStyle({
-        backgroundColor: 'var(--lg-calm)',
-      }),
+      expect(screen.getByRole('button', { name: /对比/ }).className).toContain('lg-btn-primary'),
     );
 
     await act(async () => {
@@ -287,12 +285,8 @@ describe('App - 图谱更新', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByRole('button', { name: /对比/ })).toHaveStyle({
-      backgroundColor: 'var(--lg-calm)',
-    });
-    expect(screen.getByRole('button', { name: /层级/ })).not.toHaveStyle({
-      backgroundColor: 'var(--lg-calm)',
-    });
+    expect(screen.getByRole('button', { name: /对比/ }).className).toContain('lg-btn-primary');
+    expect(screen.getByRole('button', { name: /层级/ }).className).toContain('lg-btn-ghost');
   });
 
   it('纯新增边更新时会保留已有节点坐标且不再次 fitView', async () => {
