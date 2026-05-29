@@ -16,6 +16,7 @@ import {
   type ReactFlowInstance,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+import '@listen-graphic/ui/styles/theme.css';
 
 import type { ViewType, MergedGraph, GraphNode, GraphEdge } from '@listen-graphic/schema';
 import { scoreViews } from '@listen-graphic/domain';
@@ -49,7 +50,7 @@ import {
 import { formatGraphDeltaLog, downloadTextFile, buildDebugExportPayload, buildAssemblerLogPayload } from './debug-export-utils';
 import { getAutoTourTrace } from './auto-tour-trace';
 import { getAutoTourStageKindLabel } from './auto-tour-utils';
-import { GraphNodeCard } from './GraphNodeCard';
+import { GraphNodeCard, GRAPH_NODE_BODY_FONT_PX, EmptyState, useTheme } from '@listen-graphic/ui';
 import { OverflowMenu } from './OverflowMenu';
 import { LogPanel } from './LogPanel';
 import { DebugPanel } from './DebugPanel';
@@ -74,8 +75,6 @@ import {
 
 const nodeTypes = { graphNode: GraphNodeCard };
 
-// 节点正文基准字号（与 GraphNodeCard.tsx 的 fontSize 保持同步）
-const GRAPH_NODE_BODY_FONT_PX = 12;
 const AUTO_FIT_PADDING = 0.16;
 const AUTO_FIT_DURATION_MS = 240;
 
@@ -146,6 +145,8 @@ export default function App() {
     saveGraphDisplaySettings,
     initialDisplayRef,
   } = useGraphDisplaySettings({ addLog });
+
+  const { theme, toggleTheme } = useTheme();
 
   const providerAsrType = providerConfig.asr.type;
 
@@ -777,9 +778,9 @@ export default function App() {
 
   // ===== Auto-tour indicator =====
   const autoTourIndicatorColor =
-    autoTourStatus === 'touring' ? '#10b981'
-      : autoTourStatus === 'paused' ? '#ef4444'
-        : isRunning ? '#10b981' : '#d1d5db';
+    autoTourStatus === 'touring' ? 'var(--lg-success)'
+      : autoTourStatus === 'paused' ? 'var(--lg-danger)'
+        : isRunning ? 'var(--lg-success)' : 'var(--lg-rim)';
   const autoTourPhaseSuffix =
     activeAutoTourStage?.kind != null
       ? ` (${getAutoTourStageKindLabel(activeAutoTourStage.kind)})`
@@ -821,46 +822,69 @@ export default function App() {
   }
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <style>{`@keyframes listen-graphic-tour-pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.82); } 100% { opacity: 1; transform: scale(1); } }`}</style>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }} data-theme={theme}>
+      <style>{`@keyframes listen-graphic-tour-pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.82); } 100% { opacity: 1; transform: scale(1); } } @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       {/* 顶部栏 */}
-      <div style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-        <span style={{ fontWeight: 600, fontSize: 14 }}>Listen Graphic</span>
-        <button onClick={() => void handleToggleAllSettings()}
-          style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #d1d5db', backgroundColor: settingsOpen ? '#eff6ff' : 'white', color: settingsOpen ? '#1d4ed8' : '#374151', fontSize: 11, cursor: 'pointer' }}>
-          设置
-        </button>
-        <OverflowMenu
-          canExport={canExport}
-          canReplay={canReplay}
-          debugOpen={debugOpen}
-          replayOpen={replayOpen}
-          buildInfo={{ uiLabel: BUILD_INFO.label, workerLabel: panel.workerBuildLabel }}
-          onExport={handleExport}
-          onToggleDebug={() => setDebugOpen((p) => !p)}
-          onToggleReplay={() => void handleToggleReplay()}
-        />
-        <button onClick={isRunning ? handleStop : handleStart}
-          style={{ marginLeft: 'auto', padding: '4px 12px', borderRadius: 4, border: 'none', backgroundColor: isRunning ? '#ef4444' : '#3b82f6', color: 'white', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+      <div className="lg-toolbar" style={{ gap: 8, borderBottom: 'none' }}>
+        <div className="lg-toolbar__brand">
+          <span style={{ fontWeight: 'var(--weight-bold)', fontSize: 'var(--text-base)' }}>Listen Graphic</span>
+        </div>
+        <div className="lg-toolbar__actions">
+          <button
+            className="lg-btn lg-btn-ghost lg-btn-sm"
+            onClick={toggleTheme}
+            title="切换主题"
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+          <button
+            className="lg-btn lg-btn-ghost lg-btn-sm"
+            onClick={() => void handleToggleAllSettings()}
+            style={{ backgroundColor: settingsOpen ? 'var(--lg-calm)' : undefined, color: settingsOpen ? 'var(--lg-signal)' : undefined }}
+          >
+            设置
+          </button>
+          <OverflowMenu
+            canExport={canExport}
+            canReplay={canReplay}
+            debugOpen={debugOpen}
+            replayOpen={replayOpen}
+            buildInfo={{ uiLabel: BUILD_INFO.label, workerLabel: panel.workerBuildLabel }}
+            onExport={handleExport}
+            onToggleDebug={() => setDebugOpen((p) => !p)}
+            onToggleReplay={() => void handleToggleReplay()}
+          />
+        </div>
+        <button
+          className={isRunning ? 'lg-btn lg-btn-danger lg-btn-sm' : 'lg-btn lg-btn-primary lg-btn-sm'}
+          onClick={isRunning ? handleStop : handleStart}
+          style={{ marginLeft: 'auto' }}
+        >
           {isRunning ? '停止' : '开始'}
         </button>
       </div>
+      <div className="lg-wave-divider" style={{ margin: 0, height: 8 }} />
+      {isRunning && (
+        <div
+          className="lg-waveform-bar lg-waveform-bar--active"
+          style={{ height: 2, flexShrink: 0 }}
+        />
+      )}
       {panel.recentProviderError && (
         <div data-testid="recent-error-banner"
-          style={{ padding: '8px 12px', borderBottom: '1px solid #fecaca', backgroundColor: '#fef2f2', color: '#991b1b', fontSize: 11, display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          style={{ padding: '8px 12px', borderBottom: '1px solid var(--lg-danger)', backgroundColor: 'var(--lg-surface)', color: 'var(--lg-danger)', fontSize: 'var(--text-xs)', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <span style={{ fontWeight: 700 }}>最近错误</span>
           <span style={{ fontFamily: 'monospace' }}>
             {formatErrorStageLabel(panel.recentProviderError.stage)} / {panel.recentProviderError.code}
           </span>
-          <span style={{ color: '#7f1d1d' }}>{panel.recentProviderError.message}</span>
+          <span style={{ color: 'var(--lg-danger)' }}>{panel.recentProviderError.message}</span>
         </div>
       )}
       <div
         data-testid="runtime-status-cards"
+        className="lg-status-cards-grid"
         style={{
           padding: '6px 12px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
           gap: 8,
           flexShrink: 0,
         }}
@@ -872,10 +896,10 @@ export default function App() {
             <div
               key={card.label}
               data-testid={`status-card-${card.label.toLowerCase()}`}
+              className={`lg-status-card lg-status-card--${card.tone === 'active' || card.tone === 'waiting' ? 'signal' : card.tone === 'success' ? 'signal' : card.tone === 'warning' || card.tone === 'congested' ? 'insight' : ''}`}
               style={{
-                border: `1px solid ${styles.borderColor}`,
-                borderRadius: 8,
-                backgroundColor: styles.backgroundColor,
+                position: 'relative',
+                overflow: 'hidden',
                 padding: '4px 8px',
                 display: 'grid',
                 gap: 2,
@@ -884,7 +908,7 @@ export default function App() {
             >
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: 'var(--text-xs)',
                   fontWeight: 700,
                   color: styles.statusColor,
                   display: 'flex',
@@ -893,16 +917,16 @@ export default function App() {
                   minWidth: 0,
                 }}
               >
-                <span style={{ color: styles.titleColor, fontSize: 10, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                <span style={{ color: styles.titleColor, fontSize: 'var(--text-2xs)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                   {card.label}
                 </span>
-                <span style={{ color: '#94a3b8' }}>·</span>
+                <span style={{ color: 'var(--lg-mist)' }}>·</span>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.status}</span>
               </div>
               <div
                 title={card.detail}
                 style={{
-                  fontSize: 10,
+                  fontSize: 'var(--text-2xs)',
                   color: styles.detailColor,
                   lineHeight: 1.3,
                   overflow: 'hidden',
@@ -920,6 +944,7 @@ export default function App() {
               >
                 {card.detail}
               </div>
+              <div className={`lg-waveform-bar${isRunning ? ' lg-waveform-bar--active' : ''}`} style={{ marginTop: 4 }} />
             </div>
           );
         })}
@@ -930,17 +955,17 @@ export default function App() {
           style={{
             margin: '0 12px 6px',
             padding: '5px 10px',
-            border: '1px solid #dbe4ee',
+            border: '1px solid var(--lg-rim)',
             borderRadius: 8,
-            backgroundColor: '#f8fafc',
-            color: '#475569',
+            backgroundColor: 'var(--lg-calm)',
+            color: 'var(--lg-muted)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: 10,
             flexWrap: 'wrap',
             flexShrink: 0,
-            fontSize: 11,
+            fontSize: 'var(--text-xs)',
           }}
         >
           <span>{graphSummaryText}</span>
@@ -964,9 +989,10 @@ export default function App() {
         </div>
       )}
       {/* 视图切换 */}
-      <div style={{ padding: '6px 12px', borderBottom: '1px solid #e5e7eb', display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+      <div style={{ padding: '6px 12px', borderBottom: '1px solid var(--lg-rim)', display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
         {VISIBLE_VIEW_TYPES.map((v) => (
           <button key={v}
+            className={currentView === v ? 'lg-btn lg-btn-primary lg-btn-sm' : 'lg-btn lg-btn-ghost lg-btn-sm'}
             onClick={() => {
               lastUserViewportChangeAtRef.current = Date.now();
               pauseAutoTour();
@@ -979,58 +1005,46 @@ export default function App() {
                 } as AppMessage);
               }
             }}
-            style={{
-              padding: '3px 8px', borderRadius: 4, fontSize: 11,
-              border: currentView === v ? '2px solid #3b82f6' : '1px solid #d1d5db',
-              backgroundColor: currentView === v ? '#eff6ff' : 'white',
-              color: currentView === v ? '#1d4ed8' : '#374151',
-              cursor: 'pointer',
-            }}
           >
             {VIEW_LABELS[v]}
-            <span style={{ marginLeft: 3, fontSize: 9, color: '#9ca3af' }}>({viewScores[v].toFixed(2)})</span>
           </button>
         ))}
         <button
+          className="lg-btn lg-btn-ghost lg-btn-sm"
           onClick={() => requestAutoFit({ force: true })}
           disabled={panel.graph.nodes.length === 0}
-          style={{
-            padding: '2px 6px',
-            borderRadius: 3,
-            fontSize: 10,
-            border: '1px solid #e5e7eb',
-            backgroundColor: panel.graph.nodes.length === 0 ? '#f3f4f6' : 'white',
-            color: '#6b7280',
-            cursor: panel.graph.nodes.length === 0 ? 'not-allowed' : 'pointer',
-          }}
         >
           适配视图
         </button>
       </div>
       {/* 图表区域 */}
       <div ref={flowContainerRef} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-        <ReactFlow
-          nodes={flowNodes}
-          edges={flowEdges}
-          nodeTypes={nodeTypes}
-          onNodeClick={handleNodeClick}
-          onMoveStart={handleViewportMoveStart}
-          onMoveEnd={handleViewportMoveEnd}
-          onInit={(instance) => {
-            reactFlowInstanceRef.current = instance;
-            queueMicrotask(() => requestAutoFit());
-          }}
-          minZoom={0.3}
-          maxZoom={2}
-        >
-          <Background />
-          <Controls />
-        </ReactFlow>
+        {panel.graph.nodes.length === 0 && !isRunning && panel.sessionState === 'idle' ? (
+          <EmptyState />
+        ) : (
+          <ReactFlow
+            nodes={flowNodes}
+            edges={flowEdges}
+            nodeTypes={nodeTypes}
+            onNodeClick={handleNodeClick}
+            onMoveStart={handleViewportMoveStart}
+            onMoveEnd={handleViewportMoveEnd}
+            onInit={(instance) => {
+              reactFlowInstanceRef.current = instance;
+              queueMicrotask(() => requestAutoFit());
+            }}
+            minZoom={0.3}
+            maxZoom={2}
+          >
+            <Background />
+            <Controls />
+          </ReactFlow>
+        )}
         <div data-testid="log-resizer" onMouseDown={handleLogResizeStart}
-          style={{ height: 8, flexShrink: 0, cursor: 'row-resize', background: 'linear-gradient(to bottom, #dbe4ee 0, #dbe4ee 1px, #f8fafc 1px, #f8fafc 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{ height: 8, flexShrink: 0, cursor: 'row-resize', background: 'linear-gradient(to bottom, var(--lg-rim) 0, var(--lg-rim) 1px, var(--lg-calm) 1px, var(--lg-calm) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           aria-label="调整日志面板高度" role="separator"
         >
-          <div style={{ width: 48, height: 4, borderRadius: 999, backgroundColor: '#94a3b8' }} />
+          <div style={{ width: 48, height: 4, borderRadius: 999, backgroundColor: 'var(--lg-mist)' }} />
         </div>
         <LogPanel logPanelHeight={logPanelHeight} timelineEvents={panel.timelineEvents} />
         {debugOpen && (
@@ -1046,7 +1060,7 @@ export default function App() {
         )}
       </div>
       {/* 底部状态 */}
-      <div style={{ padding: '6px 12px', borderTop: '1px solid #e5e7eb', fontSize: 11, color: '#6b7280', flexShrink: 0, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+      <div style={{ padding: '6px 12px', borderTop: '1px solid var(--lg-rim)', fontSize: 'var(--text-xs)', color: 'var(--lg-muted)', flexShrink: 0, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <span>会话: {panel.sessionId || '无'}</span>
         <span>当前时间: {formatTime(panel.currentTimeMs)}</span>
       </div>

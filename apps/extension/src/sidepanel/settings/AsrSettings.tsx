@@ -37,20 +37,20 @@ export type AsrSettingsProps = {
 /** 腾讯云信息卡片底色 */
 const tencentInfoCardStyle = {
   padding: 8,
-  backgroundColor: '#f0f9ff',
+  backgroundColor: 'var(--lg-signal-glow)',
   borderRadius: 4,
-  fontSize: 10,
-  color: '#0369a1',
+  fontSize: 'var(--text-2xs)',
+  color: 'var(--lg-info)',
   lineHeight: 1.5,
 } as const;
 
 /** External bridge 信息卡片底色 */
 const externalInfoCardStyle = {
   padding: 8,
-  backgroundColor: '#ecfeff',
+  backgroundColor: 'var(--lg-signal-glow)',
   borderRadius: 4,
-  fontSize: 10,
-  color: '#155e75',
+  fontSize: 'var(--text-2xs)',
+  color: 'var(--lg-info)',
   lineHeight: 1.5,
 } as const;
 
@@ -59,13 +59,13 @@ const bridgeHealthCardStyle = (status: string) => ({
   padding: 8,
   backgroundColor:
     status === 'error'
-      ? '#fef2f2'
+      ? 'var(--lg-surface)'
       : status === 'listening'
-        ? '#ecfdf5'
-        : '#f8fafc',
+        ? 'var(--lg-surface)'
+        : 'var(--lg-calm)',
   border: `1px solid ${colors.cardBorder}`,
   borderRadius: 4,
-  fontSize: 10,
+  fontSize: 'var(--text-2xs)',
   color: colors.text,
 });
 
@@ -103,7 +103,7 @@ export function AsrSettings({
           <div>免费额度：10小时/月</div>
           <div>价格：0.7-1.5元/小时</div>
           <div>推荐区域：华东地区(上海)</div>
-          <div style={{ marginTop: 4, fontSize: 9, color: '#0c4a6e' }}>
+          <div style={{ marginTop: 4, fontSize: 'var(--text-2xs)', color: 'var(--lg-info)' }}>
             获取密钥：console.cloud.tencent.com/cam/capi
           </div>
         </div>

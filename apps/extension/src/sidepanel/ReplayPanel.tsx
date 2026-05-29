@@ -22,11 +22,11 @@ export function ReplayPanel({
     <div
       data-testid="replay-panel"
       style={{
-        borderTop: '1px solid #d1d5db',
-        backgroundColor: '#fff7ed',
+        borderTop: '1px solid var(--lg-rim)',
+        backgroundColor: 'var(--lg-insight-glow)',
         padding: '8px 12px',
-        fontSize: 11,
-        color: '#7c2d12',
+        fontSize: 'var(--text-xs)',
+        color: 'var(--lg-insight-dim)',
       }}
     >
       <div
@@ -39,17 +39,10 @@ export function ReplayPanel({
       >
         <div style={{ fontWeight: 600 }}>Replay</div>
         <button
+          className="lg-btn lg-btn-sm lg-btn-secondary"
           onClick={onTogglePlay}
           disabled={!replayData}
-          style={{
-            padding: '2px 8px',
-            borderRadius: 4,
-            border: '1px solid #fdba74',
-            backgroundColor: replayData ? 'white' : '#fed7aa',
-            color: '#9a3412',
-            fontSize: 11,
-            cursor: replayData ? 'pointer' : 'not-allowed',
-          }}
+          style={{ cursor: replayData ? 'pointer' : 'not-allowed' }}
         >
           {replayPlaying ? '暂停' : '播放'}
         </button>
@@ -62,7 +55,7 @@ export function ReplayPanel({
         step={1000}
         value={Math.min(currentTimeMs, replayData?.durationMs ?? 0)}
         onChange={onScrub}
-        style={{ width: '100%', marginBottom: 6 }}
+        style={{ width: '100%', marginBottom: 6, accentColor: 'var(--lg-signal)', height: 4, cursor: replayData ? 'pointer' : 'not-allowed' }}
       />
       <div style={{ marginBottom: 4 }}>回放当前时间: {formatTime(currentTimeMs)}</div>
       <div>

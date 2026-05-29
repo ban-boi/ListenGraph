@@ -117,12 +117,12 @@ export function SettingsOverlay({
         }}
       >
         <span
-          style={{ cursor: 'pointer', fontSize: 12 }}
+          style={{ cursor: 'pointer', fontSize: 'var(--text-xs)', color: 'var(--lg-signal)' }}
           onClick={handleClose}
         >
           {'<-'} 返回
         </span>
-        <span style={{ fontWeight: 600, fontSize: 13 }}>设置</span>
+        <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>设置</span>
       </div>
 
       {/* Toast */}
@@ -152,10 +152,10 @@ export function SettingsOverlay({
                 onClick={() => setActiveTab(tab.key)}
                 style={{
                   padding: '12px 8px',
-                  fontSize: 11,
+                  fontSize: 'var(--text-xs)',
                   fontWeight: isActive ? 600 : 400,
                   color: isActive ? colors.primaryButton : colors.textSecondary,
-                  backgroundColor: isActive ? 'white' : 'transparent',
+                  backgroundColor: isActive ? 'var(--lg-surface)' : 'transparent',
                   borderLeft: isActive
                     ? `3px solid ${colors.primaryButton}`
                     : '3px solid transparent',
@@ -215,9 +215,9 @@ export function SettingsOverlay({
           borderTop: `1px solid ${colors.panelBorder}`,
         }}
       >
-        <div style={{ fontSize: 11 }}>
+        <div style={{ fontSize: 'var(--text-xs)' }}>
           {isDirty ? (
-            <span style={{ color: '#dc2626' }}>有未保存的修改</span>
+            <span style={{ color: 'var(--lg-danger)' }}>有未保存的修改</span>
           ) : (
             <span style={{ color: colors.textSecondary }}>
               ASR: {providerSummary.asr.type} / Structurer:{' '}

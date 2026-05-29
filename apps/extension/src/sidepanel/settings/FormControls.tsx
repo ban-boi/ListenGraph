@@ -6,8 +6,7 @@
 import React from 'react';
 import {
   fieldLabelStyle,
-  inputStyle,
-  selectStyle,
+  inputErrorStyle,
   buttonStyle,
   primaryButtonStyle,
   dangerButtonStyle,
@@ -40,6 +39,7 @@ export type InputFieldProps = {
   placeholder?: string;
   /** 默认 'text' */
   type?: string;
+  error?: boolean;
 };
 
 /** 受控 <input>，onChange 简化为 (value: string) => void */
@@ -49,15 +49,17 @@ export function InputField({
   onChange,
   placeholder,
   type = 'text',
+  error = false,
 }: InputFieldProps) {
   return (
     <input
+      className="lg-input"
       aria-label={ariaLabel}
       type={type}
       value={value}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
-      style={inputStyle}
+      style={error ? inputErrorStyle : undefined}
     />
   );
 }
@@ -80,10 +82,10 @@ export function SelectField({
 }: SelectFieldProps) {
   return (
     <select
+      className="lg-input"
       aria-label={ariaLabel}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      style={selectStyle}
     >
       {children}
     </select>

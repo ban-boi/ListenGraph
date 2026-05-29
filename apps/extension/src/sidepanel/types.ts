@@ -1,19 +1,10 @@
 import type { ViewType } from '@listen-graphic/schema';
 import type { RendererGraph } from '@listen-graphic/graph-renderers';
+import type { GraphNodeCardData } from '@listen-graphic/ui';
 
 // ===== React Flow 调试节点 =====
 
-export type ReactFlowDebugNodeData = {
-  label: string;
-  nodeType: string;
-  speaker?: string;
-  timestampMs: number;
-  status: 'draft' | 'confirmed';
-  isActive: boolean;
-  displayMode?: AutoTourDisplayMode;
-  isTourAnchor?: boolean;
-  isTourAdded?: boolean;
-};
+export type ReactFlowDebugNodeData = Omit<GraphNodeCardData, 'onClickTime'>;
 
 export type ReactFlowDebugNode = {
   id: string;
@@ -137,16 +128,5 @@ export type AutoTourStatus = 'idle' | 'touring' | 'paused';
 
 // ===== 自定义节点 =====
 
-export interface GraphNodeData {
-  label: string;
-  nodeType: string;
-  speaker?: string;
-  timestampMs: number;
-  status: 'draft' | 'confirmed';
-  isActive: boolean;
-  displayMode?: AutoTourDisplayMode;
-  isTourAnchor?: boolean;
-  isTourAdded?: boolean;
-  onClickTime: (ms: number) => void;
-}
+export type GraphNodeData = GraphNodeCardData;
 

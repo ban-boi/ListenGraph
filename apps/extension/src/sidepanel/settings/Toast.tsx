@@ -29,13 +29,13 @@ export type ToastState = {
 const toastColors = {
   success: {
     background: colors.successBg,  // #ecfdf5
-    border: '#86efac',
-    text: '#166534',
+    border: 'var(--lg-success)',
+    text: 'var(--lg-success)',
   },
   error: {
     background: colors.errorBg,    // #fef2f2
-    border: '#fca5a5',
-    text: '#991b1b',
+    border: 'var(--lg-danger)',
+    text: 'var(--lg-danger)',
   },
 } as const;
 

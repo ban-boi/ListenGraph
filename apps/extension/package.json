@@ -50,6 +50,7 @@
     "@listen-graphic/providers": "workspace:*",
     "@listen-graphic/schema": "workspace:*",
     "@listen-graphic/storage": "workspace:*",
+    "@listen-graphic/ui": "workspace:*",
     "dagre": "^0.8.5",
     "dexie": "^4.0.0",
     "react": "^18.0.0",

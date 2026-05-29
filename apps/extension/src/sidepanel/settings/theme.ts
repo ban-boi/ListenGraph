@@ -8,35 +8,35 @@
 
 export const colors = {
   /** 面板底色 */
-  panelBg: '#f8fafc',
+  panelBg: 'var(--lg-calm)',
   /** 卡片底色 */
-  cardBg: 'white',
+  cardBg: 'var(--lg-surface)',
 
   /** 面板边框 */
-  panelBorder: '#e5e7eb',
+  panelBorder: 'var(--lg-rim)',
   /** 卡片边框 */
-  cardBorder: '#dbe4ee',
+  cardBorder: 'var(--lg-rim)',
   /** 输入框边框 */
-  inputBorder: '#d1d5db',
+  inputBorder: 'var(--lg-rim)',
 
   /** 正文文字 */
-  text: '#334155',
+  text: 'var(--lg-ink)',
   /** 次要文字 */
-  textSecondary: '#64748b',
+  textSecondary: 'var(--lg-muted)',
   /** 提示 / 信息文字 */
-  textHint: '#0369a1',
+  textHint: 'var(--lg-info)',
 
   /** 成功底色 */
-  successBg: '#ecfdf5',
+  successBg: 'var(--lg-surface)',
   /** 错误底色 */
-  errorBg: '#fef2f2',
+  errorBg: 'var(--lg-surface)',
 
   /** 主按钮 */
-  primaryButton: '#2563eb',
+  primaryButton: 'var(--lg-signal)',
   /** 危险按钮文字 */
-  dangerButton: '#dc2626',
+  dangerButton: 'var(--lg-danger)',
   /** 危险按钮边框 */
-  dangerButtonBorder: '#fca5a5',
+  dangerButtonBorder: 'var(--lg-danger)',
 } as const;
 
 // ── 间距 ──────────────────────────────────────────────────────────────────
@@ -58,11 +58,11 @@ export const spacing = {
 
 export const fontSize = {
   /** 基础字号 */
-  base: 11,
+  base: 'var(--text-xs)',
   /** 小字号 */
-  small: 10,
+  small: 'var(--text-2xs)',
   /** 提示字号 */
-  hint: 9,
+  hint: 'var(--text-2xs)',
 } as const;
 
 // ── 布局 ──────────────────────────────────────────────────────────────────
@@ -97,6 +97,13 @@ export const inputStyle = {
   padding: '4px 6px',
   fontSize: fontSize.base,
   width: '100%',
+  transition: 'border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out)',
+} as const;
+
+export const inputErrorStyle = {
+  ...inputStyle,
+  borderColor: 'var(--lg-danger)',
+  boxShadow: '0 0 0 3px oklch(60% 0.18 25 / 0.1)',
 } as const;
 
 export const selectStyle = {
@@ -113,13 +120,13 @@ export const buttonStyle = {
 export const primaryButtonStyle = {
   ...buttonStyle,
   backgroundColor: colors.primaryButton,
-  color: 'white',
+  color: 'var(--lg-surface)',
   border: 'none',
 } as const;
 
 export const dangerButtonStyle = {
   ...buttonStyle,
-  backgroundColor: 'white',
+  backgroundColor: 'var(--lg-surface)',
   color: colors.dangerButton,
   border: `1px solid ${colors.dangerButtonBorder}`,
 } as const;

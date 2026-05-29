@@ -5,11 +5,10 @@ import {
   Controls,
   type Node,
   type Edge,
-  type NodeProps,
-  Handle,
-  Position,
 } from 'reactflow';
+import type { NodeProps } from 'reactflow';
 import 'reactflow/dist/style.css';
+import '@listen-graphic/ui/styles/theme.css';
 
 import type {
   MergedGraph,
@@ -19,6 +18,13 @@ import type {
   NodeType,
 } from '@listen-graphic/schema';
 import { pickDefaultView, scoreViews } from '@listen-graphic/domain';
+import {
+  GraphNodeCard,
+  formatGraphNodeTime,
+  EmptyState,
+  useTheme,
+  type GraphNodeCardData,
+} from '@listen-graphic/ui';
 import { useGraphFixtureSequence } from './useGraphFixtureSequence';
 import {
   toCausalRendererGraph,
@@ -26,37 +32,6 @@ import {
   toComparisonRendererGraph,
   toHierarchyRendererGraph,
 } from '@listen-graphic/graph-renderers';
-
-// ============ 工具函数 ============
-
-function formatTime(ms: number): string {
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
-}
-
-function getTypeColor(type: string): string {
-  const colors: Record<string, string> = {
-    claim: '#3b82f6',
-    reason: '#10b981',
-    example: '#f59e0b',
-    question: '#8b5cf6',
-    conclusion: '#ef4444',
-  };
-  return colors[type] || '#6b7280';
-}
-
-function getTypeLabel(type: string): string {
-  const labels: Record<string, string> = {
-    claim: '观点',
-    reason: '论据',
-    example: '例子',
-    question: '问题',
-    conclusion: '结论',
-  };
-  return labels[type] || type;
-}
 
 // ============ Mock 数据模板 ============
 
@@ -75,111 +50,11 @@ const NODE_TYPES = ['claim', 'reason', 'example', 'question', 'conclusion'];
 const EDGE_TYPES = ['supports', 'opposes', 'causes', 'follows', 'example_of'];
 const SPEAKERS = ['主持人', '嘉宾A', '嘉宾B'];
 
-// ============ 自定义节点组件 ============
-
-interface GraphNodeData {
-  label: string;
-  nodeType: string;
-  speaker?: string;
-  timestampMs: number;
-  status: 'draft' | 'confirmed';
-  isActive: boolean;
-  onClickTime: (ms: number) => void;
+function WebDemoGraphNodeCard(props: NodeProps<GraphNodeCardData>) {
+  return <GraphNodeCard {...props} handleMode="simple" />;
 }
 
-function GraphNodeCard({ data }: NodeProps<GraphNodeData>) {
-  const {
-    label,
-    nodeType,
-    speaker,
-    timestampMs,
-    status,
-    isActive,
-    onClickTime,
-  } = data;
-  const color = getTypeColor(nodeType);
-
-  return (
-    <div
-      style={{
-        padding: '12px 16px',
-        borderRadius: 8,
-        border: `2px solid ${isActive ? '#f59e0b' : color}`,
-        backgroundColor: isActive ? '#fffbeb' : '#ffffff',
-        boxShadow: isActive
-          ? '0 0 12px rgba(245, 158, 11, 0.5)'
-          : '0 2px 8px rgba(0,0,0,0.1)',
-        minWidth: 180,
-        maxWidth: 240,
-        opacity: status === 'draft' ? 0.6 : 1,
-        transition: 'all 0.2s ease',
-      }}
-    >
-      <Handle type="target" position={Position.Top} />
-
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          marginBottom: 6,
-        }}
-      >
-        <span
-          style={{
-            fontSize: 10,
-            padding: '2px 6px',
-            borderRadius: 4,
-            backgroundColor: color,
-            color: 'white',
-            fontWeight: 600,
-          }}
-        >
-          {getTypeLabel(nodeType)}
-        </span>
-        {status === 'draft' && (
-          <span style={{ fontSize: 10, color: '#9ca3af' }}>草稿</span>
-        )}
-      </div>
-
-      <div style={{ fontSize: 13, lineHeight: 1.4, marginBottom: 8 }}>
-        {label}
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontSize: 11,
-          color: '#6b7280',
-        }}
-      >
-        {speaker && <span>{speaker}</span>}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onClickTime(timestampMs);
-          }}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#3b82f6',
-            cursor: 'pointer',
-            fontFamily: 'monospace',
-            padding: 0,
-          }}
-        >
-          {formatTime(timestampMs)}
-        </button>
-      </div>
-
-      <Handle type="source" position={Position.Bottom} />
-    </div>
-  );
-}
-
-const nodeTypes = { graphNode: GraphNodeCard };
+const nodeTypes = { graphNode: WebDemoGraphNodeCard };
 
 // ============ 空 Graph ============
 
@@ -270,12 +145,12 @@ function getLayoutedElements(
     style: {
       stroke:
         e.relation === 'supports'
-          ? '#10b981'
+          ? 'var(--lg-success)'
           : e.relation === 'opposes'
-            ? '#ef4444'
+            ? 'var(--lg-danger)'
             : e.relation === 'causes'
-              ? '#f59e0b'
-              : '#6b7280',
+              ? 'var(--lg-insight)'
+              : 'var(--lg-muted)',
     },
     animated: e.relation === 'causes',
   }));
@@ -309,6 +184,8 @@ export default function App() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [graph, setGraph] = useState<MergedGraph>(createEmptyGraph);
   const [logs, setLogs] = useState<string[]>([]);
+
+  const { theme, toggleTheme } = useTheme();
 
   const displayGraph =
     fixtureSeq.active && fixtureSeq.graph ? fixtureSeq.graph : graph;
@@ -487,27 +364,20 @@ export default function App() {
   const isRunning = sessionState === 'capturing' && !isFixturePreview;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }} data-theme={theme}>
       {/* 顶部工具栏 */}
-      <div
-        style={{
-          padding: '12px 20px',
-          borderBottom: '1px solid #e5e7eb',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-          backgroundColor: '#f9fafb',
-        }}
-      >
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
-          Listen Graphic
-        </h2>
+      <div className="lg-toolbar" style={{ gap: 16, backgroundColor: 'var(--lg-calm)' }}>
+        <div className="lg-toolbar__brand">
+          <h2 style={{ margin: 0, fontSize: 'var(--text-xl)', fontWeight: 600 }}>
+            Listen Graphic
+          </h2>
+        </div>
 
         {fixtureSeq.sequenceId && (
           <span
             style={{
-              fontSize: 12,
-              color: fixtureSeq.error ? '#b91c1c' : '#4b5563',
+              fontSize: 'var(--text-sm)',
+              color: fixtureSeq.error ? 'var(--lg-danger)' : 'var(--lg-muted)',
             }}
           >
             {fixtureSeq.error ??
@@ -518,35 +388,27 @@ export default function App() {
         )}
 
         {/* 状态指示器 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="lg-signal-indicator">
           <div
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              backgroundColor: isRunning ? '#10b981' : '#d1d5db',
-            }}
+            className={`lg-signal-dot ${isRunning ? 'lg-signal-dot--active' : 'lg-signal-dot--idle'}`}
           />
-          <span style={{ fontSize: 12, color: '#6b7280' }}>
-            {isRunning ? '运行中' : '空闲'}
-          </span>
+          <span>{isRunning ? '运行中' : '空闲'}</span>
         </div>
+
+        {/* 主题切换 */}
+        <button
+          className="lg-btn lg-btn-ghost lg-btn-sm"
+          onClick={toggleTheme}
+          title="切换主题"
+        >
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
 
         {/* 开始/停止按钮 */}
         <button
+          className={isRunning ? 'lg-btn lg-btn-danger' : 'lg-btn lg-btn-primary'}
           onClick={isRunning ? handleStop : handleStart}
           disabled={isFixturePreview}
-          style={{
-            padding: '6px 16px',
-            borderRadius: 6,
-            border: 'none',
-            backgroundColor: isRunning ? '#ef4444' : '#3b82f6',
-            color: 'white',
-            cursor: isFixturePreview ? 'not-allowed' : 'pointer',
-            opacity: isFixturePreview ? 0.5 : 1,
-            fontWeight: 600,
-            fontSize: 13,
-          }}
         >
           {isRunning ? '停止' : '开始'}
         </button>
@@ -556,19 +418,8 @@ export default function App() {
           {VIEW_TYPES.map((view) => (
             <button
               key={view}
+              className={currentView === view ? 'lg-btn lg-btn-primary lg-btn-sm' : 'lg-btn lg-btn-ghost lg-btn-sm'}
               onClick={() => setCurrentView(view)}
-              style={{
-                padding: '4px 10px',
-                borderRadius: 4,
-                border:
-                  currentView === view
-                    ? '2px solid #3b82f6'
-                    : '1px solid #d1d5db',
-                backgroundColor: currentView === view ? '#eff6ff' : 'white',
-                color: currentView === view ? '#1d4ed8' : '#374151',
-                cursor: 'pointer',
-                fontSize: 12,
-              }}
             >
               {VIEW_LABELS[view]}
             </button>
@@ -580,11 +431,11 @@ export default function App() {
           style={{
             marginLeft: 'auto',
             fontFamily: 'monospace',
-            fontSize: 14,
-            color: '#374151',
+            fontSize: 'var(--text-base)',
+            color: 'var(--lg-ink)',
           }}
         >
-          当前时间: {formatTime(currentTimeMs)}
+          当前时间: {formatGraphNodeTime(currentTimeMs)}
         </div>
       </div>
 
@@ -592,36 +443,40 @@ export default function App() {
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* 图表区域 */}
         <div style={{ flex: 1 }}>
-          <ReactFlow
-            nodes={layoutNodes}
-            edges={layoutEdges}
-            nodeTypes={nodeTypes}
-            onNodeClick={handleNodeClick}
-            fitView
-            minZoom={0.3}
-            maxZoom={2}
-          >
-            <Background />
-            <Controls />
-          </ReactFlow>
+          {displayGraph.nodes.length === 0 && !isRunning && sessionState === 'idle' ? (
+            <EmptyState />
+          ) : (
+            <ReactFlow
+              nodes={layoutNodes}
+              edges={layoutEdges}
+              nodeTypes={nodeTypes}
+              onNodeClick={handleNodeClick}
+              fitView
+              minZoom={0.3}
+              maxZoom={2}
+            >
+              <Background />
+              <Controls />
+            </ReactFlow>
+          )}
         </div>
 
         {/* 右侧日志面板 */}
         <div
           style={{
             width: 300,
-            borderLeft: '1px solid #e5e7eb',
+            borderLeft: '1px solid var(--lg-rim)',
             display: 'flex',
             flexDirection: 'column',
-            backgroundColor: '#1e1e1e',
+            backgroundColor: 'var(--lg-ink)',
           }}
         >
           <div
             style={{
               padding: '8px 12px',
-              borderBottom: '1px solid #333',
-              color: '#10b981',
-              fontSize: 12,
+              borderBottom: '1px solid var(--lg-rim)',
+              color: 'var(--lg-success)',
+              fontSize: 'var(--text-sm)',
               fontWeight: 600,
             }}
           >
@@ -633,12 +488,12 @@ export default function App() {
               overflowY: 'auto',
               padding: '8px 12px',
               fontFamily: 'monospace',
-              fontSize: 11,
-              color: '#10b981',
+              fontSize: 'var(--text-xs)',
+              color: 'var(--lg-success)',
             }}
           >
             {logs.length === 0 ? (
-              <div style={{ color: '#666' }}>点击"开始"启动会话...</div>
+              <div style={{ color: 'var(--lg-muted)' }}>点击"开始"启动会话...</div>
             ) : (
               logs.map((log, i) => (
                 <div
@@ -657,10 +512,10 @@ export default function App() {
       <div
         style={{
           padding: '8px 20px',
-          borderTop: '1px solid #e5e7eb',
-          backgroundColor: '#f9fafb',
-          fontSize: 12,
-          color: '#6b7280',
+          borderTop: '1px solid var(--lg-rim)',
+          backgroundColor: 'var(--lg-calm)',
+          fontSize: 'var(--text-sm)',
+          color: 'var(--lg-muted)',
           display: 'flex',
           justifyContent: 'space-between',
         }}

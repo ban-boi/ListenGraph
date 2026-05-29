@@ -233,7 +233,7 @@ describe('App - 图谱更新', () => {
     await renderApp();
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /对比/ })).toHaveStyle({
-        backgroundColor: '#eff6ff',
+        backgroundColor: 'var(--lg-calm)',
       }),
     );
 
@@ -288,10 +288,10 @@ describe('App - 图谱更新', () => {
     });
 
     expect(screen.getByRole('button', { name: /对比/ })).toHaveStyle({
-      backgroundColor: '#eff6ff',
+      backgroundColor: 'var(--lg-calm)',
     });
     expect(screen.getByRole('button', { name: /层级/ })).not.toHaveStyle({
-      backgroundColor: '#eff6ff',
+      backgroundColor: 'var(--lg-calm)',
     });
   });
 
@@ -1718,7 +1718,7 @@ describe('App - 图谱更新', () => {
 
     expect(reactFlowFitViewSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        minZoom: 14 / 12,
+        minZoom: 14 / 13,
       }),
     );
   });
@@ -1787,7 +1787,7 @@ describe('App - 图谱更新', () => {
 
     expect(reactFlowFitViewSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        minZoom: 16 / 12,
+        minZoom: 16 / 13,
       }),
     );
   });

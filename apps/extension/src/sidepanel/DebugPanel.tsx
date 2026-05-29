@@ -18,11 +18,11 @@ export function DebugPanel({
     <div
       data-testid="debug-panel"
       style={{
-        borderTop: '1px solid #d1d5db',
-        backgroundColor: '#f8fafc',
+        borderTop: '1px solid var(--lg-rim)',
+        backgroundColor: 'var(--lg-calm)',
         padding: '8px 12px',
-        fontSize: 11,
-        color: '#334155',
+        fontSize: 'var(--text-xs)',
+        color: 'var(--lg-ink-soft)',
         maxHeight: 220,
         overflowY: 'auto',
       }}
@@ -45,10 +45,10 @@ export function DebugPanel({
           style={{
             padding: '2px 8px',
             borderRadius: 4,
-            border: '1px solid #cbd5e1',
-            backgroundColor: debugData ? 'white' : '#e2e8f0',
-            color: '#334155',
-            fontSize: 11,
+            border: '1px solid var(--lg-rim)',
+            backgroundColor: debugData ? 'var(--lg-surface)' : 'var(--lg-rim)',
+            color: 'var(--lg-ink)',
+            fontSize: 'var(--text-xs)',
             cursor: debugData ? 'pointer' : 'not-allowed',
           }}
         >
@@ -62,10 +62,10 @@ export function DebugPanel({
           style={{
             padding: '2px 8px',
             borderRadius: 4,
-            border: '1px solid #cbd5e1',
-            backgroundColor: debugData ? 'white' : '#e2e8f0',
-            color: '#334155',
-            fontSize: 11,
+            border: '1px solid var(--lg-rim)',
+            backgroundColor: debugData ? 'var(--lg-surface)' : 'var(--lg-rim)',
+            color: 'var(--lg-ink)',
+            fontSize: 'var(--text-xs)',
             cursor: debugData ? 'pointer' : 'not-allowed',
           }}
         >
@@ -79,17 +79,17 @@ export function DebugPanel({
           style={{
             padding: '2px 8px',
             borderRadius: 4,
-            border: '1px solid #cbd5e1',
-            backgroundColor: debugData?.assemblerRuns?.length ? 'white' : '#e2e8f0',
-            color: '#334155',
-            fontSize: 11,
+            border: '1px solid var(--lg-rim)',
+            backgroundColor: debugData?.assemblerRuns?.length ? 'var(--lg-surface)' : 'var(--lg-rim)',
+            color: 'var(--lg-ink)',
+            fontSize: 'var(--text-xs)',
             cursor: debugData?.assemblerRuns?.length ? 'pointer' : 'not-allowed',
           }}
         >
           导出 Assembler 日志
         </button>
       </div>
-      <div style={{ marginBottom: 6, color: '#64748b' }}>
+      <div style={{ marginBottom: 6, color: 'var(--lg-muted)' }}>
         摘要会去掉 ASR/provider 原始大字段；完整包保留 raw/tokens，适合深度排查。
       </div>
       <div style={{ marginBottom: 6 }}>
@@ -113,7 +113,7 @@ export function DebugPanel({
       <div style={{ marginBottom: 6 }}>
         structure units: {debugData?.structureUnits?.length ?? 0}
       </div>
-      <div style={{ marginBottom: 6, color: '#64748b' }}>
+      <div style={{ marginBottom: 6, color: 'var(--lg-muted)' }}>
         assembler 数据来源: {debugData?.traceSource === 'memory' ? '内存' : debugData?.traceSource === 'indexeddb' ? 'IndexedDB' : '空'}
       </div>
       <div style={{ marginBottom: 6 }}>
@@ -125,7 +125,7 @@ export function DebugPanel({
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
           margin: 0,
-          fontFamily: 'monospace',
+          fontFamily: 'var(--font-mono)',
         }}
       >
         {debugData

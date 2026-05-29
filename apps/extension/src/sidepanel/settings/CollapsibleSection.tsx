@@ -33,7 +33,7 @@ export function CollapsibleSection({
           userSelect: 'none',
           padding: `${spacing.fieldGap}px 0`,
           color: colors.text,
-          fontSize: 11,
+          fontSize: 'var(--text-xs)',
           borderRadius: 2,
           transition: 'background-color 0.15s',
         }}
@@ -45,7 +45,7 @@ export function CollapsibleSection({
         }}
       >
         <span>{title}</span>
-        <span style={{ fontSize: 9, lineHeight: 1 }}>
+        <span style={{ fontSize: 'var(--text-2xs)', lineHeight: 1 }}>
           {collapsed ? '▶' : '▼'}
         </span>
       </div>

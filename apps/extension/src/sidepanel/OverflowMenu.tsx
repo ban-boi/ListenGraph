@@ -12,24 +12,14 @@ export type OverflowMenuProps = {
   onToggleReplay: () => void;
 };
 
-const menuButtonStyle = {
-  padding: '4px 8px',
-  borderRadius: 4,
-  border: '1px solid #d1d5db',
-  backgroundColor: 'white',
-  color: '#374151',
-  fontSize: 11,
-  cursor: 'pointer',
-} as const;
-
 const menuItemStyle = {
   display: 'block',
   width: '100%',
   padding: '6px 10px',
   border: 'none',
   background: 'transparent',
-  color: '#374151',
-  fontSize: 11,
+  color: 'var(--lg-ink)',
+  fontSize: 'var(--text-xs)',
   textAlign: 'left' as const,
   cursor: 'pointer',
 };
@@ -79,13 +69,24 @@ export function OverflowMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((previous) => !previous)}
+        className="lg-btn lg-btn-ghost lg-btn-sm"
         style={{
-          ...menuButtonStyle,
-          backgroundColor: open ? '#eff6ff' : 'white',
-          color: open ? '#1d4ed8' : '#374151',
+          backgroundColor: open ? 'var(--lg-calm)' : undefined,
+          color: open ? 'var(--lg-signal)' : undefined,
         }}
       >
         更多
+        <span
+          style={{
+            display: 'inline-block',
+            marginLeft: 4,
+            fontSize: 'var(--text-2xs)',
+            transition: 'transform var(--dur-fast) var(--ease-out)',
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}
+        >
+          &#9660;
+        </span>
       </button>
       {open && (
         <div
@@ -96,11 +97,12 @@ export function OverflowMenu({
             left: 0,
             zIndex: 20,
             minWidth: 168,
-            border: '1px solid #dbe4ee',
-            borderRadius: 6,
-            backgroundColor: 'white',
-            boxShadow: '0 4px 12px rgba(15, 23, 42, 0.12)',
+            border: '1px solid var(--lg-rim)',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--lg-surface)',
+            boxShadow: 'var(--shadow-md)',
             padding: '4px 0',
+            animation: 'fadeIn var(--dur-fast) var(--ease-out)',
           }}
         >
           <button
@@ -112,7 +114,7 @@ export function OverflowMenu({
             style={{
               ...menuItemStyle,
               cursor: canExport ? 'pointer' : 'not-allowed',
-              color: canExport ? '#374151' : '#9ca3af',
+              color: canExport ? 'var(--lg-ink)' : 'var(--lg-mist)',
             }}
           >
             导出 JSON
@@ -126,7 +128,7 @@ export function OverflowMenu({
             style={{
               ...menuItemStyle,
               cursor: canExport ? 'pointer' : 'not-allowed',
-              color: canExport ? '#374151' : '#9ca3af',
+              color: canExport ? 'var(--lg-ink)' : 'var(--lg-mist)',
             }}
           >
             导出 Markdown
@@ -140,12 +142,12 @@ export function OverflowMenu({
             style={{
               ...menuItemStyle,
               cursor: canExport ? 'pointer' : 'not-allowed',
-              color: canExport ? '#374151' : '#9ca3af',
+              color: canExport ? 'var(--lg-ink)' : 'var(--lg-mist)',
             }}
           >
             导出 Mermaid
           </button>
-          <div style={{ height: 1, backgroundColor: '#e5e7eb', margin: '4px 0' }} />
+          <div style={{ height: 1, backgroundColor: 'var(--lg-rim)', margin: '4px 0' }} />
           <button
             type="button"
             role="menuitem"
@@ -153,8 +155,8 @@ export function OverflowMenu({
             onClick={() => closeAnd(onToggleDebug)}
             style={{
               ...menuItemStyle,
-              backgroundColor: debugOpen ? '#eff6ff' : 'transparent',
-              color: debugOpen ? '#1d4ed8' : '#374151',
+              backgroundColor: debugOpen ? 'var(--lg-calm)' : 'transparent',
+              color: debugOpen ? 'var(--lg-signal)' : 'var(--lg-ink)',
             }}
           >
             调试
@@ -168,19 +170,19 @@ export function OverflowMenu({
             style={{
               ...menuItemStyle,
               cursor: canReplay ? 'pointer' : 'not-allowed',
-              color: canReplay ? (replayOpen ? '#1d4ed8' : '#374151') : '#9ca3af',
-              backgroundColor: replayOpen && canReplay ? '#eff6ff' : 'transparent',
+              color: canReplay ? (replayOpen ? 'var(--lg-signal)' : 'var(--lg-ink)') : 'var(--lg-mist)',
+              backgroundColor: replayOpen && canReplay ? 'var(--lg-calm)' : 'transparent',
             }}
           >
             回放
           </button>
-          <div style={{ height: 1, backgroundColor: '#e5e7eb', margin: '4px 0' }} />
+          <div style={{ height: 1, backgroundColor: 'var(--lg-rim)', margin: '4px 0' }} />
           <div
             data-testid="build-info"
             style={{
               padding: '6px 10px',
-              fontSize: 10,
-              color: '#64748b',
+              fontSize: 'var(--text-2xs)',
+              color: 'var(--lg-muted)',
               fontFamily: 'monospace',
               wordBreak: 'break-word',
             }}

@@ -190,59 +190,60 @@ export function getStatusCardStyles(tone: StatusCardTone) {
   switch (tone) {
     case 'active':
       return {
-        backgroundColor: '#eff6ff',
-        borderColor: '#93c5fd',
-        titleColor: '#1d4ed8',
-        statusColor: '#1e40af',
-        detailColor: '#2563eb',
+        backgroundColor: 'var(--lg-signal-glow)',
+        borderColor: 'var(--lg-signal-dim)',
+        titleColor: 'var(--lg-signal-dim)',
+        statusColor: 'var(--lg-signal)',
+        detailColor: 'var(--lg-signal)',
       };
     case 'waiting':
       return {
-        backgroundColor: '#f0f9ff',
-        borderColor: '#bae6fd',
-        titleColor: '#0369a1',
-        statusColor: '#075985',
-        detailColor: '#0284c7',
+        backgroundColor: 'var(--lg-signal-glow)',
+        borderColor: 'var(--lg-mist)',
+        titleColor: 'var(--lg-signal-dim)',
+        statusColor: 'var(--lg-signal-dim)',
+        detailColor: 'var(--lg-signal)',
       };
     case 'success':
       return {
-        backgroundColor: '#ecfdf5',
-        borderColor: '#86efac',
-        titleColor: '#166534',
-        statusColor: '#166534',
-        detailColor: '#15803d',
+        backgroundColor: 'var(--lg-surface)',
+        borderColor: 'var(--lg-success)',
+        titleColor: 'var(--lg-success)',
+        statusColor: 'var(--lg-success)',
+        detailColor: 'var(--lg-success)',
       };
     case 'warning':
       return {
-        backgroundColor: '#fffbeb',
-        borderColor: '#fcd34d',
-        titleColor: '#92400e',
-        statusColor: '#b45309',
-        detailColor: '#b45309',
+        backgroundColor: 'var(--lg-insight-glow)',
+        borderColor: 'var(--lg-warning)',
+        titleColor: 'var(--lg-insight-dim)',
+        statusColor: 'var(--lg-insight-dim)',
+        detailColor: 'var(--lg-insight)',
       };
     case 'congested':
       return {
-        backgroundColor: '#fff7ed',
-        borderColor: '#fdba74',
-        titleColor: '#9a3412',
-        statusColor: '#c2410c',
-        detailColor: '#ea580c',
+        backgroundColor: 'var(--lg-insight-glow)',
+        borderColor: 'var(--lg-insight)',
+        titleColor: 'var(--lg-insight-dim)',
+        statusColor: 'var(--lg-insight)',
+        detailColor: 'var(--lg-insight)',
       };
     case 'error':
       return {
-        backgroundColor: '#fef2f2',
-        borderColor: '#fca5a5',
-        titleColor: '#991b1b',
-        statusColor: '#991b1b',
-        detailColor: '#b91c1c',
+        backgroundColor: 'var(--lg-surface)',
+        borderColor: 'var(--lg-danger)',
+        titleColor: 'var(--lg-danger)',
+        statusColor: 'var(--lg-danger)',
+        detailColor: 'var(--lg-danger)',
       };
+    case 'neutral':
     default:
       return {
-        backgroundColor: '#f8fafc',
-        borderColor: '#dbe4ee',
-        titleColor: '#475569',
-        statusColor: '#0f172a',
-        detailColor: '#64748b',
+        backgroundColor: 'var(--lg-calm)',
+        borderColor: 'var(--lg-rim)',
+        titleColor: 'var(--lg-muted)',
+        statusColor: 'var(--lg-muted)',
+        detailColor: 'var(--lg-muted)',
       };
   }
 }

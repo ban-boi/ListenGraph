@@ -17,16 +17,16 @@ export function LogPanel({ logPanelHeight, timelineEvents }: LogPanelProps) {
       style={{
         height: logPanelHeight,
         overflowY: 'auto',
-        backgroundColor: '#0f172a',
-        color: '#e2e8f0',
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-        fontSize: 11,
+        backgroundColor: 'var(--lg-calm)',
+        color: 'var(--lg-ink)',
+        fontFamily: 'var(--font-mono)',
+        fontSize: 'var(--text-xs)',
         padding: '8px',
-        borderTop: '1px solid #0b1220',
+        borderTop: '1px solid var(--lg-rim)',
       }}
     >
       {timelineEvents.length === 0 ? (
-        <div style={{ color: '#64748b' }}>点击"开始"启动会话，状态与事件会在这里实时出现。</div>
+        <div style={{ color: 'var(--lg-muted)' }}>点击"开始"启动会话，状态与事件会在这里实时出现。</div>
       ) : (
         timelineEvents.map((event) => {
           const toneStyles = getTimelineToneStyles(event.tone);
@@ -38,7 +38,7 @@ export function LogPanel({ logPanelHeight, timelineEvents }: LogPanelProps) {
                 border: `1px solid ${toneStyles.borderColor}`,
                 borderRadius: 8,
                 padding: '6px 8px',
-                backgroundColor: 'rgba(15, 23, 42, 0.55)',
+                backgroundColor: 'var(--lg-surface)',
                 display: 'grid',
                 gap: 4,
               }}
@@ -51,12 +51,12 @@ export function LogPanel({ logPanelHeight, timelineEvents }: LogPanelProps) {
                   minWidth: 0,
                 }}
               >
-                <span style={{ color: '#64748b', fontSize: 10 }}>
+                <span style={{ color: 'var(--lg-muted)', fontSize: 'var(--text-2xs)' }}>
                   {formatTimelineTimestamp(event.timestamp)}
                 </span>
                 <span
                   style={{
-                    fontSize: 10,
+                    fontSize: 'var(--text-2xs)',
                     padding: '1px 6px',
                     borderRadius: 999,
                     backgroundColor: toneStyles.badgeBackground,
@@ -70,11 +70,11 @@ export function LogPanel({ logPanelHeight, timelineEvents }: LogPanelProps) {
                 {(event.repeatCount ?? 1) > 1 && (
                   <span
                     style={{
-                      fontSize: 10,
+                      fontSize: 'var(--text-2xs)',
                       padding: '1px 6px',
                       borderRadius: 999,
-                      backgroundColor: '#1e293b',
-                      color: '#cbd5e1',
+                      backgroundColor: 'var(--lg-rim)',
+                      color: 'var(--lg-muted)',
                     }}
                   >
                     x{event.repeatCount}
