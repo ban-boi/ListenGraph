@@ -48,7 +48,7 @@ describe('App - 渲染', () => {
     await renderApp();
 
     const logArea = screen.getByTestId('log-area');
-    const resizer = screen.getByTestId('log-resizer');
+    const resizer = screen.getByTestId('resize-handle');
 
     expect(logArea).toHaveStyle({ height: '120px' });
 
@@ -142,7 +142,7 @@ describe('App - 渲染', () => {
 
     await renderApp();
 
-    const banner = screen.getByTestId('recent-error-banner');
+    const banner = screen.getByTestId('error-banner');
     expect(banner).toBeInTheDocument();
     expect(within(banner).getByText(/最近错误/)).toBeInTheDocument();
     expect(within(banner).getByText(/ASR \/ CONFIG_ERROR/)).toBeInTheDocument();
@@ -156,7 +156,7 @@ describe('App - 渲染', () => {
     });
 
     await renderApp();
-    expect(screen.queryByTestId('recent-error-banner')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('error-banner')).not.toBeInTheDocument();
 
     await act(async () => {
       runtimeMessageListener?.({
@@ -170,7 +170,7 @@ describe('App - 渲染', () => {
       await Promise.resolve();
     });
 
-    const banner = screen.getByTestId('recent-error-banner');
+    const banner = screen.getByTestId('error-banner');
     expect(within(banner).getByText(/Structurer \/ TIMEOUT_ERROR/)).toBeInTheDocument();
     expect(within(banner).getByText(/timed out/)).toBeInTheDocument();
 
@@ -192,6 +192,6 @@ describe('App - 渲染', () => {
       await Promise.resolve();
     });
 
-    expect(screen.queryByTestId('recent-error-banner')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('error-banner')).not.toBeInTheDocument();
   });
 });

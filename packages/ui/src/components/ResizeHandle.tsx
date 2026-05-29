@@ -1,6 +1,6 @@
 export type ResizeHandleProps = {
   /** 拖拽开始的回调（mousedown） */
-  onResizeStart: () => void;
+  onResizeStart: (event: React.MouseEvent<HTMLDivElement>) => void;
   /** aria-label 文本，默认 "调整面板高度" */
   ariaLabel?: string;
 };

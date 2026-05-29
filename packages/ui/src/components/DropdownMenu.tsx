@@ -6,6 +6,8 @@ export type DropdownMenuItem = {
   disabled?: boolean;
   /** 渲染为激活/选中态 */
   active?: boolean;
+  /** 可选的 data-testid */
+  testId?: string;
 };
 
 export type DropdownMenuProps = {
@@ -101,6 +103,7 @@ export function DropdownMenu({
               key={item.id}
               type="button"
               role="menuitem"
+              data-testid={item.testId}
               disabled={item.disabled}
               onClick={() => handleSelect(item.id)}
               style={{
@@ -125,7 +128,7 @@ export function DropdownMenu({
           {footer && (
             <>
               <div style={{ height: 1, backgroundColor: 'var(--lg-rim)', margin: '4px 0' }} />
-              <div style={{ padding: '6px 10px', fontSize: 'var(--text-2xs)', color: 'var(--lg-muted)', fontFamily: 'monospace', wordBreak: 'break-word' }}>
+              <div data-testid="build-info" style={{ padding: '6px 10px', fontSize: 'var(--text-2xs)', color: 'var(--lg-muted)', fontFamily: 'monospace', wordBreak: 'break-word' }}>
                 {footer}
               </div>
             </>

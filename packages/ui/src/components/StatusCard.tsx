@@ -13,6 +13,8 @@ export type StatusCardProps = {
   detail: string;
   tone: StatusCardTone;
   isRunning?: boolean;
+  /** 可选的 data-testid */
+  testId?: string;
 };
 
 function getStatusCardStyles(tone: StatusCardTone) {
@@ -83,12 +85,13 @@ function toneToCssModifier(tone: StatusCardTone): string {
   return '';
 }
 
-export function StatusCard({ label, status, detail, tone, isRunning }: StatusCardProps) {
+export function StatusCard({ label, status, detail, tone, isRunning, testId }: StatusCardProps) {
   const styles = getStatusCardStyles(tone);
   const modifier = toneToCssModifier(tone);
 
   return (
     <div
+      data-testid={testId}
       className={`lg-status-card${modifier ? ` lg-status-card${modifier}` : ''}`}
       style={{
         position: 'relative',

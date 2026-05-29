@@ -1,5 +1,10 @@
-import type { EdgeType, NodeType, ViewType, MergedGraph } from '@listen-graphic/schema';
+import type { EdgeType, NodeType, MergedGraph, ViewType } from '@listen-graphic/schema';
 import type { EdgePriority } from './types';
+import { VIEW_TYPES as _VIEW_TYPES, VIEW_LABELS as _VIEW_LABELS } from '@listen-graphic/ui';
+
+// 从 @listen-graphic/ui 重导出共享视图常量
+export const VIEW_TYPES = _VIEW_TYPES;
+export const VIEW_LABELS = _VIEW_LABELS;
 
 // ===== 初始空 Graph =====
 
@@ -49,23 +54,10 @@ export const ZHIPU_ENDPOINT_STANDARD = 'https://open.bigmodel.cn/api/paas/v4';
 export const ZHIPU_ENDPOINT_CODING_PLAN = 'https://open.bigmodel.cn/api/coding/paas/v4';
 
 // ===== 视图选择器 =====
-
-export const VIEW_TYPES: ViewType[] = [
-  'causal',
-  'timeline',
-  'comparison',
-  'hierarchy',
-];
+// VIEW_TYPES 和 VIEW_LABELS 现在从 @listen-graphic/ui 重导出（见文件顶部）
 
 // UI 中实际展示的视图。保持单一维度：选择什么视图，就使用该视图的边过滤与节点顺序。
 export const VISIBLE_VIEW_TYPES = VIEW_TYPES;
-
-export const VIEW_LABELS: Record<ViewType, string> = {
-  causal: '因果',
-  timeline: '时间线',
-  comparison: '对比',
-  hierarchy: '层级',
-};
 
 export const VIEW_EDGE_PRIORITIES: Record<ViewType, Record<EdgeType, EdgePriority>> = {
   causal: {

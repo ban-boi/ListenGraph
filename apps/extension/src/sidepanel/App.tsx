@@ -8,9 +8,6 @@ import {
   useReducer,
 } from 'react';
 import {
-  ReactFlow,
-  Background,
-  Controls,
   type Node,
   type Edge,
   type ReactFlowInstance,
@@ -31,9 +28,6 @@ import type { DebugExportMode, StableLayoutCache } from './types';
 import {
   formatErrorStageLabel,
   timelineEventsToExportLines,
-  formatTime,
-  formatRelativeAge,
-  getStatusCardStyles,
 } from './timeline-utils';
 import { createEmptyStableLayoutCache, buildDebugViewArtifacts } from './graph-utils';
 import {
@@ -42,17 +36,27 @@ import {
   NODE_TYPES,
   EDGE_TYPES,
   SPEAKERS,
-  VIEW_TYPES,
-  VIEW_LABELS,
-  VISIBLE_VIEW_TYPES,
   isDevMode,
 } from './constants';
 import { formatGraphDeltaLog, downloadTextFile, buildDebugExportPayload, buildAssemblerLogPayload } from './debug-export-utils';
 import { getAutoTourTrace } from './auto-tour-trace';
 import { getAutoTourStageKindLabel } from './auto-tour-utils';
-import { GraphNodeCard, GRAPH_NODE_BODY_FONT_PX, EmptyState, useTheme } from '@listen-graphic/ui';
-import { OverflowMenu } from './OverflowMenu';
-import { LogPanel } from './LogPanel';
+import {
+  GraphNodeCard,
+  GRAPH_NODE_BODY_FONT_PX,
+  useTheme,
+  GraphToolbar,
+  ViewSwitcher,
+  GraphArea,
+  StatusBar,
+  StatusCard,
+  ResizeHandle,
+  ErrorBanner,
+  DropdownMenu,
+  TimelineLogPanel,
+  formatTime,
+  formatRelativeAge,
+} from '@listen-graphic/ui';
 import { DebugPanel } from './DebugPanel';
 import { ReplayPanel } from './ReplayPanel';
 import { SettingsPanel } from './SettingsPanel';
@@ -146,7 +150,7 @@ export default function App() {
     initialDisplayRef,
   } = useGraphDisplaySettings({ addLog });
 
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
 
   const providerAsrType = providerConfig.asr.type;
 
@@ -825,44 +829,45 @@ export default function App() {
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }} data-theme={theme}>
       <style>{`@keyframes listen-graphic-tour-pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.82); } 100% { opacity: 1; transform: scale(1); } } @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       {/* 顶部栏 */}
-      <div className="lg-toolbar" style={{ gap: 8, borderBottom: 'none' }}>
-        <div className="lg-toolbar__brand">
-          <span style={{ fontWeight: 'var(--weight-bold)', fontSize: 'var(--text-base)' }}>Listen Graphic</span>
-        </div>
-        <div className="lg-toolbar__actions">
-          <button
-            className="lg-btn lg-btn-ghost lg-btn-sm"
-            onClick={toggleTheme}
-            title="切换主题"
-          >
-            {theme === 'dark' ? '☀️' : '🌙'}
-          </button>
-          <button
-            className="lg-btn lg-btn-ghost lg-btn-sm"
-            onClick={() => void handleToggleAllSettings()}
-            style={{ backgroundColor: settingsOpen ? 'var(--lg-calm)' : undefined, color: settingsOpen ? 'var(--lg-signal)' : undefined }}
-          >
-            设置
-          </button>
-          <OverflowMenu
-            canExport={canExport}
-            canReplay={canReplay}
-            debugOpen={debugOpen}
-            replayOpen={replayOpen}
-            buildInfo={{ uiLabel: BUILD_INFO.label, workerLabel: panel.workerBuildLabel }}
-            onExport={handleExport}
-            onToggleDebug={() => setDebugOpen((p) => !p)}
-            onToggleReplay={() => void handleToggleReplay()}
-          />
-        </div>
-        <button
-          className={isRunning ? 'lg-btn lg-btn-danger lg-btn-sm' : 'lg-btn lg-btn-primary lg-btn-sm'}
-          onClick={isRunning ? handleStop : handleStart}
-          style={{ marginLeft: 'auto' }}
-        >
-          {isRunning ? '停止' : '开始'}
-        </button>
-      </div>
+      <GraphToolbar
+        brandName="Listen Graphic"
+        primaryAction={{
+          label: isRunning ? '停止' : '开始',
+          onClick: isRunning ? handleStop : handleStart,
+          active: isRunning,
+        }}
+        actions={
+          <>
+            <button
+              className="lg-btn lg-btn-ghost lg-btn-sm"
+              onClick={() => void handleToggleAllSettings()}
+              style={{ backgroundColor: settingsOpen ? 'var(--lg-calm)' : undefined, color: settingsOpen ? 'var(--lg-signal)' : undefined }}
+            >
+              设置
+            </button>
+            <DropdownMenu
+              triggerLabel="更多"
+              items={[
+                { id: 'export-json', label: '导出 JSON', disabled: !canExport, testId: 'overflow-menu-export-json' },
+                { id: 'export-markdown', label: '导出 Markdown', disabled: !canExport, testId: 'overflow-menu-export-markdown' },
+                { id: 'export-mermaid', label: '导出 Mermaid', disabled: !canExport, testId: 'overflow-menu-export-mermaid' },
+                { id: 'debug', label: '调试', active: debugOpen, testId: 'overflow-menu-debug' },
+                { id: 'replay', label: '回放', disabled: !canReplay, active: replayOpen, testId: 'overflow-menu-replay' },
+              ]}
+              onSelect={(id) => {
+                switch (id) {
+                  case 'export-json': handleExport('json'); break;
+                  case 'export-markdown': handleExport('markdown'); break;
+                  case 'export-mermaid': handleExport('mermaid'); break;
+                  case 'debug': setDebugOpen((p) => !p); break;
+                  case 'replay': void handleToggleReplay(); break;
+                }
+              }}
+              footer={`UI ${BUILD_INFO.label} | Worker ${panel.workerBuildLabel}`}
+            />
+          </>
+        }
+      />
       <div className="lg-wave-divider" style={{ margin: 0, height: 8 }} />
       {isRunning && (
         <div
@@ -871,83 +876,28 @@ export default function App() {
         />
       )}
       {panel.recentProviderError && (
-        <div data-testid="recent-error-banner"
-          style={{ padding: '8px 12px', borderBottom: '1px solid var(--lg-danger)', backgroundColor: 'var(--lg-surface)', color: 'var(--lg-danger)', fontSize: 'var(--text-xs)', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <span style={{ fontWeight: 700 }}>最近错误</span>
-          <span style={{ fontFamily: 'monospace' }}>
-            {formatErrorStageLabel(panel.recentProviderError.stage)} / {panel.recentProviderError.code}
-          </span>
-          <span style={{ color: 'var(--lg-danger)' }}>{panel.recentProviderError.message}</span>
-        </div>
+        <ErrorBanner
+          stage={formatErrorStageLabel(panel.recentProviderError.stage)}
+          code={panel.recentProviderError.code}
+          message={panel.recentProviderError.message}
+        />
       )}
       <div
         data-testid="runtime-status-cards"
         className="lg-status-cards-grid"
-        style={{
-          padding: '6px 12px',
-          gap: 8,
-          flexShrink: 0,
-        }}
+        style={{ padding: '6px 12px', gap: 8, flexShrink: 0 }}
       >
-        {primaryStatusCards.map((card) => {
-          const styles = getStatusCardStyles(card.tone);
-          const isStructurer = card.label === 'Structurer';
-          return (
-            <div
-              key={card.label}
-              data-testid={`status-card-${card.label.toLowerCase()}`}
-              className={`lg-status-card lg-status-card--${card.tone === 'active' || card.tone === 'waiting' ? 'signal' : card.tone === 'success' ? 'signal' : card.tone === 'warning' || card.tone === 'congested' ? 'insight' : ''}`}
-              style={{
-                position: 'relative',
-                overflow: 'hidden',
-                padding: '4px 8px',
-                display: 'grid',
-                gap: 2,
-                minWidth: 0,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 'var(--text-xs)',
-                  fontWeight: 700,
-                  color: styles.statusColor,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  minWidth: 0,
-                }}
-              >
-                <span style={{ color: styles.titleColor, fontSize: 'var(--text-2xs)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                  {card.label}
-                </span>
-                <span style={{ color: 'var(--lg-mist)' }}>·</span>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.status}</span>
-              </div>
-              <div
-                title={card.detail}
-                style={{
-                  fontSize: 'var(--text-2xs)',
-                  color: styles.detailColor,
-                  lineHeight: 1.3,
-                  overflow: 'hidden',
-                  ...(isStructurer
-                    ? {
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical' as const,
-                      }
-                    : {
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }),
-                }}
-              >
-                {card.detail}
-              </div>
-              <div className={`lg-waveform-bar${isRunning ? ' lg-waveform-bar--active' : ''}`} style={{ marginTop: 4 }} />
-            </div>
-          );
-        })}
+        {primaryStatusCards.map((card) => (
+          <StatusCard
+            key={card.label}
+            testId={`status-card-${card.label.toLowerCase()}`}
+            label={card.label}
+            status={card.status}
+            detail={card.detail}
+            tone={card.tone}
+            isRunning={card.tone === 'active'}
+          />
+        ))}
       </div>
       {graphSummaryText && (
         <div
@@ -989,64 +939,40 @@ export default function App() {
         </div>
       )}
       {/* 视图切换 */}
-      <div style={{ padding: '6px 12px', borderBottom: '1px solid var(--lg-rim)', display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
-        {VISIBLE_VIEW_TYPES.map((v) => (
-          <button key={v}
-            className={currentView === v ? 'lg-btn lg-btn-primary lg-btn-sm' : 'lg-btn lg-btn-ghost lg-btn-sm'}
-            onClick={() => {
-              lastUserViewportChangeAtRef.current = Date.now();
-              pauseAutoTour();
-              userPinnedViewRef.current = true;
-              setUserViewOverride(v);
-              if (panel.sessionId && isRunning) {
-                void chrome.runtime.sendMessage({
-                  type: 'VIEW_SELECTED', target: 'service-worker',
-                  payload: { sessionId: panel.sessionId, view: v },
-                } as AppMessage);
-              }
-            }}
-          >
-            {VIEW_LABELS[v]}
-          </button>
-        ))}
-        <button
-          className="lg-btn lg-btn-ghost lg-btn-sm"
-          onClick={() => requestAutoFit({ force: true })}
-          disabled={panel.graph.nodes.length === 0}
-        >
-          适配视图
-        </button>
-      </div>
+      <ViewSwitcher
+        currentView={currentView}
+        onViewChange={(v) => {
+          lastUserViewportChangeAtRef.current = Date.now();
+          pauseAutoTour();
+          userPinnedViewRef.current = true;
+          setUserViewOverride(v);
+          if (panel.sessionId && isRunning) {
+            void chrome.runtime.sendMessage({
+              type: 'VIEW_SELECTED', target: 'service-worker',
+              payload: { sessionId: panel.sessionId, view: v },
+            } as AppMessage);
+          }
+        }}
+        onFitView={() => requestAutoFit({ force: true })}
+        fitViewDisabled={panel.graph.nodes.length === 0}
+      />
       {/* 图表区域 */}
       <div ref={flowContainerRef} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-        {panel.graph.nodes.length === 0 && !isRunning && panel.sessionState === 'idle' ? (
-          <EmptyState />
-        ) : (
-          <ReactFlow
-            nodes={flowNodes}
-            edges={flowEdges}
-            nodeTypes={nodeTypes}
-            onNodeClick={handleNodeClick}
-            onMoveStart={handleViewportMoveStart}
-            onMoveEnd={handleViewportMoveEnd}
-            onInit={(instance) => {
-              reactFlowInstanceRef.current = instance;
-              queueMicrotask(() => requestAutoFit());
-            }}
-            minZoom={0.3}
-            maxZoom={2}
-          >
-            <Background />
-            <Controls />
-          </ReactFlow>
-        )}
-        <div data-testid="log-resizer" onMouseDown={handleLogResizeStart}
-          style={{ height: 8, flexShrink: 0, cursor: 'row-resize', background: 'linear-gradient(to bottom, var(--lg-rim) 0, var(--lg-rim) 1px, var(--lg-calm) 1px, var(--lg-calm) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          aria-label="调整日志面板高度" role="separator"
-        >
-          <div style={{ width: 48, height: 4, borderRadius: 999, backgroundColor: 'var(--lg-mist)' }} />
-        </div>
-        <LogPanel logPanelHeight={logPanelHeight} timelineEvents={panel.timelineEvents} />
+        <GraphArea
+          nodes={flowNodes}
+          edges={flowEdges}
+          nodeTypes={nodeTypes}
+          isIdle={panel.graph.nodes.length === 0 && !isRunning && panel.sessionState === 'idle'}
+          onNodeClick={handleNodeClick}
+          onMoveStart={handleViewportMoveStart}
+          onMoveEnd={handleViewportMoveEnd}
+          onInit={(instance) => {
+            reactFlowInstanceRef.current = instance;
+            queueMicrotask(() => requestAutoFit());
+          }}
+        />
+        <ResizeHandle onResizeStart={handleLogResizeStart} />
+        <TimelineLogPanel events={panel.timelineEvents} height={logPanelHeight} />
         {debugOpen && (
           <DebugPanel debugData={debugData} sessionId={exportSessionId}
             onExportDebug={handleExportDebug}
@@ -1060,10 +986,12 @@ export default function App() {
         )}
       </div>
       {/* 底部状态 */}
-      <div style={{ padding: '6px 12px', borderTop: '1px solid var(--lg-rim)', fontSize: 'var(--text-xs)', color: 'var(--lg-muted)', flexShrink: 0, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <span>会话: {panel.sessionId || '无'}</span>
-        <span>当前时间: {formatTime(panel.currentTimeMs)}</span>
-      </div>
+      <StatusBar
+        segments={[
+          { id: 'session', content: `会话: ${panel.sessionId || '无'}` },
+          { id: 'time', content: `当前时间: ${formatTime(panel.currentTimeMs)}` },
+        ]}
+      />
     </div>
   );
 }

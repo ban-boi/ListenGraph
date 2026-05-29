@@ -316,7 +316,7 @@ export async function openOverflowMenu() {
     return;
   }
   await act(async () => {
-    fireEvent.click(screen.getByTestId('overflow-menu-toggle'));
+    fireEvent.click(screen.getByTestId('dropdown-menu-toggle'));
   });
   screen.getByTestId('overflow-menu-export-json');
 }
