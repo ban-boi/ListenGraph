@@ -1,12 +1,9 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
-  ReactFlow,
-  Background,
-  Controls,
   type Node,
   type Edge,
+  type NodeProps,
 } from 'reactflow';
-import type { NodeProps } from 'reactflow';
 import 'reactflow/dist/style.css';
 import '@listen-graphic/ui/styles/theme.css';
 
@@ -16,14 +13,19 @@ import type {
   GraphEdge,
   EdgeType,
   NodeType,
+  ViewType,
 } from '@listen-graphic/schema';
 import { pickDefaultView, scoreViews } from '@listen-graphic/domain';
 import {
   GraphNodeCard,
-  formatGraphNodeTime,
-  EmptyState,
   useTheme,
   type GraphNodeCardData,
+  GraphToolbar,
+  ViewSwitcher,
+  GraphArea,
+  StatusBar,
+  SimpleLogPanel,
+  SignalIndicator,
 } from '@listen-graphic/ui';
 import { useGraphFixtureSequence } from './useGraphFixtureSequence';
 import {
@@ -167,13 +169,6 @@ type SessionState =
   | 'structuring'
   | 'stopped';
 
-const VIEW_TYPES = ['causal', 'timeline', 'comparison', 'hierarchy'];
-const VIEW_LABELS: Record<string, string> = {
-  causal: '因果图',
-  timeline: '时间线',
-  comparison: '对比图',
-  hierarchy: '层级图',
-};
 
 export default function App() {
   const fixtureSeq = useGraphFixtureSequence();
@@ -185,7 +180,7 @@ export default function App() {
   const [graph, setGraph] = useState<MergedGraph>(createEmptyGraph);
   const [logs, setLogs] = useState<string[]>([]);
 
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
 
   const displayGraph =
     fixtureSeq.active && fixtureSeq.graph ? fixtureSeq.graph : graph;
@@ -366,165 +361,54 @@ export default function App() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }} data-theme={theme}>
       {/* 顶部工具栏 */}
-      <div className="lg-toolbar" style={{ gap: 16, backgroundColor: 'var(--lg-calm)' }}>
-        <div className="lg-toolbar__brand">
-          <h2 style={{ margin: 0, fontSize: 'var(--text-xl)', fontWeight: 600 }}>
-            Listen Graphic
-          </h2>
-        </div>
-
-        {fixtureSeq.sequenceId && (
-          <span
-            style={{
-              fontSize: 'var(--text-sm)',
-              color: fixtureSeq.error ? 'var(--lg-danger)' : 'var(--lg-muted)',
-            }}
-          >
-            {fixtureSeq.error ??
-              (fixtureSeq.active
-                ? `sequence step ${fixtureSeq.stepIndex + 1}/${fixtureSeq.total}`
-                : `sequence: ${fixtureSeq.sequenceId}`)}
-          </span>
-        )}
-
-        {/* 状态指示器 */}
-        <div className="lg-signal-indicator">
-          <div
-            className={`lg-signal-dot ${isRunning ? 'lg-signal-dot--active' : 'lg-signal-dot--idle'}`}
+      <GraphToolbar
+        brandName="Listen Graphic"
+        primaryAction={{
+          label: isRunning ? '停止' : '开始',
+          onClick: isRunning ? handleStop : handleStart,
+          active: isRunning,
+          disabled: isFixturePreview,
+        }}
+        info={
+          <>
+            {fixtureSeq.sequenceId && (
+              <span style={{ fontSize: 'var(--text-sm)', color: fixtureSeq.error ? 'var(--lg-danger)' : 'var(--lg-muted)' }}>
+                {fixtureSeq.error ?? (fixtureSeq.active ? `sequence step ${fixtureSeq.stepIndex + 1}/${fixtureSeq.total}` : `sequence: ${fixtureSeq.sequenceId}`)}
+              </span>
+            )}
+            <SignalIndicator active={isRunning} />
+          </>
+        }
+        actions={
+          <ViewSwitcher
+            currentView={currentView as ViewType}
+            onViewChange={(v) => setCurrentView(v)}
           />
-          <span>{isRunning ? '运行中' : '空闲'}</span>
-        </div>
-
-        {/* 主题切换 */}
-        <button
-          className="lg-btn lg-btn-ghost lg-btn-sm"
-          onClick={toggleTheme}
-          title="切换主题"
-        >
-          {theme === 'dark' ? '☀️' : '🌙'}
-        </button>
-
-        {/* 开始/停止按钮 */}
-        <button
-          className={isRunning ? 'lg-btn lg-btn-danger' : 'lg-btn lg-btn-primary'}
-          onClick={isRunning ? handleStop : handleStart}
-          disabled={isFixturePreview}
-        >
-          {isRunning ? '停止' : '开始'}
-        </button>
-
-        {/* 视图切换 */}
-        <div style={{ display: 'flex', gap: 8, marginLeft: 24 }}>
-          {VIEW_TYPES.map((view) => (
-            <button
-              key={view}
-              className={currentView === view ? 'lg-btn lg-btn-primary lg-btn-sm' : 'lg-btn lg-btn-ghost lg-btn-sm'}
-              onClick={() => setCurrentView(view)}
-            >
-              {VIEW_LABELS[view]}
-            </button>
-          ))}
-        </div>
-
-        {/* 时间显示 */}
-        <div
-          style={{
-            marginLeft: 'auto',
-            fontFamily: 'monospace',
-            fontSize: 'var(--text-base)',
-            color: 'var(--lg-ink)',
-          }}
-        >
-          当前时间: {formatGraphNodeTime(currentTimeMs)}
-        </div>
-      </div>
+        }
+      />
 
       {/* 主内容区 */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* 图表区域 */}
-        <div style={{ flex: 1 }}>
-          {displayGraph.nodes.length === 0 && !isRunning && sessionState === 'idle' ? (
-            <EmptyState />
-          ) : (
-            <ReactFlow
-              nodes={layoutNodes}
-              edges={layoutEdges}
-              nodeTypes={nodeTypes}
-              onNodeClick={handleNodeClick}
-              fitView
-              minZoom={0.3}
-              maxZoom={2}
-            >
-              <Background />
-              <Controls />
-            </ReactFlow>
-          )}
-        </div>
-
-        {/* 右侧日志面板 */}
-        <div
-          style={{
-            width: 300,
-            borderLeft: '1px solid var(--lg-rim)',
-            display: 'flex',
-            flexDirection: 'column',
-            backgroundColor: 'var(--lg-ink)',
-          }}
-        >
-          <div
-            style={{
-              padding: '8px 12px',
-              borderBottom: '1px solid var(--lg-rim)',
-              color: 'var(--lg-success)',
-              fontSize: 'var(--text-sm)',
-              fontWeight: 600,
-            }}
-          >
-            日志 ({logs.length})
-          </div>
-          <div
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: '8px 12px',
-              fontFamily: 'monospace',
-              fontSize: 'var(--text-xs)',
-              color: 'var(--lg-success)',
-            }}
-          >
-            {logs.length === 0 ? (
-              <div style={{ color: 'var(--lg-muted)' }}>点击"开始"启动会话...</div>
-            ) : (
-              logs.map((log, i) => (
-                <div
-                  key={i}
-                  style={{ marginBottom: 4, wordBreak: 'break-all' }}
-                >
-                  {log}
-                </div>
-              ))
-            )}
-          </div>
+        <GraphArea
+          nodes={layoutNodes}
+          edges={layoutEdges}
+          nodeTypes={nodeTypes}
+          isIdle={sessionState === 'idle' && displayGraph.nodes.length === 0 && !isRunning}
+          onNodeClick={handleNodeClick}
+          fitView
+        />
+        <div style={{ width: 300 }}>
+          <SimpleLogPanel logs={logs} placeholder='点击"开始"启动会话...' />
         </div>
       </div>
 
       {/* 底部状态栏 */}
-      <div
-        style={{
-          padding: '8px 20px',
-          borderTop: '1px solid var(--lg-rim)',
-          backgroundColor: 'var(--lg-calm)',
-          fontSize: 'var(--text-sm)',
-          color: 'var(--lg-muted)',
-          display: 'flex',
-          justifyContent: 'space-between',
-        }}
-      >
-        <span>会话: {sessionId || '无'}</span>
-        <span>
-          节点: {displayGraph.nodes.length} | 边: {displayGraph.edges.length}
-        </span>
-      </div>
+      <StatusBar
+        segments={[
+          { id: 'session', content: `会话: ${sessionId || '无'}` },
+          { id: 'stats', content: `节点: ${displayGraph.nodes.length} | 边: ${displayGraph.edges.length}` },
+        ]}
+      />
     </div>
   );
 }

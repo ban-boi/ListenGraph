@@ -129,10 +129,10 @@ describe('App 组件', () => {
   it('应该渲染视图切换按钮', () => {
     render(<App />);
 
-    expect(screen.getByText('因果图')).toBeInTheDocument();
+    expect(screen.getByText('因果')).toBeInTheDocument();
     expect(screen.getByText('时间线')).toBeInTheDocument();
-    expect(screen.getByText('对比图')).toBeInTheDocument();
-    expect(screen.getByText('层级图')).toBeInTheDocument();
+    expect(screen.getByText('对比')).toBeInTheDocument();
+    expect(screen.getByText('层级')).toBeInTheDocument();
   });
 
   it('应该显示底部状态栏', () => {
