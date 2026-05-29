@@ -26,3 +26,7 @@ export { GraphToolbar } from './components/GraphToolbar';
 export type { GraphToolbarProps, ToolbarPrimaryAction } from './components/GraphToolbar';
 export { GraphArea } from './components/GraphArea';
 export type { GraphAreaProps } from './components/GraphArea';
+export { SimpleLogPanel, TimelineLogPanel } from './components/LogPanel';
+export type { SimpleLogPanelProps, TimelineLogPanelProps, TimelineEvent, TimelineStage, TimelineTone } from './components/LogPanel';
+export { ResizeHandle } from './components/ResizeHandle';
+export type { ResizeHandleProps } from './components/ResizeHandle';
