@@ -37,6 +37,8 @@ let deferredReactFlowOnInit:
   | null = null;
 
 export function triggerDeferredReactFlowInit() {
+  // deferred 模式下 mock ReactFlow 不会自动 onInit，须手动调用。
+  // GraphArea 在 idle 空图时渲染 EmptyState；首次有节点或 remount 后需再次 trigger。
   if (!deferredReactFlowOnInit) {
     return;
   }
@@ -63,139 +65,151 @@ function fireSimulatedViewportMove() {
   capturedOnMoveEnd?.();
 }
 
-vi.mock('reactflow', () => ({
-  ReactFlow: ({
-    children,
-    nodes = [],
-    edges = [],
-    nodeTypes = {},
-    fitView,
-    onInit,
-    onNodeClick,
-    onMoveStart,
-    onMoveEnd,
-  }: {
-    children?: ReactNode;
-    nodes?: Array<{
-      id: string;
-      type?: string;
-      position?: { x: number; y: number };
-      data?: { label?: string; timestampMs?: number; displayMode?: string; isTourAnchor?: boolean; isTourAdded?: boolean };
-    }>;
-    edges?: Array<{
-      id: string;
-      source?: string;
-      target?: string;
-      sourceHandle?: string;
-      targetHandle?: string;
-      type?: string;
-    }>;
-    nodeTypes?: Record<string, (props: Record<string, unknown>) => ReactNode>;
-    fitView?: boolean;
-    onInit?: (instance: {
-      fitView: typeof reactFlowFitViewSpy;
-      fitBounds: typeof reactFlowFitBoundsSpy;
-      getViewport: typeof reactFlowGetViewportSpy;
-    }) => void;
-    onNodeClick?: (_event: React.MouseEvent, node: { id: string; type?: string; position?: { x: number; y: number }; data?: Record<string, unknown> }) => void;
-    onMoveStart?: (event?: unknown) => void;
-    onMoveEnd?: (event?: unknown) => void;
-  }) => {
-    capturedOnMoveStart = onMoveStart ?? null;
-    capturedOnMoveEnd = onMoveEnd ?? null;
+/**
+ * 创建 reactflow mock 模块对象。
+ * 导出此函数以便测试文件在自己的 vi.mock() 中复用，
+ * 确保跨 monorepo 包（如 @listen-graphic/ui）的 mock 一致性。
+ *
+ * deferred 模式：`onInit` 仅注册到 `triggerDeferredReactFlowInit()`，不会随 mount 自动触发。
+ * 配合 GraphArea 的 EmptyState 条件挂载，fixture 序列等测试须在 ReactFlow 每次 mount 后手动 trigger。
+ */
+export function createReactFlowMock() {
+  return {
+    ReactFlow: ({
+      children,
+      nodes = [],
+      edges = [],
+      nodeTypes = {},
+      fitView,
+      onInit,
+      onNodeClick,
+      onMoveStart,
+      onMoveEnd,
+    }: {
+      children?: ReactNode;
+      nodes?: Array<{
+        id: string;
+        type?: string;
+        position?: { x: number; y: number };
+        data?: { label?: string; timestampMs?: number; displayMode?: string; isTourAnchor?: boolean; isTourAdded?: boolean };
+      }>;
+      edges?: Array<{
+        id: string;
+        source?: string;
+        target?: string;
+        sourceHandle?: string;
+        targetHandle?: string;
+        type?: string;
+      }>;
+      nodeTypes?: Record<string, (props: Record<string, unknown>) => ReactNode>;
+      fitView?: boolean;
+      onInit?: (instance: {
+        fitView: typeof reactFlowFitViewSpy;
+        fitBounds: typeof reactFlowFitBoundsSpy;
+        getViewport: typeof reactFlowGetViewportSpy;
+      }) => void;
+      onNodeClick?: (_event: React.MouseEvent, node: { id: string; type?: string; position?: { x: number; y: number }; data?: Record<string, unknown> }) => void;
+      onMoveStart?: (event?: unknown) => void;
+      onMoveEnd?: (event?: unknown) => void;
+    }) => {
+      capturedOnMoveStart = onMoveStart ?? null;
+      capturedOnMoveEnd = onMoveEnd ?? null;
 
-    useEffect(() => {
-      const instance = {
-        fitView: reactFlowFitViewSpy,
-        fitBounds: reactFlowFitBoundsSpy,
-        getViewport: reactFlowGetViewportSpy,
-      };
-      if (reactFlowInitModeState === 'immediate') {
-        onInit?.(instance);
-        return;
-      }
-      deferredReactFlowOnInit = onInit ?? null;
-    }, [onInit]);
+      useEffect(() => {
+        const instance = {
+          fitView: reactFlowFitViewSpy,
+          fitBounds: reactFlowFitBoundsSpy,
+          getViewport: reactFlowGetViewportSpy,
+        };
+        if (reactFlowInitModeState === 'immediate') {
+          onInit?.(instance);
+          return;
+        }
+        deferredReactFlowOnInit = onInit ?? null;
+      }, [onInit]);
 
-    return (
+      return (
+        <div
+          data-testid="reactflow-mock"
+          data-fit-view-prop={fitView ? 'true' : 'false'}
+          onMouseDown={(event) => onMoveStart?.(event)}
+          onMouseUp={(event) => onMoveEnd?.(event)}
+          onWheel={(event) => {
+            onMoveStart?.(event);
+            onMoveEnd?.(event);
+          }}
+        >
+          {nodes.map((node) => (
+            <div key={node.id}>
+              <button
+                type="button"
+                data-node-id={node.id}
+                data-node-position={`${node.position?.x ?? 0},${node.position?.y ?? 0}`}
+                data-node-display-mode={node.data?.displayMode ?? ''}
+                data-node-tour-anchor={node.data?.isTourAnchor ? 'true' : 'false'}
+                data-node-tour-added={node.data?.isTourAdded ? 'true' : 'false'}
+                onClick={(event) => onNodeClick?.(event as unknown as React.MouseEvent, node)}
+              >
+                {node.data?.label}
+              </button>
+              {node.type && nodeTypes[node.type]
+                ? nodeTypes[node.type]({ data: node.data, selected: false, xPos: 0, yPos: 0, id: node.id })
+                : null}
+            </div>
+          ))}
+          {edges.map((edge) => (
+            <div
+              key={edge.id}
+              data-testid="reactflow-edge"
+              data-edge-id={edge.id}
+              data-edge-source={edge.source ?? ''}
+              data-edge-target={edge.target ?? ''}
+              data-edge-source-handle={edge.sourceHandle ?? ''}
+              data-edge-target-handle={edge.targetHandle ?? ''}
+              data-edge-type={edge.type ?? ''}
+            />
+          ))}
+          {children}
+        </div>
+      );
+    },
+    Background: () => <div data-testid="reactflow-background" />,
+    Controls: () => <div data-testid="reactflow-controls" />,
+    Handle: ({ id, type, position, 'data-testid': dataTestId }: { id?: string; type?: string; position?: unknown; 'data-testid'?: string }) => (
       <div
-        data-testid="reactflow-mock"
-        data-fit-view-prop={fitView ? 'true' : 'false'}
-        onMouseDown={(event) => onMoveStart?.(event)}
-        onMouseUp={(event) => onMoveEnd?.(event)}
-        onWheel={(event) => {
-          onMoveStart?.(event);
-          onMoveEnd?.(event);
-        }}
-      >
-        {nodes.map((node) => (
-          <div key={node.id}>
-            <button
-              type="button"
-              data-node-id={node.id}
-              data-node-position={`${node.position?.x ?? 0},${node.position?.y ?? 0}`}
-              data-node-display-mode={node.data?.displayMode ?? ''}
-              data-node-tour-anchor={node.data?.isTourAnchor ? 'true' : 'false'}
-              data-node-tour-added={node.data?.isTourAdded ? 'true' : 'false'}
-              onClick={(event) => onNodeClick?.(event as unknown as React.MouseEvent, node)}
-            >
-              {node.data?.label}
-            </button>
-            {node.type && nodeTypes[node.type]
-              ? nodeTypes[node.type]({ data: node.data, selected: false, xPos: 0, yPos: 0, id: node.id })
-              : null}
-          </div>
-        ))}
-        {edges.map((edge) => (
-          <div
-            key={edge.id}
-            data-testid="reactflow-edge"
-            data-edge-id={edge.id}
-            data-edge-source={edge.source ?? ''}
-            data-edge-target={edge.target ?? ''}
-            data-edge-source-handle={edge.sourceHandle ?? ''}
-            data-edge-target-handle={edge.targetHandle ?? ''}
-            data-edge-type={edge.type ?? ''}
-          />
-        ))}
-        {children}
-      </div>
-    );
-  },
-  Background: () => <div data-testid="reactflow-background" />,
-  Controls: () => <div data-testid="reactflow-controls" />,
-  Handle: ({ id, type, position, 'data-testid': dataTestId }: { id?: string; type?: string; position?: unknown; 'data-testid'?: string }) => (
-    <div
-      data-testid={dataTestId ?? 'reactflow-handle'}
-      data-handle-id={id ?? ''}
-      data-handle-type={type ?? ''}
-      data-handle-position={position ?? ''}
-    />
-  ),
-  getViewportForBounds: (
-    bounds: { x: number; y: number; width: number; height: number },
-    width: number,
-    height: number,
-    minZoom: number,
-    maxZoom: number,
-    padding = 0,
-  ) => {
-    const paddedWidth = bounds.width * (1 + padding * 2);
-    const paddedHeight = bounds.height * (1 + padding * 2);
-    const zoom = Math.max(minZoom, Math.min(maxZoom, Math.min(width / paddedWidth, height / paddedHeight)));
-    return {
-      x: width / 2 - (bounds.x + bounds.width / 2) * zoom,
-      y: height / 2 - (bounds.y + bounds.height / 2) * zoom,
-      zoom,
-    };
-  },
-  Position: {
-    Top: 'top',
-    Bottom: 'bottom',
-    Left: 'left',
-    Right: 'right',
-  },
-}));
+        data-testid={dataTestId ?? 'reactflow-handle'}
+        data-handle-id={id ?? ''}
+        data-handle-type={type ?? ''}
+        data-handle-position={position ?? ''}
+      />
+    ),
+    getViewportForBounds: (
+      bounds: { x: number; y: number; width: number; height: number },
+      width: number,
+      height: number,
+      minZoom: number,
+      maxZoom: number,
+      padding = 0,
+    ) => {
+      const paddedWidth = bounds.width * (1 + padding * 2);
+      const paddedHeight = bounds.height * (1 + padding * 2);
+      const zoom = Math.max(minZoom, Math.min(maxZoom, Math.min(width / paddedWidth, height / paddedHeight)));
+      return {
+        x: width / 2 - (bounds.x + bounds.width / 2) * zoom,
+        y: height / 2 - (bounds.y + bounds.height / 2) * zoom,
+        zoom,
+      };
+    },
+    Position: {
+      Top: 'top',
+      Bottom: 'bottom',
+      Left: 'left',
+      Right: 'right',
+    },
+  };
+}
+
+vi.mock('reactflow', () => createReactFlowMock());
 
 import App from '../App';
 

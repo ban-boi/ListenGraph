@@ -4,7 +4,7 @@
 import '@testing-library/jest-dom';
 
 // Set up chrome global before any imports
-(globalThis as any).chrome = {
+(globalThis as Record<string, unknown>).chrome = {
   storage: {
     session: {
       get: vi.fn(() => Promise.resolve({})),
@@ -76,6 +76,19 @@ import '@testing-library/jest-dom';
 };
 
 if (typeof window !== 'undefined') {
+  // Mock DOMMatrixReadOnly — jsdom 未提供此构造函数，React Flow 的 updateNodeDimensions 会调用
+  const win = window as unknown as Record<string, unknown>;
+  if (typeof win.DOMMatrixReadOnly === 'undefined') {
+    win.DOMMatrixReadOnly = class DOMMatrixReadOnly {
+      a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
+      m11 = 1; m12 = 0; m13 = 0; m14 = 0;
+      m21 = 0; m22 = 1; m23 = 0; m24 = 0;
+      m31 = 0; m32 = 0; m33 = 1; m34 = 0;
+      m41 = 0; m42 = 0; m43 = 0; m44 = 1;
+      is2D = true; isIdentity = true;
+    };
+  }
+
   // Mock window.matchMedia
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
@@ -116,7 +129,7 @@ class ResizeObserverMock {
   unobserve = vi.fn();
   disconnect = vi.fn();
 }
-(globalThis as any).ResizeObserver = ResizeObserverMock;
+(globalThis as Record<string, unknown>).ResizeObserver = ResizeObserverMock;
 
 // Mock IntersectionObserver
 class IntersectionObserverMock {
@@ -125,7 +138,7 @@ class IntersectionObserverMock {
   disconnect = vi.fn();
   takeRecords = vi.fn();
 }
-(globalThis as any).IntersectionObserver = IntersectionObserverMock;
+(globalThis as Record<string, unknown>).IntersectionObserver = IntersectionObserverMock;
 
 // Preserve the native URL constructor so code that relies on URL parsing
 // (for example real fetch requests in provider tests) keeps working.

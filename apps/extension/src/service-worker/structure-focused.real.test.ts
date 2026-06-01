@@ -1,37 +1,27 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import * as fs from 'fs';
 import * as path from 'path';
 import type {
-  EdgeType,
   MergedGraph,
   ProviderConfig,
   SerializableProviderError,
   TranscriptChunk,
 } from '@listen-graphic/schema';
-
-type StructureFixture = {
-  name: string;
-  seed?: {
-    transcriptWindow?: Array<Omit<TranscriptChunk, 'sessionId' | 'provider'> & { provider?: string }>;
-    mergedGraph?: MergedGraph;
-    currentTimeMs?: number;
-    transcriptSequence?: number;
-    chunkIndex?: number;
-  };
-  transcripts: Array<Omit<TranscriptChunk, 'sessionId' | 'provider'> & { provider?: string }>;
-  acceptance: {
-    minSegments: number;
-    minMergedNodes: number;
-    minMergedEdges: number;
-    allowFallback: boolean;
-    expectFallbackUsed?: boolean;
-    disallowDuplicatePreviousTexts?: boolean;
-    expectCrossGraphEdges?: boolean;
-    mustContainTexts?: string[];
-    mustContainOneOfTexts?: string[][];
-    requiredEdgeTypes?: EdgeType[];
-  };
-};
+import {
+  type FetchTrace,
+  type FixtureRunContext,
+  ExternalProviderIssueError,
+  fetchWithHarnessTimeout,
+  writeRealStructurerTrace,
+  attachStructurerTraceContext,
+  normalizeText,
+  summarizeGraph,
+  summarizeStructurerCalls,
+  loadFixtures,
+  writeFixtureDiagnostics,
+  getExternalSkipResult,
+  getExternalIssueMetadata,
+  assertFixtureAcceptance,
+} from './structure-focused-helpers';
 
 const FIXTURE_DIR = path.resolve(__dirname, './fixtures/structure');
 const realStructurerType = process.env.LISTEN_GRAPHIC_E2E_STRUCTURER_TYPE?.trim();
@@ -75,7 +65,25 @@ const externalRetryLimit = Number.parseInt(
 const effectiveExternalRetryLimit = Number.isFinite(externalRetryLimit)
   ? Math.max(externalRetryLimit, 0)
   : 1;
+const fixtureTestTimeoutMs = Number.parseInt(
+  process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_TEST_TIMEOUT_MS?.trim() || '',
+  10,
+);
+const effectiveFixtureTestTimeoutMs = Number.isFinite(fixtureTestTimeoutMs)
+  ? fixtureTestTimeoutMs
+  : effectiveStructurerTimeoutMs > 0
+    ? (effectiveStructurerTimeoutMs +
+        Math.max(
+          effectiveFixtureDelayMs,
+          effectiveTimeoutCooldownMs,
+          effectiveRateLimitCooldownMs,
+        ) +
+        30_000) *
+      (effectiveExternalRetryLimit + 1)
+    : 3_600_000;
 const diagnosticArtifactDir = process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_DIAGNOSTIC_DIR?.trim();
+const traceRealStructurer =
+  process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_TRACE?.trim() === '1';
 const canRunRealStructurer =
   Boolean(realStructurerType) &&
   (realStructurerType === 'zhipu' ? Boolean(realStructurerKey) : Boolean(realStructurerKey));
@@ -87,79 +95,6 @@ const SMOKE_FIXTURE_NAMES = new Set([
   'incremental-role-self',
 ]);
 const REPLAY_FIXTURE_PREFIX = 'replay-realtime-';
-
-type FetchTrace = {
-  url: string;
-  method: string;
-  fixtureName?: string;
-  fixtureAttempt?: number;
-  callSequence?: number;
-  callKey?: string;
-  structurerMode?: 'bootstrap' | 'incremental' | string;
-  latestChunkTranscript?: string;
-  latestChunkRange?: {
-    startMs: number;
-    endMs: number;
-  };
-  status?: number;
-  ok?: boolean;
-  responseBody?: string;
-  error?: string;
-};
-
-type StructurerCallSummary = {
-  fixtureName?: string;
-  fixtureAttempt?: number;
-  callSequence: number;
-  mode: string;
-  latestChunkTranscript: string;
-  latestChunkRange?: {
-    startMs: number;
-    endMs: number;
-  };
-  requestCount: number;
-  outcomes: string[];
-  sawSuccess: boolean;
-  sawAbort: boolean;
-  finalOutcome: string;
-};
-
-type FixtureRunContext = {
-  fixtureName: string;
-  fixtureAttempt: number;
-  nextCallSequence: number;
-  callSequenceByKey: Map<string, number>;
-};
-
-type ExternalSkipResult = {
-  skippedDueToExternalIssue: true;
-  reason: string;
-};
-
-type ExternalIssueMetadata = {
-  kind: 'rate_limit' | 'timeout';
-  endpoint: string;
-  status?: number;
-};
-
-class ExternalProviderIssueError extends Error {
-  constructor(
-    readonly metadata: ExternalIssueMetadata,
-    readonly diagnostics: string,
-    readonly runResponse: {
-      success: boolean;
-      error?: string;
-      providerError?: SerializableProviderError;
-    },
-  ) {
-    super(
-      metadata.kind === 'timeout'
-        ? `External structurer timeout at ${metadata.endpoint}`
-        : `External structurer rate limit at ${metadata.endpoint}`,
-    );
-    this.name = 'ExternalProviderIssueError';
-  }
-}
 
 describeReal('Structure-focused real structurer', () => {
   let messageListeners: Array<
@@ -193,7 +128,8 @@ describeReal('Structure-focused real structurer', () => {
   });
 
   async function initializeModule() {
-    const chromeMock = (globalThis as any).chrome;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 测试 mock 的 chrome 对象，需要访问 vi.fn() 方法
+    const chromeMock = (globalThis as Record<string, unknown>).chrome as any;
     messageListeners = [];
     const nativeFetch = globalThis.fetch?.bind(globalThis);
 
@@ -307,22 +243,38 @@ describeReal('Structure-focused real structurer', () => {
             init?.method ??
             (typeof input === 'string' || input instanceof URL ? 'GET' : input.method || 'GET'),
         };
-        attachStructurerTraceContext(trace, init?.body);
+        attachStructurerTraceContext(trace, init?.body, currentFixtureRunContext);
         fetchTraces.push(trace);
 
         try {
-          const response = await nativeFetch(input, init);
+          writeRealStructurerTrace('fetch:start', trace, [
+            `mode=${trace.structurerMode ?? '<unknown>'}`,
+            `timeoutMs=${effectiveStructurerTimeoutMs}`,
+            `url=${trace.url}`,
+          ], traceRealStructurer);
+          const response = await fetchWithHarnessTimeout(nativeFetch, input, init, effectiveStructurerTimeoutMs);
           trace.status = response.status;
           trace.ok = response.ok;
+          writeRealStructurerTrace('fetch:response', trace, [
+            `status=${response.status}`,
+            `ok=${response.ok}`,
+          ], traceRealStructurer);
           try {
             trace.responseBody = (await response.clone().text()).slice(0, 50_000);
+            writeRealStructurerTrace('fetch:body', trace, [
+              `chars=${trace.responseBody.length}`,
+            ], traceRealStructurer);
           } catch (error) {
             trace.responseBody =
               error instanceof Error ? `<failed to read body: ${error.message}>` : '<failed to read body>';
+            writeRealStructurerTrace('fetch:body-error', trace, [
+              `error=${error instanceof Error ? error.message : String(error)}`,
+            ], traceRealStructurer);
           }
           return response;
         } catch (error) {
           trace.error = error instanceof Error ? error.message : String(error);
+          writeRealStructurerTrace('fetch:error', trace, [`error=${trace.error}`], traceRealStructurer);
           throw error;
         }
       }),
@@ -359,215 +311,6 @@ describeReal('Structure-focused real structurer', () => {
     };
   }
 
-  function loadFixtures() {
-    let fixtures = fs
-      .readdirSync(FIXTURE_DIR)
-      .filter((name) => name.endsWith('.json'))
-      .sort()
-      .map((name) => {
-        const raw = fs.readFileSync(path.join(FIXTURE_DIR, name), 'utf-8');
-        return JSON.parse(raw) as StructureFixture;
-      });
-
-    if (structureProfile === 'smoke') {
-      fixtures = fixtures.filter(
-        (fixture) =>
-          !fixture.name.startsWith(REPLAY_FIXTURE_PREFIX) &&
-          SMOKE_FIXTURE_NAMES.has(fixture.name),
-      );
-    } else if (structureProfile === 'replay') {
-      fixtures = fixtures.filter((fixture) => fixture.name.startsWith(REPLAY_FIXTURE_PREFIX));
-    } else if (structureProfile !== 'full') {
-      throw new Error(
-        `Unsupported LISTEN_GRAPHIC_E2E_STRUCTURE_PROFILE=${structureProfile}. Expected smoke, full, or replay.`,
-      );
-    } else {
-      fixtures = fixtures.filter((fixture) => !fixture.name.startsWith(REPLAY_FIXTURE_PREFIX));
-    }
-
-    if (!requestedFixtureFilter) {
-      return fixtures;
-    }
-
-    const requestedNames = requestedFixtureFilter
-      .split(',')
-      .map((value) => value.trim())
-      .filter(Boolean);
-
-    const filtered = fixtures.filter((fixture) =>
-      requestedNames.some((name) => fixture.name.toLowerCase().includes(name)),
-    );
-    if (filtered.length === 0) {
-      throw new Error(
-        `No structure fixtures matched LISTEN_GRAPHIC_E2E_STRUCTURE_FIXTURE=${requestedFixtureFilter}`,
-      );
-    }
-
-    return filtered;
-  }
-
-  function attachStructurerTraceContext(trace: FetchTrace, requestBody: RequestInit['body']) {
-    if (!currentFixtureRunContext || typeof requestBody !== 'string') {
-      return;
-    }
-
-    const parsed = parseStructurerRequestBody(requestBody);
-    if (!parsed) {
-      return;
-    }
-
-    const key = `${parsed.mode}|${parsed.latestChunkTranscript}`;
-    let callSequence = currentFixtureRunContext.callSequenceByKey.get(key);
-    if (!callSequence) {
-      callSequence = currentFixtureRunContext.nextCallSequence++;
-      currentFixtureRunContext.callSequenceByKey.set(key, callSequence);
-    }
-
-    trace.fixtureName = currentFixtureRunContext.fixtureName;
-    trace.fixtureAttempt = currentFixtureRunContext.fixtureAttempt;
-    trace.callSequence = callSequence;
-    trace.callKey = key;
-    trace.structurerMode = parsed.mode;
-    trace.latestChunkTranscript = parsed.latestChunkTranscript;
-    trace.latestChunkRange = parsed.latestChunkRange;
-  }
-
-  function parseStructurerRequestBody(body: string) {
-    try {
-      const parsed = JSON.parse(body) as {
-        messages?: Array<{ role?: string; content?: string }>;
-      };
-      const userMessage = parsed.messages?.find((message) => message.role === 'user')?.content;
-      if (!userMessage) {
-        return null;
-      }
-      const content = JSON.parse(userMessage) as {
-        mode?: string;
-        latestChunkTranscript?: string;
-      };
-      const latestChunkTranscript = typeof content.latestChunkTranscript === 'string'
-        ? content.latestChunkTranscript
-        : '';
-      return {
-        mode: typeof content.mode === 'string' ? content.mode : 'unknown',
-        latestChunkTranscript,
-        latestChunkRange: extractTranscriptRange(latestChunkTranscript),
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  function extractTranscriptRange(transcript: string) {
-    const match = transcript.match(/^\[(\d+)-(\d+)\]/);
-    if (!match) {
-      return undefined;
-    }
-
-    return {
-      startMs: Number.parseInt(match[1], 10),
-      endMs: Number.parseInt(match[2], 10),
-    };
-  }
-
-  function summarizeStructurerCalls(traces: FetchTrace[]): StructurerCallSummary[] {
-    const grouped = new Map<string, StructurerCallSummary>();
-
-    for (const trace of traces) {
-      if (!trace.callSequence) {
-        continue;
-      }
-
-      const key = `${trace.fixtureAttempt ?? 0}:${trace.callSequence}`;
-      const current = grouped.get(key) ?? {
-        fixtureName: trace.fixtureName,
-        fixtureAttempt: trace.fixtureAttempt,
-        callSequence: trace.callSequence,
-        mode: trace.structurerMode ?? 'unknown',
-        latestChunkTranscript: trace.latestChunkTranscript ?? '',
-        latestChunkRange: trace.latestChunkRange,
-        requestCount: 0,
-        outcomes: [],
-        sawSuccess: false,
-        sawAbort: false,
-        finalOutcome: 'unknown',
-      };
-
-      current.requestCount += 1;
-      if (trace.status === 429) {
-        current.outcomes.push('rate_limit:429');
-      } else if (trace.ok) {
-        current.outcomes.push(`success:${trace.status}`);
-        current.sawSuccess = true;
-      } else if (trace.status) {
-        current.outcomes.push(`http:${trace.status}`);
-      }
-
-      if (trace.error) {
-        current.outcomes.push(trace.error.includes('AbortError') ? 'timeout:abort' : `error:${trace.error}`);
-        if (trace.error.includes('AbortError')) {
-          current.sawAbort = true;
-        }
-      }
-
-      current.finalOutcome =
-        trace.error?.includes('AbortError')
-          ? 'timeout'
-          : trace.status === 429
-            ? 'rate_limit'
-            : trace.ok
-              ? `success:${trace.status}`
-              : trace.status
-                ? `http:${trace.status}`
-                : trace.error
-                  ? `error:${trace.error}`
-                  : current.finalOutcome;
-      grouped.set(key, current);
-    }
-
-    return [...grouped.values()].sort(
-      (left, right) =>
-        (left.fixtureAttempt ?? 0) - (right.fixtureAttempt ?? 0) ||
-        left.callSequence - right.callSequence,
-    );
-  }
-
-  function writeFixtureDiagnostics(params: {
-    fixtureName: string;
-    fixtureAttempt: number;
-    runResponse: {
-      success: boolean;
-      error?: string;
-      providerError?: SerializableProviderError;
-    };
-    fetchTraces: FetchTrace[];
-  }) {
-    if (!diagnosticArtifactDir) {
-      return;
-    }
-
-    fs.mkdirSync(diagnosticArtifactDir, { recursive: true });
-    const outputPath = path.join(
-      diagnosticArtifactDir,
-      `${params.fixtureName}.attempt-${params.fixtureAttempt}.diagnostic.json`,
-    );
-    fs.writeFileSync(
-      outputPath,
-      `${JSON.stringify(
-        {
-          fixtureName: params.fixtureName,
-          fixtureAttempt: params.fixtureAttempt,
-          recordedAt: new Date().toISOString(),
-          runResponse: params.runResponse,
-          callSummaries: summarizeStructurerCalls(params.fetchTraces),
-          fetchTraces: params.fetchTraces,
-        },
-        null,
-        2,
-      )}\n`,
-    );
-  }
-
   function formatRunDiagnostics(runResponse: {
     success: boolean;
     error?: string;
@@ -585,115 +328,8 @@ describeReal('Structure-focused real structurer', () => {
     );
   }
 
-  function getExternalSkipResult(
-    fixture: StructureFixture,
-    runResponse: {
-      success: boolean;
-      error?: string;
-      providerError?: SerializableProviderError;
-    },
-  ): ExternalSkipResult | null {
-    const externalIssue = getExternalIssueMetadata(runResponse);
-    if (!externalIssue) {
-      return null;
-    }
-
-    if (externalIssue.kind === 'rate_limit' && allowExternalIssueSkip) {
-      return {
-        skippedDueToExternalIssue: true,
-        reason: [
-          `${fixture.name} hit a known external structurer rate limit and was skipped.`,
-          `provider=${runResponse.providerError?.provider ?? savedProviderConfig.structurer.type}`,
-          `status=${externalIssue.status ?? 429}`,
-          `endpoint=${externalIssue.endpoint}`,
-          `recommended_wait_ms=${effectiveRateLimitCooldownMs}`,
-          `Unset LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP to treat this as a hard failure.`,
-        ].join(' '),
-      };
-    }
-
-    if (externalIssue.kind === 'timeout' && allowExternalIssueSkip) {
-      return {
-        skippedDueToExternalIssue: true,
-        reason: [
-          `${fixture.name} hit a known external structurer timeout and was skipped.`,
-          `provider=${runResponse.providerError?.provider ?? savedProviderConfig.structurer.type}`,
-          `timeout_ms=${effectiveStructurerTimeoutMs}`,
-          `endpoint=${externalIssue.endpoint}`,
-          `recommended_wait_ms=${effectiveTimeoutCooldownMs}`,
-          `Unset LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP to treat this as a hard failure.`,
-        ].join(' '),
-      };
-    }
-
-    return null;
-  }
-
-  function getExternalIssueMetadata(runResponse: {
-    success: boolean;
-    error?: string;
-    providerError?: SerializableProviderError;
-  }): ExternalIssueMetadata | null {
-    if (runResponse.success) {
-      return null;
-    }
-
-    const providerError = runResponse.providerError;
-    const matchedTrace = fetchTraces.find((trace) => trace.status === 429);
-    const traceBody = matchedTrace?.responseBody ?? '';
-    const timedOutTraceCount = fetchTraces.filter((trace) => trace.error?.includes('AbortError')).length;
-    const lastTraceWithUrl = [...fetchTraces].reverse().find((trace) => trace.url);
-    const isKnownRateLimit =
-      providerError?.code === 'RATE_LIMIT_ERROR' ||
-      providerError?.status === 429 ||
-      matchedTrace?.status === 429 ||
-      traceBody.includes('"code":"1302"');
-    const isKnownTimeout =
-      providerError?.code === 'TIMEOUT_ERROR' ||
-      timedOutTraceCount > 0;
-
-    if (isKnownRateLimit) {
-      return {
-        kind: 'rate_limit',
-        endpoint: matchedTrace?.url ?? savedProviderConfig.structurer.endpoint ?? '<unknown>',
-        status: providerError?.status ?? matchedTrace?.status ?? 429,
-      };
-    }
-
-    if (isKnownTimeout) {
-      return {
-        kind: 'timeout',
-        endpoint:
-          lastTraceWithUrl?.url ?? matchedTrace?.url ?? savedProviderConfig.structurer.endpoint ?? '<unknown>',
-      };
-    }
-
-    return null;
-  }
-
-  function normalizeText(value: string) {
-    return value.trim().toLowerCase().replace(/[，。！？、,.!?\s]/g, '');
-  }
-
-  function summarizeGraph(graph: MergedGraph | null) {
-    if (!graph) {
-      return { nodeCount: 0, edgeCount: 0, nodeTexts: [], edges: [] };
-    }
-
-    return {
-      nodeCount: graph.nodes.length,
-      edgeCount: graph.edges.length,
-      nodeTexts: graph.nodes.map((node) => node.text),
-      edges: graph.edges.map((edge) => ({
-        source: edge.source,
-        target: edge.target,
-        type: edge.type,
-      })),
-    };
-  }
-
   function materializeFixture(
-    fixture: StructureFixture,
+    fixture: import('./structure-focused-helpers').StructureFixture,
     sessionId: string,
   ) {
     const materializeChunk = (
@@ -727,7 +363,10 @@ describeReal('Structure-focused real structurer', () => {
     };
   }
 
-  async function runFixture(fixture: StructureFixture, fixtureAttempt: number) {
+  async function runFixture(
+    fixture: import('./structure-focused-helpers').StructureFixture,
+    fixtureAttempt: number,
+  ) {
     fetchTraces = [];
     const expectedSessionId = `fixture_${fixture.name}_${Date.now()}`;
     const materialized = materializeFixture(fixture, expectedSessionId);
@@ -761,14 +400,31 @@ describeReal('Structure-focused real structurer', () => {
       fixtureAttempt,
       runResponse,
       fetchTraces,
+      diagnosticArtifactDir,
     });
 
-    const externalSkipResult = getExternalSkipResult(fixture, runResponse);
+    const externalSkipResult = getExternalSkipResult(
+      fixture,
+      runResponse,
+      {
+        allowExternalIssueSkip,
+        effectiveRateLimitCooldownMs,
+        effectiveTimeoutCooldownMs,
+        effectiveStructurerTimeoutMs,
+        structurerEndpoint: savedProviderConfig.structurer.endpoint,
+        structurerType: savedProviderConfig.structurer.type,
+      },
+      fetchTraces,
+    );
     if (externalSkipResult) {
       return externalSkipResult;
     }
 
-    const externalIssue = getExternalIssueMetadata(runResponse);
+    const externalIssue = getExternalIssueMetadata(
+      runResponse,
+      fetchTraces,
+      savedProviderConfig.structurer.endpoint,
+    );
     if (externalIssue) {
       throw new ExternalProviderIssueError(
         externalIssue,
@@ -830,138 +486,19 @@ describeReal('Structure-focused real structurer', () => {
     };
   }
 
-  function assertFixtureAcceptance(params: {
-    fixture: StructureFixture;
-    debugData: {
-      segments: any[];
-      transcripts: TranscriptChunk[];
-      graph: MergedGraph | null;
-      structurerRuns?: Array<{ fallbackUsed?: boolean }>;
-    };
-    exportData: {
-      transcripts: TranscriptChunk[];
-      graph: MergedGraph;
-    };
-    previousGraph: MergedGraph | null;
-  }) {
-    const { fixture, debugData, exportData, previousGraph } = params;
-    const acceptance = fixture.acceptance;
-    const lastSegment = debugData.segments.at(-1);
-    const lastStructurerRun = debugData.structurerRuns?.at(-1);
-    const graphSummary = summarizeGraph(debugData.graph);
-
-    expect(
-      debugData.segments.length,
-      `${fixture.name} minSegments graph=${JSON.stringify(graphSummary)}`,
-    ).toBeGreaterThanOrEqual(acceptance.minSegments);
-    expect(
-      debugData.graph?.nodes.length ?? 0,
-      `${fixture.name} minMergedNodes graph=${JSON.stringify(graphSummary)}`,
-    ).toBeGreaterThanOrEqual(acceptance.minMergedNodes);
-    expect(
-      debugData.graph?.edges.length ?? 0,
-      `${fixture.name} minMergedEdges graph=${JSON.stringify(graphSummary)}`,
-    ).toBeGreaterThanOrEqual(acceptance.minMergedEdges);
-    expect(exportData.transcripts.length, `${fixture.name} exported transcripts`).toBeGreaterThanOrEqual(
-      fixture.transcripts.length,
-    );
-
-    const fallbackUsed = Boolean(lastStructurerRun?.fallbackUsed);
-    if (!acceptance.allowFallback) {
-      expect(fallbackUsed, `${fixture.name} should not fallback`).toBe(false);
-    }
-    if (acceptance.expectFallbackUsed !== undefined) {
-      expect(fallbackUsed, `${fixture.name} fallback expectation`).toBe(
-        acceptance.expectFallbackUsed,
-      );
-    }
-
-    if (acceptance.disallowDuplicatePreviousTexts && previousGraph && lastSegment) {
-      const previousTexts = new Set(previousGraph.nodes.map((node) => normalizeText(node.text)));
-      const duplicatedTexts = lastSegment.nodes
-        .map((node: { text: string }) => normalizeText(node.text))
-        .filter((text: string) => previousTexts.has(text));
-      expect(
-        duplicatedTexts,
-        `${fixture.name} should avoid duplicating previous node text graph=${JSON.stringify(graphSummary)}`,
-      ).toEqual([]);
-    }
-
-    if (acceptance.expectCrossGraphEdges && previousGraph && lastSegment) {
-      const previousNodeIds = new Set(previousGraph.nodes.map((node) => node.id));
-      const lastSegmentNodeIds = new Set(lastSegment.nodes.map((node: { id: string }) => node.id));
-      const mergedEdges = debugData.graph?.edges ?? [];
-      const hasCrossGraphEdge = mergedEdges.some(
-        (edge: { source: string; target: string }) =>
-          (previousNodeIds.has(edge.source) && lastSegmentNodeIds.has(edge.target)) ||
-          (previousNodeIds.has(edge.target) && lastSegmentNodeIds.has(edge.source)),
-      );
-      expect(
-        hasCrossGraphEdge,
-        `${fixture.name} should contain a cross-graph edge graph=${JSON.stringify(graphSummary)}`,
-      ).toBe(true);
-    }
-
-    if (acceptance.mustContainTexts?.length) {
-      const normalizedNodeTexts = (debugData.graph?.nodes ?? []).map((node) => normalizeText(node.text));
-      for (const expectedText of acceptance.mustContainTexts) {
-        const normalizedExpected = normalizeText(expectedText);
-        const matched = normalizedNodeTexts.some(
-          (nodeText) =>
-            nodeText.includes(normalizedExpected) ||
-            normalizedExpected.includes(nodeText),
-        );
-        expect(
-          matched,
-          `${fixture.name} should contain text "${expectedText}" graph=${JSON.stringify(graphSummary)}`,
-        ).toBe(true);
-      }
-    }
-
-    if (acceptance.mustContainOneOfTexts?.length) {
-      const normalizedNodeTexts = (debugData.graph?.nodes ?? []).map((node) => normalizeText(node.text));
-      for (const candidateGroup of acceptance.mustContainOneOfTexts) {
-        const matched = candidateGroup.some((candidateText) => {
-          const normalizedExpected = normalizeText(candidateText);
-          return normalizedNodeTexts.some(
-            (nodeText) =>
-              nodeText.includes(normalizedExpected) ||
-              normalizedExpected.includes(nodeText),
-          );
-        });
-        expect(
-          matched,
-          `${fixture.name} should contain one of ${JSON.stringify(candidateGroup)} graph=${JSON.stringify(graphSummary)}`,
-        ).toBe(true);
-      }
-    }
-
-    if (acceptance.requiredEdgeTypes?.length) {
-      const edgeTypes = new Set((debugData.graph?.edges ?? []).map((edge) => edge.type));
-      for (const edgeType of acceptance.requiredEdgeTypes) {
-        expect(
-          edgeTypes.has(edgeType),
-          `${fixture.name} should contain edge type "${edgeType}" graph=${JSON.stringify(graphSummary)}`,
-        ).toBe(true);
-      }
-    }
-  }
-
-  const fixtures = loadFixtures();
+  const fixtures = loadFixtures({
+    fixtureDir: FIXTURE_DIR,
+    structureProfile,
+    requestedFixtureFilter,
+    replayFixturePrefix: REPLAY_FIXTURE_PREFIX,
+    smokeFixtureNames: SMOKE_FIXTURE_NAMES,
+  });
   let nextFixtureCooldownMs = 0;
   for (const [index, fixture] of fixtures.entries()) {
     test(
       fixture.name,
       {
-        timeout:
-          (effectiveStructurerTimeoutMs +
-            Math.max(
-              effectiveFixtureDelayMs,
-              effectiveTimeoutCooldownMs,
-              effectiveRateLimitCooldownMs,
-            ) +
-            30_000) *
-          (effectiveExternalRetryLimit + 1),
+        timeout: effectiveFixtureTestTimeoutMs,
       },
       async () => {
         const cooldownBeforeFixtureMs =
