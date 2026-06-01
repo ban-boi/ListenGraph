@@ -49,12 +49,11 @@ import {
   ViewSwitcher,
   GraphArea,
   StatusBar,
-  StatusCard,
   ResizeHandle,
   ErrorBanner,
   DropdownMenu,
   TimelineLogPanel,
-  PipelineWaveDivider,
+  PipelineLayout,
   formatTime,
   formatRelativeAge,
 } from '@listen-graphic/ui';
@@ -898,70 +897,73 @@ export default function App() {
           message={panel.recentProviderError.message}
         />
       )}
-      {/* ASR 状态 */}
-      <div data-testid="runtime-status-cards" style={{ padding: '6px 12px 2px', flexShrink: 0 }}>
-        <StatusCard
-          testId={`status-card-${asrStatusCard.label.toLowerCase()}`}
-          label={asrStatusCard.label}
-          status={asrStatusCard.status}
-          detail={asrStatusCard.detail}
-          tone={asrStatusCard.tone}
-          isRunning={asrStatusCard.tone === 'active'}
-        />
-      </div>
-      <PipelineWaveDivider status={asrWaveStatus} tone="signal" />
-      {/* Structurer 状态 */}
-      <div style={{ padding: '2px 12px 2px', flexShrink: 0 }}>
-        <StatusCard
-          testId={`status-card-${structurerStatusCard.label.toLowerCase()}`}
-          label={structurerStatusCard.label}
-          status={structurerStatusCard.status}
-          detail={structurerStatusCard.detail}
-          tone={structurerStatusCard.tone}
-          isRunning={structurerStatusCard.tone === 'active'}
-        />
-      </div>
-      <PipelineWaveDivider status={structurerWaveStatus} tone="insight" />
-      {graphSummaryText && (
-        <div
-          data-testid="graph-view-summary"
-          style={{
-            margin: '0 12px 6px',
-            padding: '5px 10px',
-            border: '1px solid var(--lg-rim)',
-            borderRadius: 8,
-            backgroundColor: 'var(--lg-calm)',
-            color: 'var(--lg-muted)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 10,
-            flexWrap: 'wrap',
-            flexShrink: 0,
-            fontSize: 'var(--text-xs)',
-          }}
-        >
-          <span>{graphSummaryText}</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span
-              data-testid="auto-tour-indicator"
+      {/* 管线状态 */}
+      <PipelineLayout
+        asr={{
+          module: {
+            label: asrStatusCard.label,
+            status: asrStatusCard.status,
+            detail: asrStatusCard.detail,
+            tone: asrStatusCard.tone,
+            testId: `status-card-${asrStatusCard.label.toLowerCase()}`,
+          },
+          waveStatus: asrWaveStatus,
+          waveTone: 'signal',
+        }}
+        structurer={{
+          module: {
+            label: structurerStatusCard.label,
+            status: structurerStatusCard.status,
+            detail: structurerStatusCard.detail,
+            tone: structurerStatusCard.tone,
+            testId: `status-card-${structurerStatusCard.label.toLowerCase()}`,
+          },
+          waveStatus: structurerWaveStatus,
+          waveTone: 'insight',
+        }}
+        graph={{
+          module: {
+            label: 'Graph',
+            status: panel.graph.nodes.length > 0 ? `${panel.graph.nodes.length}n · ${panel.graph.edges.length}e` : '空',
+            detail: graphSummaryText ?? '等待图谱数据',
+            tone: isRunning ? 'active' : panel.graph.nodes.length > 0 ? 'success' : 'neutral',
+          },
+          waveStatus: graphWaveStatus,
+          waveTone: 'neutral',
+        }}
+        graphExtra={
+          graphSummaryText ? (
+            <div
+              data-testid="graph-view-summary"
               style={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                backgroundColor: autoTourIndicatorColor,
-                animation:
-                  autoTourStatus === 'touring'
-                    ? 'listen-graphic-tour-pulse 1s ease-in-out infinite'
-                    : 'none',
-                display: 'inline-block',
+                padding: '2px 8px',
+                color: 'var(--lg-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                fontSize: '0.55rem',
               }}
-            />
-            <span data-testid="auto-tour-status">{autoTourStatusText}</span>
-          </div>
-        </div>
-      )}
-      <PipelineWaveDivider status={graphWaveStatus} tone="neutral" />
+            >
+              <span
+                data-testid="auto-tour-indicator"
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  backgroundColor: autoTourIndicatorColor,
+                  animation:
+                    autoTourStatus === 'touring'
+                      ? 'listen-graphic-tour-pulse 1s ease-in-out infinite'
+                      : 'none',
+                  display: 'inline-block',
+                }}
+              />
+              <span data-testid="auto-tour-status">{autoTourStatusText}</span>
+            </div>
+          ) : undefined
+        }
+      />
       {/* 视图切换 */}
       <ViewSwitcher
         currentView={currentView}

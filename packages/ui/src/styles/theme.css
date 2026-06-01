@@ -671,6 +671,86 @@ body {
 }
 
 /* ================================================================
+   管线紧凑模块头
+   ================================================================ */
+.lg-pipeline-mod {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-2) var(--sp-3);
+  text-align: center;
+  min-width: 0;
+  flex: 1;
+}
+
+.lg-pipeline-mod__header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: 1px;
+}
+
+.lg-pipeline-mod__label {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.lg-pipeline-mod__status {
+  font-size: var(--text-2xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lg-pipeline-mod__detail {
+  font-size: 0.55rem;
+  color: var(--lg-muted);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* ================================================================
+   管线响应式布局
+   ================================================================ */
+.lg-pipeline-layout {
+  container-type: inline-size;
+}
+
+/* --- Narrow: 单列竖排 --- */
+.lg-pipeline-layout--narrow .lg-pipeline-layout__inner {
+  display: flex;
+  flex-direction: column;
+}
+
+.lg-pipeline-layout--narrow .lg-pipeline-mod {
+  flex: none;
+}
+
+/* --- Medium: 2+1 网格 --- */
+.lg-pipeline-layout--medium .lg-pipeline-layout__top-row {
+  display: flex;
+  align-items: stretch;
+}
+
+.lg-pipeline-layout--medium .lg-pipeline-layout__bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* --- Wide: 三列并排 --- */
+.lg-pipeline-layout--wide .lg-pipeline-layout__inner {
+  display: flex;
+  align-items: stretch;
+}
+
+/* ================================================================
    响应式断点 — 全局
    ================================================================ */
 

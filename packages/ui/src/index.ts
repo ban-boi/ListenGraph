@@ -38,3 +38,7 @@ export { StatusBar } from './components/StatusBar';
 export type { StatusBarProps, StatusBarSegment } from './components/StatusBar';
 export { PipelineWaveDivider } from './components/PipelineWaveDivider';
 export type { PipelineWaveDividerProps, WaveDividerStatus, WaveDividerTone, WaveDirection } from './components/PipelineWaveDivider';
+export { PipelineModule } from './components/PipelineModule';
+export type { PipelineModuleProps } from './components/PipelineModule';
+export { PipelineLayout } from './components/PipelineLayout';
+export type { PipelineLayoutProps, PipelineModuleSlot, LayoutMode } from './components/PipelineLayout';
