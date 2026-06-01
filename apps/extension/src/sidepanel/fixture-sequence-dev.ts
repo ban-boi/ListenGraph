@@ -9,6 +9,7 @@ import seqPatternClaimReasonExample from '../../../../packages/graph-fixtures/fi
 import seqPatternOpposition from '../../../../packages/graph-fixtures/fixtures/sequences/seq-pattern-opposition.json';
 import seqPatternQuestionThreePoints from '../../../../packages/graph-fixtures/fixtures/sequences/seq-pattern-question-three-points.json';
 import seqPatternTimelineNote from '../../../../packages/graph-fixtures/fixtures/sequences/seq-pattern-timeline-note.json';
+import seqPatternQuestionIncremental from '../../../../packages/graph-fixtures/fixtures/sequences/seq-pattern-question-incremental.json';
 
 import {
   createFixtureSequenceController,
@@ -24,6 +25,7 @@ const SEQUENCE_MAP: Record<string, SequenceFixture> = {
   'seq-pattern-opposition': seqPatternOpposition as SequenceFixture,
   'seq-pattern-causal-chain': seqPatternCausalChain as SequenceFixture,
   'seq-pattern-timeline-note': seqPatternTimelineNote as SequenceFixture,
+  'seq-pattern-question-incremental': seqPatternQuestionIncremental as SequenceFixture,
 };
 
 export type FixtureLabDepsRef = RefObject<FixtureLabDeps>;

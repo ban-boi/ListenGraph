@@ -343,11 +343,14 @@ function buildStableReactFlowDebugGraph(params: {
       const shouldContinueFromAnchor =
         params.view === 'hierarchy' &&
         (node.layoutRole === 'chain' || node.layoutRole === 'support');
+
+      const branchY = anchorPosition.y + STABLE_LAYOUT_BRANCH_GAP * (branchCount + 1);
+
       basePosition = {
         x: shouldContinueFromAnchor || laneX === anchorPosition.x
           ? anchorPosition.x + STABLE_LAYOUT_BRANCH_OFFSET_X
           : laneX,
-        y: anchorPosition.y + STABLE_LAYOUT_BRANCH_GAP * (branchCount + 1),
+        y: branchY,
       };
       branchCountByAnchor.set(anchorId, branchCount + 1);
     } else {
@@ -372,6 +375,40 @@ function buildStableReactFlowDebugGraph(params: {
     }
     positions[node.id] = nextPosition;
     occupied.push(nextPosition);
+  }
+
+  // Phase 3: question-branches 分支组 reflown
+  // 对 question-branches 语义模式，将所有 branch 节点统一重排为右侧垂直分组列表
+  const semanticPattern = params.rendererGraph.layoutHints?.semanticPattern;
+  const isQuestionBranches =
+    params.view === 'hierarchy' && semanticPattern === 'question-branches';
+  const qbRootId = isQuestionBranches
+    ? params.rendererGraph.layoutHints?.rootNodeId
+    : undefined;
+  const qbBranchIds = isQuestionBranches
+    ? (params.rendererGraph.layoutHints?.branchNodeIds ?? [])
+    : [];
+
+  if (qbRootId && qbBranchIds.length > 0 && positions[qbRootId]) {
+    const rootPos = positions[qbRootId];
+    const groupStep = Math.max(
+      STABLE_LAYOUT_BRANCH_GAP,
+      STABLE_LAYOUT_CARD_HEIGHT + STABLE_LAYOUT_COLLISION_GAP,
+    );
+    const branchLaneX = rootPos.x + STABLE_LAYOUT_BRANCH_OFFSET_X;
+
+    for (let i = 0; i < qbBranchIds.length; i++) {
+      const branchId = qbBranchIds[i];
+      if (validNodeIds.has(branchId)) {
+        positions[branchId] = { x: branchLaneX, y: rootPos.y + i * groupStep };
+      }
+    }
+
+    // 重建 occupied 列表
+    occupied.length = 0;
+    for (const pos of Object.values(positions)) {
+      occupied.push(pos);
+    }
   }
 
   const nodes: ReactFlowDebugNode[] = params.rendererGraph.nodes
@@ -409,7 +446,12 @@ function buildStableReactFlowDebugGraph(params: {
       return priority !== 'hidden';
     })
     .map((edge) => {
-      const handles = resolveEdgeHandles(positions[edge.source], positions[edge.target]);
+      // question-branches：强制 source-right → target-left
+      const isBranchEdge =
+        qbRootId && edge.source === qbRootId && qbBranchIds.includes(edge.target);
+      const handles = isBranchEdge
+        ? { sourceHandle: 'source-right' as SourceHandleId, targetHandle: 'target-left' as TargetHandleId }
+        : resolveEdgeHandles(positions[edge.source], positions[edge.target]);
       const priority =
         isOppositionOverride && edge.relation === 'opposes'
           ? 'primary'

@@ -10,6 +10,7 @@ import {
   STABLE_LAYOUT_CARD_HEIGHT,
   STABLE_LAYOUT_CARD_WIDTH,
 } from './graph-utils';
+import type { StableViewLayoutState } from './types';
 
 describe('resolveEdgeHandles', () => {
   it('正上→正下：bottom→top', () => {
@@ -344,6 +345,59 @@ describe('semantic hierarchy layout grammar', () => {
     expectVisibleHandles(reactFlow.edges);
   });
 
+  it('question-branches：分支从锚点顶部开始垂直分组排列', () => {
+    const graph = makeGraph(
+      [
+        {
+          id: 'q1',
+          type: 'question',
+          text: '三个问题？',
+          timestampMs: 0,
+          status: 'confirmed',
+        },
+        {
+          id: 'p1',
+          type: 'claim',
+          text: '问题一',
+          timestampMs: 1000,
+          status: 'confirmed',
+        },
+        {
+          id: 'p2',
+          type: 'claim',
+          text: '问题二',
+          timestampMs: 2000,
+          status: 'confirmed',
+        },
+        {
+          id: 'p3',
+          type: 'claim',
+          text: '问题三',
+          timestampMs: 3000,
+          status: 'confirmed',
+        },
+      ],
+      [
+        { id: 'e1', source: 'q1', target: 'p1', type: 'supports' },
+        { id: 'e2', source: 'q1', target: 'p2', type: 'supports' },
+        { id: 'e3', source: 'q1', target: 'p3', type: 'supports' },
+      ],
+    );
+
+    const { reactFlow, positions } = layoutHierarchy(graph);
+    expectNoOverlaps(reactFlow.nodes);
+
+    // 所有分支在同一 x 列
+    expectSameLane(positions, ['p1', 'p2', 'p3']);
+
+    // 第一个分支顶部与锚点顶部对齐
+    expect(positions.p1.y).toBe(positions.q1.y);
+
+    // 分支按顺序向下排列，间距 = CARD_HEIGHT + COLLISION_GAP = 156
+    expect(positions.p2.y).toBe(positions.p1.y + 156);
+    expect(positions.p3.y).toBe(positions.p2.y + 156);
+  });
+
   it('观点-理由-例子：claim 是主节点，reason 和 example 形成右侧支撑链', () => {
     const graph = makeGraph(
       [
@@ -553,5 +607,120 @@ describe('semantic hierarchy layout grammar', () => {
     expectYOrder(positions, ['t1', 't2', 't3', 'n1']);
     expectNoOverlaps(reactFlow.nodes);
     expectVisibleHandles(reactFlow.edges);
+  });
+
+  function layoutHierarchyIncremental(
+    graphs: MergedGraph[],
+  ): Array<SemanticLayoutResult & { layoutState: StableViewLayoutState }> {
+    const results: Array<SemanticLayoutResult & { layoutState: StableViewLayoutState }> = [];
+    let previousLayoutState: StableViewLayoutState = { positions: {} };
+
+    for (const graph of graphs) {
+      const rendererGraph = toHierarchyRendererGraph(graph);
+      const result = buildStableReactFlowDebugGraph({
+        rendererGraph,
+        view: 'hierarchy',
+        currentTimeMs: 0,
+        selectedNodeId: null,
+        previousLayoutState,
+      });
+
+      const entry: SemanticLayoutResult & { layoutState: StableViewLayoutState } = {
+        rendererGraph,
+        reactFlow: result.reactFlow,
+        positions: Object.fromEntries(
+          result.reactFlow.nodes.map((node) => [node.id, node.position]),
+        ),
+        layoutState: result.layoutState,
+      };
+      results.push(entry);
+      previousLayoutState = result.layoutState;
+    }
+    return results;
+  }
+
+  it('question-branches：增量到达时整个分支组 reflown 重排', () => {
+    // rev1: q1 + p1 + p2
+    const rev1 = makeGraph(
+      [
+        { id: 'q1', type: 'question', text: '问题？', timestampMs: 0, status: 'confirmed' },
+        { id: 'p1', type: 'claim', text: '分点一', timestampMs: 1000, status: 'confirmed' },
+        { id: 'p2', type: 'claim', text: '分点二', timestampMs: 2000, status: 'confirmed' },
+      ],
+      [
+        { id: 'e1', source: 'q1', target: 'p1', type: 'supports' },
+        { id: 'e2', source: 'q1', target: 'p2', type: 'supports' },
+      ],
+    );
+
+    // rev2: q1 + p1 + p2 + p3（新增 p3）
+    const rev2 = makeGraph(
+      [
+        { id: 'q1', type: 'question', text: '问题？', timestampMs: 0, status: 'confirmed' },
+        { id: 'p1', type: 'claim', text: '分点一', timestampMs: 1000, status: 'confirmed' },
+        { id: 'p2', type: 'claim', text: '分点二', timestampMs: 2000, status: 'confirmed' },
+        { id: 'p3', type: 'claim', text: '分点三', timestampMs: 3000, status: 'confirmed' },
+      ],
+      [
+        { id: 'e1', source: 'q1', target: 'p1', type: 'supports' },
+        { id: 'e2', source: 'q1', target: 'p2', type: 'supports' },
+        { id: 'e3', source: 'q1', target: 'p3', type: 'supports' },
+      ],
+    );
+
+    const [step1, step2] = layoutHierarchyIncremental([rev1, rev2]);
+
+    // rev1: 2 分支
+    expect(step1.positions.p1.y).toBe(step1.positions.q1.y);
+    expect(step1.positions.p2.y).toBe(step1.positions.q1.y + 156);
+
+    // rev2: 3 分支，所有分支 reflown
+    expect(step2.positions.p1.y).toBe(step2.positions.q1.y);
+    expect(step2.positions.p2.y).toBe(step2.positions.q1.y + 156);
+    expect(step2.positions.p3.y).toBe(step2.positions.q1.y + 312);
+
+    // rev2 中 p1/p2 位置与 rev1 一致（顶部对齐策略天然稳定）
+    expect(step2.positions.p1.y).toBe(step1.positions.p1.y);
+    expect(step2.positions.p2.y).toBe(step1.positions.p2.y);
+
+    // 所有边使用 source-right → target-left
+    for (const edge of step2.reactFlow.edges) {
+      expect(edge.sourceHandle).toBe('source-right');
+      expect(edge.targetHandle).toBe('target-left');
+    }
+
+    expectNoOverlaps(step2.reactFlow.nodes);
+  });
+
+  it('question-branches：5 个分支全部使用 source-right → target-left', () => {
+    const nodes: MergedGraph['nodes'] = [
+      {
+        id: 'q1',
+        type: 'question',
+        text: '五个问题？',
+        timestampMs: 0,
+        status: 'confirmed',
+      },
+    ];
+    const edges: MergedGraph['edges'] = [];
+    for (let i = 1; i <= 5; i += 1) {
+      nodes.push({
+        id: `p${i}`,
+        type: 'claim',
+        text: `问题 ${i}`,
+        timestampMs: i * 1000,
+        status: 'confirmed',
+      });
+      edges.push({ id: `e${i}`, source: 'q1', target: `p${i}`, type: 'supports' });
+    }
+
+    const graph = makeGraph(nodes, edges);
+    const { reactFlow } = layoutHierarchy(graph);
+    expectNoOverlaps(reactFlow.nodes);
+
+    for (const edge of reactFlow.edges) {
+      expect(edge.sourceHandle).toBe('source-right');
+      expect(edge.targetHandle).toBe('target-left');
+    }
   });
 });
