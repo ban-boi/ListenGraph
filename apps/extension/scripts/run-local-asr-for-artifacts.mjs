@@ -20,7 +20,7 @@ const bridgePort = Number.parseInt(
   10,
 );
 const useRealAsr = env.LISTEN_GRAPHIC_LOCAL_BRIDGE_REAL_ASR?.trim() === '1';
-const fixtureFilter = env.LISTEN_GRAPHIC_E2E_ASR_FIXTURE?.trim() || undefined;
+// LISTEN_GRAPHIC_E2E_ASR_FIXTURE 由测试文件直接读取，此处不需要转发
 
 let bridgeProcess = null;
 let testProcess = null;
