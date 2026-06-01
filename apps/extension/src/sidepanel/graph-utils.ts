@@ -15,6 +15,7 @@ import {
   toComparisonRendererGraph,
   toHierarchyRendererGraph,
   type RendererGraph,
+  type RendererNode,
 } from '@listen-graphic/graph-renderers';
 import type {
   StableLayoutCache,
@@ -110,6 +111,32 @@ function getLaneX(
 
 function isBranchNodeType(nodeType: NodeType) {
   return nodeType === 'reason' || nodeType === 'example' || nodeType === 'question';
+}
+
+function isSemanticBranchNode(view: ViewType, node: RendererNode) {
+  return (
+    view === 'hierarchy' &&
+    (node.layoutRole === 'branch' ||
+      node.layoutRole === 'support' ||
+      node.layoutRole === 'chain')
+  );
+}
+
+function getNodeLaneX(
+  view: ViewType,
+  node: RendererNode,
+  sortedSpeakers?: string[],
+) {
+  if (view === 'hierarchy') {
+    if (node.layoutRole === 'root') {
+      return STABLE_LAYOUT_MAIN_X;
+    }
+    if (isSemanticBranchNode(view, node)) {
+      return STABLE_LAYOUT_MAIN_X + STABLE_LAYOUT_BRANCH_OFFSET_X;
+    }
+  }
+
+  return getLaneX(view, node.type, node.speaker, sortedSpeakers);
 }
 
 function getNodeRect(position: StableNodePosition) {
@@ -306,18 +333,25 @@ function buildStableReactFlowDebugGraph(params: {
     });
 
     let basePosition: StableNodePosition;
-    if (anchorId && isBranchNodeType(node.type)) {
+    const shouldAttachToAnchor =
+      anchorId && (isBranchNodeType(node.type) || isSemanticBranchNode(params.view, node));
+
+    if (shouldAttachToAnchor) {
       const anchorPosition = positions[anchorId];
       const branchCount = branchCountByAnchor.get(anchorId) ?? 0;
+      const laneX = getNodeLaneX(params.view, node, sortedSpeakers);
+      const shouldContinueFromAnchor =
+        params.view === 'hierarchy' &&
+        (node.layoutRole === 'chain' || node.layoutRole === 'support');
       basePosition = {
-        x: getLaneX(params.view, node.type, node.speaker, sortedSpeakers) === anchorPosition.x
+        x: shouldContinueFromAnchor || laneX === anchorPosition.x
           ? anchorPosition.x + STABLE_LAYOUT_BRANCH_OFFSET_X
-          : getLaneX(params.view, node.type, node.speaker, sortedSpeakers),
+          : laneX,
         y: anchorPosition.y + STABLE_LAYOUT_BRANCH_GAP * (branchCount + 1),
       };
       branchCountByAnchor.set(anchorId, branchCount + 1);
     } else {
-      const laneX = getLaneX(params.view, node.type, node.speaker, sortedSpeakers);
+      const laneX = getNodeLaneX(params.view, node, sortedSpeakers);
       basePosition = {
         x: laneX,
         y: getMaxYForLane(positions, params.view === 'comparison' ? laneX : undefined) +
@@ -360,15 +394,26 @@ function buildStableReactFlowDebugGraph(params: {
 
   const edgePriorities = VIEW_EDGE_PRIORITIES[params.view] ?? VIEW_EDGE_PRIORITIES.causal;
 
+  // 语义模式下的边可见性/优先级覆盖：当前仅 opposition 模式强制显示 opposes 边
+  const isOppositionOverride =
+    params.view === 'hierarchy' &&
+    params.rendererGraph.layoutHints?.semanticPattern === 'opposition';
+
   const edges: ReactFlowDebugEdge[] = params.rendererGraph.edges
     .filter((edge) => {
       if (!positions[edge.source] || !positions[edge.target]) return false;
+      if (isOppositionOverride && edge.relation === 'opposes') {
+        return true;
+      }
       const priority = edgePriorities[edge.relation];
       return priority !== 'hidden';
     })
     .map((edge) => {
       const handles = resolveEdgeHandles(positions[edge.source], positions[edge.target]);
-      const priority = edgePriorities[edge.relation] ?? 'secondary';
+      const priority =
+        isOppositionOverride && edge.relation === 'opposes'
+          ? 'primary'
+          : edgePriorities[edge.relation] ?? 'secondary';
       const isPrimary = priority === 'primary';
       return {
         id: edge.id,

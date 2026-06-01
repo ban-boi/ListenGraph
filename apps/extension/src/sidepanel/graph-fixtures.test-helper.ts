@@ -118,6 +118,14 @@ export async function playSequenceAndAssert(options: PlaySequenceAndAssertOption
 
     const nextGraph = step.graph;
     await deliverMergedGraphUpdate(listeners, { previousGraph, nextGraph });
+
+    // GraphArea 从 EmptyState 切换到 ReactFlow 时会重新 mount，
+    // deferred 模式下需要再次触发 onInit
+    await act(async () => {
+      triggerDeferredReactFlowInit();
+      await Promise.resolve();
+    });
+
     previousGraph = nextGraph;
 
     const stepAssertions = options.assertions.filter(
