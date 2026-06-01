@@ -13,9 +13,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@listen-graphic/schema": "workspace:*",
-    "react": "^18.0.0",
-    "reactflow": "^11.0.0"
+    "@listen-graphic/schema": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.0.0",
@@ -26,6 +24,8 @@
     "@testing-library/react": "^16.2.0",
     "@vitejs/plugin-react": "^4.3.4",
     "jsdom": "^26.0.0",
+    "react": "^18.0.0",
+    "reactflow": "^11.0.0",
     "vitest": "^1.6.0"
   }
 }

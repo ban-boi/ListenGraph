@@ -1,5 +1,5 @@
 import type { ReplaySessionData } from '../shared/messages';
-import { formatTime } from './timeline-utils';
+import { formatTime } from '@listen-graphic/ui';
 
 export type ReplayPanelProps = {
   replayData: ReplaySessionData | null;

@@ -25,21 +25,6 @@ export function formatErrorStageLabel(stage: 'asr' | 'structurer') {
   return stage === 'asr' ? 'ASR' : 'Structurer';
 }
 
-export function formatRelativeAge(timestamp: number | null | undefined, now = Date.now()) {
-  if (!timestamp) {
-    return '暂无';
-  }
-
-  const diffMs = Math.max(now - timestamp, 0);
-  if (diffMs < 1000) {
-    return '刚刚';
-  }
-  if (diffMs < 60_000) {
-    return `${Math.floor(diffMs / 1000)}s 前`;
-  }
-  return `${Math.floor(diffMs / 60_000)}m 前`;
-}
-
 // ===== 时间轴事件操作 =====
 
 export function createTimelineEvent(params: {
@@ -184,76 +169,6 @@ export function getTimelineToneStyles(tone: TimelineTone) {
         detailColor: '#94a3b8',
       };
   }
-}
-
-export function getStatusCardStyles(tone: StatusCardTone) {
-  switch (tone) {
-    case 'active':
-      return {
-        backgroundColor: 'var(--lg-signal-glow)',
-        borderColor: 'var(--lg-signal-dim)',
-        titleColor: 'var(--lg-signal-dim)',
-        statusColor: 'var(--lg-signal)',
-        detailColor: 'var(--lg-signal)',
-      };
-    case 'waiting':
-      return {
-        backgroundColor: 'var(--lg-signal-glow)',
-        borderColor: 'var(--lg-mist)',
-        titleColor: 'var(--lg-signal-dim)',
-        statusColor: 'var(--lg-signal-dim)',
-        detailColor: 'var(--lg-signal)',
-      };
-    case 'success':
-      return {
-        backgroundColor: 'var(--lg-surface)',
-        borderColor: 'var(--lg-success)',
-        titleColor: 'var(--lg-success)',
-        statusColor: 'var(--lg-success)',
-        detailColor: 'var(--lg-success)',
-      };
-    case 'warning':
-      return {
-        backgroundColor: 'var(--lg-insight-glow)',
-        borderColor: 'var(--lg-warning)',
-        titleColor: 'var(--lg-insight-dim)',
-        statusColor: 'var(--lg-insight-dim)',
-        detailColor: 'var(--lg-insight)',
-      };
-    case 'congested':
-      return {
-        backgroundColor: 'var(--lg-insight-glow)',
-        borderColor: 'var(--lg-insight)',
-        titleColor: 'var(--lg-insight-dim)',
-        statusColor: 'var(--lg-insight)',
-        detailColor: 'var(--lg-insight)',
-      };
-    case 'error':
-      return {
-        backgroundColor: 'var(--lg-surface)',
-        borderColor: 'var(--lg-danger)',
-        titleColor: 'var(--lg-danger)',
-        statusColor: 'var(--lg-danger)',
-        detailColor: 'var(--lg-danger)',
-      };
-    case 'neutral':
-    default:
-      return {
-        backgroundColor: 'var(--lg-calm)',
-        borderColor: 'var(--lg-rim)',
-        titleColor: 'var(--lg-muted)',
-        statusColor: 'var(--lg-muted)',
-        detailColor: 'var(--lg-muted)',
-      };
-  }
-}
-
-// ===== 时间格式化 =====
-
-export function formatTime(ms: number): string {
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
 // ===== 导出 =====

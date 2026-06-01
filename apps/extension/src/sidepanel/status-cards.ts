@@ -7,11 +7,8 @@
 
 import type { StatusCardData } from './types';
 import type { PanelState } from './panel-reducer';
-import {
-  formatRelativeAge,
-  formatTime,
-  bridgeHealthToTone,
-} from './timeline-utils';
+import { formatRelativeAge, formatTime } from '@listen-graphic/ui';
+import { bridgeHealthToTone } from './timeline-utils';
 import { STRUCTURER_DELAYED_MS } from './constants';
 
 interface StatusCardInputs {
