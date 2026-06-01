@@ -36,3 +36,5 @@ export { ErrorBanner } from './components/ErrorBanner';
 export type { ErrorBannerProps } from './components/ErrorBanner';
 export { StatusBar } from './components/StatusBar';
 export type { StatusBarProps, StatusBarSegment } from './components/StatusBar';
+export { PipelineWaveDivider } from './components/PipelineWaveDivider';
+export type { PipelineWaveDividerProps, WaveDividerStatus, WaveDividerTone, WaveDirection } from './components/PipelineWaveDivider';
