@@ -54,9 +54,11 @@ import {
   ErrorBanner,
   DropdownMenu,
   TimelineLogPanel,
+  PipelineWaveDivider,
   formatTime,
   formatRelativeAge,
 } from '@listen-graphic/ui';
+import type { WaveDividerStatus } from '@listen-graphic/ui';
 import { DebugPanel } from './DebugPanel';
 import { ReplayPanel } from './ReplayPanel';
 import { SettingsPanel } from './SettingsPanel';
@@ -245,7 +247,7 @@ export default function App() {
 
     return () => {
       disposed = true;
-      delete globalThis.__listenGraphicFixture;
+      delete (globalThis as Record<string, unknown>)['__listenGraphicFixture'];
     };
   }, []);
 
@@ -496,10 +498,31 @@ export default function App() {
   );
   const asrStatusCard = useMemo(() => computeAsrStatusCard(statusCardInputs), [statusCardInputs]);
   const structurerStatusCard = useMemo(() => computeStructurerStatusCard(statusCardInputs), [statusCardInputs]);
-  const primaryStatusCards = useMemo(() => [asrStatusCard, structurerStatusCard], [asrStatusCard, structurerStatusCard]);
+  // 已移除 primaryStatusCards，改为单独使用 asrStatusCard / structurerStatusCard
 
   // ===== 导出 =====
   const isRunning = ['capturing', 'transcribing', 'structuring'].includes(panel.sessionState);
+
+  // ===== 波浪分隔线状态推导 =====
+  const asrWaveStatus = useMemo<WaveDividerStatus>(() => {
+    if (panel.recentProviderError?.stage === 'asr') return 'error';
+    if (['capturing', 'transcribing'].includes(panel.sessionState)) return 'active';
+    return 'idle';
+  }, [panel.sessionState, panel.recentProviderError]);
+
+  const structurerWaveStatus = useMemo<WaveDividerStatus>(() => {
+    if (panel.recentProviderError?.stage === 'structurer') return 'error';
+    if (panel.sessionState === 'structuring') return 'active';
+    if (panel.stopPending && panel.stopDrainPendingCount > 0) return 'active';
+    return 'idle';
+  }, [panel.sessionState, panel.recentProviderError, panel.stopPending, panel.stopDrainPendingCount]);
+
+  const graphWaveStatus = useMemo<WaveDividerStatus>(() => {
+    if (panel.graph.nodes.length === 0) return 'idle';
+    if (isRunning) return 'active';
+    return 'complete';
+  }, [panel.graph.nodes.length, isRunning]);
+
   const canExport =
     Boolean(exportSessionId) &&
     panel.graph.nodes.length > 0 &&
@@ -868,13 +891,6 @@ export default function App() {
           </>
         }
       />
-      <div className="lg-wave-divider" style={{ margin: 0, height: 8 }} />
-      {isRunning && (
-        <div
-          className="lg-waveform-bar lg-waveform-bar--active"
-          style={{ height: 2, flexShrink: 0 }}
-        />
-      )}
       {panel.recentProviderError && (
         <ErrorBanner
           stage={formatErrorStageLabel(panel.recentProviderError.stage)}
@@ -882,23 +898,30 @@ export default function App() {
           message={panel.recentProviderError.message}
         />
       )}
-      <div
-        data-testid="runtime-status-cards"
-        className="lg-status-cards-grid"
-        style={{ padding: '6px 12px', gap: 8, flexShrink: 0 }}
-      >
-        {primaryStatusCards.map((card) => (
-          <StatusCard
-            key={card.label}
-            testId={`status-card-${card.label.toLowerCase()}`}
-            label={card.label}
-            status={card.status}
-            detail={card.detail}
-            tone={card.tone}
-            isRunning={card.tone === 'active'}
-          />
-        ))}
+      {/* ASR 状态 */}
+      <div data-testid="runtime-status-cards" style={{ padding: '6px 12px 2px', flexShrink: 0 }}>
+        <StatusCard
+          testId={`status-card-${asrStatusCard.label.toLowerCase()}`}
+          label={asrStatusCard.label}
+          status={asrStatusCard.status}
+          detail={asrStatusCard.detail}
+          tone={asrStatusCard.tone}
+          isRunning={asrStatusCard.tone === 'active'}
+        />
       </div>
+      <PipelineWaveDivider status={asrWaveStatus} tone="signal" />
+      {/* Structurer 状态 */}
+      <div style={{ padding: '2px 12px 2px', flexShrink: 0 }}>
+        <StatusCard
+          testId={`status-card-${structurerStatusCard.label.toLowerCase()}`}
+          label={structurerStatusCard.label}
+          status={structurerStatusCard.status}
+          detail={structurerStatusCard.detail}
+          tone={structurerStatusCard.tone}
+          isRunning={structurerStatusCard.tone === 'active'}
+        />
+      </div>
+      <PipelineWaveDivider status={structurerWaveStatus} tone="insight" />
       {graphSummaryText && (
         <div
           data-testid="graph-view-summary"
@@ -938,6 +961,7 @@ export default function App() {
           </div>
         </div>
       )}
+      <PipelineWaveDivider status={graphWaveStatus} tone="neutral" />
       {/* 视图切换 */}
       <ViewSwitcher
         currentView={currentView}
@@ -968,7 +992,8 @@ export default function App() {
           onMoveEnd={handleViewportMoveEnd}
           onInit={(instance) => {
             reactFlowInstanceRef.current = instance;
-            queueMicrotask(() => requestAutoFit());
+            // 同步调用，便于测试在 act() 内与 deferred trigger 对齐
+            requestAutoFit();
           }}
         />
         <ResizeHandle onResizeStart={handleLogResizeStart} />
