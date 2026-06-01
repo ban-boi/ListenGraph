@@ -1,0 +1,301 @@
+{
+  "name": "replay-local-1-信息密集型-罗翔十一学校讲座",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_01",
+      "text": "我审一零年",
+      "startMs": 1840,
+      "endMs": 4240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-2",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_02",
+      "text": "没有了这么多快的",
+      "startMs": 6040,
+      "endMs": 9040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-4",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_03",
+      "text": "哇帅谢谢么东西录一圈先录一下",
+      "startMs": 10840,
+      "endMs": 15640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-6",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_04",
+      "text": "我",
+      "startMs": 28240,
+      "endMs": 30040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-14",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_05",
+      "text": "不清",
+      "startMs": 30040,
+      "endMs": 31840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-15",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_06",
+      "text": "被二六六",
+      "startMs": 31840,
+      "endMs": 34240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-16",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_07",
+      "text": "真的",
+      "startMs": 34240,
+      "endMs": 36640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-17",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_08",
+      "text": "我子有点过了了",
+      "startMs": 36640,
+      "endMs": 39040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-18",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_09",
+      "text": "我想",
+      "startMs": 39040,
+      "endMs": 40840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-19",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_10",
+      "text": "有点点过头",
+      "startMs": 40840,
+      "endMs": 43240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-20",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_11",
+      "text": "我告请授生是生导师",
+      "startMs": 43240,
+      "endMs": 46840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-21",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_12",
+      "text": "在本次名家大师海报张贴处时有许多同学都按捺着住自己狂喜的心情期待这次讲课",
+      "startMs": 46840,
+      "endMs": 54640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-22",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_13",
+      "text": "下面让我们把话筒交给罗翔老师期待他的精彩演讲",
+      "startMs": 54640,
+      "endMs": 60040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-23",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_14",
+      "text": "喂啊唉常来到我们的",
+      "startMs": 70840,
+      "endMs": 75640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-30",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_15",
+      "text": "呃非常高兴也非常荣幸啊今天呢跟各位年轻的",
+      "startMs": 86440,
+      "endMs": 91840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-37",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_16",
+      "text": "小朋友们一起来分享分",
+      "startMs": 91840,
+      "endMs": 95440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-38",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_17",
+      "text": "什么叫做法治如何培育我们的法治信任",
+      "startMs": 95440,
+      "endMs": 100840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-39",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_18",
+      "text": "大家知道在人类最古老的学科中",
+      "startMs": 100840,
+      "endMs": 105040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-40",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_19",
+      "text": "就有法学",
+      "startMs": 105040,
+      "endMs": 106840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-41",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_20",
+      "text": "当社会出现问题我们需要把",
+      "startMs": 108640,
+      "endMs": 112240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-43",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_21",
+      "text": "当人的身体出现问题我们需要医学",
+      "startMs": 112240,
+      "endMs": 115840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-44",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-1-信息密集型-罗翔十一学校讲座_22",
+      "text": "所以法学毫无疑问是人类最古老的",
+      "startMs": 115840,
+      "endMs": 120000,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:1_信息密集型_罗翔十一学校讲座",
+        "utteranceId": "utt-45",
+        "confidence": 0,
+        "finalReason": "input_finished"
+      }
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 11,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

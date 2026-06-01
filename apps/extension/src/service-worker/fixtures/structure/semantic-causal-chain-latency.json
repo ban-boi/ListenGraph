@@ -1,0 +1,39 @@
+{
+  "name": "semantic-causal-chain-latency",
+  "transcripts": [
+    {
+      "chunkId": "semantic-causal-chain-latency_01",
+      "text": "如果转写延迟超过五秒，用户会以为系统卡住了。",
+      "startMs": 0,
+      "endMs": 6000
+    },
+    {
+      "chunkId": "semantic-causal-chain-latency_02",
+      "text": "用户一旦以为系统卡住，就会反复点击开始和停止。",
+      "startMs": 6000,
+      "endMs": 12000
+    },
+    {
+      "chunkId": "semantic-causal-chain-latency_03",
+      "text": "反复点击会制造更多状态错误，最后让整场记录不可用。",
+      "startMs": 12000,
+      "endMs": 19000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "maxMergedNodes": 6,
+    "minMergedEdges": 2,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["转写延迟", "五秒"],
+      ["反复点击"],
+      ["状态错误", "不可用"]
+    ],
+    "mustHaveNodeTypes": ["claim", "conclusion"],
+    "requiredEdgeTypes": ["causes"],
+    "forbiddenTexts": ["价格", "招聘"]
+  }
+}

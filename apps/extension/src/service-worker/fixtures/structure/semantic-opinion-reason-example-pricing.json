@@ -1,0 +1,45 @@
+{
+  "name": "semantic-opinion-reason-example-pricing",
+  "transcripts": [
+    {
+      "chunkId": "semantic-opinion-reason-example-pricing_01",
+      "text": "我的判断是现在不适合马上涨价。",
+      "startMs": 0,
+      "endMs": 4000
+    },
+    {
+      "chunkId": "semantic-opinion-reason-example-pricing_02",
+      "text": "原因是核心功能还没有稳定，用户愿意付费的信心不足。",
+      "startMs": 4000,
+      "endMs": 10000
+    },
+    {
+      "chunkId": "semantic-opinion-reason-example-pricing_03",
+      "text": "比如上周有三个客户都反馈导出结果偶尔会丢边。",
+      "startMs": 10000,
+      "endMs": 16000
+    },
+    {
+      "chunkId": "semantic-opinion-reason-example-pricing_04",
+      "text": "所以我建议先把稳定性做到可验证，再讨论价格。",
+      "startMs": 16000,
+      "endMs": 22000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "maxMergedNodes": 7,
+    "minMergedEdges": 2,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["不适合", "涨价"],
+      ["核心功能", "稳定"],
+      ["导出", "丢边"]
+    ],
+    "mustHaveNodeTypes": ["claim", "reason", "example"],
+    "requiredEdgeTypes": ["supports", "example_of"],
+    "forbiddenTexts": ["招聘", "天气"]
+  }
+}

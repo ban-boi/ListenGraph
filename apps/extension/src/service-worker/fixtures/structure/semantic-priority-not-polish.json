@@ -1,0 +1,39 @@
+{
+  "name": "semantic-priority-not-polish",
+  "transcripts": [
+    {
+      "chunkId": "semantic-priority-not-polish_01",
+      "text": "我不反对把界面做漂亮，但现在不能继续无限美化。",
+      "startMs": 0,
+      "endMs": 6000
+    },
+    {
+      "chunkId": "semantic-priority-not-polish_02",
+      "text": "因为最影响用户判断的是图到底有没有表达出逻辑。",
+      "startMs": 6000,
+      "endMs": 12000
+    },
+    {
+      "chunkId": "semantic-priority-not-polish_03",
+      "text": "所以接下来优先级应该从视觉细节转到结构化质量和图形语法。",
+      "startMs": 12000,
+      "endMs": 19000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "maxMergedNodes": 6,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["无限美化"],
+      ["表达出逻辑", "表达逻辑", "逻辑表达"],
+      ["结构化质量", "图形语法"]
+    ],
+    "mustHaveNodeTypes": ["claim", "reason", "conclusion"],
+    "requiredEdgeTypes": ["supports"],
+    "forbiddenTexts": ["天气", "股票"]
+  }
+}

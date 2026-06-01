@@ -1,0 +1,46 @@
+{
+  "name": "semantic-self-correction-market",
+  "transcripts": [
+    {
+      "chunkId": "semantic-self-correction-market_01",
+      "text": "一开始我以为这个功能主要卖给学生。",
+      "startMs": 0,
+      "endMs": 4000
+    },
+    {
+      "chunkId": "semantic-self-correction-market_02",
+      "text": "但这两周访谈下来，我觉得这个判断可能错了。",
+      "startMs": 4000,
+      "endMs": 9000
+    },
+    {
+      "chunkId": "semantic-self-correction-market_03",
+      "text": "真正高频使用的人反而是做会议纪要和访谈分析的团队。",
+      "startMs": 9000,
+      "endMs": 15000
+    },
+    {
+      "chunkId": "semantic-self-correction-market_04",
+      "text": "所以市场定位应该从学习工具调整成工作流工具。",
+      "startMs": 15000,
+      "endMs": 21000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "maxMergedNodes": 7,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["学生"],
+      ["判断", "错"],
+      ["会议纪要", "访谈"],
+      ["学习工具", "工作流"]
+    ],
+    "mustHaveNodeTypes": ["claim", "conclusion"],
+    "requiredEdgeTypes": ["opposes"],
+    "forbiddenTexts": ["法律", "股票"]
+  }
+}

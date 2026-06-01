@@ -1,0 +1,37 @@
+{
+  "name": "semantic-noise-applause-ignore",
+  "transcripts": [
+    {
+      "chunkId": "semantic-noise-applause-ignore_01",
+      "text": "我们的核心目标是让会议结束后三分钟内得到可读图谱。",
+      "startMs": 0,
+      "endMs": 6000
+    },
+    {
+      "chunkId": "semantic-noise-applause-ignore_02",
+      "text": "掌声，笑声。",
+      "startMs": 6000,
+      "endMs": 8000
+    },
+    {
+      "chunkId": "semantic-noise-applause-ignore_03",
+      "text": "如果超过三分钟，用户就会回到手写纪要。",
+      "startMs": 8000,
+      "endMs": 14000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "maxMergedNodes": 5,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["三分钟", "可读图谱"],
+      ["手写纪要"]
+    ],
+    "mustHaveNodeTypes": ["claim"],
+    "forbiddenTexts": ["掌声", "笑声", "天气"]
+  }
+}

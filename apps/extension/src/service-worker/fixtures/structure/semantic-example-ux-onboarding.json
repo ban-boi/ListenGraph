@@ -1,0 +1,39 @@
+{
+  "name": "semantic-example-ux-onboarding",
+  "transcripts": [
+    {
+      "chunkId": "semantic-example-ux-onboarding_01",
+      "text": "新用户现在最卡的是不知道第一步该做什么。",
+      "startMs": 0,
+      "endMs": 5000
+    },
+    {
+      "chunkId": "semantic-example-ux-onboarding_02",
+      "text": "举个例子，他打开侧栏以后看到模型、语言、输出格式三个设置，会直接停住。",
+      "startMs": 5000,
+      "endMs": 13000
+    },
+    {
+      "chunkId": "semantic-example-ux-onboarding_03",
+      "text": "所以引导页应该先让他完成一次录音，而不是先解释所有配置。",
+      "startMs": 13000,
+      "endMs": 21000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "maxMergedNodes": 6,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["新用户", "第一步"],
+      ["模型", "语言", "输出格式"],
+      ["引导页", "录音"]
+    ],
+    "mustHaveNodeTypes": ["claim", "example"],
+    "requiredEdgeTypes": ["example_of"],
+    "forbiddenTexts": ["价格", "招聘"]
+  }
+}

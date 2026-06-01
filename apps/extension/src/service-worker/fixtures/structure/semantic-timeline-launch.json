@@ -1,0 +1,39 @@
+{
+  "name": "semantic-timeline-launch",
+  "transcripts": [
+    {
+      "chunkId": "semantic-timeline-launch_01",
+      "text": "三月我们先做内部可用版本，只支持中文会议。",
+      "startMs": 0,
+      "endMs": 5000
+    },
+    {
+      "chunkId": "semantic-timeline-launch_02",
+      "text": "四月开放给十个设计伙伴，重点收集图谱是否看得懂。",
+      "startMs": 5000,
+      "endMs": 12000
+    },
+    {
+      "chunkId": "semantic-timeline-launch_03",
+      "text": "五月再考虑公开 demo 和英文支持。",
+      "startMs": 12000,
+      "endMs": 17000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "maxMergedNodes": 6,
+    "minMergedEdges": 2,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["三月", "内部"],
+      ["四月", "设计伙伴"],
+      ["五月", "demo", "英文"]
+    ],
+    "mustHaveNodeTypes": ["claim"],
+    "requiredEdgeTypes": ["follows"],
+    "forbiddenTexts": ["涨价", "裁员"]
+  }
+}

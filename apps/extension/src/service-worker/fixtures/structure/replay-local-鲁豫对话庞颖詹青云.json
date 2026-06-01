@@ -1,0 +1,236 @@
+{
+  "name": "replay-local-鲁豫对话庞颖詹青云",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_01",
+      "text": "我和阿鹏阿詹我们仨有一个群阿鹏给这个群起名叫鲁豫老师的粉丝",
+      "startMs": 0,
+      "endMs": 6040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-1",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_02",
+      "text": "我觉得这个名字非常可爱",
+      "startMs": 6040,
+      "endMs": 9040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-2",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_03",
+      "text": "我也接受但同时我也是他们俩的粉",
+      "startMs": 9040,
+      "endMs": 12640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-3",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_04",
+      "text": "我曾经在我的音频节目当中分别采访过他们俩我们也在辩论场上彼此见面完成了我人生第一次辩论",
+      "startMs": 12640,
+      "endMs": 22240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-4",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_05",
+      "text": "我能够看到我们身上各自的特长也能够看到彼此身上的闪光其实我们是相个很不相同的人我是七零后阿庞出生于八八年是八零后阿詹九零年九零后三个不同的年代三个人有着不同的性格不同的成长背景原本是三条平行线",
+      "startMs": 22240,
+      "endMs": 42640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-5",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_06",
+      "text": "但可能是命运吧让我们在这个时刻发生交汇我们在各自领域始终在努力的表达也始终对世界保持着最大的热忱和好奇",
+      "startMs": 42640,
+      "endMs": 54040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-6",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_07",
+      "text": "我想我们很不同但有很多相似那接下来是是跟跟阿庞阿阿的对",
+      "startMs": 54040,
+      "endMs": 60640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-7",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_08",
+      "text": "本期视频播客由 coach 联合呈现让我们一起勇于求真书写真我故事",
+      "startMs": 60640,
+      "endMs": 67840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-8",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_09",
+      "text": "文字跃入帘帘时",
+      "startMs": 67840,
+      "endMs": 70240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-9",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_10",
+      "text": "四周不断变",
+      "startMs": 70240,
+      "endMs": 72040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-10",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_11",
+      "text": "新的视角由此展",
+      "startMs": 73840,
+      "endMs": 77440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-12",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_12",
+      "text": "书写真我故事",
+      "startMs": 79240,
+      "endMs": 82840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-14",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_13",
+      "text": "又是是朋友不见你为什么背着包来我在一个给你的女没其其实我也有礼物在上面哎呦待会儿那个网友交接了来进",
+      "startMs": 88240,
+      "endMs": 99040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-18",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_14",
+      "text": "画一些些染全呀呀呀这么",
+      "startMs": 99040,
+      "endMs": 103240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-19",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_15",
+      "text": "你这也太心灵手巧了就是指定那我要指定行遇有人又收了这一块",
+      "startMs": 103240,
+      "endMs": 111040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-20",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_16",
+      "text": "哎你一定要在一个艺术家最初的时候",
+      "startMs": 111040,
+      "endMs": 114640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-21",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-鲁豫对话庞颖詹青云_17",
+      "text": "收藏对哎我要先说一下啊我们今天",
+      "startMs": 114640,
+      "endMs": 120000,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:鲁豫对话庞颖詹青云",
+        "utteranceId": "utt-22",
+        "confidence": 0,
+        "finalReason": "input_finished"
+      }
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 9,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

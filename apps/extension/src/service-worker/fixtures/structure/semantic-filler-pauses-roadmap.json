@@ -1,0 +1,38 @@
+{
+  "name": "semantic-filler-pauses-roadmap",
+  "transcripts": [
+    {
+      "chunkId": "semantic-filler-pauses-roadmap_01",
+      "text": "嗯，我们下个版本，怎么说呢，重点不是加很多新按钮。",
+      "startMs": 0,
+      "endMs": 6000
+    },
+    {
+      "chunkId": "semantic-filler-pauses-roadmap_02",
+      "text": "重点是把录音、转写、结构化这条主链路跑顺。",
+      "startMs": 6000,
+      "endMs": 12000
+    },
+    {
+      "chunkId": "semantic-filler-pauses-roadmap_03",
+      "text": "然后那些装饰性的东西，先别管。",
+      "startMs": 12000,
+      "endMs": 16000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "maxMergedNodes": 5,
+    "minMergedEdges": 0,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["不是", "新按钮"],
+      ["录音", "转写", "结构化"],
+      ["装饰", "先别管"]
+    ],
+    "mustHaveNodeTypes": ["claim"],
+    "forbiddenTexts": ["嗯", "怎么说呢", "天气"]
+  }
+}

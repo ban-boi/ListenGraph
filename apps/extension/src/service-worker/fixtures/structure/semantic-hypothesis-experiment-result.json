@@ -1,0 +1,38 @@
+{
+  "name": "semantic-hypothesis-experiment-result",
+  "transcripts": [
+    {
+      "chunkId": "semantic-hypothesis-experiment-result_01",
+      "text": "我们的假设是，只要把首图时间压到十秒内，用户留存会提升。",
+      "startMs": 0,
+      "endMs": 7000
+    },
+    {
+      "chunkId": "semantic-hypothesis-experiment-result_02",
+      "text": "这周实验结果是首图确实快了，但用户还是抱怨看不懂。",
+      "startMs": 7000,
+      "endMs": 14000
+    },
+    {
+      "chunkId": "semantic-hypothesis-experiment-result_03",
+      "text": "所以瓶颈不只是速度，而是图形表达质量。",
+      "startMs": 14000,
+      "endMs": 20000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "maxMergedNodes": 6,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["首图", "十秒"],
+      ["看不懂"],
+      ["不只是速度", "图形表达"]
+    ],
+    "mustHaveNodeTypes": ["claim", "conclusion"],
+    "forbiddenTexts": ["价格", "招聘"]
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "name": "semantic-question-options-tradeoff",
+  "transcripts": [
+    {
+      "chunkId": "semantic-question-options-tradeoff_01",
+      "text": "现在的问题是我们到底优先做自动整理，还是优先做手动编辑。",
+      "startMs": 0,
+      "endMs": 7000
+    },
+    {
+      "chunkId": "semantic-question-options-tradeoff_02",
+      "text": "自动整理能展示产品差异，但出错时用户会不信任。",
+      "startMs": 7000,
+      "endMs": 14000
+    },
+    {
+      "chunkId": "semantic-question-options-tradeoff_03",
+      "text": "手动编辑更稳，但会让产品看起来像普通画图工具。",
+      "startMs": 14000,
+      "endMs": 21000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "maxMergedNodes": 7,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["自动整理", "手动编辑"],
+      ["产品差异", "不信任"],
+      ["更稳", "画图工具"]
+    ],
+    "mustHaveNodeTypes": ["claim"],
+    "requiredEdgeTypes": ["supports"],
+    "forbiddenTexts": ["天气", "股票"]
+  }
+}

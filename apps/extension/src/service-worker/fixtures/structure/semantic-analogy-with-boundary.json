@@ -1,0 +1,39 @@
+{
+  "name": "semantic-analogy-with-boundary",
+  "transcripts": [
+    {
+      "chunkId": "semantic-analogy-with-boundary_01",
+      "text": "这个产品有点像实时白板，但它不是让人手动画图。",
+      "startMs": 0,
+      "endMs": 6000
+    },
+    {
+      "chunkId": "semantic-analogy-with-boundary_02",
+      "text": "它的价值是自动把讨论里的逻辑关系显出来。",
+      "startMs": 6000,
+      "endMs": 12000
+    },
+    {
+      "chunkId": "semantic-analogy-with-boundary_03",
+      "text": "所以不要把它定位成普通画布工具。",
+      "startMs": 12000,
+      "endMs": 17000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "maxMergedNodes": 6,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["实时白板", "不是"],
+      ["逻辑关系"],
+      ["普通画布工具"]
+    ],
+    "mustHaveNodeTypes": ["claim", "conclusion"],
+    "requiredEdgeTypes": ["supports"],
+    "forbiddenTexts": ["股票", "天气"]
+  }
+}

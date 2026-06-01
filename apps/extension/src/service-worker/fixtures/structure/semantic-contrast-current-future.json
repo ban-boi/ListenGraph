@@ -1,0 +1,38 @@
+{
+  "name": "semantic-contrast-current-future",
+  "transcripts": [
+    {
+      "chunkId": "semantic-contrast-current-future_01",
+      "text": "现在的版本像一个记录工具，能把话转成节点。",
+      "startMs": 0,
+      "endMs": 5000
+    },
+    {
+      "chunkId": "semantic-contrast-current-future_02",
+      "text": "但我希望未来它更像一个思考工具，能主动显示观点之间的关系。",
+      "startMs": 5000,
+      "endMs": 12000
+    },
+    {
+      "chunkId": "semantic-contrast-current-future_03",
+      "text": "所以路线图要从转写准确率转向图形表达能力。",
+      "startMs": 12000,
+      "endMs": 18000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "maxMergedNodes": 6,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["记录工具"],
+      ["思考工具", "关系"],
+      ["图形表达能力"]
+    ],
+    "mustHaveNodeTypes": ["claim", "conclusion"],
+    "forbiddenTexts": ["价格", "招聘"]
+  }
+}

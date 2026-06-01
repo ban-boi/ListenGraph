@@ -1,0 +1,39 @@
+{
+  "name": "semantic-risk-mitigation-api-key",
+  "transcripts": [
+    {
+      "chunkId": "semantic-risk-mitigation-api-key_01",
+      "text": "开源以后最大的风险是用户不知道 API key 会发到哪里。",
+      "startMs": 0,
+      "endMs": 6000
+    },
+    {
+      "chunkId": "semantic-risk-mitigation-api-key_02",
+      "text": "如果我们只在 README 里写一句，很多人不会看。",
+      "startMs": 6000,
+      "endMs": 12000
+    },
+    {
+      "chunkId": "semantic-risk-mitigation-api-key_03",
+      "text": "所以设置页必须直接说明 key 存在哪里、请求发给哪个 provider。",
+      "startMs": 12000,
+      "endMs": 20000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "maxMergedNodes": 6,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["API key", "哪里"],
+      ["README", "不会看"],
+      ["设置页", "provider"]
+    ],
+    "mustHaveNodeTypes": ["claim", "reason", "conclusion"],
+    "requiredEdgeTypes": ["causes"],
+    "forbiddenTexts": ["天气", "股票"]
+  }
+}

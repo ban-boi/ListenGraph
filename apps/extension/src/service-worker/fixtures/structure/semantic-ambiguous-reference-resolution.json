@@ -1,0 +1,45 @@
+{
+  "name": "semantic-ambiguous-reference-resolution",
+  "transcripts": [
+    {
+      "chunkId": "semantic-ambiguous-reference-resolution_01",
+      "text": "我们昨天试了两个方案，一个是固定层级，一个是自由力导向。",
+      "startMs": 0,
+      "endMs": 7000
+    },
+    {
+      "chunkId": "semantic-ambiguous-reference-resolution_02",
+      "text": "前者更稳定，但是显得死板。",
+      "startMs": 7000,
+      "endMs": 11000
+    },
+    {
+      "chunkId": "semantic-ambiguous-reference-resolution_03",
+      "text": "后者更自然，但是每次刷新位置都可能变。",
+      "startMs": 11000,
+      "endMs": 17000
+    },
+    {
+      "chunkId": "semantic-ambiguous-reference-resolution_04",
+      "text": "所以默认应该用固定层级，高级模式再开放自由布局。",
+      "startMs": 17000,
+      "endMs": 24000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 4,
+    "maxMergedNodes": 8,
+    "minMergedEdges": 2,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["固定层级", "自由力导向"],
+      ["更稳定", "死板"],
+      ["更自然", "位置"],
+      ["默认", "高级模式"]
+    ],
+    "mustHaveNodeTypes": ["claim", "conclusion"],
+    "forbiddenTexts": ["天气", "股票"]
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "name": "semantic-meeting-action-items",
+  "transcripts": [
+    {
+      "chunkId": "semantic-meeting-action-items_01",
+      "text": "今天会后有三件事要推进。",
+      "startMs": 0,
+      "endMs": 3000
+    },
+    {
+      "chunkId": "semantic-meeting-action-items_02",
+      "text": "产品去补十条真实语音片段，工程把验收字段接进 runner。",
+      "startMs": 3000,
+      "endMs": 10000
+    },
+    {
+      "chunkId": "semantic-meeting-action-items_03",
+      "text": "设计负责看这些图是不是一眼能读懂。",
+      "startMs": 10000,
+      "endMs": 15000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "maxMergedNodes": 7,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["三件事", "三项任务"],
+      ["真实语音片段"],
+      ["验收字段", "runner"],
+      ["一眼能读懂"]
+    ],
+    "mustHaveNodeTypes": ["claim"],
+    "requiredEdgeTypes": ["supports"],
+    "forbiddenTexts": ["天气", "股票"]
+  }
+}

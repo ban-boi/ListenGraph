@@ -1,0 +1,39 @@
+{
+  "name": "semantic-conclusion-after-evidence",
+  "transcripts": [
+    {
+      "chunkId": "semantic-conclusion-after-evidence_01",
+      "text": "过去一周客服收到的十个问题里，有六个都在问怎么导出。",
+      "startMs": 0,
+      "endMs": 7000
+    },
+    {
+      "chunkId": "semantic-conclusion-after-evidence_02",
+      "text": "还有两个用户说导出的 JSON 看不懂。",
+      "startMs": 7000,
+      "endMs": 12000
+    },
+    {
+      "chunkId": "semantic-conclusion-after-evidence_03",
+      "text": "所以导出体验应该进入本周最高优先级。",
+      "startMs": 12000,
+      "endMs": 17000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "maxMergedNodes": 6,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["客服", "导出"],
+      ["JSON", "看不懂"],
+      ["最高优先级"]
+    ],
+    "mustHaveNodeTypes": ["reason", "conclusion"],
+    "requiredEdgeTypes": ["supports"],
+    "forbiddenTexts": ["录音延迟", "股票"]
+  }
+}

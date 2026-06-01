@@ -1,0 +1,47 @@
+{
+  "name": "semantic-problem-three-points-product",
+  "transcripts": [
+    {
+      "chunkId": "semantic-problem-three-points-product_01",
+      "text": "我觉得这个产品现在主要有三个问题。",
+      "startMs": 0,
+      "endMs": 4000
+    },
+    {
+      "chunkId": "semantic-problem-three-points-product_02",
+      "text": "第一个是启动太慢，用户第一次打开会等很久。",
+      "startMs": 4000,
+      "endMs": 9000
+    },
+    {
+      "chunkId": "semantic-problem-three-points-product_03",
+      "text": "第二个是图出来以后有点乱，看不出重点。",
+      "startMs": 9000,
+      "endMs": 14000
+    },
+    {
+      "chunkId": "semantic-problem-three-points-product_04",
+      "text": "第三个是设置太复杂，新用户不知道该选哪个模型。",
+      "startMs": 14000,
+      "endMs": 20000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 4,
+    "maxMergedNodes": 8,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["三个问题", "三个主要问题"],
+      ["启动太慢", "启动速度过慢", "第一次打开"],
+      ["图", "重点"],
+      ["设置太复杂", "模型"]
+    ],
+    "mustHaveNodeTypes": ["claim"],
+    "requiredEdgeTypes": ["supports"],
+    "forbiddenTexts": ["天气", "股票"],
+    "manualReviewTags": ["semantic_quality", "graph_readability"]
+  }
+}

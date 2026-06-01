@@ -1,0 +1,171 @@
+{
+  "name": "replay-local-2-口语跳跃型-圆桌派朋友越来越少",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-2-口语跳跃型-圆桌派朋友越来越少_01",
+      "text": "呃非常高兴啊看见这么多位朋友啊今天呢也是我们鲁豫大学的日子啊",
+      "startMs": 10840,
+      "endMs": 19240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:2_口语跳跃型_圆桌派朋友越来越少",
+        "utteranceId": "utt-7",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-2-口语跳跃型-圆桌派朋友越来越少_02",
+      "text": "咱俩对我还没说鲁意跟我在一起这个这个关于出书啊看到的这么多朋友给他来捧场我真是特别听他道歉能不因为呢之前的这个朋友圈你就想不到他这个做了十七年啊三千期节目的主持人",
+      "startMs": 19240,
+      "endMs": 39640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:2_口语跳跃型_圆桌派朋友越来越少",
+        "utteranceId": "utt-8",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-2-口语跳跃型-圆桌派朋友越来越少_03",
+      "text": "我说出本书哎竟然怕了说到那天没人来说明他啊要是那天就剩咱们俩人人怎么办呢",
+      "startMs": 39640,
+      "endMs": 48640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:2_口语跳跃型_圆桌派朋友越来越少",
+        "utteranceId": "utt-9",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-2-口语跳跃型-圆桌派朋友越来越少_04",
+      "text": "非常的焦虑这是为什么呀",
+      "startMs": 48640,
+      "endMs": 51040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:2_口语跳跃型_圆桌派朋友越来越少",
+        "utteranceId": "utt-10",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-2-口语跳跃型-圆桌派朋友越来越少_05",
+      "text": "故生死 a b 今天其实不可怕好歹有你云电 s 只有一个人更可怕哎那这个咱才多我我觉觉得你得跟大家先打个招呼现在欢迎我们领导讲话",
+      "startMs": 51040,
+      "endMs": 63640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:2_口语跳跃型_圆桌派朋友越来越少",
+        "utteranceId": "utt-11",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-2-口语跳跃型-圆桌派朋友越来越少_06",
+      "text": "鲁西真的特别因为今天你是主持我是跟着你你问什么我说什么",
+      "startMs": 65440,
+      "endMs": 70840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:2_口语跳跃型_圆桌派朋友越来越少",
+        "utteranceId": "utt-13",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-2-口语跳跃型-圆桌派朋友越来越少_07",
+      "text": "hel 人人来的你的的看看我都都拿着你的书来的",
+      "startMs": 70840,
+      "endMs": 75640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:2_口语跳跃型_圆桌派朋友越来越少",
+        "utteranceId": "utt-14",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-2-口语跳跃型-圆桌派朋友越来越少_08",
+      "text": "哎",
+      "startMs": 75640,
+      "endMs": 77440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:2_口语跳跃型_圆桌派朋友越来越少",
+        "utteranceId": "utt-15",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-2-口语跳跃型-圆桌派朋友越来越少_09",
+      "text": "我做电视这么多年其实我到现在都觉得当有人跟我说他看我的节目",
+      "startMs": 79240,
+      "endMs": 87040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:2_口语跳跃型_圆桌派朋友越来越少",
+        "utteranceId": "utt-17",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-2-口语跳跃型-圆桌派朋友越来越少_10",
+      "text": "他看我的书或者听我的语音我都觉得是一件很神奇的事儿",
+      "startMs": 87040,
+      "endMs": 93040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:2_口语跳跃型_圆桌派朋友越来越少",
+        "utteranceId": "utt-18",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-2-口语跳跃型-圆桌派朋友越来越少_11",
+      "text": "嗯内心很多的感动我其实在眼睛有点肿因为昨天是鲁豫有约开播一进完成十六年进入第十七年所以昨天晚上团队在朋友圈里发了好多好多充满了回忆山的照片我觉得把家里面已经哭的稀里哗啦所以今天眼睛其实是肿的",
+      "startMs": 93040,
+      "endMs": 113440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:2_口语跳跃型_圆桌派朋友越来越少",
+        "utteranceId": "utt-19",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-2-口语跳跃型-圆桌派朋友越来越少_12",
+      "text": "对今着啥是父母啊呃现在咱们欢迎领导入座啊",
+      "startMs": 113440,
+      "endMs": 119440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "generated:2_口语跳跃型_圆桌派朋友越来越少",
+        "utteranceId": "utt-20",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 6,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

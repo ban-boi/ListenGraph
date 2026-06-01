@@ -1,0 +1,46 @@
+{
+  "name": "semantic-decision-criteria-layout",
+  "transcripts": [
+    {
+      "chunkId": "semantic-decision-criteria-layout_01",
+      "text": "这次选布局方案，我只看三个标准。",
+      "startMs": 0,
+      "endMs": 4000
+    },
+    {
+      "chunkId": "semantic-decision-criteria-layout_02",
+      "text": "第一，用户一眼能不能看出主线。",
+      "startMs": 4000,
+      "endMs": 8000
+    },
+    {
+      "chunkId": "semantic-decision-criteria-layout_03",
+      "text": "第二，新增节点时画面会不会大幅跳动。",
+      "startMs": 8000,
+      "endMs": 13000
+    },
+    {
+      "chunkId": "semantic-decision-criteria-layout_04",
+      "text": "第三，边的方向和语义关系是否一致。",
+      "startMs": 13000,
+      "endMs": 18000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 4,
+    "maxMergedNodes": 8,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["三个标准", "三项标准", "三个核心标准"],
+      ["主线"],
+      ["画面", "跳动"],
+      ["方向", "语义关系"]
+    ],
+    "mustHaveNodeTypes": ["claim"],
+    "requiredEdgeTypes": ["supports"],
+    "forbiddenTexts": ["价格", "招聘"]
+  }
+}

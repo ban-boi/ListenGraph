@@ -1,0 +1,37 @@
+{
+  "name": "semantic-incomplete-then-complete-thought",
+  "transcripts": [
+    {
+      "chunkId": "semantic-incomplete-then-complete-thought_01",
+      "text": "这个问题不是说模型不够聪明，而是",
+      "startMs": 0,
+      "endMs": 5000
+    },
+    {
+      "chunkId": "semantic-incomplete-then-complete-thought_02",
+      "text": "而是输入给模型的句子太碎，导致它不知道上下文。",
+      "startMs": 5000,
+      "endMs": 11000
+    },
+    {
+      "chunkId": "semantic-incomplete-then-complete-thought_03",
+      "text": "所以我们要先改善 structure unit，而不是马上换更大的模型。",
+      "startMs": 11000,
+      "endMs": 18000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "maxMergedNodes": 5,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["句子太碎", "上下文"],
+      ["structure unit", "模型"]
+    ],
+    "mustHaveNodeTypes": ["claim", "conclusion"],
+    "forbiddenTexts": ["天气"]
+  }
+}

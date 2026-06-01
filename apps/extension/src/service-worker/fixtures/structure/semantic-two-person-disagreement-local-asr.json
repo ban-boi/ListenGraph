@@ -1,0 +1,39 @@
+{
+  "name": "semantic-two-person-disagreement-local-asr",
+  "transcripts": [
+    {
+      "chunkId": "semantic-two-person-disagreement-local-asr_01",
+      "text": "甲说，我觉得默认应该用云端模型，因为效果更稳定。",
+      "startMs": 0,
+      "endMs": 6000
+    },
+    {
+      "chunkId": "semantic-two-person-disagreement-local-asr_02",
+      "text": "乙说，我不同意，默认云端会让用户担心隐私。",
+      "startMs": 6000,
+      "endMs": 12000
+    },
+    {
+      "chunkId": "semantic-two-person-disagreement-local-asr_03",
+      "text": "乙补充说，本地模型哪怕慢一点，也应该作为第一次启动的推荐选项。",
+      "startMs": 12000,
+      "endMs": 20000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "maxMergedNodes": 7,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["云端", "稳定"],
+      ["隐私"],
+      ["本地模型", "推荐"]
+    ],
+    "mustHaveNodeTypes": ["claim", "reason"],
+    "requiredEdgeTypes": ["opposes"],
+    "forbiddenTexts": ["天气", "股票"]
+  }
+}

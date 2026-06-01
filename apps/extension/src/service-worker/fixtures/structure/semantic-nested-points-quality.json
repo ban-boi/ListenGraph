@@ -1,0 +1,39 @@
+{
+  "name": "semantic-nested-points-quality",
+  "transcripts": [
+    {
+      "chunkId": "semantic-nested-points-quality_01",
+      "text": "结构化质量我主要看两层。",
+      "startMs": 0,
+      "endMs": 3000
+    },
+    {
+      "chunkId": "semantic-nested-points-quality_02",
+      "text": "第一层是有没有抓住核心点，比如观点、理由和例子不能漏。",
+      "startMs": 3000,
+      "endMs": 9000
+    },
+    {
+      "chunkId": "semantic-nested-points-quality_03",
+      "text": "第二层是关系有没有画对，比如反对关系不能画成支持关系。",
+      "startMs": 9000,
+      "endMs": 16000
+    }
+  ],
+  "acceptance": {
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "maxMergedNodes": 6,
+    "minMergedEdges": 1,
+    "allowFallback": false,
+    "maxFallbackRuns": 0,
+    "mustContainOneOfTexts": [
+      ["结构化质量", "两层"],
+      ["观点", "理由", "例子"],
+      ["反对", "支持"]
+    ],
+    "mustHaveNodeTypes": ["claim"],
+    "requiredEdgeTypes": ["supports"],
+    "forbiddenTexts": ["天气", "股票"]
+  }
+}
