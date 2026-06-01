@@ -1,10 +1,14 @@
 // apps/extension/src/service-worker/asr-local-bridge-helpers.ts
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   loadAsrRealtimeFixtures,
   readPcm16MonoWav,
   resolveAudioPath,
   normalizeText,
   looselyMatchesNormalizedText,
+  ASR_ARTIFACT_DIR,
+  sanitizeFileName,
   type AsrRealtimeFixture,
 } from './asr-real-fixture-helpers';
 
@@ -202,6 +206,38 @@ function safeClose(ws: WebSocket) {
   if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
     ws.close();
   }
+}
+
+/**
+ * 将本地 bridge ASR 的 utterance 结果写入 artifact 文件。
+ * 文件名用 local_ 前缀与 Tencent artifact 区分。
+ */
+export function writeLocalBridgeUtteranceArtifact(
+  fixture: AsrRealtimeFixture,
+  utterances: BridgeUtterance[],
+  bridgeEndpoint: string,
+): void {
+  fs.mkdirSync(ASR_ARTIFACT_DIR, { recursive: true });
+  const artifactPath = path.join(
+    ASR_ARTIFACT_DIR,
+    `local_${sanitizeFileName(fixture.name)}.utterances.json`,
+  );
+  fs.writeFileSync(
+    artifactPath,
+    `${JSON.stringify(
+      {
+        fixtureName: fixture.name,
+        audioFile: fixture.audioFile,
+        audioClipDurationMs: fixture.audioClipDurationMs ?? null,
+        source: 'local-asr',
+        bridgeEndpoint,
+        recordedAt: new Date().toISOString(),
+        utterances,
+      },
+      null,
+      2,
+    )}\n`,
+  );
 }
 
 export {
