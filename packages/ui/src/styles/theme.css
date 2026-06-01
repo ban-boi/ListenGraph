@@ -539,6 +539,66 @@ body {
 }
 
 /* ================================================================
+   组件样式 — 管线波浪分隔线
+   ================================================================ */
+.lg-pipeline-wave {
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.lg-pipeline-wave--horizontal {
+  height: 18px;
+  width: 100%;
+}
+
+.lg-pipeline-wave--vertical {
+  width: 18px;
+  height: 100%;
+}
+
+/* idle：灰色静止 — stroke 已是 var(--lg-muted)，再加 opacity 降低存在感 */
+.lg-pipeline-wave--idle svg {
+  opacity: 0.35;
+}
+
+/* active：语义色流动 */
+.lg-pipeline-wave--horizontal.lg-pipeline-wave--active svg {
+  animation: lg-wave-scroll-h 2.5s linear infinite;
+}
+
+.lg-pipeline-wave--vertical.lg-pipeline-wave--active svg {
+  animation: lg-wave-scroll-v 2s linear infinite;
+}
+
+/* complete：语义色半透明静止 */
+.lg-pipeline-wave--complete svg {
+  opacity: 0.5;
+}
+
+/* error：红色虚线 */
+.lg-pipeline-wave--error svg {
+  opacity: 0.7;
+}
+
+@keyframes lg-wave-scroll-h {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes lg-wave-scroll-v {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-50%); }
+}
+
+/* 尊重系统减少动态效果设置 */
+@media (prefers-reduced-motion: reduce) {
+  .lg-pipeline-wave--active svg {
+    animation: none;
+  }
+}
+
+/* ================================================================
    组件样式 — 工具栏
    ================================================================ */
 .lg-toolbar {
