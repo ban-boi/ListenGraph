@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import {
   isBridgeHealthy,
   runLocalBridgeRealtimeFixture,
+  writeLocalBridgeUtteranceArtifact,
   loadAsrRealtimeFixtures,
   readPcm16MonoWav,
   resolveAudioPath,
@@ -23,6 +24,9 @@ const effectiveTimeoutMs = Number.isFinite(realtimeTimeoutMs) ? realtimeTimeoutM
 
 // 是否使用真实 ASR（sherpa-onnx）；mock bridge 时只做管线检查
 const isRealAsr = process.env.LISTEN_GRAPHIC_LOCAL_BRIDGE_REAL_ASR?.trim() === '1';
+
+// 可选：将 utterances 写入 artifact 文件（供 scaffold 生成管线使用）
+const shouldWriteArtifacts = process.env.LISTEN_GRAPHIC_E2E_ASR_WRITE_ARTIFACTS?.trim() === '1';
 
 let bridgeAvailable = false;
 
@@ -72,6 +76,11 @@ describe('ASR 本地 bridge fixture 测试', () => {
         // 仅在真实 ASR 模式下做文本匹配断言
         if (isRealAsr) {
           assertFixtureAccuracy(fixture, result.utterances);
+        }
+
+        // 可选：将 utterances 写入 artifact 文件
+        if (shouldWriteArtifacts && !('skipped' in result)) {
+          writeLocalBridgeUtteranceArtifact(fixture, result.utterances, bridgeEndpoint);
         }
       },
     );
