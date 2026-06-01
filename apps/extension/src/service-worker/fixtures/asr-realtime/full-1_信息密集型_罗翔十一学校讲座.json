@@ -1,0 +1,8 @@
+{
+  "name": "full:1_信息密集型_罗翔十一学校讲座",
+  "audioFile": "audio/generated/1_信息密集型_罗翔十一学校讲座.wav",
+  "audioClipDurationMs": null,
+  "acceptance": {
+    "minStableUtterances": 1
+  }
+}

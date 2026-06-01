@@ -1,0 +1,8 @@
+{
+  "name": "full:2_口语跳跃型_圆桌派朋友越来越少",
+  "audioFile": "audio/generated/2_口语跳跃型_圆桌派朋友越来越少.wav",
+  "audioClipDurationMs": null,
+  "acceptance": {
+    "minStableUtterances": 1
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "full:鲁豫对话庞颖詹青云",
+  "audioFile": "audio/generated/鲁豫对话庞颖詹青云.wav",
+  "audioClipDurationMs": null,
+  "acceptance": {
+    "minStableUtterances": 1
+  }
+}

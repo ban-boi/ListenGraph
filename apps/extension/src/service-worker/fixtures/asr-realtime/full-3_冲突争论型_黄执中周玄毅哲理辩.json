@@ -1,0 +1,8 @@
+{
+  "name": "full:3_冲突争论型_黄执中周玄毅哲理辩",
+  "audioFile": "audio/generated/3_冲突争论型_黄执中周玄毅哲理辩.wav",
+  "audioClipDurationMs": null,
+  "acceptance": {
+    "minStableUtterances": 1
+  }
+}
