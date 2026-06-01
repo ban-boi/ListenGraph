@@ -73,7 +73,11 @@ export async function retryAsync<T>(
 }
 
 export function createTimeoutSignal(timeoutMs: number): AbortSignal | undefined {
-  if (typeof AbortController === 'undefined') {
+  if (
+    typeof AbortController === 'undefined' ||
+    !Number.isFinite(timeoutMs) ||
+    timeoutMs <= 0
+  ) {
     return undefined;
   }
 

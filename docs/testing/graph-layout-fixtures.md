@@ -67,6 +67,23 @@ __listenGraphicFixture.disarm();
 
 可选：`seq-late-burst`（突增节点 + auto-tour）、`seq-view-switch-mid`（中段 `viewHints` 变化）。
 
+语义图形模式抽检：
+
+```js
+__listenGraphicFixture.arm('seq-pattern-question-three-points');
+__listenGraphicFixture.next();
+__listenGraphicFixture.arm('seq-pattern-claim-reason-example');
+__listenGraphicFixture.next();
+__listenGraphicFixture.arm('seq-pattern-opposition');
+__listenGraphicFixture.next();
+__listenGraphicFixture.arm('seq-pattern-causal-chain');
+__listenGraphicFixture.next();
+__listenGraphicFixture.arm('seq-pattern-timeline-note');
+__listenGraphicFixture.next();
+```
+
+这些 fixture 不经过 ASR / structurer；它们直接投递固定 graph，用来观察一眼是否能读出“问题分三点”“观点-理由-例子”“A 反对 B”“因果链”“时间线补充说明”。
+
 ---
 
 ## web-demo 能力边界
@@ -128,5 +145,10 @@ test('fixture sequence step on sidepanel', async ({ page: sidepanelPage }) => {
 | `seq-incremental-growth` | ~8 步，节点渐增，autofit 仅首屏 |
 | `seq-late-burst` | 前少后多，突增 ~15 节点 |
 | `seq-view-switch-mid` | 中段切换 `viewHints.defaultView` |
+| `seq-pattern-question-three-points` | 问题节点 fanout 到三个 claim 分点 |
+| `seq-pattern-claim-reason-example` | 观点 -> 理由 -> 例子 |
+| `seq-pattern-opposition` | 一个 claim 反对另一个 claim，并附支撑理由 |
+| `seq-pattern-causal-chain` | 因果链 |
+| `seq-pattern-timeline-note` | 时间线主链 + 补充说明 |
 
 校验：`pnpm --filter @listen-graphic/graph-fixtures test:run`

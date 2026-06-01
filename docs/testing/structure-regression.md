@@ -92,12 +92,27 @@ fixture 不是标准答案全文，而是：
 常用验收：
 - `minSegments`
 - `minMergedNodes`
+- `maxMergedNodes`
 - `minMergedEdges`
 - `mustContainTexts`
 - `mustContainOneOfTexts`
+- `mustHaveNodeTypes`
 - `requiredEdgeTypes`
+- `forbiddenTexts`
 - `expectCrossGraphEdges`
 - `allowFallback`
+- `maxFallbackRuns`
+
+### 语义质量 fixture
+`semantic-*` fixture 是结构化质量验收集，不是快照测试。它们用短 transcript 固定输入，用弹性断言固定最低语义门槛：
+
+- 必须抓住的核心点：`mustContainTexts` / `mustContainOneOfTexts`
+- 图规模边界：`minMergedNodes` / `maxMergedNodes`
+- 关系和类型覆盖：`requiredEdgeTypes` / `mustHaveNodeTypes`
+- 幻觉和噪声边界：`forbiddenTexts`
+- fallback 边界：`allowFallback` / `maxFallbackRuns`
+
+这些 fixture 用来回答“这版有没有抓住关键意思”，不要求 LLM 输出逐字一致。新增或调整 prompt、assembler、provider、merge 逻辑前后，应优先跑相关 `semantic-*` 样本，再看 replay KPI。
 
 ## fixture 来源
 当前 active fixtures 来自两类来源：
@@ -127,6 +142,7 @@ fixture 不是标准答案全文，而是：
 - setup-tail 反例
 - 连续极短半句反例
 - 低信息 utterance 插入中间
+- 语义质量验收：问题分点、观点-理由-例子、反驳/自我修正、停顿噪声、两人争论、因果链、时间线、取舍与优先级
 
 ## 本轮已经落到生产代码里的优化
 
