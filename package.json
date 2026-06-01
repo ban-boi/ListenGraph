@@ -19,7 +19,9 @@
     "test:ext:e2e:real:local-bridge": "pnpm --filter extension test:e2e:real:local-bridge",
     "test:ext:e2e:real:sherpa": "pnpm --filter extension test:e2e:real:sherpa",
     "test:ext:asr:local-bridge": "pnpm --filter extension test:asr:local-bridge",
-    "test:ext:asr:local-bridge:mock": "pnpm --filter extension test:asr:local-bridge:mock"
+    "test:ext:asr:local-bridge:mock": "pnpm --filter extension test:asr:local-bridge:mock",
+    "prepare:asr:local": "pnpm --filter extension prepare:asr:local",
+    "prepare:structure:local-replay": "pnpm --filter extension prepare:structure:local-replay"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
