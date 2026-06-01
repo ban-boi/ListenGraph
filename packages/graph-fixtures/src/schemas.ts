@@ -73,11 +73,24 @@ export const sequenceStepSchema = z.object({
   graph: mergedGraphSchema,
 });
 
+export const visualExpectationSchema = z.object({
+  rootNode: z.string().optional(),
+  branchNodes: z.array(z.string()).optional(),
+  chainNodes: z.array(z.string()).optional(),
+  layout: z
+    .enum(['fanout', 'support-chain', 'opposition', 'causal-chain', 'timeline-note'])
+    .optional(),
+  noOverlap: z.boolean().optional(),
+  edgeHandlesReasonable: z.boolean().optional(),
+  autoTourReadable: z.boolean().optional(),
+});
+
 export const sequenceFixtureSchema = z.object({
   id: z.string(),
   kind: z.literal('sequence'),
   description: z.string(),
   sessionId: z.string(),
+  visualExpectations: visualExpectationSchema.optional(),
   playback: z
     .object({
       preserveView: z.boolean().optional(),

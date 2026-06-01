@@ -1,0 +1,105 @@
+{
+  "id": "seq-pattern-claim-reason-example",
+  "kind": "sequence",
+  "description": "Semantic pattern: claim -> reason -> example",
+  "sessionId": "fixture-seq-pattern-claim-reason-example",
+  "visualExpectations": {
+    "rootNode": "c1",
+    "branchNodes": [
+      "r1",
+      "x1"
+    ],
+    "layout": "support-chain",
+    "noOverlap": true,
+    "edgeHandlesReasonable": true,
+    "autoTourReadable": true
+  },
+  "playback": {
+    "preserveView": true
+  },
+  "steps": [
+    {
+      "label": "claim-reason-example-root",
+      "graph": {
+        "sessionId": "fixture-seq-pattern-claim-reason-example",
+        "revision": 1,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "c1",
+            "type": "claim",
+            "text": "定价页应该先讲清楚价值",
+            "timestampMs": 0,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [],
+        "viewHints": {
+          "defaultView": "hierarchy",
+          "scores": {
+            "hierarchy": 5,
+            "causal": 1,
+            "comparison": 1,
+            "timeline": 1
+          }
+        },
+        "updatedAt": 1000
+      }
+    },
+    {
+      "label": "claim-reason-example",
+      "graph": {
+        "sessionId": "fixture-seq-pattern-claim-reason-example",
+        "revision": 2,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "c1",
+            "type": "claim",
+            "text": "定价页应该先讲清楚价值",
+            "timestampMs": 0,
+            "status": "confirmed"
+          },
+          {
+            "id": "r1",
+            "type": "reason",
+            "text": "用户先判断是否值得继续了解",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "x1",
+            "type": "example",
+            "text": "例如把用例收益放在套餐表之前",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "c1",
+            "target": "r1",
+            "type": "supports"
+          },
+          {
+            "id": "e2",
+            "source": "r1",
+            "target": "x1",
+            "type": "example_of"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "hierarchy",
+          "scores": {
+            "hierarchy": 5,
+            "causal": 1,
+            "comparison": 1,
+            "timeline": 1
+          }
+        },
+        "updatedAt": 2000
+      }
+    }
+  ]
+}

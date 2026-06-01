@@ -29,6 +29,57 @@
       ],
       "primaryView": "causal",
       "description": "Mid-sequence defaultView change"
+    },
+    {
+      "id": "seq-pattern-question-three-points",
+      "file": "sequences/seq-pattern-question-three-points.json",
+      "tags": [
+        "semantic-pattern",
+        "question",
+        "fanout"
+      ],
+      "primaryView": "hierarchy",
+      "description": "Question fans out into three claim branches"
+    },
+    {
+      "id": "seq-pattern-claim-reason-example",
+      "file": "sequences/seq-pattern-claim-reason-example.json",
+      "tags": [
+        "semantic-pattern",
+        "support-chain"
+      ],
+      "primaryView": "hierarchy",
+      "description": "Claim -> reason -> example"
+    },
+    {
+      "id": "seq-pattern-opposition",
+      "file": "sequences/seq-pattern-opposition.json",
+      "tags": [
+        "semantic-pattern",
+        "opposition"
+      ],
+      "primaryView": "hierarchy",
+      "description": "A claim opposes another claim"
+    },
+    {
+      "id": "seq-pattern-causal-chain",
+      "file": "sequences/seq-pattern-causal-chain.json",
+      "tags": [
+        "semantic-pattern",
+        "causal-chain"
+      ],
+      "primaryView": "causal",
+      "description": "Cause -> effect -> consequence chain"
+    },
+    {
+      "id": "seq-pattern-timeline-note",
+      "file": "sequences/seq-pattern-timeline-note.json",
+      "tags": [
+        "semantic-pattern",
+        "timeline-note"
+      ],
+      "primaryView": "timeline",
+      "description": "Timeline with a supplementary note"
     }
   ],
   "snapshots": []

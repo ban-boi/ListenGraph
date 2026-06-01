@@ -1,0 +1,105 @@
+{
+  "id": "seq-pattern-opposition",
+  "kind": "sequence",
+  "description": "Semantic pattern: one claim opposes another claim",
+  "sessionId": "fixture-seq-pattern-opposition",
+  "visualExpectations": {
+    "rootNode": "b1",
+    "branchNodes": [
+      "a1",
+      "r1"
+    ],
+    "layout": "opposition",
+    "noOverlap": true,
+    "edgeHandlesReasonable": true,
+    "autoTourReadable": true
+  },
+  "playback": {
+    "preserveView": true
+  },
+  "steps": [
+    {
+      "label": "opposition-root",
+      "graph": {
+        "sessionId": "fixture-seq-pattern-opposition",
+        "revision": 1,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "b1",
+            "type": "claim",
+            "text": "现在更应该先补图形语法",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [],
+        "viewHints": {
+          "defaultView": "hierarchy",
+          "scores": {
+            "hierarchy": 5,
+            "causal": 1,
+            "comparison": 1,
+            "timeline": 1
+          }
+        },
+        "updatedAt": 1000
+      }
+    },
+    {
+      "label": "opposition",
+      "graph": {
+        "sessionId": "fixture-seq-pattern-opposition",
+        "revision": 2,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "a1",
+            "type": "claim",
+            "text": "应该继续打磨视觉细节",
+            "timestampMs": 0,
+            "status": "confirmed"
+          },
+          {
+            "id": "b1",
+            "type": "claim",
+            "text": "现在更应该先补图形语法",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "r1",
+            "type": "reason",
+            "text": "没有稳定表达模式时，视觉 polish 不能解决可读性",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "b1",
+            "target": "a1",
+            "type": "opposes"
+          },
+          {
+            "id": "e2",
+            "source": "b1",
+            "target": "r1",
+            "type": "supports"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "hierarchy",
+          "scores": {
+            "hierarchy": 5,
+            "causal": 1,
+            "comparison": 1,
+            "timeline": 1
+          }
+        },
+        "updatedAt": 2000
+      }
+    }
+  ]
+}

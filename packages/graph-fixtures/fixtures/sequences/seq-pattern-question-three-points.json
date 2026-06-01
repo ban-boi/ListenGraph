@@ -1,0 +1,119 @@
+{
+  "id": "seq-pattern-question-three-points",
+  "kind": "sequence",
+  "description": "Semantic pattern: question fans out into three claim branches",
+  "sessionId": "fixture-seq-pattern-question-three-points",
+  "visualExpectations": {
+    "rootNode": "q1",
+    "branchNodes": [
+      "p1",
+      "p2",
+      "p3"
+    ],
+    "layout": "fanout",
+    "noOverlap": true,
+    "edgeHandlesReasonable": true,
+    "autoTourReadable": true
+  },
+  "playback": {
+    "preserveView": true
+  },
+  "steps": [
+    {
+      "label": "question-three-points-root",
+      "graph": {
+        "sessionId": "fixture-seq-pattern-question-three-points",
+        "revision": 1,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "q1",
+            "type": "question",
+            "text": "这个产品开源前还有哪三个问题？",
+            "timestampMs": 0,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [],
+        "viewHints": {
+          "defaultView": "hierarchy",
+          "scores": {
+            "hierarchy": 5,
+            "causal": 1,
+            "comparison": 1,
+            "timeline": 1
+          }
+        },
+        "updatedAt": 1000
+      }
+    },
+    {
+      "label": "question-three-points",
+      "graph": {
+        "sessionId": "fixture-seq-pattern-question-three-points",
+        "revision": 2,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "q1",
+            "type": "question",
+            "text": "这个产品开源前还有哪三个问题？",
+            "timestampMs": 0,
+            "status": "confirmed"
+          },
+          {
+            "id": "p1",
+            "type": "claim",
+            "text": "UI 还不统一",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "p2",
+            "type": "claim",
+            "text": "图形逻辑不够清楚",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          },
+          {
+            "id": "p3",
+            "type": "claim",
+            "text": "代码架构需要清理",
+            "timestampMs": 3000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "q1",
+            "target": "p1",
+            "type": "supports"
+          },
+          {
+            "id": "e2",
+            "source": "q1",
+            "target": "p2",
+            "type": "supports"
+          },
+          {
+            "id": "e3",
+            "source": "q1",
+            "target": "p3",
+            "type": "supports"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "hierarchy",
+          "scores": {
+            "hierarchy": 5,
+            "causal": 1,
+            "comparison": 1,
+            "timeline": 1
+          }
+        },
+        "updatedAt": 2000
+      }
+    }
+  ]
+}

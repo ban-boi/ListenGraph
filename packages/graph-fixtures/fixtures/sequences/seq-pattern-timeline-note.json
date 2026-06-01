@@ -1,0 +1,122 @@
+{
+  "id": "seq-pattern-timeline-note",
+  "kind": "sequence",
+  "description": "Semantic pattern: timeline with supplementary note",
+  "sessionId": "fixture-seq-pattern-timeline-note",
+  "visualExpectations": {
+    "rootNode": "t1",
+    "chainNodes": [
+      "t1",
+      "t2",
+      "t3"
+    ],
+    "branchNodes": [
+      "n1"
+    ],
+    "layout": "timeline-note",
+    "noOverlap": true,
+    "edgeHandlesReasonable": true,
+    "autoTourReadable": true
+  },
+  "playback": {
+    "preserveView": true
+  },
+  "steps": [
+    {
+      "label": "timeline-note-root",
+      "graph": {
+        "sessionId": "fixture-seq-pattern-timeline-note",
+        "revision": 1,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "t1",
+            "type": "claim",
+            "text": "先完成核心布局规则",
+            "timestampMs": 0,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [],
+        "viewHints": {
+          "defaultView": "timeline",
+          "scores": {
+            "timeline": 5,
+            "causal": 2,
+            "hierarchy": 2,
+            "comparison": 1
+          }
+        },
+        "updatedAt": 1000
+      }
+    },
+    {
+      "label": "timeline-note",
+      "graph": {
+        "sessionId": "fixture-seq-pattern-timeline-note",
+        "revision": 2,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "t1",
+            "type": "claim",
+            "text": "先完成核心布局规则",
+            "timestampMs": 0,
+            "status": "confirmed"
+          },
+          {
+            "id": "t2",
+            "type": "claim",
+            "text": "再补语义 fixture",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "t3",
+            "type": "conclusion",
+            "text": "最后做视觉验收",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          },
+          {
+            "id": "n1",
+            "type": "example",
+            "text": "验收时重点看一眼是否读得懂",
+            "timestampMs": 2500,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "t1",
+            "target": "t2",
+            "type": "follows"
+          },
+          {
+            "id": "e2",
+            "source": "t2",
+            "target": "t3",
+            "type": "follows"
+          },
+          {
+            "id": "e3",
+            "source": "t3",
+            "target": "n1",
+            "type": "supports"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "timeline",
+          "scores": {
+            "timeline": 5,
+            "causal": 2,
+            "hierarchy": 2,
+            "comparison": 1
+          }
+        },
+        "updatedAt": 2000
+      }
+    }
+  ]
+}

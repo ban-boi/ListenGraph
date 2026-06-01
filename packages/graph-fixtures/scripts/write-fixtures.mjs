@@ -31,6 +31,40 @@ function makeGraph(sessionId, revision, nodes, edges, viewHints = { defaultView:
   };
 }
 
+function hierarchyViewHints() {
+  return {
+    defaultView: 'hierarchy',
+    scores: { hierarchy: 5, causal: 1, comparison: 1, timeline: 1 },
+  };
+}
+
+function causalViewHints() {
+  return {
+    defaultView: 'causal',
+    scores: { causal: 5, hierarchy: 2, comparison: 1, timeline: 1 },
+  };
+}
+
+function timelineViewHints() {
+  return {
+    defaultView: 'timeline',
+    scores: { timeline: 5, causal: 2, hierarchy: 2, comparison: 1 },
+  };
+}
+
+function makePatternSteps(sessionId, label, rootNodes, nodes, edges, viewHints) {
+  return [
+    {
+      label: `${label}-root`,
+      graph: makeGraph(sessionId, 1, rootNodes, [], viewHints),
+    },
+    {
+      label,
+      graph: makeGraph(sessionId, 2, nodes, edges, viewHints),
+    },
+  ];
+}
+
 function buildIncrementalGrowth() {
   const id = 'seq-incremental-growth';
   const sessionId = 'fixture-seq-incremental-growth';
@@ -219,10 +253,212 @@ function buildViewSwitchMid() {
   };
 }
 
+function buildPatternQuestionThreePoints() {
+  const id = 'seq-pattern-question-three-points';
+  const sessionId = 'fixture-seq-pattern-question-three-points';
+  const nodes = [
+    makeNode('q1', 'question', '这个产品开源前还有哪三个问题？', 0),
+    makeNode('p1', 'claim', 'UI 还不统一', 1000),
+    makeNode('p2', 'claim', '图形逻辑不够清楚', 2000),
+    makeNode('p3', 'claim', '代码架构需要清理', 3000),
+  ];
+  const edges = [
+    makeEdge('e1', 'q1', 'p1', 'supports'),
+    makeEdge('e2', 'q1', 'p2', 'supports'),
+    makeEdge('e3', 'q1', 'p3', 'supports'),
+  ];
+
+  return {
+    id,
+    kind: 'sequence',
+    description: 'Semantic pattern: question fans out into three claim branches',
+    sessionId,
+    visualExpectations: {
+      rootNode: 'q1',
+      branchNodes: ['p1', 'p2', 'p3'],
+      layout: 'fanout',
+      noOverlap: true,
+      edgeHandlesReasonable: true,
+      autoTourReadable: true,
+    },
+    playback: { preserveView: true },
+    steps: makePatternSteps(
+      sessionId,
+      'question-three-points',
+      [nodes[0]],
+      nodes,
+      edges,
+      hierarchyViewHints(),
+    ),
+  };
+}
+
+function buildPatternClaimReasonExample() {
+  const id = 'seq-pattern-claim-reason-example';
+  const sessionId = 'fixture-seq-pattern-claim-reason-example';
+  const nodes = [
+    makeNode('c1', 'claim', '定价页应该先讲清楚价值', 0),
+    makeNode('r1', 'reason', '用户先判断是否值得继续了解', 1000),
+    makeNode('x1', 'example', '例如把用例收益放在套餐表之前', 2000),
+  ];
+  const edges = [
+    makeEdge('e1', 'c1', 'r1', 'supports'),
+    makeEdge('e2', 'r1', 'x1', 'example_of'),
+  ];
+
+  return {
+    id,
+    kind: 'sequence',
+    description: 'Semantic pattern: claim -> reason -> example',
+    sessionId,
+    visualExpectations: {
+      rootNode: 'c1',
+      branchNodes: ['r1', 'x1'],
+      layout: 'support-chain',
+      noOverlap: true,
+      edgeHandlesReasonable: true,
+      autoTourReadable: true,
+    },
+    playback: { preserveView: true },
+    steps: makePatternSteps(
+      sessionId,
+      'claim-reason-example',
+      [nodes[0]],
+      nodes,
+      edges,
+      hierarchyViewHints(),
+    ),
+  };
+}
+
+function buildPatternOpposition() {
+  const id = 'seq-pattern-opposition';
+  const sessionId = 'fixture-seq-pattern-opposition';
+  const nodes = [
+    makeNode('a1', 'claim', '应该继续打磨视觉细节', 0),
+    makeNode('b1', 'claim', '现在更应该先补图形语法', 1000),
+    makeNode('r1', 'reason', '没有稳定表达模式时，视觉 polish 不能解决可读性', 2000),
+  ];
+  const edges = [
+    makeEdge('e1', 'b1', 'a1', 'opposes'),
+    makeEdge('e2', 'b1', 'r1', 'supports'),
+  ];
+
+  return {
+    id,
+    kind: 'sequence',
+    description: 'Semantic pattern: one claim opposes another claim',
+    sessionId,
+    visualExpectations: {
+      rootNode: 'b1',
+      branchNodes: ['a1', 'r1'],
+      layout: 'opposition',
+      noOverlap: true,
+      edgeHandlesReasonable: true,
+      autoTourReadable: true,
+    },
+    playback: { preserveView: true },
+    steps: makePatternSteps(
+      sessionId,
+      'opposition',
+      [nodes[1]],
+      nodes,
+      edges,
+      hierarchyViewHints(),
+    ),
+  };
+}
+
+function buildPatternCausalChain() {
+  const id = 'seq-pattern-causal-chain';
+  const sessionId = 'fixture-seq-pattern-causal-chain';
+  const nodes = [
+    makeNode('c1', 'claim', '启动时一次性加载太多模块', 0),
+    makeNode('c2', 'claim', '首屏渲染被阻塞', 1000),
+    makeNode('c3', 'claim', '用户觉得应用很慢', 2000),
+    makeNode('c4', 'conclusion', '需要拆分启动路径', 3000),
+  ];
+  const edges = [
+    makeEdge('e1', 'c1', 'c2', 'causes'),
+    makeEdge('e2', 'c2', 'c3', 'causes'),
+    makeEdge('e3', 'c3', 'c4', 'causes'),
+  ];
+
+  return {
+    id,
+    kind: 'sequence',
+    description: 'Semantic pattern: causal chain',
+    sessionId,
+    visualExpectations: {
+      rootNode: 'c1',
+      chainNodes: ['c1', 'c2', 'c3', 'c4'],
+      layout: 'causal-chain',
+      noOverlap: true,
+      edgeHandlesReasonable: true,
+      autoTourReadable: true,
+    },
+    playback: { preserveView: true },
+    steps: makePatternSteps(
+      sessionId,
+      'causal-chain',
+      [nodes[0]],
+      nodes,
+      edges,
+      causalViewHints(),
+    ),
+  };
+}
+
+function buildPatternTimelineNote() {
+  const id = 'seq-pattern-timeline-note';
+  const sessionId = 'fixture-seq-pattern-timeline-note';
+  const nodes = [
+    makeNode('t1', 'claim', '先完成核心布局规则', 0),
+    makeNode('t2', 'claim', '再补语义 fixture', 1000),
+    makeNode('t3', 'conclusion', '最后做视觉验收', 2000),
+    makeNode('n1', 'example', '验收时重点看一眼是否读得懂', 2500),
+  ];
+  const edges = [
+    makeEdge('e1', 't1', 't2', 'follows'),
+    makeEdge('e2', 't2', 't3', 'follows'),
+    makeEdge('e3', 't3', 'n1', 'supports'),
+  ];
+
+  return {
+    id,
+    kind: 'sequence',
+    description: 'Semantic pattern: timeline with supplementary note',
+    sessionId,
+    visualExpectations: {
+      rootNode: 't1',
+      chainNodes: ['t1', 't2', 't3'],
+      branchNodes: ['n1'],
+      layout: 'timeline-note',
+      noOverlap: true,
+      edgeHandlesReasonable: true,
+      autoTourReadable: true,
+    },
+    playback: { preserveView: true },
+    steps: makePatternSteps(
+      sessionId,
+      'timeline-note',
+      [nodes[0]],
+      nodes,
+      edges,
+      timelineViewHints(),
+    ),
+  };
+}
+
 const sequences = [
   buildIncrementalGrowth(),
   buildLateBurst(),
   buildViewSwitchMid(),
+  buildPatternQuestionThreePoints(),
+  buildPatternClaimReasonExample(),
+  buildPatternOpposition(),
+  buildPatternCausalChain(),
+  buildPatternTimelineNote(),
 ];
 
 for (const sequence of sequences) {
@@ -256,6 +492,41 @@ const manifest = {
       tags: ['view-switch'],
       primaryView: 'causal',
       description: 'Mid-sequence defaultView change',
+    },
+    {
+      id: 'seq-pattern-question-three-points',
+      file: 'sequences/seq-pattern-question-three-points.json',
+      tags: ['semantic-pattern', 'question', 'fanout'],
+      primaryView: 'hierarchy',
+      description: 'Question fans out into three claim branches',
+    },
+    {
+      id: 'seq-pattern-claim-reason-example',
+      file: 'sequences/seq-pattern-claim-reason-example.json',
+      tags: ['semantic-pattern', 'support-chain'],
+      primaryView: 'hierarchy',
+      description: 'Claim -> reason -> example',
+    },
+    {
+      id: 'seq-pattern-opposition',
+      file: 'sequences/seq-pattern-opposition.json',
+      tags: ['semantic-pattern', 'opposition'],
+      primaryView: 'hierarchy',
+      description: 'A claim opposes another claim',
+    },
+    {
+      id: 'seq-pattern-causal-chain',
+      file: 'sequences/seq-pattern-causal-chain.json',
+      tags: ['semantic-pattern', 'causal-chain'],
+      primaryView: 'causal',
+      description: 'Cause -> effect -> consequence chain',
+    },
+    {
+      id: 'seq-pattern-timeline-note',
+      file: 'sequences/seq-pattern-timeline-note.json',
+      tags: ['semantic-pattern', 'timeline-note'],
+      primaryView: 'timeline',
+      description: 'Timeline with a supplementary note',
     },
   ],
   snapshots: [],

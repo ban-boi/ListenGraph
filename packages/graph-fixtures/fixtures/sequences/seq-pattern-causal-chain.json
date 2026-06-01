@@ -1,0 +1,120 @@
+{
+  "id": "seq-pattern-causal-chain",
+  "kind": "sequence",
+  "description": "Semantic pattern: causal chain",
+  "sessionId": "fixture-seq-pattern-causal-chain",
+  "visualExpectations": {
+    "rootNode": "c1",
+    "chainNodes": [
+      "c1",
+      "c2",
+      "c3",
+      "c4"
+    ],
+    "layout": "causal-chain",
+    "noOverlap": true,
+    "edgeHandlesReasonable": true,
+    "autoTourReadable": true
+  },
+  "playback": {
+    "preserveView": true
+  },
+  "steps": [
+    {
+      "label": "causal-chain-root",
+      "graph": {
+        "sessionId": "fixture-seq-pattern-causal-chain",
+        "revision": 1,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "c1",
+            "type": "claim",
+            "text": "启动时一次性加载太多模块",
+            "timestampMs": 0,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5,
+            "hierarchy": 2,
+            "comparison": 1,
+            "timeline": 1
+          }
+        },
+        "updatedAt": 1000
+      }
+    },
+    {
+      "label": "causal-chain",
+      "graph": {
+        "sessionId": "fixture-seq-pattern-causal-chain",
+        "revision": 2,
+        "topics": [],
+        "nodes": [
+          {
+            "id": "c1",
+            "type": "claim",
+            "text": "启动时一次性加载太多模块",
+            "timestampMs": 0,
+            "status": "confirmed"
+          },
+          {
+            "id": "c2",
+            "type": "claim",
+            "text": "首屏渲染被阻塞",
+            "timestampMs": 1000,
+            "status": "confirmed"
+          },
+          {
+            "id": "c3",
+            "type": "claim",
+            "text": "用户觉得应用很慢",
+            "timestampMs": 2000,
+            "status": "confirmed"
+          },
+          {
+            "id": "c4",
+            "type": "conclusion",
+            "text": "需要拆分启动路径",
+            "timestampMs": 3000,
+            "status": "confirmed"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "c1",
+            "target": "c2",
+            "type": "causes"
+          },
+          {
+            "id": "e2",
+            "source": "c2",
+            "target": "c3",
+            "type": "causes"
+          },
+          {
+            "id": "e3",
+            "source": "c3",
+            "target": "c4",
+            "type": "causes"
+          }
+        ],
+        "viewHints": {
+          "defaultView": "causal",
+          "scores": {
+            "causal": 5,
+            "hierarchy": 2,
+            "comparison": 1,
+            "timeline": 1
+          }
+        },
+        "updatedAt": 2000
+      }
+    }
+  ]
+}
