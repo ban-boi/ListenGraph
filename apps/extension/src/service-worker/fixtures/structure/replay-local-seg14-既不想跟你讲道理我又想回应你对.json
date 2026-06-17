@@ -1,0 +1,157 @@
+{
+  "name": "replay-local-seg14-既不想跟你讲道理我又想回应你对",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg14-既不想跟你讲道理我又想回应你对_01",
+      "text": "既不想跟你讲道理我又想回应你",
+      "startMs": 1132240,
+      "endMs": 1137040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 14,
+        "utteranceId": "utt-155",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg14-既不想跟你讲道理我又想回应你对_02",
+      "text": "对不对当我既不想跟你讲道理而我又想回你的时候我就会采取一种非常奇怪的方式搞笑的方式戏谑的方式解构的方式开玩笑的方式这就是脱口秀的核心内核我很烦你我觉得你很油腻我觉得你非常非常的讨厌我觉得你价值观我根本就不能接受可是我根本就不想跟你正面",
+      "startMs": 1137040,
+      "endMs": 1157440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 14,
+        "utteranceId": "utt-156",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg14-既不想跟你讲道理我又想回应你对_03",
+      "text": "刚为什么好累呀而且不仅能赢而且不仅仅有意义而刚刚最后大家会会觉得你们搞辩论的吧不会是会说而已嘛好烦呐我的天我早死了但是且",
+      "startMs": 1157440,
+      "endMs": 1170040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 14,
+        "utteranceId": "utt-157",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg14-既不想跟你讲道理我又想回应你对_04",
+      "text": "且慢万一",
+      "startMs": 1170040,
+      "endMs": 1173040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 14,
+        "utteranceId": "utt-158",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg14-既不想跟你讲道理我又想回应你对_05",
+      "text": "万一呢当然我知道对方会说那万一不呢我告诉你万一不一定没有没有什么损失啊为什么因为如果你根本就不尝试你怎么知道你会给这个事情带来什么样的改变呢如果你根本就不如认真的去想这件事情去认真的去讲道理你怎么知道你能为这个世界做出什么事情呢",
+      "startMs": 1173040,
+      "endMs": 1193440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 14,
+        "utteranceId": "utt-159",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg14-既不想跟你讲道理我又想回应你对_06",
+      "text": "就好比我们之前变过好多好多的辩题比如说性少数权益的辩题对不对那么我们辩着辩着我打了二十将近二十年辩论这个辩题在我刚开始辩论的那个时候候和现在社会风气是不一样",
+      "startMs": 1193440,
+      "endMs": 1209040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 14,
+        "utteranceId": "utt-160",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg14-既不想跟你讲道理我又想回应你对_07",
+      "text": "我们变很多的性别平权的议题今天昨就昨天武大打打的时候他弹幕里边还有人在说哎呀好多都在大拳呢就给别人喷死了为什么因我的辩手一直在改变这个世界",
+      "startMs": 1209040,
+      "endMs": 1221640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 14,
+        "utteranceId": "utt-161",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg14-既不想跟你讲道理我又想回应你对_08",
+      "text": "我十几岁的时候打的一道性别辩题叫做男人更累还是女人更累你们有没有发现这个辩题在今天的辩论舞台上是一个轻挑的辩题",
+      "startMs": 1221640,
+      "endMs": 1231240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 14,
+        "utteranceId": "utt-162",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg14-既不想跟你讲道理我又想回应你对_09",
+      "text": "没有哪个主办方会选这个辩题为什么因为电题这个辩题轻挑",
+      "startMs": 1231240,
+      "endMs": 1235440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 14,
+        "utteranceId": "utt-163",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg14-既不想跟你讲道理我又想回应你对_10",
+      "text": "而为什么这个病局轻挑是我们一代业务院的辩论人做出的不懈努力谢谢各位",
+      "startMs": 1235440,
+      "endMs": 1242040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 14,
+        "utteranceId": "utt-164",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

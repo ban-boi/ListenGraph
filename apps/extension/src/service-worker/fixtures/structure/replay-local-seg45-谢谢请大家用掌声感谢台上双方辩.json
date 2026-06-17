@@ -1,0 +1,199 @@
+{
+  "name": "replay-local-seg45-谢谢请大家用掌声感谢台上双方辩",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg45-谢谢请大家用掌声感谢台上双方辩_01",
+      "text": "谢谢请大家用掌声感谢台上双方辩手谢谢执中谢谢沈",
+      "startMs": 3538840,
+      "endMs": 3547840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 45,
+        "utteranceId": "utt-496",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg45-谢谢请大家用掌声感谢台上双方辩_02",
+      "text": "我们请两位辩手啊到观众席中就坐",
+      "startMs": 3547840,
+      "endMs": 3553840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 45,
+        "utteranceId": "utt-497",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg45-谢谢请大家用掌声感谢台上双方辩_03",
+      "text": "因为我们即将进行投票环节",
+      "startMs": 3557440,
+      "endMs": 3562240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 45,
+        "utteranceId": "utt-500",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg45-谢谢请大家用掌声感谢台上双方辩_04",
+      "text": "让他们背对你们吧那你们投票会比较惬意一",
+      "startMs": 3562240,
+      "endMs": 3567640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 45,
+        "utteranceId": "utt-501",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg45-谢谢请大家用掌声感谢台上双方辩_05",
+      "text": "啊各位桌上应该都有一张票哈一面写着黄执忠一面写着周玄毅",
+      "startMs": 3569440,
+      "endMs": 3577840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 45,
+        "utteranceId": "utt-503",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg45-谢谢请大家用掌声感谢台上双方辩_06",
+      "text": "红色那一面写的黄执忠蓝色那一面写的朱玄",
+      "startMs": 3577840,
+      "endMs": 3583240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 45,
+        "utteranceId": "utt-504",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg45-谢谢请大家用掌声感谢台上双方辩_07",
+      "text": "稍后我会从前排到后排一排排请大家举牌投",
+      "startMs": 3583240,
+      "endMs": 3589240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 45,
+        "utteranceId": "utt-505",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg45-谢谢请大家用掌声感谢台上双方辩_08",
+      "text": "你想把票投给谁请把那位辩手的名字朝向前",
+      "startMs": 3589240,
+      "endMs": 3596440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 45,
+        "utteranceId": "utt-506",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg45-谢谢请大家用掌声感谢台上双方辩_09",
+      "text": "工作人员会逐牌计票最后加总决定本届哲理辩论的胜者",
+      "startMs": 3596440,
+      "endMs": 3605440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 45,
+        "utteranceId": "utt-507",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg45-谢谢请大家用掌声感谢台上双方辩_10",
+      "text": "请前排观众准备请工作员准备",
+      "startMs": 3605440,
+      "endMs": 3610840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 45,
+        "utteranceId": "utt-508",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg45-谢谢请大家用掌声感谢台上双方辩_11",
+      "text": "我们先",
+      "startMs": 3610840,
+      "endMs": 3613240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 45,
+        "utteranceId": "utt-509",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg45-谢谢请大家用掌声感谢台上双方辩_12",
+      "text": "第一排观众",
+      "startMs": 3613240,
+      "endMs": 3616240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 45,
+        "utteranceId": "utt-510",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg45-谢谢请大家用掌声感谢台上双方辩_13",
+      "text": "举",
+      "startMs": 3616240,
+      "endMs": 3618040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 45,
+        "utteranceId": "utt-511",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

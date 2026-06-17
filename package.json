@@ -6,6 +6,7 @@
     "dev:web": "turbo run dev --filter=web-demo",
     "dev:ext": "turbo run dev --filter=extension",
     "dev:ext:chrome": "pnpm --filter extension dev:chrome",
+    "dev:desktop": "turbo run dev --filter=desktop",
     "dev:mock-asr-bridge": "node ./tools/mock-asr-bridge.mjs",
     "dev:sherpa-asr-bridge": "python ./tools/sherpa-onnx-bridge.py",
     "build": "turbo run build",
@@ -21,7 +22,11 @@
     "test:ext:asr:local-bridge": "pnpm --filter extension test:asr:local-bridge",
     "test:ext:asr:local-bridge:mock": "pnpm --filter extension test:asr:local-bridge:mock",
     "prepare:asr:local": "pnpm --filter extension prepare:asr:local",
-    "prepare:structure:local-replay": "pnpm --filter extension prepare:structure:local-replay"
+    "prepare:structure:local-replay": "pnpm --filter extension prepare:structure:local-replay",
+    "segment:asr:local": "pnpm --filter extension segment:asr:local",
+    "compare:structure": "pnpm --filter extension compare:structure",
+    "compare:structure:segments": "pnpm --filter extension compare:structure:segments",
+    "judge:acceptance": "pnpm --filter extension judge:acceptance"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

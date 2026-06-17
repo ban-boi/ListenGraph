@@ -1,0 +1,115 @@
+{
+  "name": "replay-local-seg17-是因为来自某种痛苦你懂吧是来自",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg17-是因为来自某种痛苦你懂吧是来自_01",
+      "text": "是因为来自某种痛苦你懂吧是来自于某种你真实能够感受到的痛",
+      "startMs": 1387240,
+      "endMs": 1393240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 17,
+        "utteranceId": "utt-189",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg17-是因为来自某种痛苦你懂吧是来自_02",
+      "text": "真实感受到的某种疑虑",
+      "startMs": 1393240,
+      "endMs": 1396240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 17,
+        "utteranceId": "utt-190",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg17-是因为来自某种痛苦你懂吧是来自_03",
+      "text": "真实感受到的某种困境只是在台让他用笑的方式来让你笑而事实上你反过来讲如果这个现象",
+      "startMs": 1396240,
+      "endMs": 1406440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 17,
+        "utteranceId": "utt-191",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg17-是因为来自某种痛苦你懂吧是来自_04",
+      "text": "不是你所注意到的不是你所遭遇过的不是你所有共鸣的那么他讲出来那一刻你就不会笑你就不会",
+      "startMs": 1406440,
+      "endMs": 1417240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 17,
+        "utteranceId": "utt-192",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg17-是因为来自某种痛苦你懂吧是来自_05",
+      "text": "周帅刚才在申论的时候大家笑的最开心的那句是什么你怎么知道以后会有粽子",
+      "startMs": 1417240,
+      "endMs": 1422040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 17,
+        "utteranceId": "utt-193",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg17-是因为来自某种痛苦你懂吧是来自_06",
+      "text": "啪大家在笑他前面讲的东西跟后面讲的东西你们都没笑只不过维根斯坦你们都没笑为什么因粽子这种东西最好理解啊",
+      "startMs": 1422040,
+      "endMs": 1430440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 17,
+        "utteranceId": "utt-194",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg17-是因为来自某种痛苦你懂吧是来自_07",
+      "text": "他终止这边最有共鸣啊对不对所以我的意思就是说啊先到这边",
+      "startMs": 1430440,
+      "endMs": 1437640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 17,
+        "utteranceId": "utt-195",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

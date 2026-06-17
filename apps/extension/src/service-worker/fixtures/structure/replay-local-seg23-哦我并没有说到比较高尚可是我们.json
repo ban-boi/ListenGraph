@@ -1,0 +1,115 @@
+{
+  "name": "replay-local-seg23-哦我并没有说到比较高尚可是我们",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg23-哦我并没有说到比较高尚可是我们_01",
+      "text": "哦我并没有说到比较高尚可是我们必须承认",
+      "startMs": 1852240,
+      "endMs": 1856440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 23,
+        "utteranceId": "utt-245",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg23-哦我并没有说到比较高尚可是我们_02",
+      "text": "回应世界是他们的工作为什么因为这是脱口秀的起源我我们为什么要说笑我们为什么要幽默因为所有的笑跟幽默都是治疗的药丸捍卫的武器我们当我们恐惧的时候笑声让我们对抗他们当我们害怕的时候笑声帮助我们治疗他们所有的幽默所有的脱口秀",
+      "startMs": 1856440,
+      "endMs": 1876840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 23,
+        "utteranceId": "utt-246",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg23-哦我并没有说到比较高尚可是我们_03",
+      "text": "它都是实实在在在改变所有听众的一切当我们每个人为了男人怎么那么有自信啊哈哈一笑的时候一方面那是我们的武器那是我们的枪跟",
+      "startMs": 1876840,
+      "endMs": 1886440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 23,
+        "utteranceId": "utt-247",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg23-哦我并没有说到比较高尚可是我们_04",
+      "text": "我们也许你说他说我们难道用个段子就可以点醒楚王吗不对一个段子可以让楚王世世代代受辱",
+      "startMs": 1886440,
+      "endMs": 1894840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 23,
+        "utteranceId": "utt-248",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg23-哦我并没有说到比较高尚可是我们_05",
+      "text": "那可比现在点醒他有意义的多那是坚强的盾那是坚强的盔甲",
+      "startMs": 1894840,
+      "endMs": 1900240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 23,
+        "utteranceId": "utt-249",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg23-哦我并没有说到比较高尚可是我们_06",
+      "text": "有一个脱口秀演员在国外的时候他说过一个很有很有意思的一件事他说",
+      "startMs": 1900240,
+      "endMs": 1905640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 23,
+        "utteranceId": "utt-250",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg23-哦我并没有说到比较高尚可是我们_07",
+      "text": "他去健身俱乐部他去那个健身房健身教练常常抱怨他他说你这个人很难很难施语压力啊就是你知道健身做的那个俱乐部的时候他们场长会会说要再做一组再做一组啊建成教练就是给你压力的他说我很难给你压力为什么他说我每次一给你压力的时候你就调侃这件事你就",
+      "startMs": 1905640,
+      "endMs": 1926040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 23,
+        "utteranceId": "utt-251",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "name": "replay-local-seg39-谢谢之中六分钟时间好周帅提了一",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg39-谢谢之中六分钟时间好周帅提了一_01",
+      "text": "谢谢之中六分钟时间",
+      "startMs": 3165040,
+      "endMs": 3170440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 39,
+        "utteranceId": "utt-431",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg39-谢谢之中六分钟时间好周帅提了一_02",
+      "text": "好",
+      "startMs": 3170440,
+      "endMs": 3172240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 39,
+        "utteranceId": "utt-432",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg39-谢谢之中六分钟时间好周帅提了一_03",
+      "text": "周帅提了一个问",
+      "startMs": 3172240,
+      "endMs": 3174040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 39,
+        "utteranceId": "utt-433",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg39-谢谢之中六分钟时间好周帅提了一_04",
+      "text": "叫做那这个世界的战场",
+      "startMs": 3174040,
+      "endMs": 3177040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 39,
+        "utteranceId": "utt-434",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg39-谢谢之中六分钟时间好周帅提了一_05",
+      "text": "不靠我们打辩论的人不靠辩论谁填当你遇到一个反对者之后你难道不需要用辩论挡回去怼回去跟他分清楚分明白吗",
+      "startMs": 3177040,
+      "endMs": 3189040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 39,
+        "utteranceId": "utt-435",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg39-谢谢之中六分钟时间好周帅提了一_06",
+      "text": "这个就是啊我们辩论打久了被宠坏了你知道吗跟各位报告",
+      "startMs": 3189040,
+      "endMs": 3195040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 39,
+        "utteranceId": "utt-436",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg39-谢谢之中六分钟时间好周帅提了一_07",
+      "text": "哪有什么战场啊在真实世界里",
+      "startMs": 3195040,
+      "endMs": 3199240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 39,
+        "utteranceId": "utt-437",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg39-谢谢之中六分钟时间好周帅提了一_08",
+      "text": "哪有战场啊",
+      "startMs": 3199240,
+      "endMs": 3202240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 39,
+        "utteranceId": "utt-438",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg39-谢谢之中六分钟时间好周帅提了一_09",
+      "text": "你以为都像我们现在我们真的是被变成宠坏的我们你一个我一个你六分钟我六分我八分钟你八分钟这才叫战场底下的人全部都不准跑认认真真听完这才叫战场等一下还要分个胜负这才叫战场我们还想到公平不公平这才叫站长真实是界哪有战场啊",
+      "startMs": 3202240,
+      "endMs": 3222640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 39,
+        "utteranceId": "utt-439",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg39-谢谢之中六分钟时间好周帅提了一_10",
+      "text": "真实世界就是不断飘过来的一句话飘过去的一句话你在网络上更人家意见不一样然后嘞有战场吗你怼完他说一声你妈死了然后结束",
+      "startMs": 3222640,
+      "endMs": 3234040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 39,
+        "utteranceId": "utt-440",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

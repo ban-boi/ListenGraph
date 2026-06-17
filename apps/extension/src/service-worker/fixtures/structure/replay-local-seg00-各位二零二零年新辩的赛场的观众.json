@@ -1,0 +1,157 @@
+{
+  "name": "replay-local-seg00-各位二零二零年新辩的赛场的观众",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg00-各位二零二零年新辩的赛场的观众_01",
+      "text": "各位二零二零年新辩的赛场的观众大家晚上好",
+      "startMs": 9040,
+      "endMs": 14440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 0,
+        "utteranceId": "utt-6",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg00-各位二零二零年新辩的赛场的观众_02",
+      "text": "每一年新国",
+      "startMs": 18040,
+      "endMs": 19840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 0,
+        "utteranceId": "utt-9",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg00-各位二零二零年新辩的赛场的观众_03",
+      "text": "这个环节一直以来是最让我心跳加速的环节",
+      "startMs": 19840,
+      "endMs": 24640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 0,
+        "utteranceId": "utt-10",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg00-各位二零二零年新辩的赛场的观众_04",
+      "text": "我非常非常非常喜欢看里变特别是这两位仁兄给我们呈现的",
+      "startMs": 24640,
+      "endMs": 31840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 0,
+        "utteranceId": "utt-11",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg00-各位二零二零年新辩的赛场的观众_05",
+      "text": "这么一场精彩的交锋我一直在思考传统经济辩论哲理变的最大差别在哪里",
+      "startMs": 31840,
+      "endMs": 39640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 0,
+        "utteranceId": "utt-12",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg00-各位二零二零年新辩的赛场的观众_06",
+      "text": "后来我想了一下啊这两者可能都同样给我们呈",
+      "startMs": 39640,
+      "endMs": 44440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 0,
+        "utteranceId": "utt-13",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg00-各位二零二零年新辩的赛场的观众_07",
+      "text": "世界的无绝对性只不过差别是在于传统经济辩论是大家先竞构辉煌的叙事然后凭借着频密的快速的交锋让我们看到无论都恢弘的叙事啊是事事事绝对都各有短板",
+      "startMs": 44440,
+      "endMs": 64840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 0,
+        "utteranceId": "utt-14",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg00-各位二零二零年新辩的赛场的观众_08",
+      "text": "而这里边呢也许是反过来给我们呈现这一面足够长时间的叙述环节让双方在虽然敌对的立场上给我们看到最终各自都能够禁顾起恢弘的叙事让我们从反面看到事事无绝对这件事",
+      "startMs": 64840,
+      "endMs": 85240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 0,
+        "utteranceId": "utt-15",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg00-各位二零二零年新辩的赛场的观众_09",
+      "text": "今天这道辩题是脱口秀或者是辩论能更好的回应世界恰好是新国辩我们在前一赛段中所采用的一道辩题呃今天我们在这里边同样打这一道辩题让我们看看另外一面的风貌请大家用掌声欢迎我们今天的",
+      "startMs": 85240,
+      "endMs": 105640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 0,
+        "utteranceId": "utt-16",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg00-各位二零二零年新辩的赛场的观众_10",
+      "text": "两位辩手入",
+      "startMs": 105640,
+      "endMs": 107440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 0,
+        "utteranceId": "utt-17",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

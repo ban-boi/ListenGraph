@@ -1,0 +1,171 @@
+{
+  "name": "replay-local-seg40-哪来的战场啊你讲了三分钟人家马",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg40-哪来的战场啊你讲了三分钟人家马_01",
+      "text": "哪来的战场啊你讲了三分钟人家马上把你打断你说我生的时间还没到有这种事吗你看会抱怨这种事情可见我们辩论圈真的是",
+      "startMs": 3234040,
+      "endMs": 3246040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 40,
+        "utteranceId": "utt-441",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg40-哪来的战场啊你讲了三分钟人家马_02",
+      "text": "特深焦肉贵的一群呐还战",
+      "startMs": 3246040,
+      "endMs": 3249640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 40,
+        "utteranceId": "utt-442",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg40-哪来的战场啊你讲了三分钟人家马_03",
+      "text": "这个世界不在意的这个世界是一直滚动一直往前的不在意的我们要做的就是什么啊丢一个石头让你一阵哄笑成为一阵反",
+      "startMs": 3249640,
+      "endMs": 3262240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 40,
+        "utteranceId": "utt-443",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg40-哪来的战场啊你讲了三分钟人家马_04",
+      "text": "再丢一颗再丢一颗",
+      "startMs": 3262240,
+      "endMs": 3265240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 40,
+        "utteranceId": "utt-444",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg40-哪来的战场啊你讲了三分钟人家马_05",
+      "text": "重点是要他们有反应反应完了之后也许某些东西飘落心里有些某些人笑的下次不敢再说什么不好的听的话也许某个人突然有点领悟也许没有也无所谓其续往前继续往",
+      "startMs": 3265240,
+      "endMs": 3278440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 40,
+        "utteranceId": "utt-445",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg40-哪来的战场啊你讲了三分钟人家马_06",
+      "text": "真实世界是这个样子的",
+      "startMs": 3278440,
+      "endMs": 3281440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 40,
+        "utteranceId": "utt-446",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg40-哪来的战场啊你讲了三分钟人家马_07",
+      "text": "在座的各位我们打辩论的人都像堂吉诃",
+      "startMs": 3281440,
+      "endMs": 3285040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 40,
+        "utteranceId": "utt-447",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg40-哪来的战场啊你讲了三分钟人家马_08",
+      "text": "我们对着风车争斗了一",
+      "startMs": 3285040,
+      "endMs": 3288640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 40,
+        "utteranceId": "utt-448",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg40-哪来的战场啊你讲了三分钟人家马_09",
+      "text": "我们的敌人是假的可是我们的勇气与热情是真的",
+      "startMs": 3288640,
+      "endMs": 3293440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 40,
+        "utteranceId": "utt-449",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg40-哪来的战场啊你讲了三分钟人家马_10",
+      "text": "可是不能误以为我们的敌人是真的你懂吧",
+      "startMs": 3293440,
+      "endMs": 3297040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 40,
+        "utteranceId": "utt-450",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg40-哪来的战场啊你讲了三分钟人家马_11",
+      "text": "敌人是抽签坐在那儿",
+      "startMs": 3297040,
+      "endMs": 3299440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 40,
+        "utteranceId": "utt-451",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

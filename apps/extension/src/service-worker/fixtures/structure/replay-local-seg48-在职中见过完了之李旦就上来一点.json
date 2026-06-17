@@ -1,0 +1,115 @@
+{
+  "name": "replay-local-seg48-在职中见过完了之李旦就上来一点",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg48-在职中见过完了之李旦就上来一点_01",
+      "text": "在职中见过完了之",
+      "startMs": 3790840,
+      "endMs": 3793240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 48,
+        "utteranceId": "utt-547",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg48-在职中见过完了之李旦就上来一点_02",
+      "text": "李旦就上来一点点来猜来解构了而我不得不说李诞在解构方面的做法我觉得非常高明",
+      "startMs": 3793240,
+      "endMs": 3803440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 48,
+        "utteranceId": "utt-548",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg48-在职中见过完了之李旦就上来一点_03",
+      "text": "一件一拆我觉得恰好让我们看到了辩论的美和脱口秀的美这是第一第",
+      "startMs": 3803440,
+      "endMs": 3811840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 48,
+        "utteranceId": "utt-549",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg48-在职中见过完了之李旦就上来一点_04",
+      "text": "我其实也同意啊之中刚才所说的最后那一趴就是",
+      "startMs": 3811840,
+      "endMs": 3817240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 48,
+        "utteranceId": "utt-550",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg48-在职中见过完了之李旦就上来一点_05",
+      "text": "辩论这件事情啊很很多时候是我们一群志同道合者有共识者关起门来",
+      "startMs": 3817240,
+      "endMs": 3823840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 48,
+        "utteranceId": "utt-551",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg48-在职中见过完了之李旦就上来一点_06",
+      "text": "我们自己讨论的所有话题它和真实世界毕竟是真有距离哪管我们试图引入再多贴合时代贴合这一个环境下我们是要关切的争议题都好他的争锋环境他话语体系都和真实世界不太一样",
+      "startMs": 3823840,
+      "endMs": 3844240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 48,
+        "utteranceId": "utt-552",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg48-在职中见过完了之李旦就上来一点_07",
+      "text": "我们在礼上",
+      "startMs": 3844240,
+      "endMs": 3846640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 48,
+        "utteranceId": "utt-553",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

@@ -1,0 +1,143 @@
+{
+  "name": "replay-local-seg29-你这样真的我很不舒服你能不能不",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg29-你这样真的我很不舒服你能不能不_01",
+      "text": "你这样真的我很不舒服你能不能不要讲了我这个人我跟你说这种人气也小了吧七眼小了吗气爷是不是下去",
+      "startMs": 2350240,
+      "endMs": 2359240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 29,
+        "utteranceId": "utt-318",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg29-你这样真的我很不舒服你能不能不_02",
+      "text": "舒不舒服不是由您界定的是由我来界定的所以你应该尊重一下我的感",
+      "startMs": 2359240,
+      "endMs": 2365240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 29,
+        "utteranceId": "utt-319",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg29-你这样真的我很不舒服你能不能不_03",
+      "text": "end of game 赢了",
+      "startMs": 2365240,
+      "endMs": 2367640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 29,
+        "utteranceId": "utt-320",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg29-你这样真的我很不舒服你能不能不_04",
+      "text": "怎么这一场比赛我仅仅有躺枪的感",
+      "startMs": 2374840,
+      "endMs": 2378440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 29,
+        "utteranceId": "utt-325",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg29-你这样真的我很不舒服你能不能不_05",
+      "text": "来到第二回合的主席提问这一轮的提问啊分别来自一位脱口秀演员",
+      "startMs": 2378440,
+      "endMs": 2386840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 29,
+        "utteranceId": "utt-326",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg29-你这样真的我很不舒服你能不能不_06",
+      "text": "和来自一位辩手啊这一轮的提问环节",
+      "startMs": 2386840,
+      "endMs": 2391040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 29,
+        "utteranceId": "utt-327",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg29-你这样真的我很不舒服你能不能不_07",
+      "text": "我们先",
+      "startMs": 2391040,
+      "endMs": 2392840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 29,
+        "utteranceId": "utt-328",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg29-你这样真的我很不舒服你能不能不_08",
+      "text": "正方",
+      "startMs": 2394640,
+      "endMs": 2396440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 29,
+        "utteranceId": "utt-330",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg29-你这样真的我很不舒服你能不能不_09",
+      "text": "啊对不起先向反方提问",
+      "startMs": 2396440,
+      "endMs": 2400040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 29,
+        "utteranceId": "utt-331",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

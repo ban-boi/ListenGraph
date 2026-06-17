@@ -1,0 +1,115 @@
+{
+  "name": "replay-local-seg49-比几外面的世界来说过度较真了我",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg49-比几外面的世界来说过度较真了我_01",
+      "text": "比几外面的世界来说过度较真了",
+      "startMs": 3846640,
+      "endMs": 3850840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 49,
+        "utteranceId": "utt-554",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg49-比几外面的世界来说过度较真了我_02",
+      "text": "我们试图在是非对错上的那一种讲究比起真实世界来说其实确实是有一点象牙塔的只不过我内心对辩论的还是有那么一丝清春的憧憬和幼稚就是",
+      "startMs": 3850840,
+      "endMs": 3865240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 49,
+        "utteranceId": "utt-555",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg49-比几外面的世界来说过度较真了我_03",
+      "text": "如果现实世界也都这么较真和讲理那该多好啊所以",
+      "startMs": 3865240,
+      "endMs": 3873640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 49,
+        "utteranceId": "utt-556",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg49-比几外面的世界来说过度较真了我_04",
+      "text": "希望我们能有更多的辩论爱好者希望在这个真空的世界中我们在畅想在思考在争辩在计较能够从中让我们看到些什么学到些什么坚定相信些什么",
+      "startMs": 3873640,
+      "endMs": 3890440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 49,
+        "utteranceId": "utt-557",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg49-比几外面的世界来说过度较真了我_05",
+      "text": "那也许在我们回到世界真实世界中生活的时候可能在内心中还有一篇我们自己相信的净土啊和自己在那小小世界中啊会自我认可的那么一个小空间吧",
+      "startMs": 3890440,
+      "endMs": 3906040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 49,
+        "utteranceId": "utt-558",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg49-比几外面的世界来说过度较真了我_06",
+      "text": "啊所以这个是我最后对辩论的呃一个想象",
+      "startMs": 3906040,
+      "endMs": 3910840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 49,
+        "utteranceId": "utt-559",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg49-比几外面的世界来说过度较真了我_07",
+      "text": "来",
+      "startMs": 3910840,
+      "endMs": 3912640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 49,
+        "utteranceId": "utt-560",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

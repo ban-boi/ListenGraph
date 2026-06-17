@@ -1,0 +1,73 @@
+{
+  "name": "replay-local-seg19-但是我知道这种肯定都会有说你看",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg19-但是我知道这种肯定都会有说你看_01",
+      "text": "但是我知道这种肯定都会有说你看大家都笑了我告诉各位我刚才讲那句话之前我没有想到强制是万志愿我刚才讲的重植之前我没有想到是粽子变路图图有最大区别在于什么病论是以以带笑我讲到这儿了突然讲个笑话我就讲了不讲笑话我也无所谓我坐下来了对不对如果说是以孝代理哎呀我一定要丢个粽子的段子啊啊我怎么把这个动作",
+      "startMs": 1560040,
+      "endMs": 1580440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 19,
+        "utteranceId": "utt-212",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg19-但是我知道这种肯定都会有说你看_02",
+      "text": "讲出来来呢叫以效代理请问以效代理更容易回应还是以礼带孝更容易回应你讲道理讲理讲着不管讲得好不好你反正笑和不笑我都赢了对不对你以效代理你要么讲笑了大家都只是当笑话你要么就是没笑的的话你就糟糕糕对不对请问哪个门槛更低哪更符合所有的人我个人认为还是辩",
+      "startMs": 1580440,
+      "endMs": 1600840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 19,
+        "utteranceId": "utt-213",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg19-但是我知道这种肯定都会有说你看_03",
+      "text": "以下代理不理不管笑没笑我们辩手都赢了我们辩手赢两次谢",
+      "startMs": 1600840,
+      "endMs": 1605640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 19,
+        "utteranceId": "utt-214",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg19-但是我知道这种肯定都会有说你看_04",
+      "text": "接着来到第二回合的陈词环节双方各有六分钟的时间我们我们先请正方开始发",
+      "startMs": 1609240,
+      "endMs": 1618840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 19,
+        "utteranceId": "utt-217",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

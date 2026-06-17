@@ -54,6 +54,30 @@ pnpm run test:ext:replay
 - fallback 行为
 - 腾讯 realtime utterance 验收
 - 新 transcript 风格回归
+- **本地 ASR → LLM Judge acceptance 校准**（见 [llm-judge-acceptance-calibration.md](./llm-judge-acceptance-calibration.md)）
+
+### 本地 ASR → Acceptance 校准 Pipeline
+
+从真实音频出发，通过 LLM-as-Judge 批量生成 acceptance 草稿，人工精选后固化为 regression fixture。详见 [llm-judge-acceptance-calibration.md](./llm-judge-acceptance-calibration.md)。
+
+```powershell
+# 1. 分段（确定性，无 AI）
+pnpm segment:asr:local
+
+# 2. 生成 segment fixture（弱 scaffold）
+pnpm prepare:structure:local-replay -- --segments
+
+# 3. 跑 structurer 对比（with/without assembler）
+$env:LISTEN_GRAPHIC_E2E_STRUCTURER_TYPE = "openai"
+$env:LISTEN_GRAPHIC_E2E_STRUCTURER_API_KEY = "sk-..."
+pnpm compare:structure:segments
+
+# 4. LLM Judge（blind comparison + rubric 评分）
+$env:LISTEN_GRAPHIC_JUDGE_API_KEY = "sk-..."
+pnpm judge:acceptance
+
+# 5. 人工从 summary.md 选 10-20 条，微调 acceptance
+```
 
 ### 3. Thin E2E
 验证少量高价值用户闭环，证明扩展真的可以被操作并跑通。

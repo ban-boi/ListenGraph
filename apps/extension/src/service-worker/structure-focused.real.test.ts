@@ -21,6 +21,7 @@ import {
   getExternalSkipResult,
   getExternalIssueMetadata,
   assertFixtureAcceptance,
+  writeCompactGraphArtifact,
 } from './structure-focused-helpers';
 
 const FIXTURE_DIR = path.resolve(__dirname, './fixtures/structure');
@@ -524,6 +525,18 @@ describeReal('Structure-focused real structurer', () => {
               exportData: result.exportData,
               previousGraph: result.previousGraph,
             });
+            // 条件写入 compact graph artifact（仅在环境变量启用时）
+            const shouldWriteGraphs =
+              process.env.LISTEN_GRAPHIC_COMPARISON_WRITE_GRAPHS?.trim() === '1';
+            if (shouldWriteGraphs) {
+              const assemblerEnabled =
+                process.env.LISTEN_GRAPHIC_STRUCTURE_UNIT_ASSEMBLER_ENABLED !== 'false';
+              writeCompactGraphArtifact(
+                fixture.name,
+                result.debugData.graph ?? null,
+                assemblerEnabled,
+              );
+            }
             break;
           } catch (error) {
             if (

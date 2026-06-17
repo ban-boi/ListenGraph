@@ -1,0 +1,171 @@
+{
+  "name": "replay-local-seg15-在进入第二回合的长陈词之前我们",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg15-在进入第二回合的长陈词之前我们_01",
+      "text": "在进入第二回合的长陈词之前",
+      "startMs": 1249240,
+      "endMs": 1252840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 15,
+        "utteranceId": "utt-169",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg15-在进入第二回合的长陈词之前我们_02",
+      "text": "我们有一个环节这个环节有两次这个环节叫做主席提问的环节",
+      "startMs": 1252840,
+      "endMs": 1261840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 15,
+        "utteranceId": "utt-170",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg15-在进入第二回合的长陈词之前我们_03",
+      "text": "我会向双方各提问一道问题每一位各有两分钟的回答时间",
+      "startMs": 1261840,
+      "endMs": 1269640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 15,
+        "utteranceId": "utt-171",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg15-在进入第二回合的长陈词之前我们_04",
+      "text": "按规则",
+      "startMs": 1269640,
+      "endMs": 1271440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 15,
+        "utteranceId": "utt-172",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg15-在进入第二回合的长陈词之前我们_05",
+      "text": "我向正方提提问题",
+      "startMs": 1271440,
+      "endMs": 1274440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 15,
+        "utteranceId": "utt-173",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg15-在进入第二回合的长陈词之前我们_06",
+      "text": "之中在你的世界",
+      "startMs": 1274440,
+      "endMs": 1277440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 15,
+        "utteranceId": "utt-174",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg15-在进入第二回合的长陈词之前我们_07",
+      "text": "怎样才算是已经回应了世界",
+      "startMs": 1277440,
+      "endMs": 1282240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 15,
+        "utteranceId": "utt-175",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg15-在进入第二回合的长陈词之前我们_08",
+      "text": "因为从你刚才的全篇论述当中我听到了你对辩论的非议",
+      "startMs": 1282240,
+      "endMs": 1288840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 15,
+        "utteranceId": "utt-176",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg15-在进入第二回合的长陈词之前我们_09",
+      "text": "你对辩论的",
+      "startMs": 1288840,
+      "endMs": 1291240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 15,
+        "utteranceId": "utt-177",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg15-在进入第二回合的长陈词之前我们_10",
+      "text": "没有看不起的意思啊但是啊这句话的背后的意义在于说他只不过是一场智力的游戏但是辩题毕竟要我们去讨论回应",
+      "startMs": 1291240,
+      "endMs": 1303240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 15,
+        "utteranceId": "utt-178",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg15-在进入第二回合的长陈词之前我们_11",
+      "text": "你的回应的效果究竟是怎样",
+      "startMs": 1303240,
+      "endMs": 1307440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 15,
+        "utteranceId": "utt-179",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "name": "replay-local-seg26-有点冒犯了对不对我有点冒犯了我",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg26-有点冒犯了对不对我有点冒犯了我_01",
+      "text": "有点冒犯了对不对我有点冒犯了我不是辩手的那个那个思路对对不回到到回到回到到到论来来对不起回到里论来 ok 脱口秀的讲者可以讲这个词辩手不能讲这个词回到第二点对方说错口秀者更接地气对不对他所谓的回真问题叫做更接地气我告诉你更接地气和和",
+      "startMs": 2077240,
+      "endMs": 2097640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 26,
+        "utteranceId": "utt-274",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg26-有点冒犯了对不对我有点冒犯了我_02",
+      "text": "真问题不是一回事我给你举个例子就是那个脱口秀的那个讲者讲完之后老大给了他几万美金的那个事情",
+      "startMs": 2097640,
+      "endMs": 2104840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 26,
+        "utteranceId": "utt-275",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg26-有点冒犯了对不对我有点冒犯了我_03",
+      "text": "我请问你那个脱口秀者说我后来变成了一个女权主义者我请问你他老大变成了女权主义者吗",
+      "startMs": 2104840,
+      "endMs": 2111440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 26,
+        "utteranceId": "utt-276",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

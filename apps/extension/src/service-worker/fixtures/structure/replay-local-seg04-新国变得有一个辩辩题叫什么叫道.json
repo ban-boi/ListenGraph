@@ -1,0 +1,101 @@
+{
+  "name": "replay-local-seg04-新国变得有一个辩辩题叫什么叫道",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg04-新国变得有一个辩辩题叫什么叫道_01",
+      "text": "新国变得有一个辩辩题叫什么叫道可道还是",
+      "startMs": 339640,
+      "endMs": 343840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 4,
+        "utteranceId": "utt-56",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg04-新国变得有一个辩辩题叫什么叫道_02",
+      "text": "不可",
+      "startMs": 343840,
+      "endMs": 345640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 4,
+        "utteranceId": "utt-57",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg04-新国变得有一个辩辩题叫什么叫道_03",
+      "text": "这没有一个是这个世界想要你回应的问题你懂吗",
+      "startMs": 345640,
+      "endMs": 350440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 4,
+        "utteranceId": "utt-58",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg04-新国变得有一个辩辩题叫什么叫道_04",
+      "text": "啊我当然请各位理解一件事我在讲这个的时候我并不是在指责我们彼此我只是希望我们打辩论的人呢理解一件事我们其实在辩论当中是把它当成一个置信活动就是智力活动啊智力活动对我们而言我们在这个过程当中我们真正想要做",
+      "startMs": 350440,
+      "endMs": 370840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 4,
+        "utteranceId": "utt-59",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg04-新国变得有一个辩辩题叫什么叫道_05",
+      "text": "做到的是自我挑战自我回应指问自答其实我们都没有特别关心这个世界我们在这边他的每一个辩题我我我在之前来之前我看了前面几场比赛在扣每个题目不管是在了为了某一个字眼什么叫做回应回应是件件什么意思我看网络上有打一个这个",
+      "startMs": 370840,
+      "endMs": 391240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 4,
+        "utteranceId": "utt-60",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg04-新国变得有一个辩辩题叫什么叫道_06",
+      "text": "题目时候想说说来参考一下看看一般都在聊什么其中一方在讲说中东问题吵了那么多年对不对请问辩论如何回应他们另外一方说哎呀辩论辩论的可不是只有是非啊辩论还有很多比较型的辩题了对方辩友我想说你们在讲什么你懂吗",
+      "startMs": 391240,
+      "endMs": 408640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 4,
+        "utteranceId": "utt-61",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

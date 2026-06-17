@@ -1,0 +1,101 @@
+{
+  "name": "replay-local-seg06-而尤其是辩论这玩意儿特脆弱你知",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg06-而尤其是辩论这玩意儿特脆弱你知_01",
+      "text": "而尤其是辩论这玩意儿特脆弱你知道吗特别脆弱你想想看在一个辩论的过程当中啊我们会希望要公平我们会需要评委啊我们需要有规则我们需要有对手我们还希望评委最好要专心听我们讲话真实世界不是这个样子的真实世界",
+      "startMs": 478240,
+      "endMs": 498640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 6,
+        "utteranceId": "utt-68",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg06-而尤其是辩论这玩意儿特脆弱你知_02",
+      "text": "很粗糙的在我的理解里头我比较能够理解解辩论很像是个古典乐它跟民谣不一样啊还不打算回应任何真实的世界的问题辩论的本身它就是一个在特定环节特定规则特定时空跟特定条件下咱们比比看谁赢谁输",
+      "startMs": 498640,
+      "endMs": 516640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 6,
+        "utteranceId": "utt-69",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg06-而尤其是辩论这玩意儿特脆弱你知_03",
+      "text": "我之前啊我以前在上课的时候我分享过一个个案例特有有思思他我那那时候看到报纸上说是有奥",
+      "startMs": 516640,
+      "endMs": 525040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 6,
+        "utteranceId": "utt-70",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg06-而尤其是辩论这玩意儿特脆弱你知_04",
+      "text": "四百米的女子金牌的选手四百米冠军啊结果在巴西还是阿根廷的旅游的时候包包被人抢了他马上回身去追结果嘞没追上",
+      "startMs": 525040,
+      "endMs": 538840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 6,
+        "utteranceId": "utt-71",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg06-而尤其是辩论这玩意儿特脆弱你知_05",
+      "text": "为什么没追上你四百米金牌你这人类跑四百米最快",
+      "startMs": 538840,
+      "endMs": 543040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 6,
+        "utteranceId": "utt-72",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg06-而尤其是辩论这玩意儿特脆弱你知_06",
+      "text": "因为你要知道奥运的那个四百米金牌他跑的那个记录是必须一样在特定环境特定条件特定时空跟特定的保护下才跑得出来的你必须穿那样的衣服你必须穿那样的球鞋你起跑的时候有一个助跑器必须在那个铺好的那个笔直的跑道上然",
+      "startMs": 543040,
+      "endMs": 563440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 6,
+        "utteranceId": "utt-73",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

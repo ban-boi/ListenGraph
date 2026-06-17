@@ -1,0 +1,101 @@
+{
+  "name": "replay-local-seg05-我个人看起来我个人看起来你请不",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg05-我个人看起来我个人看起来你请不_01",
+      "text": "我个人看起来我个人看起来你请不要误会我并没有我并没有批判辩论这个活动",
+      "startMs": 408640,
+      "endMs": 415240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 5,
+        "utteranceId": "utt-62",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg05-我个人看起来我个人看起来你请不_02",
+      "text": "我个人看起来我自己也是辩论爱好者我是辩论的狂热者可是我从",
+      "startMs": 415240,
+      "endMs": 421240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 5,
+        "utteranceId": "utt-63",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg05-我个人看起来我个人看起来你请不_03",
+      "text": "时间久了以后拉回来看我觉得我们比较像什么你们有没有看过那个金庸小说里头有一段就是老顽童周伯通他被困在桃花岛上啊没人跟他对战那他怎么办他学会了一招叫什么左右互补啊没人跟我打架那我就左手跟我右手打架我们辩论的好多辩题",
+      "startMs": 421240,
+      "endMs": 441640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 5,
+        "utteranceId": "utt-64",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg05-我个人看起来我个人看起来你请不_04",
+      "text": "其实都是我们在玩这个智力游戏的时候的左右互搏",
+      "startMs": 441640,
+      "endMs": 446440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 5,
+        "utteranceId": "utt-65",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg05-我个人看起来我个人看起来你请不_05",
+      "text": "啊我们想要用各式各样的辩题挑战我们能想到什么样的地步展现我们彼此立论跟经切入点的精妙之处啊然后呢让底下的评审啊或感叹或投入或者说哇还有这种角度可是我们从来没有真正的想要关切切世界界的问题老实说会听我们打",
+      "startMs": 446440,
+      "endMs": 466840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 5,
+        "utteranceId": "utt-66",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg05-我个人看起来我个人看起来你请不_06",
+      "text": "我这个辩题的人在座的各位我们都是同同一个圈子里的人辩论很难出圈其实原因之一也是在于这里因为我们都是彼此都想看看彼此左右互补有多么精彩而",
+      "startMs": 466840,
+      "endMs": 478240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 5,
+        "utteranceId": "utt-67",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

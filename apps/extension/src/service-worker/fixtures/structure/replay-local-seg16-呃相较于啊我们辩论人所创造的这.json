@@ -1,0 +1,101 @@
+{
+  "name": "replay-local-seg16-呃相较于啊我们辩论人所创造的这",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg16-呃相较于啊我们辩论人所创造的这_01",
+      "text": "呃相较于啊我们辩论人所创造的这些辩题虽然我解释一下刚刚才帅帅讲说男人累还是女人类这种题目已经被我们淘汰他不是那个题目只是因为用老了啊现在辩论圈头其他的轻飘的辩题多的是",
+      "startMs": 1312840,
+      "endMs": 1329640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 16,
+        "utteranceId": "utt-183",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg16-呃相较于啊我们辩论人所创造的这_02",
+      "text": "我们之所以用这些辩题单纯只是因为我们觉得这些辩题啊在台上觉得有趣才上对呃针锋相对有意思称上某个热点他并不是一个真正要讨论的东西那我们回到刚才 talshow 总是还觉得脱口秀只是单纯的在解脱其实不是的",
+      "startMs": 1329640,
+      "endMs": 1349440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 16,
+        "utteranceId": "utt-184",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg16-呃相较于啊我们辩论人所创造的这_03",
+      "text": "与之相反我们等下给我等下再在申论时候我可以更深入的聊一聊同时他他谈的反而是真问题他谈的是什么你真实面对的痛苦你的愚",
+      "startMs": 1349440,
+      "endMs": 1360840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 16,
+        "utteranceId": "utt-185",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg16-呃相较于啊我们辩论人所创造的这_04",
+      "text": "你害害怕你你所担心的事物那些让你为难的事物",
+      "startMs": 1360840,
+      "endMs": 1366840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 16,
+        "utteranceId": "utt-186",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg16-呃相较于啊我们辩论人所创造的这_05",
+      "text": "你说不是吧脱口秀大家笑的成这个样子怎么会是讨论一些什么什么真问题什么什么你刚刚讲什么愚蠢还是是什么害怕不是吧是的你试想一下啊哪怕一个你们大家都听过的那个段子叫做男生为什么那么普通却又那么自信",
+      "startMs": 1366840,
+      "endMs": 1383040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 16,
+        "utteranceId": "utt-187",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg16-呃相较于啊我们辩论人所创造的这_06",
+      "text": "这个问题这个段子如果你",
+      "startMs": 1383040,
+      "endMs": 1387240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 16,
+        "utteranceId": "utt-188",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

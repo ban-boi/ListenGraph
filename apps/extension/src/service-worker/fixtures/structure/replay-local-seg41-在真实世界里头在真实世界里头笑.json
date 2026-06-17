@@ -1,0 +1,59 @@
+{
+  "name": "replay-local-seg41-在真实世界里头在真实世界里头笑",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg41-在真实世界里头在真实世界里头笑_01",
+      "text": "在真实世界里头在真实世界里头笑声就是最大的武器笑声就是最好的回应笑跟你一起笑的是你的支持者不敢笑的是反对者反对者如果认为他有支持者上来也讲一个啊也讲一段呢看看人家会不会跟你笑这就是最好的",
+      "startMs": 3301240,
+      "endMs": 3321640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 41,
+        "utteranceId": "utt-453",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg41-在真实世界里头在真实世界里头笑_02",
+      "text": "最简单的事情这个世界一路往前滚动世界如此周糟他不意你的答案也别想奢求说我现在要留什么答案要什么推动别把自己当那么回事儿",
+      "startMs": 3321640,
+      "endMs": 3334240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 41,
+        "utteranceId": "utt-454",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg41-在真实世界里头在真实世界里头笑_03",
+      "text": "所以你看周帅在网上做的事情是特别对的他会不会跟人家私撕半天不会的他做了一件很了不起的事叫什么阴阳怪",
+      "startMs": 3334240,
+      "endMs": 3343840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 41,
+        "utteranceId": "utt-455",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

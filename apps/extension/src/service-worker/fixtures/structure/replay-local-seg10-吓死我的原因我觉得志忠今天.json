@@ -1,0 +1,423 @@
+{
+  "name": "replay-local-seg10-吓死我的原因我觉得志忠今天",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_01",
+      "text": "吓死我",
+      "startMs": 756640,
+      "endMs": 758440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-98",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_02",
+      "text": "的原因",
+      "startMs": 758440,
+      "endMs": 760240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-99",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_03",
+      "text": "我觉得志忠今天",
+      "startMs": 760240,
+      "endMs": 762640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-100",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_04",
+      "text": "一个辩论人的身份在结构辩论",
+      "startMs": 762640,
+      "endMs": 765640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-101",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_05",
+      "text": "我觉得有点儿受到了威",
+      "startMs": 765640,
+      "endMs": 768640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-102",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_06",
+      "text": "但是我突然想到了有有两句",
+      "startMs": 768640,
+      "endMs": 772240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-103",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_07",
+      "text": "第一句话叫",
+      "startMs": 772240,
+      "endMs": 774040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-104",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_08",
+      "text": "哲学家一直都只是在解释世界可是问题的关键在于改变它",
+      "startMs": 774040,
+      "endMs": 779440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-105",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_09",
+      "text": "这句话谁说的",
+      "startMs": 779440,
+      "endMs": 781240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-106",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_10",
+      "text": "马克",
+      "startMs": 781240,
+      "endMs": 783640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-107",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_11",
+      "text": "第二句话叫做哲学家都是苍蝇评里的苍蝇他是乱飞真正的问题不是碰那个碰那那个语言的墙壁而是非洲那个苍蝇瓶",
+      "startMs": 783640,
+      "endMs": 793840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-108",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_12",
+      "text": "浙江好蠢呐",
+      "startMs": 793840,
+      "endMs": 796240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-109",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_13",
+      "text": "这句话谁说的",
+      "startMs": 796240,
+      "endMs": 798040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-110",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_14",
+      "text": "维特根斯",
+      "startMs": 798040,
+      "endMs": 799840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-111",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_15",
+      "text": "马克思是什么人",
+      "startMs": 799840,
+      "endMs": 802240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-112",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_16",
+      "text": "什什么",
+      "startMs": 802240,
+      "endMs": 804640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-113",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_17",
+      "text": "哲学家维特克斯坦是什么",
+      "startMs": 804640,
+      "endMs": 807640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-114",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_18",
+      "text": "哲学家所以你知道",
+      "startMs": 807640,
+      "endMs": 810640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-115",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_19",
+      "text": "哲学跟辩论有一个非常非常相似的地方就在于他们内部的人都特别喜欢拆自己的台",
+      "startMs": 810640,
+      "endMs": 817240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-116",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_20",
+      "text": "可是我告诉各位这恰恰是哲学和辩论最有意思的地方一是他最有生命力的地方也是他有价值的地方",
+      "startMs": 817240,
+      "endMs": 825640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-117",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_21",
+      "text": "只第一点第二点刚才之中在陈词的时候我突然这我在网上查了一下",
+      "startMs": 825640,
+      "endMs": 831640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-118",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_22",
+      "text": "我找到了这个年份",
+      "startMs": 831640,
+      "endMs": 834040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-119",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_23",
+      "text": "就是公元前二百七十八年的时候发生了一件事情",
+      "startMs": 834040,
+      "endMs": 838240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-120",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_24",
+      "text": "屈原投",
+      "startMs": 838240,
+      "endMs": 840040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-121",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_25",
+      "text": "那屈原在江边遇到了一个渔夫那个渔夫跟屈原",
+      "startMs": 840040,
+      "endMs": 844840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-122",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_26",
+      "text": "你为什么要死呢",
+      "startMs": 844840,
+      "endMs": 847240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-123",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_27",
+      "text": "举世皆酌你就不能跟着他们一块玩吗世界上有那么多的真问题吗",
+      "startMs": 847240,
+      "endMs": 853840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-124",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_28",
+      "text": "世界值得那么严肃的被对待吗",
+      "startMs": 853840,
+      "endMs": 856840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-125",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg10-吓死我的原因我觉得志忠今天_29",
+      "text": "你爱不爱国你爱不爱楚王你的那套方案是真的能够去对应现在楚人的关心的问题吗楚人家的关心你死不死吗世界真的会在意你死不死吗你确定以后一定会有粽子吗",
+      "startMs": 856840,
+      "endMs": 871840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 10,
+        "utteranceId": "utt-126",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 5,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

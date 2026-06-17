@@ -1,0 +1,241 @@
+{
+  "name": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_01",
+      "text": "我之前跟程璐聊了一下",
+      "startMs": 2401840,
+      "endMs": 2405440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-333",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_02",
+      "text": "程璐是一个脱口秀演员打了奇葩说",
+      "startMs": 2405440,
+      "endMs": 2410240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-334",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_03",
+      "text": "然后我刚才跟他电话聊的时候他跟我吐槽了一句话",
+      "startMs": 2410240,
+      "endMs": 2416240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-335",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_04",
+      "text": "他",
+      "startMs": 2416240,
+      "endMs": 2418040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-336",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_05",
+      "text": "他觉得辩论没法真正的回应世界",
+      "startMs": 2418040,
+      "endMs": 2423440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-337",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_06",
+      "text": "因为你们好不真实",
+      "startMs": 2423440,
+      "endMs": 2427040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-338",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_07",
+      "text": "因为他",
+      "startMs": 2427040,
+      "endMs": 2428840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-339",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_08",
+      "text": "当你们死抠一个概念非得要分出黑白和对错的时候",
+      "startMs": 2428840,
+      "endMs": 2435440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-340",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_09",
+      "text": "这其实就失真了",
+      "startMs": 2435440,
+      "endMs": 2438440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-341",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_10",
+      "text": "真实的世界本来就不只有一种声音",
+      "startMs": 2438440,
+      "endMs": 2442640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-342",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_11",
+      "text": "正式回应世界的方式应该是让每一个人的真诚的说出自己想说的话",
+      "startMs": 2442640,
+      "endMs": 2450440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-343",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_12",
+      "text": "把反对者的声音先放下让大家看到不同的声音",
+      "startMs": 2450440,
+      "endMs": 2456440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-344",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_13",
+      "text": "辩论的较",
+      "startMs": 2456440,
+      "endMs": 2458240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-345",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_14",
+      "text": "让我们看不到真实的世界所以他认为脱口秀才能更好的回应世界对此你怎么看",
+      "startMs": 2458240,
+      "endMs": 2467240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-346",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_15",
+      "text": "谢",
+      "startMs": 2467240,
+      "endMs": 2469040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-347",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg30-我之前跟程璐聊了一下程璐是一个_16",
+      "text": "对此我的第一个建议是请程璐来我们哲理辩",
+      "startMs": 2469040,
+      "endMs": 2475040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 30,
+        "utteranceId": "utt-348",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 4,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

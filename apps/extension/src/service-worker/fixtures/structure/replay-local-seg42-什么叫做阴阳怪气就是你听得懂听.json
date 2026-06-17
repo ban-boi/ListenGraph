@@ -1,0 +1,115 @@
+{
+  "name": "replay-local-seg42-什么叫做阴阳怪气就是你听得懂听",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg42-什么叫做阴阳怪气就是你听得懂听_01",
+      "text": "什么叫做阴阳怪气就是你听得懂听不懂都无所谓反正我已经笑完你了",
+      "startMs": 3347440,
+      "endMs": 3354040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 42,
+        "utteranceId": "utt-458",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg42-什么叫做阴阳怪气就是你听得懂听_02",
+      "text": "听得懂的人都哈哈哈听不懂的人哎他们为什么笑我周书海你阴阳怪气哦这是他们唯一的回",
+      "startMs": 3354040,
+      "endMs": 3360040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 42,
+        "utteranceId": "utt-459",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg42-什么叫做阴阳怪气就是你听得懂听_03",
+      "text": "然后你就爽了还不行还要再那干嘛拉黑嘛",
+      "startMs": 3360040,
+      "endMs": 3364240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 42,
+        "utteranceId": "utt-460",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg42-什么叫做阴阳怪气就是你听得懂听_04",
+      "text": "这不就是我们在干的事吗还战场不要战场什么田战场不要停档在座各位年",
+      "startMs": 3364240,
+      "endMs": 3373240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 42,
+        "utteranceId": "utt-461",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg42-什么叫做阴阳怪气就是你听得懂听_05",
+      "text": "青春震盛聪明才华不要去填那个什么战场",
+      "startMs": 3373240,
+      "endMs": 3379840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 42,
+        "utteranceId": "utt-462",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg42-什么叫做阴阳怪气就是你听得懂听_06",
+      "text": "在这里打打辩论享受智力的对抗回去以后好好上",
+      "startMs": 3379840,
+      "endMs": 3385840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 42,
+        "utteranceId": "utt-463",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg42-什么叫做阴阳怪气就是你听得懂听_07",
+      "text": "作为一个好的打工",
+      "startMs": 3385840,
+      "endMs": 3388240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 42,
+        "utteranceId": "utt-464",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

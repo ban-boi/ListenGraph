@@ -1,0 +1,171 @@
+{
+  "name": "replay-local-seg03-马上我们请正方率先发言八分钟的",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg03-马上我们请正方率先发言八分钟的_01",
+      "text": "马上我们请正方率先发言八分钟的陈词环节之中请",
+      "startMs": 246040,
+      "endMs": 253840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 3,
+        "utteranceId": "utt-45",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg03-马上我们请正方率先发言八分钟的_02",
+      "text": "啊大家好",
+      "startMs": 253840,
+      "endMs": 255640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 3,
+        "utteranceId": "utt-46",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg03-马上我们请正方率先发言八分钟的_03",
+      "text": "这是一场辩论我们要讨论辩论能不能回应世界",
+      "startMs": 255640,
+      "endMs": 263440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 3,
+        "utteranceId": "utt-47",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg03-马上我们请正方率先发言八分钟的_04",
+      "text": "呃在我讨这个题目之前我觉得这个辩题本身就蛮能说明一些事情你想今天这个辩题在讲什么啊脱口秀跟辩论哪个更能回应世界",
+      "startMs": 263440,
+      "endMs": 274840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 3,
+        "utteranceId": "utt-48",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg03-马上我们请正方率先发言八分钟的_05",
+      "text": "这是个真问题吗",
+      "startMs": 274840,
+      "endMs": 277240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 3,
+        "utteranceId": "utt-49",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg03-马上我们请正方率先发言八分钟的_06",
+      "text": "这个这是一个世界真正在关心的问题",
+      "startMs": 277240,
+      "endMs": 281440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 3,
+        "utteranceId": "utt-50",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg03-马上我们请正方率先发言八分钟的_07",
+      "text": "对不对我们在这边变来变去这个什么我我我我我容易理解不个脱口秀跟辩论哪个更好笑哪个更好玩哪个个更能表达自己的看法什么叫做哪个更好的回应世界这个人说的话吗什么叫做回应世界",
+      "startMs": 281440,
+      "endMs": 296440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 3,
+        "utteranceId": "utt-51",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg03-马上我们请正方率先发言八分钟的_08",
+      "text": "他是什么意思啊真的有人在意这件事情或讨论这件事情以至于我们要这边把它分辨清楚吗",
+      "startMs": 296440,
+      "endMs": 304240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 3,
+        "utteranceId": "utt-52",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg03-马上我们请正方率先发言八分钟的_09",
+      "text": "不是这也就是我们讲辩论哦一个很大的一个问题就叫做我们好多的辩题都是自嗨的辩题我们好多的辩题其实目的是为了展示我们自己其实我们没那么关心世界你看我们今天哲理辩哲理变都都要搞高大上的辩题高大上的辩解就是这个辩题啊",
+      "startMs": 304240,
+      "endMs": 324640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 3,
+        "utteranceId": "utt-53",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg03-马上我们请正方率先发言八分钟的_10",
+      "text": "在某种程度上它是抽象的朦胧的涵阔的不太清晰的对不对我们之前讨论叫做什么叫",
+      "startMs": 324640,
+      "endMs": 333040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 3,
+        "utteranceId": "utt-54",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg03-马上我们请正方率先发言八分钟的_11",
+      "text": "被误解是不是表达者的宿命啊那我我记得去年去年那个",
+      "startMs": 333040,
+      "endMs": 339640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 3,
+        "utteranceId": "utt-55",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

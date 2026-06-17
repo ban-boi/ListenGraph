@@ -1,0 +1,283 @@
+{
+  "name": "replay-local-seg27-他老大心就哇扑死呀你全没有你得",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_01",
+      "text": "他老大心就哇扑死呀你全",
+      "startMs": 2113240,
+      "endMs": 2116840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-278",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_02",
+      "text": "没有",
+      "startMs": 2116840,
+      "endMs": 2119240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-279",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_03",
+      "text": "你得跟他继续讲吧我告诉各位你听了这个笑话你真的会油然而生的活真的女人好不容易你他妈本来就是个女权主义者",
+      "startMs": 2119240,
+      "endMs": 2128240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-280",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_04",
+      "text": "你本来就这个女权主义",
+      "startMs": 2128240,
+      "endMs": 2130640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-281",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_05",
+      "text": "对对不起我还是收了一下我为什么这么愤怒说实在的我不是跟对方生气啊我是我是跟什么样的生气我是想到那个那个段子我就很生气我告诉你一件事情这是我的要讲的第三点就是我我个人认为所谓的接地气不等于要争问题所谓有争议问题题也不等于回应这个事情好就算脱口秀才回应这个世界比如说有很多油腻的的直男很烦很烦很烦最后我我点了他一句叫你那么",
+      "startMs": 2130640,
+      "endMs": 2151040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-282",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_06",
+      "text": "那么普通么么的的么信信我我就在我回应他",
+      "startMs": 2151040,
+      "endMs": 2154640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-283",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_07",
+      "text": "然后呢然",
+      "startMs": 2154640,
+      "endMs": 2157040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-284",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_08",
+      "text": "我说的难听一点你们脱口笑的人开的战场是我们辩论的人在舔",
+      "startMs": 2157040,
+      "endMs": 2162440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-285",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_09",
+      "text": "听懂我意思吗你讲了一句话说哎呀你们这么普通又这么自信哇群起而攻之",
+      "startMs": 2162440,
+      "endMs": 2169040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-286",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_10",
+      "text": "这个时候你怎么",
+      "startMs": 2169040,
+      "endMs": 2170840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-287",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_11",
+      "text": "你继续吵吗你还能再爆梗",
+      "startMs": 2170840,
+      "endMs": 2173840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-288",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_12",
+      "text": "你还要捧起来",
+      "startMs": 2173840,
+      "endMs": 2175640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-289",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_13",
+      "text": "你没有而且你凭什么有啊",
+      "startMs": 2175640,
+      "endMs": 2179240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-290",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_14",
+      "text": "哎我讲的一个道理我讲了一个笑话然后一堆人喷我这个时候我要我要非常优雅的我每喷回去都是一个 punting light 每块一块就是这个胖子来每喷过去这个胖子来我就算我能做到我有什么义务这么做啊我为什么要这样去回馈那些喷我的人呢这个时候我告诉各位一个脱口秀者有两种做法第一种做法",
+      "startMs": 2179240,
+      "endMs": 2199640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-291",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_15",
+      "text": "叫做回避我只讲个段子而已请大家不要对话入座请大家不要深入的去讨论这个问题因为这只是脱口秀而已对不对第二个做法就是你真的想给我白扯白酒是吧那我就给你掰扯掰扯",
+      "startMs": 2199640,
+      "endMs": 2211640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-292",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_16",
+      "text": "debate beg",
+      "startMs": 2211640,
+      "endMs": 2213440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-293",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_17",
+      "text": "现在进入辩论时刻",
+      "startMs": 2213440,
+      "endMs": 2216440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-294",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_18",
+      "text": "那个话题出现之后我告诉你一件非常有意思的事情是在网上真的去讨论说这个段子本身不是冒犯而是情绪的油然而生的这种勃发的这种感觉的人",
+      "startMs": 2216440,
+      "endMs": 2229640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-295",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg27-他老大心就哇扑死呀你全没有你得_19",
+      "text": "都是在辩",
+      "startMs": 2229640,
+      "endMs": 2231440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 27,
+        "utteranceId": "utt-296",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 4,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

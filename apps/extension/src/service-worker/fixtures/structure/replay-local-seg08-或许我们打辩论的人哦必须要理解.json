@@ -1,0 +1,101 @@
+{
+  "name": "replay-local-seg08-或许我们打辩论的人哦必须要理解",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg08-或许我们打辩论的人哦必须要理解_01",
+      "text": "或许我们打辩论的人哦必须要理解一件事我们必须适度的把自己放低因为我们都在打辩论我们彼此都是聪明人在座各位都是聪明人我们都在玩一个很高尚的啊很高深的智力游戏如古典乐那么的精妙",
+      "startMs": 610240,
+      "endMs": 628240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 8,
+        "utteranceId": "utt-80",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg08-或许我们打辩论的人哦必须要理解_02",
+      "text": "等待有缘人以及有水准的裁判哈来平分来来评审我们来评断我们",
+      "startMs": 628240,
+      "endMs": 635440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 8,
+        "utteranceId": "utt-81",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg08-或许我们打辩论的人哦必须要理解_03",
+      "text": "我们很容易会误以为这就是真实世界的答案我们很容易会误以为叫做真实世界必须要向我们渴求答案啊我告诉你是什么我告诉你是怎么回事我帮你们分清楚了来答案就这样子我赢过他了看到了没有我们以为是这样其实不是的",
+      "startMs": 635440,
+      "endMs": 654040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 8,
+        "utteranceId": "utt-82",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg08-或许我们打辩论的人哦必须要理解_04",
+      "text": "我",
+      "startMs": 654040,
+      "endMs": 655840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 8,
+        "utteranceId": "utt-83",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg08-或许我们打辩论的人哦必须要理解_05",
+      "text": "我们再晚一个非常非常迷人的游戏我们在我们的内在自由一个世界我特别热爱辩论的这个圈子是因为我特别知道在出了这个圈子之后",
+      "startMs": 655840,
+      "endMs": 668440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 8,
+        "utteranceId": "utt-84",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg08-或许我们打辩论的人哦必须要理解_06",
+      "text": "好多我们觉得有趣的东西别人不感兴趣好多我们觉得有价值的东西对别人而言根本不是他生活的一部分我们可以在这边谈论除了柴米油盐酱醋茶之外极小众极少数的人会觉得有趣的问题这是他最大的魅力可是如果你要告诉我说辩论的目的是来",
+      "startMs": 668440,
+      "endMs": 688840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 8,
+        "utteranceId": "utt-85",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

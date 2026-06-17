@@ -1,0 +1,115 @@
+{
+  "name": "replay-local-seg21-可是我从这个过程当中也看到古典",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg21-可是我从这个过程当中也看到古典_01",
+      "text": "可是我从这个过程当中也看到古典乐般精妙的智力斗争可是他不是回应世界咱们总得承认这个咱们打辩论的人都那么聪明总得承认这一个连这个都蒙着眼不看的话那枉费咱们一片聪明啊",
+      "startMs": 1704040,
+      "endMs": 1722640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 21,
+        "utteranceId": "utt-231",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg21-可是我从这个过程当中也看到古典_02",
+      "text": "在讲脱口秀",
+      "startMs": 1722640,
+      "endMs": 1725040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 21,
+        "utteranceId": "utt-232",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg21-可是我从这个过程当中也看到古典_03",
+      "text": "对那个刚才周帅讲啊脱口秀只是叫你解脱而已他没有赋予意义",
+      "startMs": 1725040,
+      "endMs": 1731040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 21,
+        "utteranceId": "utt-233",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg21-可是我从这个过程当中也看到古典_04",
+      "text": "他没有让你如何在对这个世界保持改变或对抗真的吗我讲一个我那时候在网络上看到了一个段子国外的一个通秀演员一个黑人看起来吊儿郎当的年纪轻轻",
+      "startMs": 1731040,
+      "endMs": 1743640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 21,
+        "utteranceId": "utt-234",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg21-可是我从这个过程当中也看到古典_05",
+      "text": "他在那一段里头他在讲",
+      "startMs": 1743640,
+      "endMs": 1745440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 21,
+        "utteranceId": "utt-235",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg21-可是我从这个过程当中也看到古典_06",
+      "text": "说我年轻的时候常常在那种名不见经传的纽约那种小俱乐部里头啊表演因为菜鸟一个都是在很糟糕的时段凌晨的那边在那个彻夜的俱乐部投表演我的听众十之八九的是那些什么毒虫跟这个毒",
+      "startMs": 1745440,
+      "endMs": 1764040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 21,
+        "utteranceId": "utt-236",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg21-可是我从这个过程当中也看到古典_07",
+      "text": "他说有一次我在表演结束之后被他们老大叫到后面去我非常紧张就怕老大说你今天的表现非常好太好笑了来打",
+      "startMs": 1764040,
+      "endMs": 1774840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 21,
+        "utteranceId": "utt-237",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "name": "replay-local-seg25-我一点都不怪他们后来我跟他们在",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg25-我一点都不怪他们后来我跟他们在_01",
+      "text": "我一点都不怪他们后来我跟他们在房间里边说我说我真的一点儿都不怪你们因为说实在的我二十岁呃我二十岁的时候比你们傻多了我二十多岁之后只知道把手按在字典里边儿告诉你万他妈就是这个意",
+      "startMs": 2011840,
+      "endMs": 2025040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 25,
+        "utteranceId": "utt-266",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg25-我一点都不怪他们后来我跟他们在_02",
+      "text": "我想说的是什么就是真的这个比较有一个非常大的不公平之中所说的那个布鲁克林的那个脱口秀者跟他相比我们的所有的辩手都是菜鸟",
+      "startMs": 2025040,
+      "endMs": 2036440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 25,
+        "utteranceId": "utt-267",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg25-我一点都不怪他们后来我跟他们在_03",
+      "text": "都是菜鸟不是你的学历的问题这对社会的真实理解上都是菜鸟也许我现在到四十岁了我可能对这个社会的理解我可能跟那个布里库里那这个穷小子可能会有可以对话的",
+      "startMs": 2036440,
+      "endMs": 2047840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 25,
+        "utteranceId": "utt-268",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg25-我一点都不怪他们后来我跟他们在_04",
+      "text": "的 leve 那那个资格你们二十岁你们做不到黄思涵你也做不到你毕竟就二十多岁所以就不怪你已经打的很好了你们都已经表现的很好",
+      "startMs": 2047840,
+      "endMs": 2060440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 25,
+        "utteranceId": "utt-269",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg25-我一点都不怪他们后来我跟他们在_05",
+      "text": "就是猜别人对于辩手冷嘲热讽的时候说哎呀你们其实都不是这个问题的时候你们谈全十万恶巨元你只知道用那个字典内部的逻辑来谈的时候",
+      "startMs": 2060440,
+      "endMs": 2070640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 25,
+        "utteranceId": "utt-270",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg25-我一点都不怪他们后来我跟他们在_06",
+      "text": "好不公平",
+      "startMs": 2070640,
+      "endMs": 2073040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 25,
+        "utteranceId": "utt-271",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg25-我一点都不怪他们后来我跟他们在_07",
+      "text": "太不公平",
+      "startMs": 2073040,
+      "endMs": 2075440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 25,
+        "utteranceId": "utt-272",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

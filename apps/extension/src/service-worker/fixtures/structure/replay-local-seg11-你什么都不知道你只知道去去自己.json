@@ -1,0 +1,143 @@
+{
+  "name": "replay-local-seg11-你什么都不知道你只知道去去自己",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg11-你什么都不知道你只知道去去自己_01",
+      "text": "你什么都不知道你只知道去去自己去",
+      "startMs": 873640,
+      "endMs": 876640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 11,
+        "utteranceId": "utt-128",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg11-你什么都不知道你只知道去去自己_02",
+      "text": "我为什么想起了这个是因为刚才正方所说的这个立论和渔夫对屈原讲的话是一模一样的他的意思是世界不值得用辩论的这样一种方式去回应因为病了太严肃了我们要放低自己的身段",
+      "startMs": 876640,
+      "endMs": 895840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 11,
+        "utteranceId": "utt-129",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg11-你什么都不知道你只知道去去自己_03",
+      "text": "那说到放低就是我的第三点了",
+      "startMs": 895840,
+      "endMs": 899440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 11,
+        "utteranceId": "utt-130",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg11-你什么都不知道你只知道去去自己_04",
+      "text": "大家还记不记得二零一四年第一场哲理辩是什么",
+      "startMs": 899440,
+      "endMs": 903040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 11,
+        "utteranceId": "utt-131",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg11-你什么都不知道你只知道去去自己_05",
+      "text": "叫做犬儒主义是不是精神的解脱之道",
+      "startMs": 903040,
+      "endMs": 906640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 11,
+        "utteranceId": "utt-132",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg11-你什么都不知道你只知道去去自己_06",
+      "text": "我现在请问大家",
+      "startMs": 906640,
+      "endMs": 909040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 11,
+        "utteranceId": "utt-133",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg11-你什么都不知道你只知道去去自己_07",
+      "text": "解脱与回",
+      "startMs": 909040,
+      "endMs": 910840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 11,
+        "utteranceId": "utt-134",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg11-你什么都不知道你只知道去去自己_08",
+      "text": "是不是一个反义词",
+      "startMs": 910840,
+      "endMs": 913840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 11,
+        "utteranceId": "utt-135",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg11-你什么都不知道你只知道去去自己_09",
+      "text": "如果一个人他想要去回应这个世界就意味着他不能做语夫这样的解脱者对不对如果说这个世界上其实没有什么真问题这个是上很多问题其实根本就不值得很认真的很严肃的对待辩手在那里自己觉得自己好像解决了很多的问题其实都很无聊 o k 你是个高",
+      "startMs": 913840,
+      "endMs": 934240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 11,
+        "utteranceId": "utt-136",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

@@ -717,3 +717,46 @@ export function assertFixtureAcceptance(params: {
     }
   }
 }
+
+/** 将 MergedGraph 精简为 LLM judge 友好的 compact 格式并写入 JSON 文件 */
+export function writeCompactGraphArtifact(
+  fixtureName: string,
+  mergedGraph: MergedGraph | null,
+  assemblerEnabled: boolean,
+): void {
+  const mode = assemblerEnabled ? 'with-assembler' : 'no-assembler';
+  const artifactDir = path.resolve(__dirname, 'fixtures/structure/artifacts/segments/graphs');
+  fs.mkdirSync(artifactDir, { recursive: true });
+
+  const nodes = mergedGraph?.nodes ?? [];
+  const edges = mergedGraph?.edges ?? [];
+
+  // 构建 id → text 查找表
+  const nodeTextById = new Map<string, string>();
+  for (const node of nodes) {
+    nodeTextById.set(node.id, node.text);
+  }
+
+  const compact = {
+    fixtureName,
+    assemblerEnabled,
+    nodes: nodes.map((node) => ({
+      id: node.id,
+      type: node.type,
+      text: node.text,
+    })),
+    edges: edges.map((edge) => ({
+      sourceText: nodeTextById.get(edge.source) ?? edge.source,
+      targetText: nodeTextById.get(edge.target) ?? edge.target,
+      type: edge.type,
+      confidence: edge.confidence,
+    })),
+    stats: {
+      nodeCount: nodes.length,
+      edgeCount: edges.length,
+    },
+  };
+
+  const outputPath = path.join(artifactDir, `${fixtureName}.${mode}.compact-graph.json`);
+  fs.writeFileSync(outputPath, `${JSON.stringify(compact, null, 2)}\n`);
+}

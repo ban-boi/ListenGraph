@@ -1,0 +1,87 @@
+{
+  "name": "replay-local-seg35-应该合法化之类的你亏以呀呀可以",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg35-应该合法化之类的你亏以呀呀可以_01",
+      "text": "应该合法化之类的你亏以呀呀可以提呀可是你不能因为我们这把菜刀原来主要是用来切水果的就不能说这把菜刀不适合切菜了吧我们要讨论这把菜刀到底长什么样儿我们到现在为止都打了几十分钟了我们还没有再谈脑筋的么太到这只手到底长什么样哎急死我了阿哥我们还没有探讨这把菜刀到底长什么样儿呢",
+      "startMs": 2880040,
+      "endMs": 2900440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 35,
+        "utteranceId": "utt-398",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg35-应该合法化之类的你亏以呀呀可以_02",
+      "text": "所以最后的时间我就来告诉大家这把菜刀到底长长什么样有两把刀一把叫做脱口秀之刀一把叫做辩论之道",
+      "startMs": 2900440,
+      "endMs": 2910040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 35,
+        "utteranceId": "utt-399",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg35-应该合法化之类的你亏以呀呀可以_03",
+      "text": "他到底长什么样呢我给大家举个例子你就明白了李诞是脱口秀的顶流对不对李诞在业界几乎可以跟黄志忠相提并论",
+      "startMs": 2910040,
+      "endMs": 2920840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 35,
+        "utteranceId": "utt-400",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg35-应该合法化之类的你亏以呀呀可以_04",
+      "text": "可是你们有没有发现李诞最棒的一段脱口秀输出是在奇葩说的旧话和救猫上",
+      "startMs": 2920840,
+      "endMs": 2929240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 35,
+        "utteranceId": "utt-401",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg35-应该合法化之类的你亏以呀呀可以_05",
+      "text": "有意思",
+      "startMs": 2929240,
+      "endMs": 2931640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 35,
+        "utteranceId": "utt-402",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

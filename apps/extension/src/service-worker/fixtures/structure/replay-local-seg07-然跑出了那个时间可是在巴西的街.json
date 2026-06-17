@@ -1,0 +1,101 @@
+{
+  "name": "replay-local-seg07-然跑出了那个时间可是在巴西的街",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg07-然跑出了那个时间可是在巴西的街_01",
+      "text": "然跑出了那个时间",
+      "startMs": 563440,
+      "endMs": 565840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 7,
+        "utteranceId": "utt-74",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg07-然跑出了那个时间可是在巴西的街_02",
+      "text": "可是在巴西的街头啊九万是八拐弟弟也不平这边有水坑的时候",
+      "startMs": 565840,
+      "endMs": 571840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 7,
+        "utteranceId": "utt-75",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg07-然跑出了那个时间可是在巴西的街_03",
+      "text": "你不是那个记录这也解释了你知道吗这也解释了我们好多人在辩场上我们都很厉害我们都很厉害可是呢这不代表你在生活中或者是你在真实的世世界当中你依然能够说哎呦你你你很会变嘛来来来你是不是能够解决你的生活很多的问题你是不是能回应别人很多的疑惑不见",
+      "startMs": 571840,
+      "endMs": 592240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 7,
+        "utteranceId": "utt-76",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg07-然跑出了那个时间可是在巴西的街_04",
+      "text": "因为为为什么因为那是巴西街头我们的记录通通都是在什么都是奥运赛场上才会出现的所以我们我们很在意这个世界吗我们不在意这个世界",
+      "startMs": 592240,
+      "endMs": 604240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 7,
+        "utteranceId": "utt-77",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg07-然跑出了那个时间可是在巴西的街_05",
+      "text": "就我再说一遍我并不是在贬低我们彼此",
+      "startMs": 604240,
+      "endMs": 608440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 7,
+        "utteranceId": "utt-78",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg07-然跑出了那个时间可是在巴西的街_06",
+      "text": "我只是",
+      "startMs": 608440,
+      "endMs": 610240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 7,
+        "utteranceId": "utt-79",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

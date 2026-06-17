@@ -1,0 +1,199 @@
+{
+  "name": "replay-local-seg18-周刚才你在呃陈词的差不多末端的",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg18-周刚才你在呃陈词的差不多末端的_01",
+      "text": "周",
+      "startMs": 1441240,
+      "endMs": 1443040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 18,
+        "utteranceId": "utt-198",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg18-周刚才你在呃陈词的差不多末端的_02",
+      "text": "刚才你在呃陈词的差不多末端的时候有提出呼唤大家去尝试一下辩论",
+      "startMs": 1443040,
+      "endMs": 1450840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 18,
+        "utteranceId": "utt-199",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg18-周刚才你在呃陈词的差不多末端的_03",
+      "text": "言下之意我想你的意",
+      "startMs": 1450840,
+      "endMs": 1453240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 18,
+        "utteranceId": "utt-200",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg18-周刚才你在呃陈词的差不多末端的_04",
+      "text": "应该也会接纳辩论不是一件容易的事情",
+      "startMs": 1453240,
+      "endMs": 1458040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 18,
+        "utteranceId": "utt-201",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg18-周刚才你在呃陈词的差不多末端的_05",
+      "text": "然后你也说了脱口秀是一种开玩笑的方式啊来表达自己如果你真的是呼唤大家尝试去回应世界而你也同意脱口秀是一个门槛比较低的回应方式",
+      "startMs": 1458040,
+      "endMs": 1475440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 18,
+        "utteranceId": "utt-202",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg18-周刚才你在呃陈词的差不多末端的_06",
+      "text": "那为什么不是脱口秀更好的能够呼唤到大家尝试去回应",
+      "startMs": 1475440,
+      "endMs": 1480240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 18,
+        "utteranceId": "utt-203",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg18-周刚才你在呃陈词的差不多末端的_07",
+      "text": "好非常感谢呃说实在的脱口秀不是一个门槛更低的是真的吐血不是门槛更低的我告诉你脱口秀跟辩论的最大的区别是什么像在这中有一个比较出色的真的有很不公平是因为脱口秀的那些讲者他们都是拿去挣钱的所以脱口秀的整个 level 对不起我得罪了各位哈脱口秀的整个 leve 脱口秀的从事者",
+      "startMs": 1480240,
+      "endMs": 1500640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 18,
+        "utteranceId": "utt-204",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg18-周刚才你在呃陈词的差不多末端的_08",
+      "text": "他比辩手的那个语言能力要高",
+      "startMs": 1500640,
+      "endMs": 1503640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 18,
+        "utteranceId": "utt-205",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg18-周刚才你在呃陈词的差不多末端的_09",
+      "text": "比平均的要",
+      "startMs": 1503640,
+      "endMs": 1505440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 18,
+        "utteranceId": "utt-206",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg18-周刚才你在呃陈词的差不多末端的_10",
+      "text": "我不知我不知道这句话有没有冒犯到大家其因为脱口秀是一件挣钱的事情一一出以后事情直接面对观众要拿着你的梗要挣钱的事情我要去讲去讲脱口秀的话真的是穷的裤子都没得穿真的我做不到这他不是门槛的问题所以如果不是门槛槛问题的话你会发现一个问题究竟有一个比较是不公平的真的你们仔细想想",
+      "startMs": 1505440,
+      "endMs": 1525240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 18,
+        "utteranceId": "utt-207",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg18-周刚才你在呃陈词的差不多末端的_11",
+      "text": "其中说脱口秀他讲的才是真问题我告诉各位错不说里边儿好的讲者讲的是这个问题不好的讲者也会讲很油腻的段子也不是这个问题只是纯粹的搞笑而已你们看脱口秀大会每个问题都很好笑都很好笑但是每个问题都很深刻吗不是吧对不对所以你会发现",
+      "startMs": 1525240,
+      "endMs": 1542040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 18,
+        "utteranceId": "utt-208",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg18-周刚才你在呃陈词的差不多末端的_12",
+      "text": "脱口秀能讲真问题的原因是退口秀的讲者的能力而如果同等级别的辩手他居然在一个辩题里边他讲不出这个问题的话那我觉得这个辩手真的要找个地方钻进去",
+      "startMs": 1542040,
+      "endMs": 1552840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 18,
+        "utteranceId": "utt-209",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg18-周刚才你在呃陈词的差不多末端的_13",
+      "text": "一个好的辩手你就算跟我谈论过钱是不是万恶之源我都能找出这个问题来",
+      "startMs": 1552840,
+      "endMs": 1558240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 18,
+        "utteranceId": "utt-210",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

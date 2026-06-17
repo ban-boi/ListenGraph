@@ -1,0 +1,143 @@
+{
+  "name": "replay-local-seg12-你是个高人我非常非常的理解一个",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg12-你是个高人我非常非常的理解一个_01",
+      "text": "你是个高人我非常非常的理解一个人辩论着很多年之后会变成这样的一个高人",
+      "startMs": 934240,
+      "endMs": 940240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 12,
+        "utteranceId": "utt-137",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg12-你是个高人我非常非常的理解一个_02",
+      "text": "我也非常非常的理解血肉主义可能就是精神的解脱之道我能认我今天我能认五年之后我终于认了五年之前我不认啊但是你会发现这叫做解脱之道",
+      "startMs": 940240,
+      "endMs": 951040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 12,
+        "utteranceId": "utt-138",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg12-你是个高人我非常非常的理解一个_03",
+      "text": "而我们今天谈的是回应所以刚才正方所说的叫做放低身段我告诉各位很多时候我们之所以不愿意用辩论去回应这个世界恰恰是因为我们不放低自己的身段什么意思我给你举个例子我们觉得我们非常厉害有人骂我我去",
+      "startMs": 951040,
+      "endMs": 969040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 12,
+        "utteranceId": "utt-139",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg12-你是个高人我非常非常的理解一个_04",
+      "text": "冷嘲热讽",
+      "startMs": 969040,
+      "endMs": 970840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 12,
+        "utteranceId": "utt-140",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg12-你是个高人我非常非常的理解一个_05",
+      "text": "给个段子调笑一下一笑而过对不对屈原如果在家里发微博在这编段子去怼楚王",
+      "startMs": 970840,
+      "endMs": 979840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 12,
+        "utteranceId": "utt-141",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg12-你是个高人我非常非常的理解一个_06",
+      "text": "然后呢有一堆大字在流行也很不错啊居然也能活下来呀但是这个叫做解脱之道而缺在想我要怎么样回应这个事情呢我要怎么去认真去讨论这个问题呢这个时候你能用脱口秀解决吗",
+      "startMs": 979840,
+      "endMs": 995440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 12,
+        "utteranceId": "utt-142",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg12-你是个高人我非常非常的理解一个_07",
+      "text": "你能用冷嘲热讽解决吗你能有段子解决吗你觉得船会被你点醒吗如果船真的一点就醒能够用脱口秀来点醒的话那就是那不是楚楚那不是土是楚什么王来着那就是楚庄王还是楚怀王我忘了就是那个说是不是说那个三年不飞一飞冲天三年呃不鸣一鸣惊人那个叫处什不亡来着对不起自自曝短",
+      "startMs": 995440,
+      "endMs": 1015840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 12,
+        "utteranceId": "utt-143",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg12-你是个高人我非常非常的理解一个_08",
+      "text": "短板如果一个楚王能够被脱脱口秀点醒说明这个床本身他就有很多的想法",
+      "startMs": 1015840,
+      "endMs": 1022440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 12,
+        "utteranceId": "utt-144",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg12-你是个高人我非常非常的理解一个_09",
+      "text": "所以各位回到我们今天的辩题为什么我们要用辩论去回应这个世界原因非常简单不是因为这件事情很爽也不是因为这个事情会让我们解脱也不是因为这个事情真的有意义不是的我们没有那么傲慢我们要放低我们的身身段",
+      "startMs": 1022440,
+      "endMs": 1041040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 12,
+        "utteranceId": "utt-145",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

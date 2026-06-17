@@ -14,11 +14,24 @@
 真实音频 (.wav)
     ↓  本地 ASR (sherpa-onnx / mock bridge)
     ↓  LG-ASR-WS v1 协议
+raw utterance artifact (artifacts/local_*.utterances.json)
+    ↓  segment-local-artifacts.mjs（确定性分段）
+segment 文件 (~30-50 个，30-120s) + manifest（人工可调）
+    ↓  prepare-local-replay-fixtures.mjs --segments
+replay-local-segNN-*.json fixture（弱 scaffold acceptance）
+    ↓  compare-structure-segments.mjs（with/without assembler）
+compact graph artifacts（每段两个图）
+    ↓  judge-acceptance.mjs（LLM judge，blind comparison + rubric）
+calibration JSON + summary.md（draft acceptance + promote 推荐）
+    ↓  人工从 shouldPromoteToFixture=true 中选 10-20 条，微调 acceptance
+最终可回归的 replay fixture
+```
+
+旧路径（不经过分段，直接从完整 artifact 生成）仍可用：
+```
 raw utterance artifact
-    ↓  prepare-local-replay-fixtures.mjs
-structure replay fixture scaffold (弱 acceptance)
-    ↓  人工校准 acceptance
-可回归的 replay fixture
+    ↓  prepare-local-replay-fixtures.mjs（无 --segments）
+replay-local-*.json scaffold（弱 acceptance，需人工校准）
 ```
 
 ---
@@ -251,3 +264,92 @@ fixtures/asr-realtime/full-1_信息密集型_罗翔十一学校讲座.json   # a
 | `LISTEN_GRAPHIC_E2E_ASR_WRITE_ARTIFACTS` | `"1"` = 测试完成后写 artifact | 未设置（不写） |
 | `LISTEN_GRAPHIC_E2E_ASR_TIMEOUT_MS` | 单条 fixture ASR 超时 | `90000`（90 秒） |
 | `LISTEN_GRAPHIC_E2E_ASR_FIXTURE` | 按名称过滤 fixture | 未设置（跑全部） |
+
+---
+
+## 分段（Segmentation）
+
+将全长 artifact 切成 30-120 秒的 segment，便于批量处理和 AI 校准。
+
+```powershell
+# 默认：处理所有 local_full_*.utterances.json
+pnpm segment:asr:local
+
+# 指定输入文件
+node apps/extension/scripts/segment-local-artifacts.mjs --input local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json
+
+# 自定义分段参数
+node apps/extension/scripts/segment-local-artifacts.mjs --gap 3000 --min-duration 20000 --max-duration 90000
+```
+
+**输出：** `artifacts/segments/local_<name>_seg<NN>.json` + `local_<name>_manifest.json`
+
+**Manifest 可人工编辑：**
+```json
+{ "id": "seg05", "keep": false, "mergeWithNext": false, "note": "纯掌声" }
+```
+设 `keep: false` 可在后续步骤中跳过该段。
+
+**从 segments 生成 fixture：**
+```powershell
+pnpm prepare:structure:local-replay -- --segments
+```
+
+---
+
+## Structurer 对比（Assembler Comparison）
+
+对每个 segment fixture 跑两遍 structurer（with/without assembler），收集 compact graph artifacts。
+
+```powershell
+# 配置 structurer（必填）
+$env:LISTEN_GRAPHIC_E2E_STRUCTURER_TYPE = "openai"
+$env:LISTEN_GRAPHIC_E2E_STRUCTURER_API_KEY = "sk-..."
+
+# 跑对比
+pnpm compare:structure:segments
+
+# 只跑特定 segment
+node apps/extension/scripts/compare-structure-segments.mjs --filter "seg05"
+
+# 重跑已有结果
+pnpm compare:structure:segments -- --force
+```
+
+**输出：** `artifacts/segments/graphs/replay-local-segNN-*.graphs.json`
+
+每个文件包含 graphA（with assembler）和 graphB（without assembler）的 compact 格式（nodes + human-readable edges）。
+
+---
+
+## LLM Judge（AI 评审）
+
+用 LLM blind comparison + rubric 评分，为每个 segment 生成 acceptance 草稿。
+
+```powershell
+# 配置 judge（必填）
+$env:LISTEN_GRAPHIC_JUDGE_API_KEY = "sk-..."
+
+# 跑 judge
+pnpm judge:acceptance
+
+# 只评判特定 segment
+node apps/extension/scripts/judge-acceptance.mjs --filter "seg05"
+```
+
+**输出：**
+- `artifacts/segments/judgments/replay-local-segNN-*.judgment.json` — 评分 + acceptance 草稿
+- `artifacts/segments/calibration-summary.md` — 总览报告
+
+**评分 Rubric：** coverage / faithfulness / relationQuality / noiseHandling（各 1-5 分）
+
+**重要：** Judge 输出的 `suggestedAcceptanceDraft` 标记为 `reviewStatus: "ai_draft"`，不是最终验收标准。人工必须审核后才能固化到 regression fixture。
+
+**新增环境变量：**
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `LISTEN_GRAPHIC_JUDGE_API_KEY` | Judge LLM API key | 必填 |
+| `LISTEN_GRAPHIC_JUDGE_BASE_URL` | API base URL | `https://api.openai.com/v1` |
+| `LISTEN_GRAPHIC_JUDGE_MODEL` | Judge 模型 | `gpt-4o` |
+| `LISTEN_GRAPHIC_COMPARISON_WRITE_GRAPHS` | `"1"` = 写 compact graph artifact | 未设置 |

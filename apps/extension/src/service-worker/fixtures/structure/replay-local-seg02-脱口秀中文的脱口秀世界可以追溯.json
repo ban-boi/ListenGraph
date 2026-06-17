@@ -1,0 +1,171 @@
+{
+  "name": "replay-local-seg02-脱口秀中文的脱口秀世界可以追溯",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg02-脱口秀中文的脱口秀世界可以追溯_01",
+      "text": "脱口秀",
+      "startMs": 145240,
+      "endMs": 148240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 2,
+        "utteranceId": "utt-32",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg02-脱口秀中文的脱口秀世界可以追溯_02",
+      "text": "中文的脱口秀世界可以追溯到黄子华先生在香港连串的董洞修开展出来的",
+      "startMs": 148240,
+      "endMs": 156040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 2,
+        "utteranceId": "utt-33",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg02-脱口秀中文的脱口秀世界可以追溯_03",
+      "text": "在零八年周立波先生在大陆开始有了普通话版本的脱口",
+      "startMs": 156040,
+      "endMs": 162040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 2,
+        "utteranceId": "utt-34",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg02-脱口秀中文的脱口秀世界可以追溯_04",
+      "text": "然后在一零",
+      "startMs": 162040,
+      "endMs": 163840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 2,
+        "utteranceId": "utt-35",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg02-脱口秀中文的脱口秀世界可以追溯_05",
+      "text": "在深圳源自于香港的脱口秀俱乐部在这个地方开始出现了分支",
+      "startMs": 163840,
+      "endMs": 171640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 2,
+        "utteranceId": "utt-36",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg02-脱口秀中文的脱口秀世界可以追溯_06",
+      "text": "从深圳传到上海到北京",
+      "startMs": 171640,
+      "endMs": 175240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 2,
+        "utteranceId": "utt-37",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg02-脱口秀中文的脱口秀世界可以追溯_07",
+      "text": "到脱口秀大会到吐槽大会脱口秀来到今天在大陆上是开花结果了而华语辩论呢",
+      "startMs": 175240,
+      "endMs": 184240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 2,
+        "utteranceId": "utt-38",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg02-脱口秀中文的脱口秀世界可以追溯_08",
+      "text": "从九十年代开始借着亚洲大专辩论赛国际华语辩论赛他展现出来的势头热",
+      "startMs": 184240,
+      "endMs": 193840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 2,
+        "utteranceId": "utt-39",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg02-脱口秀中文的脱口秀世界可以追溯_09",
+      "text": "曾经是我们这一代人的梦影牵绊的赛事来到今天更是相当大的辩论爱好者一直以来在追一逐在观赏的算是学术活动算是舞台活",
+      "startMs": 193840,
+      "endMs": 208840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 2,
+        "utteranceId": "utt-40",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg02-脱口秀中文的脱口秀世界可以追溯_10",
+      "text": "但是我们今天辩题所讨论的脱口秀和辩论当然不仅仅局限在于这两种活动形式也未必要局限在于大陆的辩论或者是脱口秀究竟双方会怎么诠释今天的辩题我们把舞台交给双方",
+      "startMs": 208840,
+      "endMs": 227440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 2,
+        "utteranceId": "utt-41",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg02-脱口秀中文的脱口秀世界可以追溯_11",
+      "text": "赛制的第一部分将会是长环节的陈词环节双方各有八分钟时间我们按序将从正方开始发言然后到反方我仅宣布今天的哲理辩论现在开",
+      "startMs": 227440,
+      "endMs": 242440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 2,
+        "utteranceId": "utt-42",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

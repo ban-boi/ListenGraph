@@ -1,0 +1,129 @@
+{
+  "name": "replay-local-seg09-来回应世界啊那太嚣张了那太嚣张",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg09-来回应世界啊那太嚣张了那太嚣张_01",
+      "text": "来回应世界啊那太嚣张了那太嚣张了这世界上所有人都在回应世界那未必是我们辩论人独有的甚至我们的辩论人在我的角度来看是特别不关心这个世界",
+      "startMs": 688840,
+      "endMs": 702640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 9,
+        "utteranceId": "utt-86",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg09-来回应世界啊那太嚣张了那太嚣张_02",
+      "text": "啊我们",
+      "startMs": 702640,
+      "endMs": 704440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 9,
+        "utteranceId": "utt-87",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg09-来回应世界啊那太嚣张了那太嚣张_03",
+      "text": "这个辩题",
+      "startMs": 704440,
+      "endMs": 706840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 9,
+        "utteranceId": "utt-88",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg09-来回应世界啊那太嚣张了那太嚣张_04",
+      "text": "这个辩题是一个非常非常的典型那你说不对啊学长那不是世界上还有很多别的辩题吗对不对是的有些辩题的确挺回应这个世界的比如说死刑要不要废除",
+      "startMs": 706840,
+      "endMs": 719440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 9,
+        "utteranceId": "utt-89",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg09-来回应世界啊那太嚣张了那太嚣张_05",
+      "text": "啊 i 乐要要不合合化这这个挺好的只可你知道吗我们辩论圈圈人都知道",
+      "startMs": 719440,
+      "endMs": 724840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 9,
+        "utteranceId": "utt-90",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg09-来回应世界啊那太嚣张了那太嚣张_06",
+      "text": "我们要不断有新辩题嘛对不对啊我们这个这个生态圈很奇怪我们在挑选辩题的时候不是以这个辩题最值得辩继一直用它而且这个辩题用过了已经变成老辩题了我们想换换新辩题对不对所以这又是另外一个我们其实不真正关心世界的证明",
+      "startMs": 724840,
+      "endMs": 741640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 9,
+        "utteranceId": "utt-91",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg09-来回应世界啊那太嚣张了那太嚣张_07",
+      "text": "谢谢紧接着我们听听看反",
+      "startMs": 747040,
+      "endMs": 751240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 9,
+        "utteranceId": "utt-95",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg09-来回应世界啊那太嚣张了那太嚣张_08",
+      "text": "如何陈词八分钟周算",
+      "startMs": 751240,
+      "endMs": 754840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 9,
+        "utteranceId": "utt-96",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

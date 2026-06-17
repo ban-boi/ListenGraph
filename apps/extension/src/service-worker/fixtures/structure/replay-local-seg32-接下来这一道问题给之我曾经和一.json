@@ -1,0 +1,143 @@
+{
+  "name": "replay-local-seg32-接下来这一道问题给之我曾经和一",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg32-接下来这一道问题给之我曾经和一_01",
+      "text": "接下来这一道问题给之",
+      "startMs": 2596840,
+      "endMs": 2599840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 32,
+        "utteranceId": "utt-366",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg32-接下来这一道问题给之我曾经和一_02",
+      "text": "我曾经和一位",
+      "startMs": 2599840,
+      "endMs": 2602840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 32,
+        "utteranceId": "utt-367",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg32-接下来这一道问题给之我曾经和一_03",
+      "text": "著名的辩手聊过他对于辩论的认知",
+      "startMs": 2602840,
+      "endMs": 2607040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 32,
+        "utteranceId": "utt-368",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg32-接下来这一道问题给之我曾经和一_04",
+      "text": "他说辩论最有意思的一件事情其实就是探寻各种全新的视角来看待同一个议题他跟我说",
+      "startMs": 2607040,
+      "endMs": 2617840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 32,
+        "utteranceId": "utt-369",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg32-接下来这一道问题给之我曾经和一_05",
+      "text": "我们老辩手如果在舞台上还一味的跟人家较真攻防某个点的对错",
+      "startMs": 2617840,
+      "endMs": 2626840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 32,
+        "utteranceId": "utt-370",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg32-接下来这一道问题给之我曾经和一_06",
+      "text": "满足于此不够他认为辩论最大意意义试图在一个议题上挖掘不同的视角让我们看到更多元的真实",
+      "startMs": 2626840,
+      "endMs": 2637640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 32,
+        "utteranceId": "utt-371",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg32-接下来这一道问题给之我曾经和一_07",
+      "text": "请问你认为这个说法是不是符合你所说的那一种",
+      "startMs": 2637640,
+      "endMs": 2644840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 32,
+        "utteranceId": "utt-372",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg32-接下来这一道问题给之我曾经和一_08",
+      "text": "回应真实事",
+      "startMs": 2644840,
+      "endMs": 2647240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 32,
+        "utteranceId": "utt-373",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg32-接下来这一道问题给之我曾经和一_09",
+      "text": "回应真问题因为真实这件事情的前提是看到认识从每一个小课题中我们都可以挖掘出不同视角下的真实呢",
+      "startMs": 2647240,
+      "endMs": 2658640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 32,
+        "utteranceId": "utt-374",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

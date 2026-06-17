@@ -1,0 +1,87 @@
+{
+  "name": "replay-local-seg36-就是为什么就是我不是说李诞的脱",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg36-就是为什么就是我不是说李诞的脱_01",
+      "text": "就是为什么就是我不是说李诞的脱口秀不好笑哈都他不会觉得很好笑可是是的脱脱秀秀最能够引起人讨论的最多会引起全网的深刻的讨论的而不是哈哈一笑就过去了说实在这说实在在就是是能够够回应这个世界引起这个社会的的关注的那个点在奇葩说",
+      "startMs": 2931640,
+      "endMs": 2952040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 36,
+        "utteranceId": "utt-403",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg36-就是为什么就是我不是说李诞的脱_02",
+      "text": "非常有意思你们回头想想我之前讲过八个字叫做有理入校和游笑入理",
+      "startMs": 2952040,
+      "endMs": 2960440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 36,
+        "utteranceId": "utt-404",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg36-就是为什么就是我不是说李诞的脱_03",
+      "text": "脱口秀是有笑入",
+      "startMs": 2960440,
+      "endMs": 2962840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 36,
+        "utteranceId": "utt-405",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg36-就是为什么就是我不是说李诞的脱_04",
+      "text": "他第一个 punlight 你笑着就笑了没有笑就没没有我是是不可能跟你解释我为什么好笑的你笑完了之后再一想有道理啊对不对这是由校入理辩论不一样辩论是由里入入心新手学问论经常会犯的一个错误就是哎呀你看周帅有有很多笑话很好玩我要不要准备一笑话笑下次讲不要你必死",
+      "startMs": 2962840,
+      "endMs": 2982040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 36,
+        "utteranceId": "utt-406",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg36-就是为什么就是我不是说李诞的脱_05",
+      "text": "笑话都嘴你讲道理了之后你蹦出来的蹦蹦出来也无所谓不要学这些东西我我我我现在我现在要恢复到一个庄严的辩手一辩带会小朋小朋友你知道吗辩论不是需要这些东西的别人不需要接东西病人要求你在这里非常简单的讲道理就可以了这叫做有理入孝而且有没有效都",
+      "startMs": 2982040,
+      "endMs": 3002440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 36,
+        "utteranceId": "utt-407",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

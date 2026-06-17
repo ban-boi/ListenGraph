@@ -1,0 +1,45 @@
+{
+  "name": "replay-local-seg01-我觉得这两位应该不牢我多加介绍",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg01-我觉得这两位应该不牢我多加介绍_01",
+      "text": "我觉得这两位应该不牢我多加介绍但是为了走一个流程请大家掌声欢迎今天的正方辩手黄执中先生",
+      "startMs": 121840,
+      "endMs": 134440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 1,
+        "utteranceId": "utt-26",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg01-我觉得这两位应该不牢我多加介绍_02",
+      "text": "反方辩手周宪毅先",
+      "startMs": 138040,
+      "endMs": 141640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 1,
+        "utteranceId": "utt-29",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

@@ -1,0 +1,213 @@
+{
+  "name": "replay-local-seg47-那在等待的过程中我瞎说一些话来",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg47-那在等待的过程中我瞎说一些话来_01",
+      "text": "那在等待的过程中",
+      "startMs": 3678040,
+      "endMs": 3681040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 47,
+        "utteranceId": "utt-533",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg47-那在等待的过程中我瞎说一些话来_02",
+      "text": "我瞎说一些话来填补时间",
+      "startMs": 3681040,
+      "endMs": 3684040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 47,
+        "utteranceId": "utt-534",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg47-那在等待的过程中我瞎说一些话来_03",
+      "text": "啊刚才周帅提到一点就是关于啊李诞在奇葩说上救猫救话的那一段啊辩论",
+      "startMs": 3684040,
+      "endMs": 3694840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 47,
+        "utteranceId": "utt-535",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg47-那在等待的过程中我瞎说一些话来_04",
+      "text": "我对那一段其实颇有",
+      "startMs": 3694840,
+      "endMs": 3698440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 47,
+        "utteranceId": "utt-536",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg47-那在等待的过程中我瞎说一些话来_05",
+      "text": "敢想而且我觉得那个安排恰好",
+      "startMs": 3698440,
+      "endMs": 3702640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 47,
+        "utteranceId": "utt-537",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg47-那在等待的过程中我瞎说一些话来_06",
+      "text": "把脱口秀跟辩论的两个极致给排了出来如果那一场比赛是李旦先行再到职中上来打的话可能就没机会真正让我们见识到这两种活动的极致在我的认知中",
+      "startMs": 3702640,
+      "endMs": 3717640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 47,
+        "utteranceId": "utt-538",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg47-那在等待的过程中我瞎说一些话来_07",
+      "text": "我认为脱口秀之所以好笑之所以精彩因为他非常擅长于解构解构我们世间所认可的推崇的在意的所有价值让我们在笑声中",
+      "startMs": 3717640,
+      "endMs": 3732640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 47,
+        "utteranceId": "utt-539",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg47-那在等待的过程中我瞎说一些话来_08",
+      "text": "看透了很多事情",
+      "startMs": 3732640,
+      "endMs": 3735040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 47,
+        "utteranceId": "utt-540",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg47-那在等待的过程中我瞎说一些话来_09",
+      "text": "所以他能让我们释怀它能让我们轻松松觉得脱口秀的极致就是解构意义而辩论啊有很多种哈而直中擅长的辩论我一直以来认",
+      "startMs": 3735040,
+      "endMs": 3748840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 47,
+        "utteranceId": "utt-541",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg47-那在等待的过程中我瞎说一些话来_10",
+      "text": "是建",
+      "startMs": 3748840,
+      "endMs": 3750640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 47,
+        "utteranceId": "utt-542",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg47-那在等待的过程中我瞎说一些话来_11",
+      "text": "所谓的呃瘦身打法也好价值论述也好什么建中都好我认为走到最后就是职中非常擅长做到辩论中建构价值进构意义感的这么一种打法",
+      "startMs": 3750640,
+      "endMs": 3767440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 47,
+        "utteranceId": "utt-543",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg47-那在等待的过程中我瞎说一些话来_12",
+      "text": "我觉得他的打法是禁锢之极",
+      "startMs": 3767440,
+      "endMs": 3770440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 47,
+        "utteranceId": "utt-544",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg47-那在等待的过程中我瞎说一些话来_13",
+      "text": "所以在那一场比赛我们看到的是职中在救猫救画这一方上先把意义建构的高高的远方的哭声对吧",
+      "startMs": 3770440,
+      "endMs": 3781840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 47,
+        "utteranceId": "utt-545",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg47-那在等待的过程中我瞎说一些话来_14",
+      "text": "是我们一般生活中觉得很遥远的事情突然间让我们看到了啊好有价值和意义呀",
+      "startMs": 3781840,
+      "endMs": 3790840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 47,
+        "utteranceId": "utt-546",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

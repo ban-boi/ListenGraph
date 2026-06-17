@@ -1,0 +1,115 @@
+{
+  "name": "replay-local-seg22-给了我一个包背包里头塞两万块钱",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg22-给了我一个包背包里头塞两万块钱_01",
+      "text": "给了我一个包背包里头塞两万块钱现金两万美金的现金因为毒虫都是用现金",
+      "startMs": 1774840,
+      "endMs": 1782040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 22,
+        "utteranceId": "utt-238",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg22-给了我一个包背包里头塞两万块钱_02",
+      "text": "就他抱的那个那个背包对不对回到到是凌晨四点钟钟啊离开俱乐部五点钟搭上滴班地铁回自己的布鲁克林区他说我这辈辈子从来没那么害怕过我坐在那个地铁上 po 破烂烂摇摇晃晃手上抱着一个背包没有人知道里头有两万块钱我怕死了为什",
+      "startMs": 1782040,
+      "endMs": 1802440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 22,
+        "utteranceId": "utt-239",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg22-给了我一个包背包里头塞两万块钱_03",
+      "text": "因为它非常相信任何人都会为了我手上抱着的这样东东西而杀掉",
+      "startMs": 1802440,
+      "endMs": 1807840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 22,
+        "utteranceId": "utt-240",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg22-给了我一个包背包里头塞两万块钱_04",
+      "text": "他说因此我变成了一个女权主义者为什么因为她那时候我也想到如果我必须每天抱着一个 pu",
+      "startMs": 1807840,
+      "endMs": 1818040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 22,
+        "utteranceId": "utt-241",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg22-给了我一个包背包里头塞两万块钱_05",
+      "text": "啊你懂吗就是如果我是个女人啊我身上拥有一个所有好多人会为了得到这样而杀掉我的东西那我吓死了你知道吗如果当时那个黑道大哥不是给我两万块钱是给我一个 pucy 说来这给你我一定打死说不要",
+      "startMs": 1818040,
+      "endMs": 1833640,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 22,
+        "utteranceId": "utt-242",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg22-给了我一个包背包里头塞两万块钱_06",
+      "text": "太恐怖了是的",
+      "startMs": 1833640,
+      "endMs": 1837240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 22,
+        "utteranceId": "utt-243",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg22-给了我一个包背包里头塞两万块钱_07",
+      "text": "他们没有在观察世界吗他们没有要赋予意义吗他们没有在搞笑之余去思考或对抗都是的我有一个差别是他不会花那么大的力气去争论万是不是一切",
+      "startMs": 1837240,
+      "endMs": 1852240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 22,
+        "utteranceId": "utt-244",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 2,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}

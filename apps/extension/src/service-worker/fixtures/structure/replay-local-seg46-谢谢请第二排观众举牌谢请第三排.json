@@ -1,0 +1,171 @@
+{
+  "name": "replay-local-seg46-谢谢请第二排观众举牌谢请第三排",
+  "transcripts": [
+    {
+      "chunkId": "replay-local-seg46-谢谢请第二排观众举牌谢请第三排_01",
+      "text": "谢谢请第二排观众举牌谢",
+      "startMs": 3623440,
+      "endMs": 3629440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 46,
+        "utteranceId": "utt-515",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg46-谢谢请第二排观众举牌谢请第三排_02",
+      "text": "请第三排观众举",
+      "startMs": 3629440,
+      "endMs": 3632440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 46,
+        "utteranceId": "utt-516",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg46-谢谢请第二排观众举牌谢请第三排_03",
+      "text": "谢谢并第四排观众举牌",
+      "startMs": 3632440,
+      "endMs": 3637840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 46,
+        "utteranceId": "utt-517",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg46-谢谢请第二排观众举牌谢请第三排_04",
+      "text": "谢谢请第五排观众举",
+      "startMs": 3639640,
+      "endMs": 3643840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 46,
+        "utteranceId": "utt-519",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg46-谢谢请第二排观众举牌谢请第三排_05",
+      "text": "谢",
+      "startMs": 3645640,
+      "endMs": 3647440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 46,
+        "utteranceId": "utt-521",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg46-谢谢请第二排观众举牌谢请第三排_06",
+      "text": "请第六排观众举牌",
+      "startMs": 3647440,
+      "endMs": 3651040,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 46,
+        "utteranceId": "utt-522",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg46-谢谢请第二排观众举牌谢请第三排_07",
+      "text": "谢谢后边还有",
+      "startMs": 3651040,
+      "endMs": 3653440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 46,
+        "utteranceId": "utt-523",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg46-谢谢请第二排观众举牌谢请第三排_08",
+      "text": "请第十六排观众举牌",
+      "startMs": 3653440,
+      "endMs": 3656440,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 46,
+        "utteranceId": "utt-524",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg46-谢谢请第二排观众举牌谢请第三排_09",
+      "text": "谢谢",
+      "startMs": 3660040,
+      "endMs": 3661840,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 46,
+        "utteranceId": "utt-527",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg46-谢谢请第二排观众举牌谢请第三排_10",
+      "text": "还有一排第十七排观众请举牌谢谢",
+      "startMs": 3663640,
+      "endMs": 3670240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 46,
+        "utteranceId": "utt-529",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    },
+    {
+      "chunkId": "replay-local-seg46-谢谢请第二排观众举牌谢请第三排_11",
+      "text": "好我们现在等工作人员进行计票",
+      "startMs": 3672040,
+      "endMs": 3676240,
+      "raw": {
+        "source": "local-asr-replay",
+        "artifactFixtureName": "local_full_3_冲突争论型_黄执中周玄毅哲理辩.utterances.json",
+        "segmentIndex": 46,
+        "utteranceId": "utt-531",
+        "confidence": 0,
+        "finalReason": "endpoint"
+      }
+    }
+  ],
+  "acceptance": {
+    "_quality": "weak_scaffold",
+    "minSegments": 1,
+    "minMergedNodes": 3,
+    "minMergedEdges": 0,
+    "allowFallback": true,
+    "manualReviewTags": [
+      "weak_scaffold",
+      "needs-acceptance-calibration",
+      "local-asr-source"
+    ]
+  }
+}
