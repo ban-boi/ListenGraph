@@ -11,12 +11,15 @@ import {
   encodeAudioChunkAsWav,
   float32ToPcm16,
 } from '../shared/audio';
+import { LocalAsrSession, type LocalAsrEvent, type WebSocketLike } from '@listen-graphic/asr-runtime';
 
 let audioContext: AudioContext | null = null;
 let mediaStream: MediaStream | null = null;
 let sourceNode: MediaStreamAudioSourceNode | null = null;
 let processorNode: AudioWorkletNode | null = null;
 let realtimeSocket: WebSocket | null = null;
+// 共享 ASR 运行时仅承载 Local Bridge（external）分支；腾讯分支仍用 realtimeSocket。
+let localAsrSession: LocalAsrSession | null = null;
 let isCapturing = false;
 let hasReportedCaptureEnd = false;
 let activeCaptureRun = 0;
@@ -668,79 +671,38 @@ async function openExternalBridgeSocket(
     },
   } as AppMessage);
 
-  realtimeSocket = await new Promise<WebSocket>((resolve, reject) => {
-    const ws = new WebSocket(config.connectionUrl);
-    ws.binaryType = 'arraybuffer';
-
-    const cleanup = () => {
-      ws.removeEventListener('open', handleOpen);
-      ws.removeEventListener('error', handleError);
-    };
-
-    const handleOpen = () => {
-      cleanup();
-      resolve(ws);
-    };
-
-    const handleError = () => {
-      cleanup();
-      reject(new Error('Local ASR Bridge WebSocket 连接失败'));
-    };
-
-    ws.addEventListener('open', handleOpen, { once: true });
-    ws.addEventListener('error', handleError, { once: true });
+  // 浏览器宿主的 WebSocket 工厂：直接用全局 WebSocket，便于测试 mock 拦截。
+  // 原生 WebSocket 结构上满足 WebSocketLike，边界处断言桥接。
+  const browserWebSocketFactory = (endpoint: string): WebSocketLike =>
+    new WebSocket(endpoint) as unknown as WebSocketLike;
+  const session = new LocalAsrSession({
+    endpoint: config.connectionUrl,
+    authToken: config.authToken,
+    sampleRate: SAMPLE_RATE,
+    frameDurationMs: config.frameDurationMs,
+    sessionId: crypto.randomUUID(),
+    websocketFactory: browserWebSocketFactory,
   });
+  session.on((event) => void handleLocalAsrEvent(event));
 
-  realtimeSocket.onmessage = (event) => {
-    void handleExternalBridgeMessage(event.data);
-  };
-  realtimeSocket.onerror = () => {
-    void chrome.runtime.sendMessage({
+  try {
+    await session.connect();
+  } catch (error) {
+    await chrome.runtime.sendMessage({
       type: 'ASR_STREAM_ERROR',
       target: 'service-worker',
       payload: {
         provider: config.provider,
         code: 'NETWORK_ERROR',
-        message: 'Local ASR Bridge WebSocket 连接异常',
+        message:
+          error instanceof Error ? error.message : 'Local ASR Bridge WebSocket 连接失败',
       },
     } as AppMessage);
-  };
-  realtimeSocket.onclose = () => {
-    void chrome.runtime.sendMessage({
-      type: 'ASR_STREAM_STATUS',
-      target: 'service-worker',
-      payload: {
-        status: 'closed',
-        provider: config.provider,
-        detail: 'Local ASR Bridge 已断开',
-        bridge: {
-          protocol: config.protocol,
-          endpoint: config.connectionUrl,
-        },
-      },
-    } as AppMessage);
-  };
+    throw error;
+  }
 
-  sendRealtimeSocketJson({
-    type: 'session.start',
-    version: '1',
-    session: {
-      sessionId: crypto.randomUUID(),
-    },
-    audio: {
-      codec: 'pcm_s16le',
-      sampleRate: SAMPLE_RATE,
-      channels: 1,
-      frameDurationMs: config.frameDurationMs,
-    },
-    options: {
-      partials: true,
-      finals: true,
-      tokens: false,
-      timestamps: false,
-    },
-    authToken: config.authToken,
-  });
+  // 仅在握手成功后赋值，避免半连接状态被后续帧/关闭逻辑使用。
+  localAsrSession = session;
 
   await chrome.runtime.sendMessage({
     type: 'ASR_STREAM_STATUS',
@@ -757,25 +719,129 @@ async function openExternalBridgeSocket(
   } as AppMessage);
 }
 
+/**
+ * 将共享 ASR 运行时的规范化事件映射为现有的扩展 service-worker 消息，
+ * 行为与原 handleExternalBridgeMessage 等价（保留 partial/final/error/status 全字段）。
+ */
+async function handleLocalAsrEvent(event: LocalAsrEvent) {
+  if (!activeRealtimeStreamConfig || activeRealtimeStreamConfig.providerType !== 'external') {
+    return;
+  }
+  const config = activeRealtimeStreamConfig;
+
+  if (event.type === 'session.started') {
+    await chrome.runtime.sendMessage({
+      type: 'ASR_STREAM_STATUS',
+      target: 'service-worker',
+      payload: {
+        status: 'listening',
+        provider: config.provider,
+        detail: 'Local ASR Bridge 握手成功',
+        bridge: {
+          protocol: config.protocol,
+          endpoint: config.connectionUrl,
+        },
+      },
+    } as AppMessage);
+    return;
+  }
+
+  if (event.type === 'status') {
+    await chrome.runtime.sendMessage({
+      type: 'ASR_STREAM_STATUS',
+      target: 'service-worker',
+      payload: {
+        status: event.status,
+        provider: config.provider,
+        detail: event.detail,
+        bridge: {
+          protocol: config.protocol,
+          endpoint: config.connectionUrl,
+        },
+      },
+    } as AppMessage);
+    return;
+  }
+
+  if (event.type === 'transcript.partial') {
+    await chrome.runtime.sendMessage({
+      type: 'ASR_STREAM_PARTIAL_UPDATED',
+      target: 'service-worker',
+      payload: {
+        text: event.utterance.text,
+        provider: config.provider,
+        utteranceId: event.utterance.utteranceId,
+        revision: event.utterance.revision,
+        kind: 'partial',
+        stability: 'interim',
+        startMs: event.utterance.startMs,
+        endMs: event.utterance.endMs,
+        vendor: event.vendor,
+        raw: event.raw,
+      },
+    } as AppMessage);
+    return;
+  }
+
+  if (event.type === 'transcript.final' && event.utterance.text.trim()) {
+    await chrome.runtime.sendMessage({
+      type: 'ASR_STREAM_FINAL_READY',
+      target: 'service-worker',
+      payload: {
+        text: event.utterance.text,
+        provider: config.provider,
+        utteranceId: event.utterance.utteranceId,
+        revision: event.utterance.revision,
+        kind: 'final',
+        finalReason: event.utterance.finalReason ?? 'vendor_defined',
+        stability: event.utterance.stability ?? 'stable',
+        transport: 'ws',
+        language: event.utterance.language,
+        startMs: event.utterance.startMs,
+        endMs: event.utterance.endMs,
+        confidence: event.utterance.confidence,
+        vendor: event.vendor,
+        raw: event.raw,
+      },
+    } as AppMessage);
+    return;
+  }
+
+  if (event.type === 'error') {
+    await chrome.runtime.sendMessage({
+      type: 'ASR_STREAM_ERROR',
+      target: 'service-worker',
+      payload: {
+        provider: config.provider,
+        code: event.error.code,
+        message: event.error.message,
+      },
+    } as AppMessage);
+  }
+}
+
 function sendRealtimeAudioFrame(floatSamples: Float32Array) {
+  const config = activeRealtimeStreamConfig;
+
+  // Local Bridge 分支：经共享 ASR 运行时编帧发送。
+  if (config?.providerType === 'external') {
+    if (!localAsrSession) {
+      return;
+    }
+    try {
+      localAsrSession.sendFloat32Frame(floatSamples, Date.now());
+    } catch (error) {
+      // 非 streaming 状态等会抛 INVALID_STATE，此处静默忽略避免中断音频循环。
+      console.warn('[content-script] Local ASR 帧发送失败:', error);
+    }
+    return;
+  }
+
+  // 腾讯分支：仍走原生 socket 发送 PCM16。
   if (!realtimeSocket || realtimeSocket.readyState !== WebSocket.OPEN) {
     return;
   }
-
   const pcm16 = float32ToPcm16(floatSamples);
-  const config = activeRealtimeStreamConfig;
-  if (config?.providerType === 'external') {
-    sendRealtimeSocketJson({
-      type: 'audio.frame',
-      audio: {
-        codec: 'pcm_s16le',
-        data: bytesToBase64(new Uint8Array(pcm16.buffer.slice(0))),
-        samples: pcm16.length,
-      },
-    });
-    return;
-  }
-
   realtimeSocket.send(new Uint8Array(pcm16.buffer.slice(0)));
 }
 
@@ -968,6 +1034,21 @@ async function handleExternalBridgeMessage(data: unknown) {
 }
 
 function closeRealtimeSocket() {
+  // Local Bridge 分支：交由共享 ASR 运行时按 flush → stop 顺序优雅关闭。
+  // flush 与 stop 会各自同步发出对应负载（不等对方完成），保证关闭顺序契约；
+  // 余下的握手关闭由 session 内部超时兜底，无需阻塞音频停止流程。
+  if (localAsrSession) {
+    const session = localAsrSession;
+    localAsrSession = null;
+    void session
+      .flush()
+      .catch((error) => console.warn('[content-script] Local ASR flush 失败:', error));
+    void session
+      .stop()
+      .catch((error) => console.warn('[content-script] Local ASR stop 失败:', error));
+    return;
+  }
+
   if (!realtimeSocket) {
     return;
   }
@@ -977,12 +1058,7 @@ function closeRealtimeSocket() {
 
   if (socket.readyState === WebSocket.OPEN) {
     try {
-      if (activeRealtimeStreamConfig?.providerType === 'external') {
-        sendRealtimeSocketJson({ type: 'audio.flush', reason: 'input_finished' }, socket);
-        sendRealtimeSocketJson({ type: 'session.stop' }, socket);
-      } else {
-        socket.send('{"type": "end"}');
-      }
+      socket.send('{"type": "end"}');
     } catch (error) {
       console.warn('[content-script] 实时 ASR 结束标记发送失败:', error);
     }

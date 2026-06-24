@@ -52,6 +52,7 @@
     "test:e2e:full": "playwright test e2e/extension.local.spec.ts e2e/extension.closure.spec.ts e2e/extension.real.spec.ts"
   },
   "dependencies": {
+    "@listen-graphic/asr-runtime": "workspace:*",
     "@listen-graphic/domain": "workspace:*",
     "@listen-graphic/graph-fixtures": "workspace:*",
     "@listen-graphic/graph-renderers": "workspace:*",

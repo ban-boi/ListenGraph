@@ -95,6 +95,7 @@ describe('content-script 主链路', () => {
       readyState = 0;
       binaryType = 'blob';
       sent: unknown[] = [];
+      onopen: (() => void) | null = null;
       onmessage: ((event: { data: unknown }) => void) | null = null;
       onerror: (() => void) | null = null;
       onclose: (() => void) | null = null;
@@ -123,6 +124,8 @@ describe('content-script 主链路', () => {
       dispatchOpen = () => {
         this.readyState = 1;
         this.listeners.get('open')?.forEach((handler) => handler());
+        // 真实浏览器 WebSocket 的 open 事件会同时触发 onopen 属性与 addEventListener。
+        this.onopen?.();
       };
 
       send(data: unknown) {
@@ -401,11 +404,12 @@ describe('content-script 主链路', () => {
     }
     expect(webSocketInstances).toHaveLength(1);
     webSocketInstances[0].dispatchOpen();
-    await startPromise;
 
     const socketInstance = webSocketInstances[0];
     expect(socketInstance.sent[0]).toContain('"type":"session.start"');
 
+    // 共享运行时需在收到 session.started 后才完成握手（比原生更严谨），
+    // 因此先回送 session.started，再 await 启动 promise。
     socketInstance.onmessage?.({
       data: JSON.stringify({
         type: 'session.started',
@@ -413,6 +417,8 @@ describe('content-script 主链路', () => {
         bridge: { model: 'mock-paraformer' },
       }),
     });
+    await startPromise;
+
     socketInstance.onmessage?.({
       data: JSON.stringify({
         type: 'transcript.partial',
@@ -463,5 +469,19 @@ describe('content-script 主链路', () => {
         }),
       }),
     );
+
+    // 关闭流程契约：STOP_CAPTURE 后必须按顺序发出 audio.flush 与 session.stop。
+    await dispatchMessage({ type: 'STOP_CAPTURE', target: 'content-script' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const sentTypes = socketInstance.sent.map((raw: string) => {
+      try {
+        return JSON.parse(raw).type;
+      } catch {
+        return '<unparseable>';
+      }
+    });
+    expect(sentTypes[sentTypes.length - 2]).toBe('audio.flush');
+    expect(sentTypes[sentTypes.length - 1]).toBe('session.stop');
   });
 });
