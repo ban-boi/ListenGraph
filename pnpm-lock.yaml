@@ -255,6 +255,12 @@ importers:
         specifier: ^1.6.0
         version: 1.6.0(@types/node@22.19.21)(jsdom@29.0.1)
 
+  packages/asr-runtime:
+    devDependencies:
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.0(@types/node@22.19.21)(jsdom@29.0.1)
+
   packages/domain:
     dependencies:
       '@listen-graphic/schema':

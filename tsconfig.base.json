@@ -19,6 +19,7 @@
       "@listen-graphic/storage": ["packages/storage/src"],
       "@listen-graphic/ui": ["packages/ui/src"],
       "@listen-graphic/shared-utils": ["packages/shared-utils/src"],
+      "@listen-graphic/asr-runtime": ["packages/asr-runtime/src"],
       "@listen-graphic/graph-fixtures": ["packages/graph-fixtures/src"],
       "@listen-graphic/graph-fixtures/*": ["packages/graph-fixtures/src/*"]
     }
