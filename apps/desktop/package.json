@@ -11,11 +11,14 @@
     "build": "tsc --noEmit && vite build && tsc -p tsconfig.electron.json",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
     "lint": "cross-env ESLINT_USE_FLAT_CONFIG=false eslint src electron --ext .ts,.tsx",
+    "test": "vitest run",
     "smoke": "pnpm run build && cross-env LISTEN_GRAPH_DESKTOP_SMOKE=1 electron ."
   },
   "dependencies": {
+    "@listen-graphic/asr-runtime": "workspace:*",
     "@listen-graphic/domain": "workspace:*",
     "@listen-graphic/graph-renderers": "workspace:*",
+    "@listen-graphic/providers": "workspace:*",
     "@listen-graphic/schema": "workspace:*",
     "@listen-graphic/ui": "workspace:*",
     "dagre": "^0.8.5",

@@ -38,12 +38,18 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@listen-graphic/asr-runtime':
+        specifier: workspace:*
+        version: link:../../packages/asr-runtime
       '@listen-graphic/domain':
         specifier: workspace:*
         version: link:../../packages/domain
       '@listen-graphic/graph-renderers':
         specifier: workspace:*
         version: link:../../packages/graph-renderers
+      '@listen-graphic/providers':
+        specifier: workspace:*
+        version: link:../../packages/providers
       '@listen-graphic/schema':
         specifier: workspace:*
         version: link:../../packages/schema
