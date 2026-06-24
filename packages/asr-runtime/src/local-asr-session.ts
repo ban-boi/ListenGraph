@@ -13,10 +13,11 @@ import {
 /** 宿主注入的最小 WebSocket 抽象（浏览器 WebSocket 或测试假对象均满足）。 */
 export interface WebSocketLike {
   readonly readyState: number;
-  onopen: (() => void) | null;
+  // handler 接收可选 any 参数，兼容浏览器原生 WebSocket 回调（带 Event）。
+  onopen: ((event?: any) => void) | null;
   onmessage: ((event: { data: string }) => void) | null;
-  onerror: (() => void) | null;
-  onclose: (() => void) | null;
+  onerror: ((event?: any) => void) | null;
+  onclose: ((event?: any) => void) | null;
   send(data: string): void;
   close(): void;
 }
