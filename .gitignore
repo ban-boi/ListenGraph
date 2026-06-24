@@ -48,3 +48,12 @@ apps/extension/src/service-worker/fixtures/structure/artifacts/
 # Python
 __pycache__/
 *.py[cod]
+
+# 源码目录下的 TypeScript 编译产物（包入口均指向 src/*.ts，这些 *.js/*.d.ts 是误编译输出，勿提交）
+packages/*/src/**/*.js
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.js.map
+packages/*/src/**/*.tsbuildinfo
+# UI 包的组件/子目录同理
+packages/ui/src/**/*.js
+packages/ui/src/**/*.d.ts
