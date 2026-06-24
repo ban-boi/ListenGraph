@@ -143,15 +143,47 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 9,
+    "minMergedEdges": 8,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-23T15:06:11.939Z",
+    "maxMergedNodes": 13,
+    "mustContainOneOfTexts": [
+      [
+        "脱口秀",
+        "戏谑",
+        "解构"
+      ],
+      [
+        "讲道理",
+        "尝试",
+        "辩论"
+      ],
+      [
+        "性少数",
+        "平权",
+        "权益"
+      ],
+      [
+        "改变",
+        "世界",
+        "社会风气"
+      ],
+      [
+        "轻挑",
+        "主办方",
+        "辩题"
+      ]
+    ],
+    "forbiddenTexts": [
+      "业务院"
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

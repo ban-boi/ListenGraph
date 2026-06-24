@@ -185,15 +185,35 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 10,
+    "minMergedEdges": 8,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-24T08:03:03.163Z",
+    "maxMergedNodes": 13,
+    "mustContainOneOfTexts": [
+      [
+        "真问题",
+        "核心问题"
+      ],
+      [
+        "辩手",
+        "辩论"
+      ],
+      [
+        "犬儒主义",
+        "选儒主义"
+      ],
+      [
+        "公平",
+        "公正"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

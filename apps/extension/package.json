@@ -24,6 +24,7 @@
     "test:structure:real:full:part2": "node ./scripts/run-structure-real.mjs full-part2",
     "test:structure:real:replay": "node ./scripts/run-structure-real.mjs replay",
     "test:structure:real:replay:strict": "node ./scripts/run-structure-replay-strict.mjs",
+    "test:structure:real:replay:local": "node ./scripts/run-structure-replay-strict.mjs --include-local",
     "test:structure:semantic": "node ./scripts/run-structure-semantic.mjs",
     "test:structure:replay:no-assembler": "node ./scripts/run-structure-replay-strict.mjs --no-assembler",
     "test:structure:compare:baseline": "node ./scripts/compare-assembler-baseline.mjs",

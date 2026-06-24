@@ -143,15 +143,45 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
+    "minMergedNodes": 10,
+    "minMergedEdges": 8,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-17T13:47:14.659Z",
+    "maxMergedNodes": 15,
+    "mustContainOneOfTexts": [
+      [
+        "段子手",
+        "讲笑话",
+        "脱口秀态度"
+      ],
+      [
+        "回应",
+        "与世界纠缠",
+        "持续交锋"
+      ],
+      [
+        "痛苦",
+        "辩手的任务",
+        "必然任务"
+      ],
+      [
+        "推动社会进步",
+        "撼动现实",
+        "讲道理"
+      ]
+    ],
+    "forbiddenTexts": [
+      "金波美主义",
+      "池中",
+      "哗鼓掌",
+      "爆笑如"
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

@@ -185,15 +185,36 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
+    "minMergedNodes": 14,
+    "minMergedEdges": 14,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-24T07:43:26.233Z",
+    "maxMergedNodes": 21,
+    "mustContainOneOfTexts": [
+      [
+        "辩论",
+        "辩手"
+      ],
+      [
+        "脱口秀"
+      ],
+      [
+        "门槛"
+      ],
+      [
+        "真问题"
+      ],
+      [
+        "语言能力",
+        "能力"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

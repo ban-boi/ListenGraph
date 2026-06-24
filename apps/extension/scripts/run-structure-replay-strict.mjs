@@ -10,12 +10,52 @@ const artifactDir = diagnosticDirArg
   ? path.resolve(extensionRoot, diagnosticDirArg.slice('--diagnostic-dir='.length))
   : path.join(fixtureDir, 'artifacts', 'provider-instability');
 const isDryRun = process.argv.includes('--dry-run');
+// --include-local：让 strict replay 也覆盖 replay-local-segNN fixture。
+// 默认（不加 flag）只跑 replay-realtime-，保持 stable 门不变。
+// local fixture 是 LLM-as-Judge promote 的产物，需要显式 opt-in 才进严格校验。
+const includeLocal = process.argv.includes('--include-local');
 const requestedFixtureFilter = process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_FIXTURE?.trim().toLowerCase();
+
+const replayPrefixes = includeLocal
+  ? ['replay-realtime-', 'replay-local-']
+  : ['replay-realtime-'];
+
+// --include-local 时，local fixture 只收「已有 LLM judgment」的子集。
+// 未判的 weak_scaffold fixture acceptance 是公式估算的弱值，强校验必大面积 fail，
+// 混淆信号；只跑已 judge、可校准的，保持 --include-local 的闭环干净。
+// judgmentDir 与 judge-acceptance.mjs 保持一致。
+const judgmentDir = path.join(
+  extensionRoot,
+  'src',
+  'service-worker',
+  'fixtures',
+  'asr-realtime',
+  'artifacts',
+  'segments',
+  'judgments',
+);
+const judgedLocalNames = includeLocal
+  ? new Set(
+      fs.existsSync(judgmentDir)
+        ? fs
+            .readdirSync(judgmentDir)
+            .filter((n) => n.endsWith('.judgment.json'))
+            .map((n) => n.replace(/\.judgment\.json$/i, ''))
+        : [],
+    )
+  : new Set();
 
 const fixtureNames = fs
   .readdirSync(fixtureDir)
-  .filter((name) => name.endsWith('.json') && name.startsWith('replay-realtime-'))
+  .filter((name) => name.endsWith('.json') && replayPrefixes.some((p) => name.startsWith(p)))
   .map((name) => name.replace(/\.json$/i, ''))
+  .filter((name) => {
+    // local fixture 必须有对应 judgment 才入选（仅 --include-local 时生效）
+    if (includeLocal && name.startsWith('replay-local-') && !judgedLocalNames.has(name)) {
+      return false;
+    }
+    return true;
+  })
   .filter((name) =>
     !requestedFixtureFilter
       ? true
@@ -40,6 +80,11 @@ const baseEnv = {
   ...process.env,
   LISTEN_GRAPHIC_E2E_STRUCTURE_PROFILE: 'replay',
   LISTEN_GRAPHIC_E2E_STRUCTURE_DIAGNOSTIC_DIR: artifactDir,
+  // --include-local 时，把测试侧的 replay 前缀也放宽到 replay-local-，
+  // 否则 helpers 的 replay 过滤会把 local fixture 滤掉。
+  // --include-local 时，把测试侧的 replay 前缀放宽到 replay-（同时匹配 realtime 和 local）。
+  // 验证过 structure 目录只有 replay-realtime- 和 replay-local- 两类，replay- 是安全的 catchall。
+  ...(includeLocal ? { LISTEN_GRAPHIC_E2E_STRUCTURE_REPLAY_PREFIX: 'replay-' } : {}),
   LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP:
     process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP?.trim() || '0',
   LISTEN_GRAPHIC_E2E_STRUCTURER_TIMEOUT_MS:
@@ -60,7 +105,7 @@ if (noAssembler) {
 }
 
 const modeLabel = noAssembler ? 'no-assembler' : 'with-assembler';
-console.log(`[strict-replay] mode: ${modeLabel}`);
+console.log(`[strict-replay] mode: ${modeLabel}${includeLocal ? ' +include-local' : ''}`);
 
 if (isDryRun) {
   console.log(
@@ -68,6 +113,9 @@ if (isDryRun) {
       {
         fixtureNames,
         mode: modeLabel,
+        includeLocal,
+        replayPrefixes,
+        judgedLocalCount: includeLocal ? judgedLocalNames.size : 0,
         env: {
           LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP:
             baseEnv.LISTEN_GRAPHIC_E2E_STRUCTURE_ALLOW_EXTERNAL_SKIP,

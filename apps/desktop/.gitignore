@@ -1,0 +1,8 @@
+dist
+dist-electron
+.turbo
+node_modules
+*.tsbuildinfo
+src/**/*.js
+src/**/*.d.ts
+!src/vite-env.d.ts

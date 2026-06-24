@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { generateWavePath } from '../utils/wave-path';
 
 export type WaveDividerStatus = 'idle' | 'active' | 'complete' | 'error';
@@ -16,12 +16,17 @@ export interface PipelineWaveDividerProps {
   className?: string;
 }
 
-/** 设计参数 */
+/** 设计参数 — 与设计文件对齐 */
 const AMPLITUDE = 7;
 const TARGET_WAVELENGTH = 40;
 const CROSS_LENGTH = 18;
 const STROKE_WIDTH = 2;
-const DEFAULT_LENGTH = 320;
+
+/** 不同方向的默认长度（ResizeObserver 测量生效前的回退值） */
+const FALLBACK_LENGTH: Record<WaveDirection, number> = {
+  horizontal: 320,
+  vertical: 80,
+};
 
 const TONE_COLORS: Record<WaveDividerTone, string> = {
   signal: 'var(--lg-signal)',
@@ -32,15 +37,44 @@ const TONE_COLORS: Record<WaveDividerTone, string> = {
 const IDLE_COLOR = 'var(--lg-muted)';
 const ERROR_COLOR = 'var(--lg-danger)';
 
+/**
+ * 测量波浪容器在主轴方向的实际尺寸。
+ * 返回 0 表示尚未测量。
+ */
+function useMeasuredLength(
+  direction: WaveDirection,
+): { ref: React.RefObject<HTMLDivElement | null>; length: number } {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [length, setLength] = useState(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      const len = direction === 'horizontal' ? el.clientWidth : el.clientHeight;
+      if (len > 0) setLength(len);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [direction]);
+
+  return { ref, length };
+}
+
 export function PipelineWaveDivider({
   status,
   tone,
   direction = 'horizontal',
   className,
 }: PipelineWaveDividerProps) {
+  const { ref: measureRef, length: measuredLength } = useMeasuredLength(direction);
+  const length = measuredLength > 0 ? measuredLength : FALLBACK_LENGTH[direction];
+
   const wave = useMemo(
-    () => generateWavePath(DEFAULT_LENGTH, CROSS_LENGTH, AMPLITUDE, TARGET_WAVELENGTH, direction),
-    [direction],
+    () => generateWavePath(length, CROSS_LENGTH, AMPLITUDE, TARGET_WAVELENGTH, direction),
+    [length, direction],
   );
 
   const strokeColor =
@@ -53,6 +87,7 @@ export function PipelineWaveDivider({
 
   return (
     <div
+      ref={measureRef}
       className={[
         'lg-pipeline-wave',
         `lg-pipeline-wave--${direction}`,

@@ -106,6 +106,7 @@ export function PipelineLayout({ asr, structurer, graph, graphExtra, className }
           <ModSlot slot={structurer} />
           <Wave status={structurer.waveStatus} tone={structurer.waveTone} direction="vertical" />
           <ModSlot slot={graph} />
+          <Wave status={graph.waveStatus} tone={graph.waveTone} direction="vertical" />
           {graphExtra}
         </div>
       )}

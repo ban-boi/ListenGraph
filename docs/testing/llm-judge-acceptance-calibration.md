@@ -209,6 +209,39 @@ Judge 按 4 个维度评分（1-5 分），每个维度同时评 graph1 和 grap
 
 ---
 
+## Judge 模型选型（本地小模型实测）
+
+2026-06 实测 `google/gemma-4-12b-qat`（LM Studio，4-bit QAT，OpenAI-compatible `localhost:1234/v1`）能否替代 `gpt-4o` 做 judge。结论：**分档可用，但核心用途扛不住**。
+
+### 测试方法
+3 个判官考点 × 每个 3 次重复（temperature 0.3，`json_schema` 强制输出），全部走本地 LM Studio：
+- **Case A**：好图 vs 极差图（对照基线）
+- **Case B**：仅 `supports` vs `causes` 一处关系类型差别（微妙分辨）
+- **Case C**：两个语义等价图、仅措辞不同（tie 判断）
+
+### 结果
+
+| Case | preferred 序列 | 判定 |
+|------|---------------|------|
+| A 好 vs 极差 | `[g1,g1,g1]` | ✅ 3/3 正确，分数极差=0 |
+| B supports vs causes | `[g2,g2,g1]` | ⚠️ 不稳，2/3 把 causes 判满分 |
+| C 等价 tie | `[g2,g2,tie]` | ⚠️ 不稳，系统性偏袒 graph2 |
+
+### 分档结论
+- **粗筛可用**：明显差异（有实质内容 vs 纯噪声）分得准且稳，理由具体。可做 `shouldPromoteToFixture` 这类粗分类。
+- **细判不可用**：assembler on/off 这类微妙差异，preferred 乱跳、带位置偏差（等价图也系统性偏袒一侧），**扛不住**。pipeline 的核心用途（比较 with/without assembler）必须用 `gpt-4o`。
+
+### 硬约束
+- 必须 `response_format: json_schema` 强制输出。OpenAI 标准 `json_object` LM Studio 直接拒（400）。
+- 单段 ~60-90s，30+ 段批量要 30+ 分钟（本地 CPU 吞吐瓶颈）。
+- Case B 证明 gemma **分不清 supports vs causes**——这同时威胁它做 structurer（边类型是 structurer 的核心产出），见下文实测。
+
+### 选型建议
+- Judge 默认 `gpt-4o`（细判场景必需）。
+- `gemma-4-12b-qat` 仅限粗筛层 / 离线 draft，不用于 with-vs-without assembler 对比。
+
+---
+
 ## 环境变量
 
 ### ASR artifact 收集
@@ -233,9 +266,27 @@ Judge 按 4 个维度评分（1-5 分），每个维度同时评 graph1 和 grap
 
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
-| `LISTEN_GRAPHIC_JUDGE_API_KEY` | Judge API key | 必填 |
-| `LISTEN_GRAPHIC_JUDGE_BASE_URL` | API base URL | `https://api.openai.com/v1` |
-| `LISTEN_GRAPHIC_JUDGE_MODEL` | 模型 | `gpt-4o` |
+| `LISTEN_GRAPHIC_JUDGE_PROVIDER` | 后端类型：`openai`（默认）或 `opencode-serve` | `openai` |
+| `LISTEN_GRAPHIC_JUDGE_API_KEY` | Judge API key（`openai` 必填，`opencode-serve` 不需要） | 必填 |
+| `LISTEN_GRAPHIC_JUDGE_BASE_URL` | API base URL（仅 `openai`） | `https://api.openai.com/v1` |
+| `LISTEN_GRAPHIC_JUDGE_MODEL` | 模型名（`opencode-serve` 用 `opencode/<模型>`） | `gpt-4o` |
+| `OPENCODE_SERVE_URL` | opencode serve 地址（仅 `opencode-serve`） | `http://127.0.0.1:4199` |
+| `LISTEN_GRAPHIC_JUDGE_MAX_RETRIES` | `opencode-serve` 失败重试次数 | `2` |
+
+用 `opencode-serve` 免费模型做粗筛：
+
+```powershell
+# 1. 先启动常驻服务
+opencode serve --port 4199
+
+# 2. 跑 judge（本机若设了 http_proxy，需清空 NO_PROXY='*' 让 localhost 直连）
+$env:LISTEN_GRAPHIC_JUDGE_PROVIDER = "opencode-serve"
+$env:OPENCODE_SERVE_URL = "http://127.0.0.1:4199"
+$env:LISTEN_GRAPHIC_JUDGE_MODEL = "opencode/nemotron-3-ultra-free"
+pnpm judge:acceptance
+```
+
+注意：`opencode-serve` 后端的细判稳定性（Case C 位置偏差、偶发 JSON 损坏）弱于 `openai`，生产环境仍推荐 `openai` + `gpt-4o`；`opencode-serve` 适合免费额度下的粗筛层。详见本文档「opencode 探测」段。
 
 ---
 
@@ -264,3 +315,151 @@ Judge 按 4 个维度评分（1-5 分），每个维度同时评 graph1 和 grap
 | 比较维度 | 无 | 无 | with/without assembler |
 | 人工投入 | 写 acceptance | 校准 acceptance | 选 10-20 条 + 微调 |
 | 产出 | `replay-realtime-*` | `replay-local-*` | `replay-local-segNN-*` |
+
+---
+
+## 本地小模型做 Structurer 实测（gemma-4-12b-qat）
+
+与 judge 实测同一模型，用**生产 `openai-structurer.ts` 的真实 system prompt**（~13 条硬规则）+ 真实中文辩论文本（黄执中 seg05），bootstrap 模式 × 3 次，`json_schema` 强制输出。
+
+### 测试方法
+- 输入：4 句真实辩论 utterance（含专有词：周伯通/桃花岛/左右互搏/老顽童）
+- 审计：7 项（JSON 合法性、节点类型、悬空边、专有词保留、幻觉检测、核心论点抓取、噪声过滤、边类型合理性）
+- 每项对比 gemma 翻车的已知弱点（Case B: supports vs causes）
+
+### 结果
+- **run 1**：7 节点 5 边，topic 准（"辩论活动的现状与自我对弈的现象"），专有词全保留，噪声过滤，边类型用了 supports×3 + example_of + causes，7/7 审计通过
+- **run 2**：**16 节点** 5 边，同样输入过度拆分 7→16
+- **run 3**：**JSON 截断**（position 1570 解析失败），`max_tokens=1200` 不够
+
+### 分档结论
+- **单次语义质量可用**：run 1 产出准确、关系类型合理、专有词保留、噪声过滤——中文理解过关
+- **生产 structurer 不可用**：稳定性崩（nodeCount 7↔16，极差 9）+ JSON 截断。增量合并（`mergeSegmentGraph` + `stabilizeGraph`）要求拓扑稳定，7↔16 波动会让 merge 去重冲垮、用户看到的图不断重组
+- **可用场景**：离线 draft / 开发调试 / mock structurer 升级（比纯规则 mock 强）、给旗舰模型做对照基线
+
+### 核心规律
+与 judge 结论一致：**gemma-4-12b-qat 理解力够、稳定性不够**。单次能惊艳，但同输入复现性差、长输出易截断。12B QAT 的通病——judge 和 structurer 两个角色都卡在同一个病根。
+
+---
+
+## cursor-agent 探测（`cursor-agent -p` 非交互模式）
+
+### 测试方法
+spawn `cursor-agent -p "..." --model auto --mode ask --output-format json`，分别在项目目录（ListenGraph，含大 node_modules）和空目录运行。
+
+### 关键发现
+1. **json 结构清晰**：`{type:"result", is_error:false, result:"...", usage:{inputTokens:N, outputTokens:N}}`，适配层读 `.result` 即可
+2. **`--trust` 必需**：非交互 `-p` 模式首次在某目录跑需 `--trust`（workspace trust），否则 exit 1
+3. **每次固定烧 ~28000 input tokens**：`--workspace` 指向空目录后 inputTokens 从 30496 降到 27714（几乎没变）——这 ~28000 是**agent 框架系统提示的固定开销**，`--workspace` 关不掉
+4. **耗时 16-25s/次**
+
+### 成本对比（同一 judge 任务，30 段）
+
+| 方式 | input tokens/次 | 30 段 total input |
+|------|----------------|-------------------|
+| cursor-agent | ~28000（框架开销） | ~84 万 |
+| 直接官方 API | ~1000-1500 | ~3-4 万 |
+
+**cursor-agent 反而费 ~20 倍 input tokens**，全部烧在 agent 框架上，对 judge 任务零贡献。
+
+### 分档结论
+- **技术可行**：json 结构清晰、result 可取、--trust 绕过
+- **按 token 计费不划算**：84 万框架 token 快速烧额度，比直接调 API 更贵
+- **包月订阅可用**：如果 Cursor 是包月/无限订阅（不按 token 单独计费），token 多少无所谓，可省单独 API key 费用
+
+---
+
+## opencode 探测（`opencode run` CLI + `opencode serve` HTTP）
+
+### 测试方法
+1. **CLI 路径**：`opencode run -m opencode/nemotron-3-ultra-free "..." --format json`，分别在 bash 直接调用、Node spawn（含 winpty / `bash -c` 包装）、项目目录与 home 目录运行
+2. **serve 路径**：`opencode serve --port 4199` 常驻，再走 `POST /session` → `POST /session/<id>/message` HTTP API
+3. **judge 稳定性**：复用 gemma judge suite 的同一套 Case A/B/C（同一真实辩论文本、同一 rubric），3 case × 3 repeat，仅替换后端为 opencode 免费模型
+
+### 关键发现
+
+#### 1. CLI「卡死」的真正根因不是 TTY，是 Node spawn 死锁
+早期探测脚本（`test-opencode-probe.mjs`）在 Node spawn 下观察到「0 输出、90s 超时被 kill」，曾误判为 opencode「需要 TTY」。实测推翻：
+- **bash 直接调用（含管道、文件重定向）100% 稳定**：EXIT=0，秒回，`step_start` → `text:"2"` → `step_finish` 三事件齐全。手动多次调用零失败
+- **Node spawn（无论 `shell:false`、`shell:true`、winpty 包装、`bash -c` 包装）全部死锁**：子进程挂起，stdout 0 字节
+
+因此根因是 **`opencode run` 子命令在 Node 衍生子进程的 stdout 管道下死锁**（疑似对 ConPTY/console buffer 的探测与 Node pipe fd 不兼容），**不是 TTY 检测**——bash 直接调用同样没有交互 TTY 却能用。winpty 伪终端也绕不过去。
+
+#### 2. `--format json` 是 NDJSON 事件流，不是单 JSON 对象
+旧 probe 脚本用 `JSON.parse(整段 stdout)` 取值，面对多行 NDJSON 必然抛错，于是把「事件流」误判成「无输出/卡死」。正确取值：按行 parse，累积所有 `type:"text"` 的 `part.text`，从 `type:"step_finish"` 的 `part.tokens` 取 token。（已修正 probe 脚本。）
+
+#### 3. serve HTTP 是唯一可靠的自动化路径
+`opencode serve --port N` 常驻进程自身持有 console，HTTP 接口对调用方零 TTY 要求，Node `fetch` 可直接调用：
+- `POST /session`（body `{}`）→ 返回 `{id}`
+- `POST /session/<id>/message`（body `{parts:[{type:"text",text}]}`）→ 返回完整 assistant message（含 `type:text` 文本、`type:reasoning` 思维链、`info.tokens` 用量）
+
+9 次 judge 请求全部经此路径完成。
+
+#### 4. 代理拦截坑（部署层）
+本机 `http_proxy=127.0.0.1:10809` 会拦截 localhost 请求返回 503（serve 端口 `curl` 直接调全部空响应即此因）。调用 serve API 必须 `--noproxy '*'`（curl）或让 Node fetch 不走代理。CI/容器环境需注意同理。
+
+#### 5. token 经济性：比 cursor 省 ~45%
+serve 返回的真实 token（同输入「1加1等于几」，多次平均）：
+
+| 后端 | input tokens/次 | 30 段 total input |
+|------|----------------|-------------------|
+| opencode serve | ~15500 | ~46 万 |
+| cursor-agent CLI | ~28000 | ~84 万 |
+| 直接官方 API | ~1000-1500 | ~3-4 万 |
+
+opencode 比 cursor 省约 45% input，但仍远高于直连 API（agent 框架固定开销）。
+
+### judge 稳定性实测（nemotron-3-ultra-free，via serve HTTP，3 case × 3 repeat）
+
+| Case | 预期 | preferred 序列 | 判定 |
+|------|------|---------------|------|
+| A 好 vs 极差 | graph1 明显优 | `[g1,g1,g1]` | ✅ 3/3 正确，relationQuality 极差 5→1 |
+| B supports vs causes | relationQuality g1 略优 | `[g1,g1,g1]` | ✅ **3/3 正确且稳**（rela g1=4/g2=2 三次完全一致）|
+| C 等价 tie | 应判 tie | `[g1,g1,失败]` | ⚠️ 偏袒 graph1 + 1 次 JSON 残缺解析失败 |
+
+对照 gemma（本文档 gemma 段实测）：gemma 在 Case B「分不清 supports vs causes、2/3 把 causes 判满分」，**opencode 在微妙差异判断上反而比 gemma 稳定**。但 opencode 在 Case C 等价判断有位置偏差（系统性偏 graph1），与 gemma 的 Case C 位置偏差（偏 graph2）同病。
+
+免费模型稳定性短板客观存在：9 次请求 1 次 JSON 输出残缺、1 次单请求超时（>120s）。生产 judge 脚本接入 opencode 必须带**重试 + 宽松 JSON 解析兜底**。
+
+### 分档结论
+- **CLI 不可用于自动化**：Node spawn 必死锁，仅限 bash/交互终端手动调用
+- **serve HTTP 可用于自动化**：粗筛层（`shouldPromoteToFixture` 分类）可用；细判（with/without assembler）因 Case C 位置偏差 + 偶发 JSON 损坏，仍建议 gpt-4o
+- **比 cursor 经济**：input 省 ~45%，且免 API key（免费模型路由）
+- **比 gemma 强**：Case B 微妙差异判得更准更稳
+
+---
+
+## 最终选型建议
+
+### Judge 模型
+
+| 模型 | 可用？ | 说明 |
+|------|--------|------|
+| `gpt-4o`（默认） | ✅ 推荐 | 细分辨能力远超 gemma/opencode，无稳定性/截断/位置偏差问题 |
+| `claude-sonnet-4` | ✅ 推荐 | 同上，可通过 Anthropic API |
+| opencode（免费，via serve） | ⚠️ 粗筛可用 | Case B 微妙差异判得比 gemma 准且稳；Case C 等价判断有位置偏差 + 偶发 JSON 损坏；**必须走 serve HTTP**，CLI spawn 在 Node 下死锁；input ~15500，比 cursor 省 ~45%、免 API key |
+| `gemma-4-12b-qat`（本地） | ⚠️ 仅粗筛 | 理解力够但稳定性不够，supports vs causes 分不清 |
+| cursor-agent（auto） | ⚠️ 包月可用 | 每次 2.8 万框架 token，按 token 计费不划算 |
+
+**推荐方案：直接配官方 API key**，现有脚本零改动：
+
+```powershell
+$env:LISTEN_GRAPHIC_JUDGE_API_KEY = "sk-..."
+$env:LISTEN_GRAPHIC_JUDGE_MODEL = "gpt-4o"  # 或 claude-sonnet-4
+pnpm judge:acceptance
+```
+
+### Structurer 模型
+
+生产 structurer 不可用本地小模型（稳定性崩）。继续使用现有 provider 体系（OpenAI/Zhipu/Baidu/Aliyun），通过 `LISTEN_GRAPHIC_E2E_STRUCTURER_TYPE` + `LISTEN_GRAPHIC_E2E_STRUCTURER_API_KEY` 配置。
+
+### 测试脚本清单（已创建，可复用）
+
+| 脚本 | 用途 |
+|------|------|
+| `scripts/test-gemma-judge.mjs` | gemma judge 单次测试（Case A 对照） |
+| `scripts/test-gemma-judge-suite.mjs` | gemma judge 3 case × 3 repeat 稳定性套件 |
+| `scripts/test-gemma-structurer.mjs` | gemma structurer 真实 prompt 测试 |
+| `scripts/test-cursor-probe.mjs` | cursor-agent json 结构 + token 探针 |
+| `scripts/test-opencode-probe.mjs` | opencode 探针：按 NDJSON 事件流取值（修正旧版整段 parse 误判）；同时验证 CLI spawn 死锁、serve HTTP 可用 |
+| `scripts/test-opencode-judge-suite.mjs` | opencode judge 3 case × 3 repeat 稳定性套件（via serve HTTP，与 gemma suite 同 case 定义） |

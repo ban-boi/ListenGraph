@@ -18,6 +18,13 @@ const judgmentDir = path.resolve(segmentDir, 'judgments');
 const API_KEY = process.env.LISTEN_GRAPHIC_JUDGE_API_KEY ?? '';
 const BASE_URL = process.env.LISTEN_GRAPHIC_JUDGE_BASE_URL ?? 'https://api.openai.com/v1';
 const MODEL = process.env.LISTEN_GRAPHIC_JUDGE_MODEL ?? 'gpt-4o';
+// judge 后端类型：openai（默认，OpenAI-compatible）| opencode-serve（走 opencode serve HTTP）
+// opencode-serve 适合用免费模型做粗筛；它对 serve 返回的 JSON 做宽松解析 + 重试兜底
+const PROVIDER = (process.env.LISTEN_GRAPHIC_JUDGE_PROVIDER ?? 'openai').trim();
+// opencode serve 地址，仅 PROVIDER=opencode-serve 时使用
+const OPENCODE_SERVE_URL = (process.env.OPENCODE_SERVE_URL ?? 'http://127.0.0.1:4199').trim();
+// opencode 免费模型偶发 JSON 残缺/单请求超时，失败时重试次数
+const MAX_RETRIES = Number(process.env.LISTEN_GRAPHIC_JUDGE_MAX_RETRIES ?? '2');
 
 // ── 常量 ───────────────────────────────────────────────────────
 const SYSTEM_PROMPT = `你是一个知识图谱质量评审专家。你的任务是对比两份从同一段语音转写生成的知识图谱，按固定 rubric 评分。
@@ -41,13 +48,22 @@ async function main() {
   if (graphFiles.length === 0) {
     console.log('未找到匹配的 graph artifact 文件。');
     console.log(`路径: ${graphsDir}`);
+    // 即便本次无新产出，也基于已有 judgment 刷新一次 summary（聚合逻辑，不冲掉历史）
+    const existing = readAllJudgments();
+    if (existing.length > 0) {
+      writeCalibrationSummary(existing, { runCount: 0 });
+    }
     return;
   }
 
   fs.mkdirSync(judgmentDir, { recursive: true });
 
   console.log(`开始评判 ${graphFiles.length} 个 graph artifacts...`);
-  console.log(`模型: ${MODEL} | API: ${BASE_URL}`);
+  if (PROVIDER === 'opencode-serve') {
+    console.log(`后端: opencode-serve | serve: ${OPENCODE_SERVE_URL} | 模型: ${MODEL}`);
+  } else {
+    console.log(`后端: ${PROVIDER} | 模型: ${MODEL} | API: ${BASE_URL}`);
+  }
   console.log('');
 
   const results = [];
@@ -88,9 +104,11 @@ async function main() {
     }
   }
 
-  // 生成校准总结
-  if (results.length > 0) {
-    writeCalibrationSummary(results);
+  // 生成校准总结（聚合所有已落盘 judgment，避免增量 run 冲掉历史）
+  // 本次 run 的新 judgment 已在循环中 writeJudgment() 落盘，这里统一从磁盘读全量汇总
+  const allJudgments = readAllJudgments();
+  if (allJudgments.length > 0) {
+    writeCalibrationSummary(allJudgments, { runCount: results.length });
   }
 
   // 最终报告
@@ -283,10 +301,10 @@ ${edges2}
     "minMergedEdges": <number>,
     "allowFallback": <boolean>,
     "mustContainOneOfTexts": [
-      ["关键词1", "同义词1"],
-      ["关键词2", "同义词2"]
+      ["短词1", "同义词1"],
+      ["短词2", "同义词2"]
     ],
-    "forbiddenTexts": ["不应出现的词"],
+    "forbiddenTexts": ["明显幻觉或人名错配的完整词"],
     "mustHaveNodeTypes": ["claim"],
     "reviewStatus": "ai_draft"
   }
@@ -294,10 +312,21 @@ ${edges2}
 \`\`\`
 
 注意：
-1. mustContainOneOfTexts 选 3-5 组核心语义锚点，每组 2-3 个同义表达
-2. 不要自动添加 requiredEdgeTypes——边类型有合理浮动
-3. mustHaveNodeTypes 最多要求 "claim" 类型
-4. 如果原始内容信息量极低（纯开场/掌声/过渡），shouldPromoteToFixture 设为 false`;
+1. mustContainOneOfTexts 选 3-5 组核心语义锚点，每组 2-3 个同义表达。
+   【锚点格式强制规则】每个候选必须是「短词」（2-6 个汉字），代表核心概念，
+   不要写成完整句子或短语。理由：该字段用子串匹配校验，长句/整句几乎不可能命中
+   structurer 的实际措辞。错误示例：["脱口秀未必探讨真问题"、"辩论不是一件容易的事情"]；
+   正确示例：["脱口秀"、"真问题"、"门槛"]。
+   不要用斜杠/竖线/逗号把多个概念合并成一个候选（错误："幽默应对/自我解嘲"），
+   要拆成数组里的独立候选：["幽默应对"、"自我解嘲"]。
+   选词要贴合 structurer 可能的实际措辞，避免过于书面/生僻（如「混沌系统」→用「混沌」）。
+2. forbiddenTexts 只放「明显幻觉、人名错配、与主题无关的跑题概念」。
+   【禁词保守规则】禁词必须是完整、特异、不会在正常上下文中出现的词，
+   不要放可能在合理上下文中使用的短词（如「池中」「回应」这类）。
+   若不确定某词是否该禁，宁可不放。宁缺毋滥——漏放幻觉比误杀正常表达危害小。
+3. 不要自动添加 requiredEdgeTypes——边类型有合理浮动
+4. mustHaveNodeTypes 最多要求 "claim" 类型
+5. 如果原始内容信息量极低（纯开场/掌声/过渡），shouldPromoteToFixture 设为 false`;
 }
 
 /** 格式化节点列表 */
@@ -318,8 +347,14 @@ function formatEdges(edges) {
 
 // ── LLM 调用 ──────────────────────────────────────────────────
 
-/** 调用 OpenAI-compatible API */
+/** 按 PROVIDER 分支调用 LLM，返回模型输出的文本（含 JSON） */
 async function callLlm(userPrompt) {
+  if (PROVIDER === 'opencode-serve') return callOpencodeServe(userPrompt);
+  return callOpenAi(userPrompt);
+}
+
+/** 调用 OpenAI-compatible API（默认后端） */
+async function callOpenAi(userPrompt) {
   const url = `${BASE_URL}/chat/completions`;
   const body = {
     model: MODEL,
@@ -351,6 +386,89 @@ async function callLlm(userPrompt) {
     throw new Error('API 返回空内容');
   }
   return content;
+}
+
+/**
+ * 调用 opencode serve HTTP API（opencode-serve 后端）
+ *
+ * 路径：POST /session 建 session → POST /session/<id>/message 跑模型。
+ * 不支持 response_format json_schema，靠 prompt 强约束；模型可能裹 markdown
+ * 代码块，由 parseLlmResponse 的宽松解析兜底。
+ *
+ * 免费模型稳定性短板（偶发 JSON 残缺、单请求超时）由 MAX_RETRIES 重试兜底。
+ * 注意：serve 不接受 build agent 之外的 system 覆盖，故把 SYSTEM_PROMPT 拼进 user 消息首段。
+ */
+async function callOpencodeServe(userPrompt) {
+  let lastErr;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      // 1. 建 session
+      const sessRes = await fetchJson(`${OPENCODE_SERVE_URL}/session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      if (!sessRes.ok) {
+        throw new Error(`serve POST /session 返回 ${sessRes.status}（确认 opencode serve 已启动: ${OPENCODE_SERVE_URL}）`);
+      }
+      const sessJson = await sessRes.json();
+      const sid = sessJson.id;
+
+      // 2. 发 message（system prompt 拼进 user，opencode build agent 自带 system）
+      const msgRes = await fetchJson(`${OPENCODE_SERVE_URL}/session/${sid}/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parts: [{ type: 'text', text: `${SYSTEM_PROMPT}\n\n${userPrompt}` }],
+        }),
+      });
+      if (!msgRes.ok) {
+        const detail = msgRes.text.slice(0, 200);
+        throw new Error(`serve POST /message 返回 ${msgRes.status}: ${detail}`);
+      }
+      const msgJson = await msgRes.json();
+
+      // 3. 取 assistant 文本（累积所有 text part）
+      const parts = msgJson?.parts ?? [];
+      const content = parts
+        .filter((p) => p.type === 'text')
+        .map((p) => p.text)
+        .join('');
+      if (!content.trim()) {
+        throw new Error('serve 返回空内容（assistant 无 text part）');
+      }
+      return content;
+    } catch (err) {
+      lastErr = err;
+      // 仅最后一次不打印重试提示
+      if (attempt < MAX_RETRIES) {
+        console.warn(`  ↻ opencode-serve 第 ${attempt + 1} 次失败: ${err.message}，重试...`);
+      }
+    }
+  }
+  throw new Error(`opencode-serve 重试 ${MAX_RETRIES} 次仍失败: ${lastErr?.message ?? '未知错误'}`);
+}
+
+/** fetch 封装：带超时，返回 { ok, status, json, text }（json/text 均惰性 await） */
+async function fetchJson(url, opts, timeoutMs = 180000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...opts, signal: ctrl.signal });
+    const text = await res.text();
+    let jsonCache;
+    return {
+      ok: res.ok,
+      status: res.status,
+      text,
+      async json() {
+        if (jsonCache === undefined) jsonCache = JSON.parse(text);
+        return jsonCache;
+      },
+    };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // ── 响应解析 ──────────────────────────────────────────────────
@@ -400,15 +518,44 @@ function resolveScores(parsed, labelMapping) {
 
 // ── 写入输出 ──────────────────────────────────────────────────
 
+/** 读取 judgments 目录下所有已落盘的 judgment（用于聚合汇总） */
+function readAllJudgments() {
+  if (!fs.existsSync(judgmentDir)) return [];
+  const judgments = [];
+  for (const name of fs.readdirSync(judgmentDir)) {
+    if (!name.endsWith('.judgment.json')) continue;
+    try {
+      judgments.push(readJsonFile(path.join(judgmentDir, name)));
+    } catch (err) {
+      console.warn(`跳过损坏的 judgment ${name}: ${err.message}`);
+    }
+  }
+  return judgments;
+}
+
 /** 写入单个 judgment 文件 */
 function writeJudgment(judgment) {
   const filePath = path.join(judgmentDir, `${judgment.fixtureName}.judgment.json`);
   fs.writeFileSync(filePath, `${JSON.stringify(judgment, null, 2)}\n`);
 }
 
-/** 生成并写入校准总结 */
-function writeCalibrationSummary(results) {
+/**
+ * 生成并写入校准总结
+ * 汇总基于「全量已落盘 judgment」，而非仅本次 run——
+ * 这样增量跑、--filter 单跑、甚至零产出的 run 都能反映真实累计进度，
+ * 不会把历史汇总冲掉。
+ * @param {Array} judgments 全量 judgment（含本次新写的）
+ * @param {{ runCount: number }} meta runCount = 本次 run 实际处理（新写或重判）的条数
+ */
+function writeCalibrationSummary(judgments, meta = {}) {
   const summaryPath = path.join(segmentDir, 'calibration-summary.md');
+
+  // 按 fixtureName 去重（同 fixture 多次重判只保留最新，靠 writeJudgment 覆盖语义保证）
+  const dedup = new Map();
+  for (const j of judgments) dedup.set(j.fixtureName, j);
+  const results = [...dedup.values()].sort((a, b) =>
+    a.fixtureName.localeCompare(b.fixtureName, 'zh-Hans-CN'),
+  );
 
   const promoted = results.filter((r) => r.shouldPromoteToFixture);
   const skipped = results.filter((r) => !r.shouldPromoteToFixture);
@@ -428,6 +575,7 @@ function writeCalibrationSummary(results) {
 
   const now = new Date();
   const timestamp = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+  const runLine = meta.runCount != null ? `- 本次 run 处理: ${meta.runCount} 条\n` : '';
 
   const lines = [
     `# LLM Judge 校准总结`,
@@ -435,7 +583,7 @@ function writeCalibrationSummary(results) {
     `生成时间: ${timestamp}`,
     ``,
     `## 概览`,
-    `- segments: ${results.length} | promote: ${promoted.length} | skip: ${skipped.length}`,
+    `${runLine}- 累计 segments: ${results.length} | promote: ${promoted.length} | skip: ${skipped.length}`,
     `- graphA (with assembler) 被偏好: ${preferA} 次`,
     `- graphB (without assembler) 被偏好: ${preferB} 次`,
     `- tie: ${tieCount} 次`,
@@ -567,6 +715,14 @@ function readJsonFile(filePath) {
 
 /** 校验必要的环境变量 */
 function validateEnv() {
+  // opencode-serve 用免费模型路由，不需要 API key；仅需 serve 地址可达
+  if (PROVIDER === 'opencode-serve') {
+    if (!OPENCODE_SERVE_URL) {
+      console.error('错误: PROVIDER=opencode-serve 时必须设置 OPENCODE_SERVE_URL');
+      process.exit(1);
+    }
+    return;
+  }
   if (!API_KEY) {
     console.error('错误: 必须设置环境变量 LISTEN_GRAPHIC_JUDGE_API_KEY');
     process.exit(1);
@@ -620,9 +776,20 @@ function printHelp() {
   --help                 显示此帮助
 
 环境变量:
-  LISTEN_GRAPHIC_JUDGE_API_KEY    （必填）OpenAI-compatible API Key
-  LISTEN_GRAPHIC_JUDGE_BASE_URL   （可选）API 地址，默认 https://api.openai.com/v1
-  LISTEN_GRAPHIC_JUDGE_MODEL      （可选）模型名，默认 gpt-4o
+  LISTEN_GRAPHIC_JUDGE_PROVIDER   （可选）后端类型：openai（默认）| opencode-serve
+  LISTEN_GRAPHIC_JUDGE_API_KEY    （openai 必填）OpenAI-compatible API Key
+  LISTEN_GRAPHIC_JUDGE_BASE_URL   （openai 可选）API 地址，默认 https://api.openai.com/v1
+  LISTEN_GRAPHIC_JUDGE_MODEL      （可选）模型名，默认 gpt-4o；opencode-serve 用 opencode/<模型>
+  OPENCODE_SERVE_URL              （opencode-serve 必填）opencode serve 地址，默认 http://127.0.0.1:4199
+  LISTEN_GRAPHIC_JUDGE_MAX_RETRIES（opencode-serve 可选）失败重试次数，默认 2
+
+opencode-serve 用法（免费模型粗筛）:
+  1. 先启动常驻服务: opencode serve --port 4199
+  2. 设环境变量:
+     LISTEN_GRAPHIC_JUDGE_PROVIDER=opencode-serve
+     OPENCODE_SERVE_URL=http://127.0.0.1:4199
+     LISTEN_GRAPHIC_JUDGE_MODEL=opencode/nemotron-3-ultra-free
+  3. 注意: 本机若设了 http_proxy，需让 localhost 不走代理，否则 serve 调用返回 503
 
 输入:
   artifacts/segments/graphs/replay-local-segNN-*.graphs.json

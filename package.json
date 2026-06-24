@@ -7,6 +7,7 @@
     "dev:ext": "turbo run dev --filter=extension",
     "dev:ext:chrome": "pnpm --filter extension dev:chrome",
     "dev:desktop": "turbo run dev --filter=desktop",
+    "ensure:electron": "pnpm --filter desktop ensure-electron",
     "dev:mock-asr-bridge": "node ./tools/mock-asr-bridge.mjs",
     "dev:sherpa-asr-bridge": "python ./tools/sherpa-onnx-bridge.py",
     "build": "turbo run build",
@@ -38,5 +39,10 @@
     "prettier": "^3.0.0",
     "turbo": "^2.0.0",
     "typescript": "^5.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron"
+    ]
   }
 }

@@ -554,7 +554,7 @@ body {
 
 .lg-pipeline-wave--vertical {
   width: 18px;
-  height: 100%;
+  align-self: stretch;
 }
 
 /* idle：灰色静止 — stroke 已是 var(--lg-muted)，再加 opacity 降低存在感 */

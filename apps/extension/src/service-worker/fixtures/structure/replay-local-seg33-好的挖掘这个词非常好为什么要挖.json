@@ -143,15 +143,51 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
+    "minMergedNodes": 10,
+    "minMergedEdges": 10,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-17T13:31:40.046Z",
+    "maxMergedNodes": 18,
+    "mustContainOneOfTexts": [
+      [
+        "挖掘",
+        "深挖",
+        "探求深度"
+      ],
+      [
+        "脱离现实",
+        "抽象概括",
+        "不写实"
+      ],
+      [
+        "脱口秀",
+        "日常具体困境",
+        "现实落地"
+      ],
+      [
+        "古典乐",
+        "纯数学",
+        "纯理性构造"
+      ],
+      [
+        "骄傲",
+        "自大",
+        "虚妄"
+      ]
+    ],
+    "forbiddenTexts": [
+      "对不对",
+      "嘛",
+      "呃",
+      "拖离现实",
+      "庞征博影"
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

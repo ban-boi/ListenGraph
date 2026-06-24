@@ -227,15 +227,41 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 4,
-    "minMergedEdges": 0,
+    "minMergedNodes": 10,
+    "minMergedEdges": 10,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-17T14:11:06.169Z",
+    "maxMergedNodes": 18,
+    "mustContainOneOfTexts": [
+      [
+        "幽默应对/自我解嘲",
+        "嘲笑困境/倾诉释放"
+      ],
+      [
+        "辩论目的/自我挑战",
+        "智力游戏/智力竞赛"
+      ],
+      [
+        "左右互搏/周伯通",
+        "自我切磋/手痒痒"
+      ],
+      [
+        "填字谜/解谜活动",
+        "挖掘视角/不改变现实"
+      ]
+    ],
+    "forbiddenTexts": [
+      "打辩",
+      "武学奇",
+      "不是这个意思的",
+      "talk 笑"
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

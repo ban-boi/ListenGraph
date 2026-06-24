@@ -95,7 +95,11 @@ const SMOKE_FIXTURE_NAMES = new Set([
   'incremental-support-reason',
   'incremental-role-self',
 ]);
-const REPLAY_FIXTURE_PREFIX = 'replay-realtime-';
+// replay 前缀可被环境变量覆盖（默认 replay-realtime-，保持 stable 门不变）。
+// run-structure-replay-strict.mjs --include-local 会把它设为 replay-local-，
+// 让 local-segNN fixture 也能被 strict replay 校验（用于 LLM-as-Judge promote 落地验证）。
+const REPLAY_FIXTURE_PREFIX =
+  process.env.LISTEN_GRAPHIC_E2E_STRUCTURE_REPLAY_PREFIX?.trim() || 'replay-realtime-';
 
 describeReal('Structure-focused real structurer', () => {
   let messageListeners: Array<

@@ -7,6 +7,16 @@
 
 ## 当前有效
 
+### 产品路线与端形态
+- [ListenGraph 多端产品路线](C:/Users/finni/Desktop/ListenGraph/docs/product/multi-platform-roadmap.md)
+  - 浏览器插件、桌面端、网页端、手机端的产品定位
+  - 设备内声音与外界实时录音的跨端能力边界
+  - 为什么下一步优先做桌面端
+- [Desktop V2 音频采集验收](C:/Users/finni/Desktop/ListenGraph/docs/product/desktop-v2-acceptance.md)
+  - 本轮封口：真实麦克风 / 系统声音进入 AudioWorklet 的采集验证
+  - 静态回归结论与手动验收清单
+  - 当前限制：图谱仍由 mock transcript 驱动，未接真实 ASR
+
 ### 运行时现状与关键决策
 - [扩展运行时主链路基线](C:/Users/finni/Desktop/ListenGraph/docs/extension/runtime-mainline.md)
   - 当前 extension 运行时主链路
@@ -57,11 +67,12 @@
 ## 建议阅读顺序
 
 ### 想理解“现在到底怎么跑”
-1. [runtime-mainline.md](C:/Users/finni/Desktop/ListenGraph/docs/extension/runtime-mainline.md)
-2. [current-runtime.md](C:/Users/finni/Desktop/ListenGraph/docs/extension/current-runtime.md)
-3. [incremental-graph-stability.md](C:/Users/finni/Desktop/ListenGraph/docs/extension/incremental-graph-stability.md)
-4. [incremental-camera-follow.md](C:/Users/finni/Desktop/ListenGraph/docs/extension/incremental-camera-follow.md)
-5. [docs/providers/README.md](C:/Users/finni/Desktop/ListenGraph/docs/providers/README.md)
+1. [multi-platform-roadmap.md](C:/Users/finni/Desktop/ListenGraph/docs/product/multi-platform-roadmap.md)
+2. [runtime-mainline.md](C:/Users/finni/Desktop/ListenGraph/docs/extension/runtime-mainline.md)
+3. [current-runtime.md](C:/Users/finni/Desktop/ListenGraph/docs/extension/current-runtime.md)
+4. [incremental-graph-stability.md](C:/Users/finni/Desktop/ListenGraph/docs/extension/incremental-graph-stability.md)
+5. [incremental-camera-follow.md](C:/Users/finni/Desktop/ListenGraph/docs/extension/incremental-camera-follow.md)
+6. [docs/providers/README.md](C:/Users/finni/Desktop/ListenGraph/docs/providers/README.md)
 
 ### 想联调腾讯 realtime ASR
 1. [tencent-asr-smoke.md](C:/Users/finni/Desktop/ListenGraph/docs/providers/tencent-asr-smoke.md)
