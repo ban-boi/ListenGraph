@@ -26,6 +26,14 @@ export default defineConfig({
         __dirname,
         '../../packages/shared-utils/src',
       ),
+      '@listen-graphic/asr-runtime': resolve(
+        __dirname,
+        '../../packages/asr-runtime/src',
+      ),
+      '@listen-graphic/providers': resolve(
+        __dirname,
+        '../../packages/providers/src',
+      ),
     },
   },
 });
