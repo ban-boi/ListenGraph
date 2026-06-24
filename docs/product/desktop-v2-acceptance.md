@@ -96,20 +96,79 @@
 
 明确写清楚本轮不做、或尚未达成的点：
 
-1. **图谱仍由 mock transcript 驱动**：`MOCK_TRANSCRIPTS`（`desktop-runtime.ts:36-42`）+ 6 秒 `setInterval`（`:159-160`）。真实音频帧只更新电平 / frameCount / sampleRate，不进入图谱。
-2. **真实 ASR 未接入**：下游 `AudioSource -> ASR -> Structurer -> Merge -> Graph` 链路中，ASR 及之后在本轮未接通。
+1. **图谱已由真实 ASR final 驱动（structurer 仍为 mock）**：~~`MOCK_TRANSCRIPTS` + 6 秒 `setInterval`~~ 已于「阶段二：共享 ASR 运行时」移除。当前图谱由 `LocalAsrSession` 的 `transcript.final` 事件经 `DesktopTranscriptPipeline` + `MockStructurerProvider` 产生；structurer 仍是 mock，图谱质量不代表真实语义抽取。
+2. **真实 ASR 已接入到 Local Bridge**：`AudioSource -> ASR -> Structurer -> Merge -> Graph` 链路中，ASR 及 structurer 均已接通，详见下文「阶段二」。剩余未做项见该节末尾。
 3. **停止后 `frameCount` / `sampleRate` 字段未清零**：`stopSession()` 不会重置这两个字段，停止后 UI 仍显示上一会话的累计帧数与采样率（如停在 248 帧、16000 Hz），直到下次 `startSession` 开头才重置。这是已知行为，非缺陷；本轮验收清单把“frameCount 不再增长”作为停止释放的唯一断言。
-4. **smoke 不覆盖功能断言**：smoke 只校验 renderer 加载，没有音频 / 图谱的功能性断言，也没有 `test` 脚本（`apps/desktop/package.json` 未暴露 vitest 入口，尽管 devDeps 已装）。
+4. **smoke 不覆盖功能断言**：smoke 只校验 renderer 加载，没有音频 / 图谱的功能性断言。~~没有 `test` 脚本~~：阶段二已为 desktop 加 `vitest run` 入口与 9 个单测，但 smoke 本身仍未加功能断言。
 5. **系统音频依赖平台 loopback**：系统声音捕获依赖 Electron `audio:'loopback'`，Windows / macOS 行为不同，当前未做平台分支处理。
 6. **无混音**：麦克风与系统声音为二选一，无同时混音路径（roadmap MVP 步骤 5）。
 7. **无打包发布**：仅源码 + dev/smoke，未做安装包（roadmap MVP 步骤 6）。
 
+## 阶段二：共享 ASR 运行时（2026-06-24）
+
+> 计划文档：`docs/superpowers/plans/2026-06-24-shared-asr-runtime.md`
+
+### 范围
+
+把 `lg-asr-ws-v1` 客户端从扩展 content-script 抽到共享包 `@listen-graphic/asr-runtime`，扩展与桌面端复用同一会话状态机；桌面端去掉 timer 驱动的 mock 转写图谱，改为「音频帧 → ASR → final → structurer → merge → 图谱」的真实链路（structurer 暂用 mock）。
+
+### 已落到生产代码
+
+- **共享包 `packages/asr-runtime`**：
+  - `src/audio.ts`：主机无关的 `float32ToPcm16` / `bytesToBase64`（不依赖 Node Buffer，浏览器与 Node 双用）
+  - `src/protocol.ts` + `src/protocol-parser.ts`：lg-asr-ws-v1 规范化事件类型与**严格解析器**（替代扩展原生的 `JSON.parse + cast`，畸形负载以稳定错误码 `INVALID_PROTOCOL_MESSAGE` 抛出）
+  - `src/local-asr-session.ts`：单一 WebSocket 后端会话状态机，握手后才发帧、flush/stop 幂等、意外关闭发 `UNEXPECTED_CLOSE`
+- **扩展迁移**：`content-script` 的 Local Bridge 分支改用 `LocalAsrSession`，腾讯分支保持原 `realtimeSocket` 路径不变
+- **桌面端**：
+  - `src/asr/desktop-transcript-pipeline.ts`：final 去重 + 串行 structurer + `mergeSegmentGraph`
+  - `src/desktop-runtime.ts`：移除全部 mock，改为 ASR-first 启动（先握手再启音频）、音频帧送 ASR、final 喂管道、确定性停止清理
+
+### 自动化门禁（实测）
+
+| 命令 | 结果 | 备注 |
+|---|---|---|
+| `pnpm --filter @listen-graphic/asr-runtime test` | ✅ 22 passed | codec 2 + parser 9 + session 11 |
+| `pnpm --filter desktop test` | ✅ 9 passed | pipeline 5 + runtime 集成 4 |
+| `pnpm --filter extension exec vitest run src/content-script/content-script.test.ts` | ✅ 8 passed | 含 Local Bridge 完整流程与 flush/stop 顺序 |
+| `pnpm --filter extension exec vitest run src/service-worker/{provider-contract,realtime-asr,session-lifecycle,asr-realtime.local-bridge}.test.ts` | ✅ 18 passed / 8 skipped | ASR 契约未回归 |
+| `pnpm typecheck` | ✅ 12/12 workspaces | |
+| `pnpm build` | ✅ 12/12 workspaces | |
+
+### Mock Bridge 协议闭环
+
+- `pnpm dev:mock-asr-bridge` 启动成功，`http://127.0.0.1:15377/healthz` 返回 `{"ok":true,...}`。
+- 协议闭环经单元测试覆盖：`local-asr-session.test.ts` 用真实 `LocalAsrSession` 驱动 FakeSocket 走通 `session.start → session.started → audio.frame → audio.flush → session.stop`，并验证 partial/final 转发；`desktop-runtime.test.ts` 验证音频帧确实送入 ASR、停止时发出 flush/stop。
+- mock bridge 在 `audio.flush` 时回送固定 final `今天天气不错，我们开始测试本地 bridge。`，该文本会经 `DesktopTranscriptPipeline` 出现在图节点（与计划 Step 1 期望一致）。
+
+### Sherpa 真实模型验收
+
+> **状态：未由人工执行。** Sherpa 本地模型（`sherpa-onnx-streaming-paraformer-bilingual-zh-en`）与 Python 环境需用户本人在本机具备，并需真人发声或播放已知音频。自动化门禁不依赖它。
+
+如需执行，按计划 Step 2：
+
+```powershell
+pnpm dev:sherpa-asr-bridge -- --encoder .tmp/sherpa-model/.../encoder.int8.onnx ^
+  --decoder .tmp/sherpa-model/.../decoder.int8.onnx ^
+  --tokens .tmp/sherpa-model/.../tokens.txt ^
+  --model-name sherpa-onnx-streaming-paraformer-bilingual-zh-en
+```
+
+预期 `/healthz` 协议为 `lg-asr-ws-v1`，说一句话后 final 文本应进入图节点。
+
+### 阶段二当前限制
+
+1. **structurer 仍为 mock**：`MockStructurerProvider` 只按节点数轮换类型/说话人，图谱语义质量不代表真实抽取。真实 structurer 接入是下一阶段。
+2. **无混音、无设置 UI、无打包**：同阶段一限制 5/6/7。
+3. **Sherpa 真实模型验收待人工执行**：见上节。
+4. **既存非本次引入**：`App.fixture-sequence.test.tsx`（UI）失败与 `.real.test.ts`（需 Tencent 凭证）失败在阶段二之前即存在；`pnpm test:ext:contract` 脚本指向的 `src/service-worker/index.test.ts` 已不存在（项目重构遗留），实际契约测试在 `provider-contract.test.ts` 等文件，已单独验证通过。
+5. **全仓 ESLint v9 与 `.eslintrc.cjs` 不兼容**：本机 ESLint 已升至 v9，`pnpm lint` 全仓 12 包均失败，属环境既存问题，非本次引入；本次以 `tsc --noEmit`（typecheck）作为等价静态门禁。
+
 ## 下一阶段
 
-下一张任务卡再做“desktop audio frames -> ASR bridge -> transcript”。推荐路线：
+下一张任务卡推荐：
 
-- 把 `DesktopAudioSource` 的 frame 事件接到已有 ASR transport / 本地 bridge
-- 先走 local mock bridge 或 local ASR bridge，不要直接把 provider、结构化、桌面 UI 一次性全串起来
-- 待运行时边界稳定后，再逐步接 structurer、merge、图谱
+- 接入真实 structurer（替换 `MockStructurerProvider`），验证语义图谱质量
+- 人工执行 Sherpa 真实模型验收，确认真实语音 → 图谱闭环
+- 解决全仓 ESLint v9 flat-config 迁移
 
-本验收文档在真实 ASR 接入后应随之更新或由新阶段文档取代。
+本验收文档随后续阶段继续更新。
