@@ -8,3 +8,9 @@ export {
   type LocalAsrUtterance,
 } from './protocol';
 export { parseLocalAsrMessage } from './protocol-parser';
+export {
+  LocalAsrSession,
+  type LocalAsrSessionOptions,
+  type WebSocketFactory,
+  type WebSocketLike,
+} from './local-asr-session';
