@@ -408,7 +408,7 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
         graph: nextGraph,
         currentView: nextCurrentView,
         recentProviderError: null,
-        lastGraphUpdatedAt: Date.now(),
+        lastGraphUpdatedAt: nextGraph.updatedAt,
         lastGraphDelta: {
           addedNodeCount: action.payload.addedNodeIds.length,
           addedEdgeCount,
