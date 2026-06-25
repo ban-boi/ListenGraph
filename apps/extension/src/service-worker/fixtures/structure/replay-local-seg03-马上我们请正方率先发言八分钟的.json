@@ -157,15 +157,37 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 10,
+    "minMergedEdges": 10,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T04:02:26.003Z",
+    "maxMergedNodes": 16,
+    "mustContainOneOfTexts": [
+      [
+        "辩论",
+        "辩题"
+      ],
+      [
+        "回应世界"
+      ],
+      [
+        "自嗨",
+        "展示自己"
+      ],
+      [
+        "脱口秀"
+      ],
+      [
+        "真问题",
+        "高大上"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

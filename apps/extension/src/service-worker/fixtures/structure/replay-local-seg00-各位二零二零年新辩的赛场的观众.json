@@ -143,15 +143,39 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 6,
+    "minMergedEdges": 6,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T03:59:10.305Z",
+    "maxMergedNodes": 8,
+    "mustContainOneOfTexts": [
+      [
+        "心跳加速",
+        "心跳"
+      ],
+      [
+        "传统经济辩论",
+        "传统辩论"
+      ],
+      [
+        "哲理辩",
+        "哲理辩论"
+      ],
+      [
+        "无绝对",
+        "无绝对性"
+      ],
+      [
+        "脱口秀",
+        "喜剧"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

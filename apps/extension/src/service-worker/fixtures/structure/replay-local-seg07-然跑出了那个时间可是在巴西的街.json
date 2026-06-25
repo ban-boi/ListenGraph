@@ -87,15 +87,39 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 4,
+    "minMergedEdges": 4,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T04:12:01.182Z",
+    "maxMergedNodes": 7,
+    "mustContainOneOfTexts": [
+      [
+        "辩场",
+        "辩论"
+      ],
+      [
+        "生活",
+        "真实世界"
+      ],
+      [
+        "解决问题",
+        "回应疑惑"
+      ],
+      [
+        "巴西街头",
+        "奥运赛场"
+      ],
+      [
+        "在意",
+        "不在"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

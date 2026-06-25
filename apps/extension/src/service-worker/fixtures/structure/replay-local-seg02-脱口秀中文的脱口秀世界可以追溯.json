@@ -157,15 +157,41 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
+    "minMergedNodes": 12,
+    "minMergedEdges": 11,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T04:01:10.837Z",
+    "maxMergedNodes": 16,
+    "mustContainOneOfTexts": [
+      [
+        "黄子华",
+        "栋笃笑"
+      ],
+      [
+        "周立波",
+        "2008"
+      ],
+      [
+        "深圳",
+        "分支",
+        "扩展"
+      ],
+      [
+        "脱口秀大会",
+        "开花结果"
+      ],
+      [
+        "华语辩论",
+        "辩论赛",
+        "九十年"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }
