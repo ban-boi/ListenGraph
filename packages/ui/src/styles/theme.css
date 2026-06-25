@@ -372,7 +372,7 @@ body {
 .lg-form-section-header {
   font-size: var(--text-xs);
   font-weight: 600;
-  color: var(--lg-text);
+  color: var(--lg-ink);
 }
 
 .lg-form-hint {
@@ -422,7 +422,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 6px 0;
-  color: var(--lg-text);
+  color: var(--lg-ink);
   background: transparent;
   border: 0;
   cursor: pointer;
