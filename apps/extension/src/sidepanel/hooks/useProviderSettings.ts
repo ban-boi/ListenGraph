@@ -197,17 +197,17 @@ export function useProviderSettings({ addLog, dispatch }: UseProviderSettingsOpt
       } as AppMessage);
 
       if (!response?.success) {
-        addLog(`清除密钥失败: ${response?.error || '未知错误'}`);
+        addLog(`恢复默认配置失败: ${response?.error || '未知错误'}`);
         return;
       }
 
       const fallbackConfig = createExtensionDefaultProviderConfigForUi();
       setProviderConfig(fallbackConfig);
       setProviderSummary(redactProviderConfig(fallbackConfig));
-      addLog('provider 密钥已清除');
+      addLog('provider 配置已恢复默认');
     } catch (error) {
-      const message = error instanceof Error ? error.message : '清除 provider 密钥失败';
-      addLog(`清除密钥失败: ${message}`);
+      const message = error instanceof Error ? error.message : '恢复 provider 默认配置失败';
+      addLog(`恢复默认配置失败: ${message}`);
     }
   }, [addLog]);
 

@@ -1079,4 +1079,83 @@ describe('App - 设置面板', () => {
       },
     });
   });
+
+  it('密钥字段可以临时显示和隐藏', async () => {
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: { sessionId: null, state: 'idle', graph: null, currentTimeMs: 0 },
+          });
+        }
+        if (message?.type === 'GET_PROVIDER_SETTINGS') {
+          return Promise.resolve({
+            success: true,
+            config: {
+              asr: { type: 'tencent', mode: 'direct', region: 'ap-shanghai', language: 'zh' },
+              structurer: { type: 'mock', mode: 'direct', model: 'mock-structurer', language: 'zh' },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+    const user = userEvent.setup();
+    await renderApp();
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^设置$/ }));
+    });
+    const settingsPanel = await screen.findByTestId('settings-panel');
+    const input = within(settingsPanel).getByLabelText('Tencent Secret ID') as HTMLInputElement;
+    await act(async () => {
+      await user.type(input, 'secret-id');
+      await user.click(within(settingsPanel).getByRole('button', { name: '显示 Secret ID' }));
+    });
+    expect(input.type).toBe('text');
+    await act(async () => {
+      await user.click(within(settingsPanel).getByRole('button', { name: '隐藏 Secret ID' }));
+    });
+    expect(input.type).toBe('password');
+  });
+
+  it('恢复默认配置按钮诚实描述重置范围', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: { sessionId: null, state: 'idle', graph: null, currentTimeMs: 0 },
+          });
+        }
+        if (message?.type === 'GET_PROVIDER_SETTINGS') {
+          return Promise.resolve({
+            success: true,
+            config: {
+              asr: { type: 'openai', mode: 'direct', endpoint: 'https://api.openai.com/v1', model: 'gpt-4o-mini-transcribe', language: 'zh' },
+              structurer: { type: 'openai', mode: 'direct', endpoint: 'https://api.openai.com/v1', model: 'gpt-4.1-mini', language: 'zh' },
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+    const user = userEvent.setup();
+    await renderApp();
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /^设置$/ }));
+    });
+    const settingsPanel = await screen.findByTestId('settings-panel');
+    await act(async () => {
+      await user.click(within(settingsPanel).getByRole('button', { name: '恢复默认配置' }));
+    });
+    expect(confirmSpy).toHaveBeenCalledWith(
+      expect.stringContaining('provider type、endpoint、model 和密钥'),
+    );
+    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'CLEAR_PROVIDER_SECRETS' }),
+    );
+    confirmSpy.mockRestore();
+  });
 });
