@@ -109,23 +109,20 @@ Add a reducer field:
 type LastGraphDelta = {
   addedNodeCount: number;
   addedEdgeCount: number;
-  addedNodeIds: string[];
-  anchorNodeIds: string[];
-  revision: number;
   at: number;
 } | null;
 ```
 
-`MERGED_GRAPH_UPDATED` computes it from existing payload data and stores it with the update timestamp. Reset actions and fixture resets clear stale delta where they clear graph runtime state.
+`MERGED_GRAPH_UPDATED` computes it from existing payload data and stores it with the update timestamp. `addedNodeIds`, `anchorNodeIds`, and `revision` continue to feed auto-tour through the existing seed path; they do not need to be duplicated in `lastGraphDelta` unless implementation discovers a second durable consumer. Reset actions and fixture resets clear stale delta where they clear graph runtime state.
 
 `computeGraphStatusCard` returns one module object at a time using this priority:
 
 1. Structurer error: `保留旧图 · 待处理 N`
-2. Fresh graph delta, within about 1 second: `新增 N 节点 · M 关系`
+2. Fresh graph delta, when `nowMs - lastGraphDelta.at <= 1000`: `新增 N 节点 · M 关系`
 3. Auto-tour touring: `导览 current/total`
 4. Auto-tour paused: `导览暂停 current/total`
-5. Recent graph update: `回显 N 节点 · M 关系`
-6. Stable graph: `N 节点 · M 关系`
+5. Recent graph update, when `nowMs - lastGraphUpdatedAt <= 5000`: `回显 N 节点 · M 关系`
+6. Stable graph: `图谱已稳定 · N 节点 · M 关系`
 7. Empty graph: `等待图谱数据`
 
 The composer decides tone and detail only. It must not trigger tour behavior, read ReactFlow instances, or mutate reducer state.
@@ -164,6 +161,7 @@ The doc should include:
 - module header contract: dot + label, no secondary status text
 - detail contract: ASR heard text, Structurer pressure, Graph output
 - Graph priority order from this spec
+- Graph timing contract: fresh delta window is 1000ms; recent graph replay window is 5000ms; after that, the stable phase says `图谱已稳定 · N 节点 · M 关系`
 - wave contract: wavelength 40px, amplitude 7px, 4 statuses, 3 tones, using the current production SVG path implementation
 - release rule: provider/model/endpoint/token/debug stack details do not belong in the always-visible pipeline modules
 
@@ -190,7 +188,7 @@ Add focused Vitest coverage for:
 
 - `computeAsrStatusCard` uses `lastTranscriptTail` when present and remains null-safe
 - `computeStructurerStatusCard` produces pressure-oriented detail without depending on `lastStructurerRun`
-- `computeGraphStatusCard` priority cases: error, fresh delta, touring, paused, recent update, stable, empty
+- `computeGraphStatusCard` priority cases: error, fresh delta within 1000ms, touring, paused, recent update within 5000ms, stable after 5000ms, empty
 - `panelReducer` writes `lastTranscriptTail` from `TRANSCRIPT_READY`
 - `panelReducer` writes `lastGraphDelta` from `MERGED_GRAPH_UPDATED`
 - `SettingsOverlay` uses honest reset wording
