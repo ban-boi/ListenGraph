@@ -289,10 +289,8 @@ describe('App - 日志与状态卡', () => {
     expect(within(logArea).getByText(/转写: final stable/)).toBeInTheDocument();
   });
 
-  // Task 4 (PipelineModule 去 status)：delayed/processing/congested 文案
-  // 原本挂在 status span 上，现已由 SignalDot + 波形双通道表达。
-  // 精确的 detail 文案断言留到 Task 6（composer 重写）后再恢复。
-  it.skip('structuring 超过阈值时会在状态卡显示 delayed', async () => {
+  // Task 6：composer 重写后用 detail 文案（排队/队列/排空）替代旧 status 文案断言。
+  it('structuring 超过阈值时会在状态卡显示排空/排队/队列 detail', async () => {
     (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
       (message: { type?: string }) => {
         if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
@@ -313,11 +311,11 @@ describe('App - 日志与状态卡', () => {
 
     await renderApp();
 
-    expect(within(screen.getByTestId('status-card-structurer')).getByText(/delayed/i)).toBeInTheDocument();
+    expect(within(screen.getByTestId('status-card-structurer')).getByText(/排队|队列|排空/)).toBeInTheDocument();
   });
 
-  // Task 4：见上，processing/target/backlog 文案断言留到 Task 6 恢复。
-  it.skip('structurer 状态卡会展示当前目标 transcript 与 backlog', async () => {
+  // Task 6：structurer 详情改用 排队 detail 文案断言。
+  it('structurer 状态卡会展示当前排队压力 detail', async () => {
     (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
       (message: { type?: string }) => {
         if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
@@ -347,14 +345,11 @@ describe('App - 日志与状态卡', () => {
     await renderApp();
 
     const card = screen.getByTestId('status-card-structurer');
-    expect(within(card).getByText(/processing/i)).toBeInTheDocument();
-    expect(within(card).getByText(/target 0:45 \/ 67字/i)).toBeInTheDocument();
-    expect(within(card).getByText(/backlog 2/i)).toBeInTheDocument();
-    expect(within(card).getByText(/这是当前正在处理的一句很关键的话/i)).toBeInTheDocument();
+    expect(within(card).getByText(/排队 3/)).toBeInTheDocument();
   });
 
-  // Task 4：见上，congested/backlog 文案断言留到 Task 6 恢复。
-  it.skip('backlog 过大时 structurer 状态卡会显示 congested', async () => {
+  // Task 6：congested 场景改用 排队 detail 文案断言。
+  it('backlog 过大时 structurer 状态卡 detail 会显示排队计数', async () => {
     (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
       (message: { type?: string }) => {
         if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
@@ -384,8 +379,7 @@ describe('App - 日志与状态卡', () => {
     await renderApp();
 
     const card = screen.getByTestId('status-card-structurer');
-    expect(within(card).getByText(/congested/i)).toBeInTheDocument();
-    expect(within(card).getByText(/backlog 4/i)).toBeInTheDocument();
+    expect(within(card).getByText(/排队 5/)).toBeInTheDocument();
   });
 
   it('重复的 queue 事件会被折叠计数', async () => {

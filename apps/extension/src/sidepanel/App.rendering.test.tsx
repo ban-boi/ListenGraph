@@ -41,6 +41,7 @@ describe('App - 渲染', () => {
     expect(screen.getByTestId('runtime-status-cards')).toBeInTheDocument();
     expect(screen.getByTestId('status-card-asr')).toBeInTheDocument();
     expect(screen.getByTestId('status-card-structurer')).toBeInTheDocument();
+    expect(screen.getByTestId('status-card-graph')).toBeInTheDocument();
     expect(screen.queryByTestId('graph-view-summary')).not.toBeInTheDocument();
   });
 
