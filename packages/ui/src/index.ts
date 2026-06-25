@@ -42,3 +42,21 @@ export { PipelineModule } from './components/PipelineModule';
 export type { PipelineModuleProps } from './components/PipelineModule';
 export { PipelineLayout } from './components/PipelineLayout';
 export type { PipelineLayoutProps, PipelineModuleSlot, LayoutMode } from './components/PipelineLayout';
+export {
+  Button,
+  InputField,
+  LabeledField,
+  SectionHeader,
+  SelectField,
+} from './components/FormControls';
+export type {
+  ButtonProps,
+  InputFieldProps,
+  LabeledFieldProps,
+  SectionHeaderProps,
+  SelectFieldProps,
+} from './components/FormControls';
+export { SecretField } from './components/SecretField';
+export type { SecretFieldProps } from './components/SecretField';
+export { CollapsibleSection } from './components/CollapsibleSection';
+export type { CollapsibleSectionProps } from './components/CollapsibleSection';

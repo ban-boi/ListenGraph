@@ -15,7 +15,7 @@ import type {
 } from '../shared/messages';
 import { createEmptyGraph, MAX_TIMELINE_EVENTS } from './constants';
 import { formatGraphDeltaLog } from './debug-export-utils';
-import type { TimelineEvent } from './types';
+import type { LastGraphDelta, LastTranscriptTail, TimelineEvent } from './types';
 import {
   upsertTimelineEvent,
   stripTimelineTransientEvents,
@@ -83,6 +83,10 @@ export interface PanelState {
   timelineEvents: TimelineEvent[];
   /** DEV fixture lab：当前 armed 的 sequence id */
   fixtureLabId: string | null;
+  /** 最近一次稳定转写尾部（at = transcript.endMs，reducer 纯函数） */
+  lastTranscriptTail: LastTranscriptTail;
+  /** 最近一次合并图谱增量（at = mergedGraph.updatedAt，reducer 纯函数） */
+  lastGraphDelta: LastGraphDelta;
 }
 
 // ===== 初始状态 =====
@@ -108,6 +112,8 @@ export const initialPanelState: PanelState = {
   bridgeHealth: { status: 'idle' },
   timelineEvents: [],
   fixtureLabId: null,
+  lastTranscriptTail: null,
+  lastGraphDelta: null,
 };
 
 // ===== 辅助类型：SESSION_STATE_CHANGED payload =====
@@ -201,6 +207,8 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
       let nextSelectedNodeId = state.selectedNodeId;
       let nextStopPending = state.stopPending;
       let nextStructuringSince = state.structuringSince;
+      // 标记图谱是否在本分支被重置为空（用于清理 pipeline detail facts）
+      let graphWasReset = false;
 
       // --- stopped 分支 ---
       if (p.state === 'stopped') {
@@ -218,6 +226,7 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
           nextGraph = createEmptyGraph();
           nextCurrentTimeMs = 0;
           nextCurrentView = 'causal';
+          graphWasReset = true;
         }
       }
 
@@ -228,6 +237,7 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
         nextCurrentTimeMs = 0;
         nextSelectedNodeId = null;
         nextCurrentView = 'causal';
+        graphWasReset = true;
       }
 
       // --- stopPending 清除 ---
@@ -277,6 +287,10 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
         stopDrainPendingCount: p.stopDrainPendingCount ?? 0,
         currentStructurerTarget: p.currentStructurerTarget ?? null,
         timelineEvents: upsertTimelineEvent(state.timelineEvents, timelineEvent),
+        // 图谱被重置为空时清理 pipeline detail facts（保持 reducer 纯函数）
+        ...(graphWasReset
+          ? { lastTranscriptTail: null, lastGraphDelta: null }
+          : {}),
       };
     }
 
@@ -296,6 +310,11 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
         ...state,
         recentProviderError: null,
         lastTranscriptAt: Date.now(),
+        lastTranscriptTail: {
+          text: transcript.text,
+          stable: true,
+          at: transcript.endMs,
+        },
         timelineEvents: finalized,
       };
     }
@@ -371,6 +390,12 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
         ? state.currentView
         : (nextGraph.viewHints?.defaultView ?? 'causal');
 
+      // 计算新增边数：previousGraph 中不存在的边
+      const previousEdges = action.payload.previousGraph.edges;
+      const addedEdgeCount = nextGraph.edges.filter(
+        (edge) => !previousEdges.some((prev) => prev.id === edge.id),
+      ).length;
+
       const timelineEvent = createTimelineEvent({
         stage: 'graph',
         message: formatGraphDeltaLog(action.payload.previousGraph, nextGraph),
@@ -383,7 +408,12 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
         graph: nextGraph,
         currentView: nextCurrentView,
         recentProviderError: null,
-        lastGraphUpdatedAt: Date.now(),
+        lastGraphUpdatedAt: nextGraph.updatedAt,
+        lastGraphDelta: {
+          addedNodeCount: action.payload.addedNodeIds.length,
+          addedEdgeCount,
+          at: nextGraph.updatedAt,
+        },
         lastStructurerRun: null,
         structuringSince: null,
         timelineEvents: upsertTimelineEvent(state.timelineEvents, timelineEvent),
@@ -468,6 +498,8 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
         currentView: 'causal',
         stopPending: false,
         recentProviderError: null,
+        lastTranscriptTail: null,
+        lastGraphDelta: null,
       };
     }
 
@@ -484,6 +516,8 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
         pendingWorkCount: 0,
         stopDrainPendingCount: 0,
         currentStructurerTarget: null,
+        lastTranscriptTail: null,
+        lastGraphDelta: null,
       };
     }
 
@@ -560,6 +594,8 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
         pendingWorkCount: 0,
         stopDrainPendingCount: 0,
         currentStructurerTarget: null,
+        lastTranscriptTail: null,
+        lastGraphDelta: null,
       };
     }
 

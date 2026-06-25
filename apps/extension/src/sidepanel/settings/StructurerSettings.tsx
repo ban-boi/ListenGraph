@@ -6,12 +6,12 @@
 
 import type { ProviderConfig } from '@listen-graphic/schema';
 import {
-  LabeledField,
   InputField,
-  SelectField,
+  LabeledField,
+  SecretField,
   SectionHeader,
-} from './FormControls';
-import { SecretField } from './SecretField';
+  SelectField,
+} from '@listen-graphic/ui';
 import { spacing } from './theme';
 import { getProviderTypeSelectValue } from '../provider-helpers';
 

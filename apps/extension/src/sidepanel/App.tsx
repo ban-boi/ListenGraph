@@ -75,6 +75,7 @@ import { useLogResize } from './hooks/useLogResize';
 import { useSessionControl } from './hooks/useSessionControl';
 import {
   computeAsrStatusCard,
+  computeGraphStatusCard,
   computeStructurerStatusCard,
 } from './status-cards';
 
@@ -499,6 +500,31 @@ export default function App() {
   const structurerStatusCard = useMemo(() => computeStructurerStatusCard(statusCardInputs), [statusCardInputs]);
   // 已移除 primaryStatusCards，改为单独使用 asrStatusCard / structurerStatusCard
 
+  // ===== Graph 状态卡片（优先级状态机：错误 > 新增 > 导览 > 回显 > 稳定 > 空）=====
+  const graphStatusCard = useMemo(
+    () =>
+      computeGraphStatusCard({
+        graph: panel.graph,
+        pendingWorkCount: panel.pendingWorkCount,
+        recentStructurerError: panel.recentProviderError,
+        lastGraphDelta: panel.lastGraphDelta,
+        lastGraphUpdatedAt: panel.lastGraphUpdatedAt,
+        statusNowMs,
+        tourStatus: autoTourStatus,
+        tourProgress: autoTourProgress,
+      }),
+    [
+      autoTourProgress,
+      autoTourStatus,
+      panel.graph,
+      panel.lastGraphDelta,
+      panel.lastGraphUpdatedAt,
+      panel.pendingWorkCount,
+      panel.recentProviderError,
+      statusNowMs,
+    ],
+  );
+
   // ===== 导出 =====
   const isRunning = ['capturing', 'transcribing', 'structuring'].includes(panel.sessionState);
 
@@ -902,7 +928,6 @@ export default function App() {
         asr={{
           module: {
             label: asrStatusCard.label,
-            status: asrStatusCard.status,
             detail: asrStatusCard.detail,
             tone: asrStatusCard.tone,
             testId: `status-card-${asrStatusCard.label.toLowerCase()}`,
@@ -913,7 +938,6 @@ export default function App() {
         structurer={{
           module: {
             label: structurerStatusCard.label,
-            status: structurerStatusCard.status,
             detail: structurerStatusCard.detail,
             tone: structurerStatusCard.tone,
             testId: `status-card-${structurerStatusCard.label.toLowerCase()}`,
@@ -923,10 +947,10 @@ export default function App() {
         }}
         graph={{
           module: {
-            label: 'Graph',
-            status: panel.graph.nodes.length > 0 ? `${panel.graph.nodes.length}n · ${panel.graph.edges.length}e` : '空',
-            detail: graphSummaryText ?? '等待图谱数据',
-            tone: isRunning ? 'active' : panel.graph.nodes.length > 0 ? 'success' : 'neutral',
+            label: graphStatusCard.label,
+            detail: graphStatusCard.detail,
+            tone: graphStatusCard.tone,
+            testId: 'status-card-graph',
           },
           waveStatus: graphWaveStatus,
           waveTone: 'neutral',

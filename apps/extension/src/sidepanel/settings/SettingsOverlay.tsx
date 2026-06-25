@@ -13,7 +13,7 @@ import type { BridgeHealth } from '../panel-reducer';
 import { AsrSettings } from './AsrSettings';
 import { StructurerSettings } from './StructurerSettings';
 import { DisplaySettings } from './DisplaySettings';
-import { Button } from './FormControls';
+import { Button } from '@listen-graphic/ui';
 import { Toast, useToast } from './Toast';
 import { colors, layout } from './theme';
 import { getStageCredentialState } from '../provider-helpers';
@@ -84,9 +84,9 @@ export function SettingsOverlay({
   }, [onSaveSettings, showSuccess, showError]);
 
   const handleClear = useCallback(() => {
-    if (!window.confirm('确定要清除所有已保存的密钥吗？此操作不可撤销。')) return;
+    if (!window.confirm('确定要恢复默认 provider 配置吗？provider type、endpoint、model 和密钥都会回到扩展默认值。')) return;
     onClearSecrets();
-    showSuccess('密钥已清除');
+    showSuccess('provider 配置已恢复默认');
   }, [onClearSecrets, showSuccess]);
 
   const handleClose = useCallback(() => {
@@ -227,7 +227,7 @@ export function SettingsOverlay({
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <Button variant="danger" onClick={handleClear}>
-            清除密钥
+            恢复默认配置
           </Button>
           <Button
             variant="primary"
