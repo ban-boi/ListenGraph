@@ -101,7 +101,6 @@ export function computeStructurerStatusCard({
     pendingWorkCount,
     stopPending,
     stopDrainPendingCount,
-    lastStructurerRun,
     graph,
   } = panel;
 
@@ -156,15 +155,6 @@ export function computeStructurerStatusCard({
       tone: 'waiting',
     };
   }
-  if (lastStructurerRun) {
-    return {
-      label: 'Structurer',
-      detail:
-        `${lastStructurerRun.durationMs}ms` +
-        (lastStructurerRun.errorCode ? ` | ${lastStructurerRun.errorCode}` : ''),
-      tone: lastStructurerRun.status === 'success' ? 'success' : 'warning',
-    };
-  }
   return {
     label: 'Structurer',
     detail: graph.nodes.length > 0 ? '队列 0' : '等待可结构化上下文',
@@ -191,11 +181,12 @@ export interface GraphStatusCardInputs {
  * 2. 新增增量 ≤ 1000ms → 新增 X 节点
  * 3. 导览中 → 导览 cur/total
  * 4. 导览暂停 → 导览暂停 cur/total
- * 5. 回显 ≤ 5000ms → 回显 X 节点
- * 6. 稳定 → 图谱已稳定
- * 7. 空图 → 等待图谱数据
+ * 5. 空图 → 等待图谱数据（优先级实质高于回显/稳定）
+ * 6. 回显 ≤ 5000ms → 回显 X 节点
+ * 7. 稳定 → 图谱已稳定
  *
- * 注意：错误优先于增量/导览；空图判断在回显/稳定之前，避免空图误报回显。
+ * 注意：空图检查在回显/稳定之前——空图时回显/稳定会产出"图谱已稳定 · 0 节点 · 0
+ * 关系"的误导文案，故空图优先返回"等待图谱数据"。
  */
 export function computeGraphStatusCard({
   graph,
