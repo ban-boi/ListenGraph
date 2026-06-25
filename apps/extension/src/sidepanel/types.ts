@@ -130,3 +130,26 @@ export type AutoTourStatus = 'idle' | 'touring' | 'paused';
 
 export type GraphNodeData = GraphNodeCardData;
 
+// ===== Pipeline 详情事实（供 detail composer 消费） =====
+
+/** 最近一次稳定转写尾部，at 取自 transcript.endMs（reducer 纯函数，不用 Date.now） */
+export type LastTranscriptTail = {
+  text: string;
+  stable: boolean;
+  at: number;
+} | null;
+
+/** 最近一次合并图谱增量，at 取自 mergedGraph.updatedAt（reducer 纯函数，不用 Date.now） */
+export type LastGraphDelta = {
+  addedNodeCount: number;
+  addedEdgeCount: number;
+  at: number;
+} | null;
+
+/** Pipeline 模块卡片数据（Task 6 detail composer 使用） */
+export type PipelineModuleData = {
+  label: string;
+  detail: string;
+  tone: StatusCardTone;
+};
+
