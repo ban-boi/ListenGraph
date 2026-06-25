@@ -782,13 +782,6 @@ body {
   text-transform: uppercase;
 }
 
-.lg-pipeline-mod__status {
-  font-size: var(--text-2xs);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .lg-pipeline-mod__detail {
   font-size: 0.55rem;
   color: var(--lg-muted);

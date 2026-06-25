@@ -902,7 +902,6 @@ export default function App() {
         asr={{
           module: {
             label: asrStatusCard.label,
-            status: asrStatusCard.status,
             detail: asrStatusCard.detail,
             tone: asrStatusCard.tone,
             testId: `status-card-${asrStatusCard.label.toLowerCase()}`,
@@ -913,7 +912,6 @@ export default function App() {
         structurer={{
           module: {
             label: structurerStatusCard.label,
-            status: structurerStatusCard.status,
             detail: structurerStatusCard.detail,
             tone: structurerStatusCard.tone,
             testId: `status-card-${structurerStatusCard.label.toLowerCase()}`,
@@ -924,7 +922,6 @@ export default function App() {
         graph={{
           module: {
             label: 'Graph',
-            status: panel.graph.nodes.length > 0 ? `${panel.graph.nodes.length}n · ${panel.graph.edges.length}e` : '空',
             detail: graphSummaryText ?? '等待图谱数据',
             tone: isRunning ? 'active' : panel.graph.nodes.length > 0 ? 'success' : 'neutral',
           },
