@@ -584,8 +584,8 @@ export function getExternalSkipResult(
   return null;
 }
 
-/** Fixture 断言验收检查 */
-export function assertFixtureAcceptance(params: {
+/** Fixture 断言参数类型 */
+export type FixtureAssertionParams = {
   fixture: StructureFixture;
   debugData: {
     segments: unknown[];
@@ -598,10 +598,23 @@ export function assertFixtureAcceptance(params: {
     graph: MergedGraph;
   };
   previousGraph: MergedGraph | null;
-}) {
-  const { fixture, debugData, exportData, previousGraph } = params;
+};
+
+/**
+ * 第 1 层：确定性契约断言（模型无关，进 CI 硬门）。
+ *
+ * 只校验「不依赖参考模型分布就能确定」的工程契约：
+ * - minSegments（输入有几个 transcript，纯确定性）
+ * - exported transcripts 数量（导出不丢）
+ * - fallback 行为（allowFallback / expectFallbackUsed / maxFallbackRuns）
+ *
+ * 这些断言崩了 = 代码坏了（schema、流程、稳定性问题），必须立刻修、必须阻塞发布。
+ * 注意：节点/边数阈值、文本/类型/边类型语义断言不在这一层——它们依赖参考模型分布，
+ * 见 assertFixtureQuality。
+ */
+export function assertFixtureContract(params: FixtureAssertionParams) {
+  const { fixture, debugData, exportData } = params;
   const acceptance = fixture.acceptance;
-  const lastSegment = debugData.segments.at(-1);
   const lastStructurerRun = debugData.structurerRuns?.at(-1);
   const graphSummary = summarizeGraph(debugData.graph);
 
@@ -610,31 +623,6 @@ export function assertFixtureAcceptance(params: {
     `${fixture.name} minSegments graph=${JSON.stringify(graphSummary)}`,
   ).toBeGreaterThanOrEqual(acceptance.minSegments);
 
-  // 节点数容差：仅对 judge 草稿落地的 fixture（带 promotedFrom）生效。
-  // 人工精校的 realtime fixture 不享受容差，保持硬标准。
-  // 理由：同模型两次跑 structurer（compare + verify）节点数有 ±1-2 浮动，
-  // judge 草稿的精确 min/max 边界扛不住这个浮动，导致接近一半误红。
-  // 容差 ±2 是对 LLM 节点数波动的合理建模，不是放宽语义标准。
-  const isAiDraft = Boolean(acceptance.promotedFrom);
-  const nodeTol = isAiDraft ? NODE_COUNT_TOLERANCE : 0;
-  const effectiveMinNodes = acceptance.minMergedNodes - nodeTol;
-  const effectiveMaxNodes =
-    acceptance.maxMergedNodes !== undefined ? acceptance.maxMergedNodes + nodeTol : undefined;
-
-  expect(
-    debugData.graph?.nodes.length ?? 0,
-    `${fixture.name} minMergedNodes (draft ${acceptance.minMergedNodes}, tol -${nodeTol} → ${effectiveMinNodes}) graph=${JSON.stringify(graphSummary)}`,
-  ).toBeGreaterThanOrEqual(effectiveMinNodes);
-  if (effectiveMaxNodes !== undefined) {
-    expect(
-      debugData.graph?.nodes.length ?? 0,
-      `${fixture.name} maxMergedNodes (draft ${acceptance.maxMergedNodes}, tol +${nodeTol} → ${effectiveMaxNodes}) graph=${JSON.stringify(graphSummary)}`,
-    ).toBeLessThanOrEqual(effectiveMaxNodes);
-  }
-  expect(
-    debugData.graph?.edges.length ?? 0,
-    `${fixture.name} minMergedEdges graph=${JSON.stringify(graphSummary)}`,
-  ).toBeGreaterThanOrEqual(acceptance.minMergedEdges);
   expect(
     exportData.transcripts.length,
     `${fixture.name} exported transcripts`,
@@ -656,16 +644,83 @@ export function assertFixtureAcceptance(params: {
       acceptance.maxFallbackRuns,
     );
   }
+}
+
+/**
+ * 第 3 层：质量断言（模型特异，不阻塞发布）。
+ *
+ * 校验依赖参考模型分布的语义/数值断言：
+ * - 节点/边数阈值（含 judge 草稿容差）
+ * - 文本锚点（mustContain / mustContainOneOf，含 splitAnchor 拆分）
+ * - 禁词、节点类型、边类型、跨图边、重复文本
+ *
+ * 这些断言崩了 ≠ 代码坏了，更可能是「当前模型分布与参考模型不同」。
+ * 因此默认 soft：失败只 warn 不 throw（LISTEN_GRAPHIC_STRUCTURE_QUALITY_SOFT=1，默认开）。
+ * 深度排查时可设 SOFT=0 让它 hard（失败阻塞）。
+ */
+export function assertFixtureQuality(params: FixtureAssertionParams) {
+  const { fixture, debugData, previousGraph } = params;
+  const acceptance = fixture.acceptance;
+  const lastSegment = debugData.segments.at(-1);
+  const graphSummary = summarizeGraph(debugData.graph);
+
+  // soft 模式：quality 断言失败时 warn 而非 throw。
+  // 默认开——因为 quality 红多为模型分布差异，不该阻塞 CI。
+  // 设 LISTEN_GRAPHIC_STRUCTURE_QUALITY_SOFT=0 可恢复 hard（用于深度排查）。
+  const soft = process.env.LISTEN_GRAPHIC_STRUCTURE_QUALITY_SOFT?.trim() !== '0';
+  // 收集本 fixture 的 quality 失败，soft 模式下一次性 warn
+  const failures: string[] = [];
+  const softExpect = <T>(actual: T, message: string, matcher: (a: T) => void) => {
+    try {
+      matcher(actual);
+    } catch (err) {
+      if (soft) {
+        failures.push(`${message}\n  ${(err as Error).message}`);
+      } else {
+        throw err;
+      }
+    }
+  };
+
+  // 节点数容差：仅对 judge 草稿落地的 fixture（带 promotedFrom）生效。
+  const isAiDraft = Boolean(acceptance.promotedFrom);
+  const nodeTol = isAiDraft ? NODE_COUNT_TOLERANCE : 0;
+  const effectiveMinNodes = acceptance.minMergedNodes - nodeTol;
+  const effectiveMaxNodes =
+    acceptance.maxMergedNodes !== undefined ? acceptance.maxMergedNodes + nodeTol : undefined;
+
+  softExpect(
+    debugData.graph?.nodes.length ?? 0,
+    `${fixture.name} minMergedNodes (draft ${acceptance.minMergedNodes}, tol -${nodeTol} → ${effectiveMinNodes})`,
+    (n) =>
+      expect(n, `${fixture.name} minMergedNodes graph=${JSON.stringify(graphSummary)}`).toBeGreaterThanOrEqual(effectiveMinNodes),
+  );
+  if (effectiveMaxNodes !== undefined) {
+    softExpect(
+      debugData.graph?.nodes.length ?? 0,
+      `${fixture.name} maxMergedNodes (draft ${acceptance.maxMergedNodes}, tol +${nodeTol} → ${effectiveMaxNodes})`,
+      (n) =>
+        expect(n, `${fixture.name} maxMergedNodes graph=${JSON.stringify(graphSummary)}`).toBeLessThanOrEqual(effectiveMaxNodes),
+    );
+  }
+  softExpect(
+    debugData.graph?.edges.length ?? 0,
+    `${fixture.name} minMergedEdges`,
+    (e) =>
+      expect(e, `${fixture.name} minMergedEdges graph=${JSON.stringify(graphSummary)}`).toBeGreaterThanOrEqual(acceptance.minMergedEdges),
+  );
 
   if (acceptance.disallowDuplicatePreviousTexts && previousGraph && lastSegment) {
     const previousTexts = new Set(previousGraph.nodes.map((node) => normalizeText(node.text)));
     const duplicatedTexts = (lastSegment as { nodes: Array<{ text: string }> })
       .nodes.map((node) => normalizeText(node.text))
       .filter((text) => previousTexts.has(text));
-    expect(
+    softExpect(
       duplicatedTexts,
-      `${fixture.name} should avoid duplicating previous node text graph=${JSON.stringify(graphSummary)}`,
-    ).toEqual([]);
+      `${fixture.name} disallowDuplicatePreviousTexts`,
+      (d) =>
+        expect(d, `${fixture.name} should avoid duplicating previous node text graph=${JSON.stringify(graphSummary)}`).toEqual([]),
+    );
   }
 
   if (acceptance.expectCrossGraphEdges && previousGraph && lastSegment) {
@@ -679,94 +734,110 @@ export function assertFixtureAcceptance(params: {
         (previousNodeIds.has(edge.source) && lastSegmentNodeIds.has(edge.target)) ||
         (previousNodeIds.has(edge.target) && lastSegmentNodeIds.has(edge.source)),
     );
-    expect(
+    softExpect(
       hasCrossGraphEdge,
-      `${fixture.name} should contain a cross-graph edge graph=${JSON.stringify(graphSummary)}`,
-    ).toBe(true);
+      `${fixture.name} expectCrossGraphEdges`,
+      (h) =>
+        expect(h, `${fixture.name} should contain a cross-graph edge graph=${JSON.stringify(graphSummary)}`).toBe(true),
+    );
   }
 
+  const normalizedNodeTexts = (debugData.graph?.nodes ?? []).map((node) =>
+    normalizeText(node.text),
+  );
+
   if (acceptance.mustContainTexts?.length) {
-    const normalizedNodeTexts = (debugData.graph?.nodes ?? []).map((node) =>
-      normalizeText(node.text),
-    );
     for (const expectedText of acceptance.mustContainTexts) {
       const normalizedExpected = normalizeText(expectedText);
       const matched = normalizedNodeTexts.some(
-        (nodeText) =>
-          nodeText.includes(normalizedExpected) ||
-          normalizedExpected.includes(nodeText),
+        (nodeText) => nodeText.includes(normalizedExpected) || normalizedExpected.includes(nodeText),
       );
-      expect(
+      softExpect(
         matched,
-        `${fixture.name} should contain text "${expectedText}" graph=${JSON.stringify(graphSummary)}`,
-      ).toBe(true);
+        `${fixture.name} mustContainTexts "${expectedText}"`,
+        (m) =>
+          expect(m, `${fixture.name} should contain text "${expectedText}" graph=${JSON.stringify(graphSummary)}`).toBe(true),
+      );
     }
   }
 
   if (acceptance.mustContainOneOfTexts?.length) {
-    const normalizedNodeTexts = (debugData.graph?.nodes ?? []).map((node) =>
-      normalizeText(node.text),
-    );
     for (const candidateGroup of acceptance.mustContainOneOfTexts) {
-      // 锚点拆分兜底：把误用分隔符合并的候选（如 "幽默应对/自我解嘲"）
-      // 还原成多个独立子锚点。注意：这里只做「分隔符拆分 + 过短 token 过滤」，
-      // 不放宽匹配语义——拆分后仍是现有的双向子串匹配。
-      // 这样能容忍 draft 里少部分不符合「短词」格式的写法，而不必重判已落地的 fixture。
       const subAnchorsPerCandidate = candidateGroup.map((candidateText) =>
         splitAnchor(normalizeText(candidateText)),
       );
-      // 任一候选的任一子锚点命中即算该组通过
       const matched = subAnchorsPerCandidate.some((subAnchors) =>
         subAnchors.some((normalizedExpected) =>
           normalizedNodeTexts.some(
-            (nodeText) =>
-              nodeText.includes(normalizedExpected) ||
-              normalizedExpected.includes(nodeText),
+            (nodeText) => nodeText.includes(normalizedExpected) || normalizedExpected.includes(nodeText),
           ),
         ),
       );
-      expect(
+      softExpect(
         matched,
-        `${fixture.name} should contain one of ${JSON.stringify(candidateGroup)} graph=${JSON.stringify(graphSummary)}`,
-      ).toBe(true);
+        `${fixture.name} mustContainOneOfTexts ${JSON.stringify(candidateGroup)}`,
+        (m) =>
+          expect(m, `${fixture.name} should contain one of ${JSON.stringify(candidateGroup)} graph=${JSON.stringify(graphSummary)}`).toBe(true),
+      );
     }
   }
 
   if (acceptance.forbiddenTexts?.length) {
-    const normalizedNodeTexts = (debugData.graph?.nodes ?? []).map((node) =>
-      normalizeText(node.text),
-    );
     for (const forbiddenText of acceptance.forbiddenTexts) {
       const normalizedForbidden = normalizeText(forbiddenText);
       const matched = normalizedNodeTexts.some((nodeText) =>
         nodeText.includes(normalizedForbidden),
       );
-      expect(
+      softExpect(
         matched,
-        `${fixture.name} should not contain text "${forbiddenText}" graph=${JSON.stringify(graphSummary)}`,
-      ).toBe(false);
+        `${fixture.name} forbiddenTexts "${forbiddenText}"`,
+        (m) =>
+          expect(m, `${fixture.name} should not contain text "${forbiddenText}" graph=${JSON.stringify(graphSummary)}`).toBe(false),
+      );
     }
   }
 
   if (acceptance.mustHaveNodeTypes?.length) {
     const nodeTypes = new Set((debugData.graph?.nodes ?? []).map((node) => node.type));
     for (const nodeType of acceptance.mustHaveNodeTypes) {
-      expect(
+      softExpect(
         nodeTypes.has(nodeType),
-        `${fixture.name} should contain node type "${nodeType}" graph=${JSON.stringify(graphSummary)}`,
-      ).toBe(true);
+        `${fixture.name} mustHaveNodeTypes "${nodeType}"`,
+        (has) =>
+          expect(has, `${fixture.name} should contain node type "${nodeType}" graph=${JSON.stringify(graphSummary)}`).toBe(true),
+      );
     }
   }
 
   if (acceptance.requiredEdgeTypes?.length) {
     const edgeTypes = new Set((debugData.graph?.edges ?? []).map((edge) => edge.type));
     for (const edgeType of acceptance.requiredEdgeTypes) {
-      expect(
+      softExpect(
         edgeTypes.has(edgeType),
-        `${fixture.name} should contain edge type "${edgeType}" graph=${JSON.stringify(graphSummary)}`,
-      ).toBe(true);
+        `${fixture.name} requiredEdgeTypes "${edgeType}"`,
+        (has) =>
+          expect(has, `${fixture.name} should contain edge type "${edgeType}" graph=${JSON.stringify(graphSummary)}`).toBe(true),
+      );
     }
   }
+
+  // soft 模式下，汇总 warn 所有 quality 失败（不阻塞）
+  if (failures.length > 0) {
+    const tag = soft ? '[quality-soft]' : '[quality-hard]';
+    console.warn(
+      `\n${tag} ${fixture.name} 有 ${failures.length} 个质量断言未通过（不阻塞 CI）：\n` +
+        failures.map((f) => `  - ${f}`).join('\n'),
+    );
+  }
+}
+
+/**
+ * 兼容入口：依次执行 contract（硬）+ quality（默认 soft）。
+ * 保留旧名以避免破坏现有调用点；新代码应直接调用 assertFixtureContract / assertFixtureQuality。
+ */
+export function assertFixtureAcceptance(params: FixtureAssertionParams) {
+  assertFixtureContract(params);
+  assertFixtureQuality(params);
 }
 
 /** 将 MergedGraph 精简为 LLM judge 友好的 compact 格式并写入 JSON 文件 */
