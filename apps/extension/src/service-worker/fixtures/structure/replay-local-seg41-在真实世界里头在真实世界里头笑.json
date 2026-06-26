@@ -45,15 +45,42 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 5,
+    "minMergedEdges": 2,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T16:02:48.505Z",
+    "maxMergedNodes": 8,
+    "mustContainOneOfTexts": [
+      [
+        "笑声",
+        "武器",
+        "回应"
+      ],
+      [
+        "支持者",
+        "反对者",
+        "沉默"
+      ],
+      [
+        "答案",
+        "世界",
+        "推动"
+      ],
+      [
+        "周帅",
+        "阴阳怪"
+      ],
+      [
+        "高估",
+        "个人"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

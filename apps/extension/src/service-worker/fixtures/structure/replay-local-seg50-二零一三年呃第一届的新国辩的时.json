@@ -157,15 +157,38 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 5,
+    "minMergedEdges": 3,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T16:14:42.171Z",
+    "maxMergedNodes": 8,
+    "mustContainOneOfTexts": [
+      [
+        "新国辩",
+        "第一届"
+      ],
+      [
+        "表演赛",
+        "致敬"
+      ],
+      [
+        "人性本善",
+        "人性本恶"
+      ],
+      [
+        "陆一鸣",
+        "主持"
+      ]
+    ],
+    "forbiddenTexts": [
+      "人性和善"
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

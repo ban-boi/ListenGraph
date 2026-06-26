@@ -157,15 +157,41 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 5,
+    "minMergedEdges": 4,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T11:14:44.935Z",
+    "maxMergedNodes": 8,
+    "mustContainOneOfTexts": [
+      [
+        "回应世界",
+        "回应",
+        "世界"
+      ],
+      [
+        "辩论",
+        "辩论的"
+      ],
+      [
+        "智力游戏",
+        "智力的游戏",
+        "游戏"
+      ],
+      [
+        "非议",
+        "论述"
+      ],
+      [
+        "提问",
+        "问题"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

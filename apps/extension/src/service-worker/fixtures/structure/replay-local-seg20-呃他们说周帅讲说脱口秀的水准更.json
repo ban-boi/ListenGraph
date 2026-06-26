@@ -143,15 +143,39 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 6,
+    "minMergedEdges": 5,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T14:44:37.001Z",
+    "maxMergedNodes": 10,
+    "mustContainOneOfTexts": [
+      [
+        "脱口秀",
+        "喜剧演员"
+      ],
+      [
+        "辩手",
+        "辩论"
+      ],
+      [
+        "真问题",
+        "真实"
+      ],
+      [
+        "金钱",
+        "万恶之源"
+      ],
+      [
+        "攻防",
+        "回应"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

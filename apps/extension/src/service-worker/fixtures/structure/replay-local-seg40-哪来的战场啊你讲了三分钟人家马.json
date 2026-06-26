@@ -157,15 +157,43 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
+    "minMergedNodes": 9,
+    "minMergedEdges": 4,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T16:01:01.018Z",
+    "maxMergedNodes": 13,
+    "mustContainOneOfTexts": [
+      [
+        "打断",
+        "插嘴",
+        "发言"
+      ],
+      [
+        "堂吉诃德",
+        "风车",
+        "唐吉诃德"
+      ],
+      [
+        "投石",
+        "抛石",
+        "丢石头"
+      ],
+      [
+        "勇气",
+        "热情"
+      ],
+      [
+        "敌人",
+        "对手",
+        "虚构"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

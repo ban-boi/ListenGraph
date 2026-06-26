@@ -129,15 +129,39 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
+    "minMergedNodes": 5,
+    "minMergedEdges": 3,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T14:56:14.938Z",
+    "maxMergedNodes": 8,
+    "mustContainOneOfTexts": [
+      [
+        "不舒服",
+        "不适"
+      ],
+      [
+        "界定",
+        "由我"
+      ],
+      [
+        "尊重",
+        "感受"
+      ],
+      [
+        "赢了",
+        "获胜"
+      ],
+      [
+        "躺枪",
+        "受波及"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

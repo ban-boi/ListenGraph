@@ -185,15 +185,40 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 5,
+    "minMergedEdges": 4,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T16:06:49.328Z",
+    "maxMergedNodes": 8,
+    "mustContainOneOfTexts": [
+      [
+        "投票",
+        "举牌"
+      ],
+      [
+        "黄执忠",
+        "黄执中"
+      ],
+      [
+        "周玄毅",
+        "玄毅"
+      ],
+      [
+        "选票",
+        "双面"
+      ],
+      [
+        "计票",
+        "加总",
+        "逐牌"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

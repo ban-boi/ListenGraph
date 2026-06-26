@@ -45,15 +45,40 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 4,
+    "minMergedEdges": 2,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T14:53:02.064Z",
+    "maxMergedNodes": 4,
+    "mustContainOneOfTexts": [
+      [
+        "脱口秀",
+        "脱口秀讲者",
+        "脱口秀演员"
+      ],
+      [
+        "接地气",
+        "更接地气"
+      ],
+      [
+        "真问题",
+        "关注真问题"
+      ],
+      [
+        "辩手",
+        "辩论"
+      ],
+      [
+        "女权主义",
+        "女权主义者"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

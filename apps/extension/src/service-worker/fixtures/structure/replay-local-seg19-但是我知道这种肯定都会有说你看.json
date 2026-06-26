@@ -59,15 +59,43 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
+    "minMergedNodes": 4,
+    "minMergedEdges": 3,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T15:48:38.994Z",
+    "maxMergedNodes": 7,
+    "mustContainOneOfTexts": [
+      [
+        "以笑代理",
+        "以效代理",
+        "以礼带孝"
+      ],
+      [
+        "门槛",
+        "参与门槛"
+      ],
+      [
+        "辩手",
+        "稳赢",
+        "赢两次"
+      ],
+      [
+        "笑话",
+        "段子",
+        "幽默"
+      ],
+      [
+        "逻辑",
+        "道理",
+        "说理"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

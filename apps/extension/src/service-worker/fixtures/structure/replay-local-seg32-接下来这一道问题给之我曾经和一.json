@@ -129,15 +129,43 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
     "minMergedNodes": 3,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedEdges": 3,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T14:58:43.938Z",
+    "maxMergedNodes": 10,
+    "mustContainOneOfTexts": [
+      [
+        "全新视角",
+        "不同视角",
+        "多元视角"
+      ],
+      [
+        "辩论",
+        "辩手",
+        "辩论认知"
+      ],
+      [
+        "真实",
+        "真问题",
+        "多元真实"
+      ],
+      [
+        "议题",
+        "小课题",
+        "课题"
+      ],
+      [
+        "认知",
+        "意义"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

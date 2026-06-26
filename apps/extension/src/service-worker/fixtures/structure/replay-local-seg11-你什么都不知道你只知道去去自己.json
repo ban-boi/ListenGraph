@@ -129,15 +129,42 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
+    "minMergedNodes": 7,
+    "minMergedEdges": 7,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T11:09:34.042Z",
+    "maxMergedNodes": 11,
+    "mustContainOneOfTexts": [
+      [
+        "渔夫",
+        "屈原"
+      ],
+      [
+        "放低身段",
+        "放低"
+      ],
+      [
+        "解脱",
+        "解脱者",
+        "解脱之道"
+      ],
+      [
+        "真问题"
+      ],
+      [
+        "犬儒",
+        "犬儒主义"
+      ]
+    ],
+    "forbiddenTexts": [
+      "语夫"
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

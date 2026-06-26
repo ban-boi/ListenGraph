@@ -101,15 +101,38 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 5,
+    "minMergedEdges": 3,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T14:51:52.654Z",
+    "maxMergedNodes": 8,
+    "mustContainOneOfTexts": [
+      [
+        "布鲁克林",
+        "脱口秀"
+      ],
+      [
+        "菜鸟",
+        "新手"
+      ],
+      [
+        "社会真实",
+        "社会理解"
+      ],
+      [
+        "字典",
+        "内部逻辑"
+      ],
+      [
+        "不公平"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

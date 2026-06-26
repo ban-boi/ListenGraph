@@ -199,15 +199,42 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 6,
+    "minMergedEdges": 5,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T16:08:27.545Z",
+    "maxMergedNodes": 12,
+    "mustContainOneOfTexts": [
+      [
+        "救猫救画",
+        "救猫",
+        "救画"
+      ],
+      [
+        "脱口秀",
+        "脱口"
+      ],
+      [
+        "解构",
+        "解构意义",
+        "解构价值"
+      ],
+      [
+        "建构",
+        "建构价值",
+        "建构意义"
+      ],
+      [
+        "远方的哭声",
+        "远方的"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

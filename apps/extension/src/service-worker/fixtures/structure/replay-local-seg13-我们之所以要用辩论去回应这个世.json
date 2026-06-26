@@ -129,15 +129,40 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
+    "minMergedNodes": 10,
+    "minMergedEdges": 8,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T11:13:09.209Z",
+    "maxMergedNodes": 14,
+    "mustContainOneOfTexts": [
+      [
+        "辩论",
+        "辩题"
+      ],
+      [
+        "真问题",
+        "语言世界"
+      ],
+      [
+        "赋予意义",
+        "日常语言"
+      ],
+      [
+        "历史",
+        "说了算"
+      ],
+      [
+        "脱口秀",
+        "解脱",
+        "拧巴"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

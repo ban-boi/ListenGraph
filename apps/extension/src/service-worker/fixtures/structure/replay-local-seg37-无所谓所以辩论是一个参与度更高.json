@@ -143,15 +143,34 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
+    "minMergedNodes": 8,
+    "minMergedEdges": 6,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T15:56:14.841Z",
+    "maxMergedNodes": 12,
+    "mustContainOneOfTexts": [
+      [
+        "辩论"
+      ],
+      [
+        "脱口秀",
+        "利刃"
+      ],
+      [
+        "铠甲",
+        "盔甲"
+      ],
+      [
+        "普通",
+        "自信"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

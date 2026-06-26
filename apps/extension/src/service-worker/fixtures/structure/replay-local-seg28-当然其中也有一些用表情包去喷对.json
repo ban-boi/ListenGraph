@@ -283,15 +283,44 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 4,
-    "minMergedEdges": 0,
+    "minMergedNodes": 11,
+    "minMergedEdges": 10,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T14:55:00.056Z",
+    "maxMergedNodes": 18,
+    "mustContainOneOfTexts": [
+      [
+        "中立观众",
+        "中立者",
+        "中立受众"
+      ],
+      [
+        "讲道理",
+        "理性回应",
+        "严肃"
+      ],
+      [
+        "会输",
+        "打不赢",
+        "注定失败"
+      ],
+      [
+        "悲凉",
+        "失态",
+        "愤怒"
+      ],
+      [
+        "点醒",
+        "填坑",
+        "认知盲区"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }
