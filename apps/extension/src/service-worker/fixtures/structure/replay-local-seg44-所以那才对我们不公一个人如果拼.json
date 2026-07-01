@@ -115,15 +115,35 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 8,
+    "minMergedEdges": 5,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T16:05:30.466Z",
+    "maxMergedNodes": 12,
+    "mustContainOneOfTexts": [
+      [
+        "不公平",
+        "不公"
+      ],
+      [
+        "抽象画",
+        "抽象化"
+      ],
+      [
+        "古典乐",
+        "古典音乐"
+      ],
+      [
+        "鼻子",
+        "俩鼻子"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

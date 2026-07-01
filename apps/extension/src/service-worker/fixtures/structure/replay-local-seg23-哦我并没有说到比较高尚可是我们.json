@@ -101,15 +101,44 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
+    "minMergedNodes": 7,
+    "minMergedEdges": 5,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T14:49:24.674Z",
+    "maxMergedNodes": 9,
+    "mustContainOneOfTexts": [
+      [
+        "脱口秀",
+        "幽默",
+        "喜剧"
+      ],
+      [
+        "武器",
+        "枪",
+        "盾"
+      ],
+      [
+        "恐惧",
+        "害怕",
+        "治疗"
+      ],
+      [
+        "楚王",
+        "受辱",
+        "段子"
+      ],
+      [
+        "健身",
+        "教练",
+        "调侃"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

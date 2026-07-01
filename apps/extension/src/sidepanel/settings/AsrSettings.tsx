@@ -5,13 +5,13 @@
 
 import type { ProviderConfig } from '@listen-graphic/schema';
 import {
-  LabeledField,
+  CollapsibleSection,
   InputField,
-  SelectField,
+  LabeledField,
+  SecretField,
   SectionHeader,
-} from './FormControls';
-import { SecretField } from './SecretField';
-import { CollapsibleSection } from './CollapsibleSection';
+  SelectField,
+} from '@listen-graphic/ui';
 import { cardStyle, hintTextStyle, colors, spacing } from './theme';
 import { getProviderTypeSelectValue } from '../provider-helpers';
 

@@ -101,15 +101,40 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 7,
+    "minMergedEdges": 5,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T14:48:04.940Z",
+    "maxMergedNodes": 14,
+    "mustContainOneOfTexts": [
+      [
+        "两万",
+        "两万美金"
+      ],
+      [
+        "背包"
+      ],
+      [
+        "地铁"
+      ],
+      [
+        "布鲁克林"
+      ],
+      [
+        "恐惧",
+        "害怕"
+      ],
+      [
+        "女权",
+        "女性主义"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

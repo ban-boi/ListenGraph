@@ -145,40 +145,44 @@
   "acceptance": {
     "minSegments": 1,
     "minMergedNodes": 10,
-    "minMergedEdges": 8,
-    "allowFallback": true,
+    "minMergedEdges": 12,
+    "allowFallback": false,
     "manualReviewTags": [
       "local-asr-source"
     ],
-    "promotedFrom": "2026-06-17T13:47:14.659Z",
+    "promotedFrom": "2026-06-25T01:37:24.079Z",
     "maxMergedNodes": 15,
     "mustContainOneOfTexts": [
       [
-        "段子手",
-        "讲笑话",
-        "脱口秀态度"
+        "段子",
+        "幽默",
+        "笑"
       ],
       [
         "回应",
-        "与世界纠缠",
-        "持续交锋"
+        "纠缠",
+        "痛苦"
       ],
       [
-        "痛苦",
-        "辩手的任务",
-        "必然任务"
+        "辩题",
+        "同性婚姻",
+        "社会进步"
       ],
       [
-        "推动社会进步",
-        "撼动现实",
-        "讲道理"
+        "讲道理",
+        "价值观",
+        "道理"
+      ],
+      [
+        "脱口秀",
+        "普通",
+        "反问"
       ]
     ],
     "forbiddenTexts": [
       "金波美主义",
-      "池中",
-      "哗鼓掌",
-      "爆笑如"
+      "飞出来",
+      "哗鼓掌"
     ],
     "mustHaveNodeTypes": [
       "claim"

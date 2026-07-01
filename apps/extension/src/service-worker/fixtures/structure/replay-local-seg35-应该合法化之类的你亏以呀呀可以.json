@@ -73,15 +73,41 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 4,
+    "minMergedEdges": 3,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-26T01:05:44.441Z",
+    "maxMergedNodes": 6,
+    "mustContainOneOfTexts": [
+      [
+        "脱口秀",
+        "脱口秀之刀"
+      ],
+      [
+        "辩论之道",
+        "辩论"
+      ],
+      [
+        "李诞"
+      ],
+      [
+        "菜刀",
+        "切水果"
+      ],
+      [
+        "奇葩说",
+        "救猫"
+      ]
+    ],
+    "forbiddenTexts": [
+      "旧狗"
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

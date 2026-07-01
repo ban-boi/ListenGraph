@@ -87,15 +87,42 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
+    "minMergedNodes": 7,
+    "minMergedEdges": 6,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T04:10:32.717Z",
+    "maxMergedNodes": 9,
+    "mustContainOneOfTexts": [
+      [
+        "脆弱",
+        "辩论脆弱"
+      ],
+      [
+        "古典乐",
+        "像古典乐",
+        "民谣"
+      ],
+      [
+        "真实世界",
+        "粗糙"
+      ],
+      [
+        "特定条件",
+        "特定规则",
+        "特定时空"
+      ],
+      [
+        "四百米",
+        "金牌",
+        "追不上"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

@@ -101,15 +101,39 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 4,
+    "minMergedEdges": 2,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T15:47:25.368Z",
+    "maxMergedNodes": 6,
+    "mustContainOneOfTexts": [
+      [
+        "痛苦",
+        "苦痛"
+      ],
+      [
+        "疑虑",
+        "困惑"
+      ],
+      [
+        "困境",
+        "现实困境"
+      ],
+      [
+        "共鸣",
+        "共情"
+      ],
+      [
+        "粽子",
+        "维根斯坦"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

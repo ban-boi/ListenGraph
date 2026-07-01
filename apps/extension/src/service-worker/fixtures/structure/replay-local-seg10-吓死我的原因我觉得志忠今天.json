@@ -409,15 +409,45 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 5,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 20,
+    "minMergedEdges": 18,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T11:04:35.932Z",
+    "maxMergedNodes": 26,
+    "mustContainOneOfTexts": [
+      [
+        "志忠",
+        "辩论"
+      ],
+      [
+        "哲学家",
+        "解释",
+        "改变"
+      ],
+      [
+        "苍蝇瓶",
+        "苍蝇",
+        "维特根"
+      ],
+      [
+        "拆台",
+        "哲学"
+      ],
+      [
+        "屈原",
+        "渔夫",
+        "投江"
+      ]
+    ],
+    "forbiddenTexts": [
+      "被困"
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

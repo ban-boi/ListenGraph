@@ -129,15 +129,44 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 3,
-    "minMergedEdges": 0,
+    "minMergedNodes": 7,
+    "minMergedEdges": 5,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T14:50:53.854Z",
+    "maxMergedNodes": 12,
+    "mustContainOneOfTexts": [
+      [
+        "盔甲",
+        "笑点",
+        "调侃"
+      ],
+      [
+        "失恋",
+        "武器",
+        "伤痛"
+      ],
+      [
+        "民谣",
+        "古典乐",
+        "分界线"
+      ],
+      [
+        "巴赫",
+        "巴哈",
+        "智力"
+      ],
+      [
+        "武汉大学",
+        "辩论队",
+        "周帅"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

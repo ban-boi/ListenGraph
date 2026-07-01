@@ -73,15 +73,39 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
+    "minMergedNodes": 7,
+    "minMergedEdges": 5,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T15:54:59.350Z",
+    "maxMergedNodes": 11,
+    "mustContainOneOfTexts": [
+      [
+        "脱口秀"
+      ],
+      [
+        "有笑入理",
+        "由笑入理",
+        "由校入理"
+      ],
+      [
+        "由理入心",
+        "辩论路径"
+      ],
+      [
+        "深刻讨论",
+        "全网讨论",
+        "社会关注"
+      ],
+      [
+        "庄严"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

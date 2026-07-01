@@ -87,15 +87,41 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 7,
+    "minMergedEdges": 5,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T04:06:09.163Z",
+    "maxMergedNodes": 10,
+    "mustContainOneOfTexts": [
+      [
+        "左右互搏",
+        "左右互补",
+        "左手右手"
+      ],
+      [
+        "周伯通",
+        "老顽童",
+        "桃花岛"
+      ],
+      [
+        "出圈",
+        "圈子"
+      ],
+      [
+        "真问题",
+        "真实世界"
+      ],
+      [
+        "立论",
+        "切入点"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

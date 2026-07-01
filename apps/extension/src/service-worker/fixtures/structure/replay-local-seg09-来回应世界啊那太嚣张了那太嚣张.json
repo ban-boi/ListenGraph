@@ -115,15 +115,41 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 5,
+    "minMergedEdges": 4,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T04:15:17.946Z",
+    "maxMergedNodes": 9,
+    "mustContainOneOfTexts": [
+      [
+        "辩论人",
+        "辩手",
+        "辩论圈"
+      ],
+      [
+        "回应世界",
+        "关心世界",
+        "回应现实"
+      ],
+      [
+        "独有",
+        "独有的"
+      ],
+      [
+        "辩题",
+        "辩论题"
+      ],
+      [
+        "死刑",
+        "安乐死"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

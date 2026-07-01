@@ -87,15 +87,41 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
-    "allowFallback": true,
+    "minMergedNodes": 7,
+    "minMergedEdges": 6,
+    "allowFallback": false,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T04:05:03.865Z",
+    "maxMergedNodes": 11,
+    "mustContainOneOfTexts": [
+      [
+        "道可道",
+        "不可道",
+        "辩题"
+      ],
+      [
+        "世界想要",
+        "回应的问题"
+      ],
+      [
+        "智力活动",
+        "辩论"
+      ],
+      [
+        "自我挑战",
+        "自问自答"
+      ],
+      [
+        "中东",
+        "比较型",
+        "是非"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

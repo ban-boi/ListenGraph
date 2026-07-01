@@ -87,15 +87,39 @@
     }
   ],
   "acceptance": {
-    "_quality": "weak_scaffold",
     "minSegments": 1,
-    "minMergedNodes": 2,
-    "minMergedEdges": 0,
+    "minMergedNodes": 8,
+    "minMergedEdges": 6,
     "allowFallback": true,
     "manualReviewTags": [
-      "weak_scaffold",
-      "needs-acceptance-calibration",
       "local-asr-source"
+    ],
+    "promotedFrom": "2026-06-25T04:13:19.568Z",
+    "maxMergedNodes": 11,
+    "mustContainOneOfTexts": [
+      [
+        "放低",
+        "放低自己"
+      ],
+      [
+        "古典乐",
+        "智力游戏"
+      ],
+      [
+        "误以为",
+        "真实世界"
+      ],
+      [
+        "魅力",
+        "极小众"
+      ],
+      [
+        "内在自由",
+        "构建世界"
+      ]
+    ],
+    "mustHaveNodeTypes": [
+      "claim"
     ]
   }
 }

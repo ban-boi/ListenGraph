@@ -35,6 +35,10 @@
 - [ASR 流式日志合并（utteranceId dedup）](C:/Users/finni/Desktop/ListenGraph/docs/extension/asr-stream-log-dedup.md)
   - sidepanel 如何用 `utteranceId` 合并 partial、替换正则与 `slice_type` 计数
   - Local ASR Bridge / 腾讯 realtime / 未来流式 adapter 的统一 dedup 规则（proposal）
+- [Pipeline 可视化契约](C:/Users/finni/Desktop/ListenGraph/docs/extension/pipeline-visual-contract.md)
+  - ASR / Structurer / Graph 三段 detail 应显示什么
+  - Graph 多态时序、1000ms / 5000ms 时间窗、波浪视觉常量
+  - release surface 中哪些诊断信息不应常驻
 
 ### ASR 联调与回归
 - [腾讯 ASR 联调 Checklist](C:/Users/finni/Desktop/ListenGraph/docs/providers/tencent-asr-smoke.md)

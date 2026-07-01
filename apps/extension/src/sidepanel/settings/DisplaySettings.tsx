@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import type { GraphDisplaySettings } from '@listen-graphic/schema';
-import { LabeledField, SelectField, SectionHeader } from './FormControls';
+import { LabeledField, SectionHeader, SelectField } from '@listen-graphic/ui';
 import { spacing, hintTextStyle } from './theme';
 
 // ── 类型 ──────────────────────────────────────────────────────────────────

@@ -300,9 +300,45 @@ pnpm judge:acceptance
 | Segment → fixture 转换 | ✅ 已实现 | `--segments` 模式 |
 | Compact graph writer | ✅ 已实现 | helper + 测试条件写入 |
 | Structurer 对比脚本 | ✅ 已实现 | with/without assembler 双 pass |
-| LLM Judge 脚本 | ✅ 已实现 | blind comparison + rubric |
-| npm scripts 注册 | ✅ 已完成 | 3 个新命令 |
-| 端到端验证 | ⬜ 待做 | 需要 structurer + judge API key |
+| LLM Judge 脚本 | ✅ 已实现 | blind comparison + rubric + opencode-serve 后端 |
+| npm scripts 注册 | ✅ 已完成 | segment/compare/judge/promote/eval:assembler |
+| **端到端规模化** | ✅ 已完成 | **49/51 graph、48 judgment、47 promoted fixture** |
+| **assembler 效果报告** | ✅ 已完成 | `eval:assembler`，48 样本结论：Δ=+0.09 效果不显著 |
+| 两层定位落地 | ✅ 已完成 | contract（CI 硬门）/ quality（soft 不阻塞）拆分 |
+
+### 实际跑出来的规模（截至最近一次）
+
+- **49/51 segment 有 graph**（seg01 内容太薄无图、seg46 失败）
+- **48 个 judgment**（seg42 judge 失败待补）
+- **47 个 fixture 已 calibrate**（acceptance 带 `promotedFrom` 溯源，清 weak_scaffold）
+- **跨模型混杂**：49 graph 混了 glm-5.1 / qwen3.6-flash / qwen3.6-35b-a3b（各模型免费额度依次耗尽，被迫换模型）。已接受混杂（路 B）；若要数据干净需单一模型重跑全部。
+- **草稿质量规模化稳定**：新 prompt 规则（2-6 字短词锚点 + 保守禁词）在 47 个 fixture 上验证有效，0 整句、0 斜杠合并、禁词精准（如「金波美主义」式真 ASR 幻觉）
+
+### 草稿质量的诊断结论（6 个样本深度验证）
+
+- **结构断言（节点数/边数/claim 类型/禁词）6/6 可靠**：AI 对「这段该长什么样」判断准确
+- **节点数边界 ±1-2 浮动**：同模型两次跑 structurer 必然波动，已用 `NODE_COUNT_TOLERANCE=2`（仅对 promotedFrom 生效）吸收
+- **文本锚点（mustContainOneOfTexts）是主要红源**：草稿措辞 vs structurer 实际措辞对不上。已修两类：斜杠合并（splitAnchor 拆分）+ 整句（生成端短词规则）。残余红是措辞随机性，属可接受噪声
+- **forbiddenTexts 偶发误判**：旧草稿误禁正常上下文词（如「池中」），新 prompt 改为只禁真幻觉，已验证
+
+---
+
+## 定位：两层评测，不做模型 profile benchmark
+
+这套 LLM-as-Judge pipeline 产出的 acceptance 是**模型特异的**——它编码了产生它的参考模型（glm/qwen 旗舰）的语义密度、表达风格、节点粒度。再用小模型或端侧模型跑 structurer，全红不一定说明代码坏了，更多是「这个模型的结构化能力和参考模型不在同一分布」。把这种红放进 CI 硬门，会把「模型能力差异」误报成「代码回归」。
+
+因此**不把这套 acceptance 当跨模型通用回归硬门**。定位成两层：
+
+### 第 1 层：确定性契约（模型无关，CI 硬门）
+只测不需要语义判断就能确定的工程契约：JSON schema 合法、`minSegments`、fallback 行为稳定、assembler 输入输出幂等。崩了 = 代码坏了，进 CI 阻塞发布。代码入口 `assertFixtureContract`。
+
+### 第 3 层：assembler 效果检验（模型特异，不阻塞）
+这是最适合当前 LLM-as-Judge pipeline 的位置。同一段输入、同一模型、with assembler vs without assembler，对比图谱是否更聚合、更少噪声。这个**相对比较**比「必须命中旗舰 acceptance」可靠得多——配对消除了模型变量，唯一变量是 assembler 开关。产出是报告（`eval:assembler`）和趋势，不是红绿灯。
+
+代码入口 `assertFixtureQuality`（默认 soft，失败只 warn）。quality 断言也可用于「同模型代码回归」（测代码改动不崩），但必须用与 acceptance 同源的模型跑。
+
+### 为什么不做第 2 层（模型 profile benchmark）
+曾经考虑过「每个模型一个 profile，各自基线和通过率」。砍掉的原因：维护多模型基线库的成本不划算（每加一个模型要跑一轮存基线，assembler 改了所有基线可能要重跑）。当前只做 1+3 两层。旗舰模型产出的 acceptance 可作为「高质量参考线」，但不能作为所有模型必须通过的统一真理。
 
 ---
 
@@ -463,3 +499,5 @@ pnpm judge:acceptance
 | `scripts/test-cursor-probe.mjs` | cursor-agent json 结构 + token 探针 |
 | `scripts/test-opencode-probe.mjs` | opencode 探针：按 NDJSON 事件流取值（修正旧版整段 parse 误判）；同时验证 CLI spawn 死锁、serve HTTP 可用 |
 | `scripts/test-opencode-judge-suite.mjs` | opencode judge 3 case × 3 repeat 稳定性套件（via serve HTTP，与 gemma suite 同 case 定义） |
+| `scripts/promote-judgment-to-fixture.mjs` | 草稿落地：judgment.suggestedAcceptanceDraft → fixture acceptance（严格落地，清 weak_scaffold，记 promotedFrom） |
+| `scripts/report-assembler-effect.mjs` | **第 3 层 assembler 效果报告**：从 judgment 提取 graphA/B 盲评，算 Δ 分布。`pnpm eval:assembler` |
