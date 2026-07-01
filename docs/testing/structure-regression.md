@@ -21,6 +21,24 @@
 - 不消耗 ASR 额度
 - 更适合高频调 prompt、incremental merge、fallback、parser
 
+## 两层定位（重要）
+
+structure 断言按「是否依赖参考模型分布」分两层，**不能混用**：
+
+### 第 1 层：确定性契约（模型无关，进 CI 硬门）
+只校验「不依赖参考模型就能确定」的工程契约：`minSegments`、exported transcripts 不丢、`allowFallback`/`expectFallbackUsed`/`maxFallbackRuns`、JSON schema 合法。这些崩了 = 代码坏了（流程/schema/稳定性问题），必须立刻修、必须阻塞发布。
+
+代码入口：`assertFixtureContract`。
+
+### 第 3 层：质量断言（模型特异，默认 soft，不阻塞）
+校验依赖参考模型分布的断言：节点/边数阈值（`minMergedNodes`/`minMergedEdges`/`maxMergedNodes`）、文本锚点（`mustContainTexts`/`mustContainOneOfTexts`）、`forbiddenTexts`、`mustHaveNodeTypes`/`requiredEdgeTypes`。这些断言编码了「参考模型的语义密度、表达风格、节点粒度」——换个小模型或端侧模型跑，红了**不一定是代码坏了**，更可能是「这个模型的结构化能力和参考模型不在同一分布」。
+
+因此第 3 层默认 soft：`LISTEN_GRAPHIC_STRUCTURE_QUALITY_SOFT=1`（默认开），quality 断言失败只 warn 不阻塞 CI；深度排查时设 `=0` 恢复 hard。
+
+代码入口：`assertFixtureQuality`。
+
+> 为什么不分一个「第 2 层模型 profile benchmark」：见 [llm-judge-acceptance-calibration.md](./llm-judge-acceptance-calibration.md) 的讨论——维护多模型基线的成本不划算，当前只做 1+3 两层。
+
 ## 当前推荐入口
 
 如果你是在判断“这个问题该补哪层测试”，先看：
@@ -103,7 +121,7 @@ fixture 不是标准答案全文，而是：
 - `allowFallback`
 - `maxFallbackRuns`
 
-### 语义质量 fixture
+### 语义质量 fixture（第 3 层，模型特异）
 `semantic-*` fixture 是结构化质量验收集，不是快照测试。它们用短 transcript 固定输入，用弹性断言固定最低语义门槛：
 
 - 必须抓住的核心点：`mustContainTexts` / `mustContainOneOfTexts`
@@ -112,7 +130,9 @@ fixture 不是标准答案全文，而是：
 - 幻觉和噪声边界：`forbiddenTexts`
 - fallback 边界：`allowFallback` / `maxFallbackRuns`
 
-这些 fixture 用来回答“这版有没有抓住关键意思”，不要求 LLM 输出逐字一致。新增或调整 prompt、assembler、provider、merge 逻辑前后，应优先跑相关 `semantic-*` 样本，再看 replay KPI。
+**重要定位变化**：这些语义/数值断言属于第 3 层（模型特异），**不该当跨模型硬门**。它们的 acceptance 编码了某个参考模型的输出分布；用更强的模型跑会过、用更弱的模型/端侧模型跑会大面积红——但这个红是「模型能力差异」，不是「代码回归」。所以默认走 soft 模式（`LISTEN_GRAPHIC_STRUCTURE_QUALITY_SOFT=1`），失败只 warn 不阻塞。
+
+这些 fixture 用来回答「**在产生这套 acceptance 的参考模型下**，这版有没有抓住关键意思」，不要求 LLM 输出逐字一致，也**不要求任意用户模型都通过**。新增或调整 prompt、assembler、provider、merge 逻辑前后，应优先跑相关 `semantic-*` 样本（用与 acceptance 同源的模型），再看 replay KPI。
 
 ## fixture 来源
 当前 active fixtures 来自两类来源：

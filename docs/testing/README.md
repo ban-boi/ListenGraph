@@ -56,9 +56,11 @@ pnpm run test:ext:replay
 - 新 transcript 风格回归
 - **本地 ASR → LLM Judge acceptance 校准**（见 [llm-judge-acceptance-calibration.md](./llm-judge-acceptance-calibration.md)）
 
-### 本地 ASR → Acceptance 校准 Pipeline
+### 本地 ASR → Acceptance 校准 Pipeline（第 3 层工具，非回归硬门）
 
-从真实音频出发，通过 LLM-as-Judge 批量生成 acceptance 草稿，人工精选后固化为 regression fixture。详见 [llm-judge-acceptance-calibration.md](./llm-judge-acceptance-calibration.md)。
+从真实音频出发，通过 LLM-as-Judge 批量生成 acceptance 草稿。**这套 acceptance 是模型特异的**（编码了产生它的参考模型的输出分布），**不该当跨模型回归硬门**——用更弱的模型/端侧模型跑会大面积红，但那是模型能力差异不是代码回归。它的价值在第 3 层：assembler 效果检验 + 同模型代码回归。详见 [llm-judge-acceptance-calibration.md](./llm-judge-acceptance-calibration.md)。
+
+两层定位（见 [structure-regression.md](./structure-regression.md)）：第 1 层确定性契约（模型无关，CI 硬门）+ 第 3 层质量断言（模型特异，默认 soft 不阻塞）。
 
 ```powershell
 # 1. 分段（确定性，无 AI）
@@ -67,16 +69,20 @@ pnpm segment:asr:local
 # 2. 生成 segment fixture（弱 scaffold）
 pnpm prepare:structure:local-replay -- --segments
 
-# 3. 跑 structurer 对比（with/without assembler）
+# 3. 跑 structurer 对比（with/without assembler）— 产双图
 $env:LISTEN_GRAPHIC_E2E_STRUCTURER_TYPE = "openai"
 $env:LISTEN_GRAPHIC_E2E_STRUCTURER_API_KEY = "sk-..."
 pnpm compare:structure:segments
 
-# 4. LLM Judge（blind comparison + rubric 评分）
-$env:LISTEN_GRAPHIC_JUDGE_API_KEY = "sk-..."
+# 4. LLM Judge（blind comparison + rubric 评分 + 草稿生成）
+$env:LISTEN_GRAPHIC_JUDGE_PROVIDER = "opencode-serve"  # 或 openai
 pnpm judge:acceptance
 
-# 5. 人工从 summary.md 选 10-20 条，微调 acceptance
+# 5. 草稿落地到 fixture（acceptance 标 promotedFrom，清 weak_scaffold）
+node apps/extension/scripts/promote-judgment-to-fixture.mjs
+
+# 6. assembler 效果报告（第 3 层产出，不进 CI）
+pnpm --filter extension eval:assembler
 ```
 
 ### 3. Thin E2E
