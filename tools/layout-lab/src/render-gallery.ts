@@ -6,6 +6,9 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 const readJson = (p: string) => JSON.parse(fs.readFileSync(p, 'utf8'));
 
 // spec 6.1 抽样规则：选待人工详细校正的样本
+// spec 6.1 抽样规则。注意：spec 原列了 5 条，其中「每类 semanticReading 抽样 2-3 条」
+// 在此刻意省略——semanticReading 是 LLM 自由文本，分类不稳定，且第 1 层全量缩略图扫描
+// 已能覆盖各类失败的发现。这里只保留可客观判定的 4 条规则。
 export function buildReviewSample(
   annotations: Annotation[],
   metrics: Array<{ graphIndex: number; metrics: StructureMetrics; detector: DetectorCheck }>,

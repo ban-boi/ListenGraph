@@ -7,8 +7,8 @@ const SIMPLIFIED_DIR = path.resolve(import.meta.dirname, '../outputs/simplified'
 const SCREENSHOT_DIR = path.resolve(import.meta.dirname, '../outputs/screenshots');
 const OUTPUT_DIR = path.resolve(import.meta.dirname, '../outputs/annotations');
 
-// 可配置 provider（spec 5.4）。默认 openai 兼容接口。
-const PROVIDER = process.env.LAYOUT_LAB_LLM_PROVIDER ?? 'openai';
+// 可配置模型与 endpoint（spec 5.4）。当前固定走 OpenAI 兼容的 /chat/completions；
+// LAYOUT_LAB_LLM_PROVIDER 仅作记录用，不切换请求形态（如需 anthropic 等非兼容接口要另写适配）。
 const MODEL = process.env.LAYOUT_LAB_LLM_MODEL ?? 'gpt-4o';
 const API_KEY = process.env.LAYOUT_LAB_LLM_API_KEY ?? '';
 const BASE_URL = process.env.LAYOUT_LAB_LLM_BASE_URL ?? 'https://api.openai.com/v1';
