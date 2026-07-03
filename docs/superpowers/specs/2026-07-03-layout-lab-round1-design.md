@@ -51,7 +51,12 @@ ListenGraph 的语义图布局当前走"五选一 pattern detection"（`packages
 - 实验台代码**不 import 任何 sidepanel 产品模块的产品逻辑**。允许的两类复用：
   - 纯函数 `detectHierarchyLayoutPattern`（仅用于指标对照列"detector 说了什么"，不做判断）
   - `MergedGraph` schema 类型（用于灌图时的类型契约）
-- 唯一允许碰的产品代码是 `loadGraph`（DEV-only，见第 4 节）。
+- 允许碰的产品代码**白名单**（仅这 4 个文件，全部为 DEV/类型层，不触碰 live 渲染逻辑）：
+  - `apps/extension/src/sidepanel/fixture-sequence-controller.ts`（新增 `loadGraph`、`ControllerState.loadedGraph`、改 `status()`、`arm`/`disarm` 清 `loadedGraph`）
+  - `apps/extension/src/sidepanel/fixture-sequence-dev.ts`（无逻辑变化，`loadGraph` 经现有 `createFixtureSequenceController` 自动暴露）
+  - `apps/extension/src/vite-env.d.ts`（`__listenGraphicFixture` 全局类型已声明为 `ListenGraphicFixtureAPI`，类型扩展自动生效，**通常无需改**；仅当 TS 报错时同步）
+  - `apps/extension/src/sidepanel/fixture-sequence-controller.test.ts`（若存在，补 `loadGraph`/`status()` 读取 `loadedGraph` 的单测；若不存在则新增 DEV 测试）
+- 白名单之外的任何产品文件**禁止修改**。
 - `inputs/` 与 `outputs/` **必须 gitignore**（含真实用户对话数据）。
 
 ---
@@ -144,7 +149,7 @@ export type StructureMetrics = {
   maxOutDegreeNodeId: string | null;
   maxInDegree: number;
   maxInDegreeNodeId: string | null;
-  avgDegree: number;                  // 2 * edgeCount / nodeCount
+  avgDegree: number | null;          // 2 * edgeCount / nodeCount；nodeCount=0 时为 null
 
   // —— 时间/序列 ——
   spanMs: number;                     // 最早最晚节点 timestampMs 之差
@@ -152,8 +157,8 @@ export type StructureMetrics = {
 
   // —— 说话人（判断"是否真争论"的关键信号）——
   speakerCounts: Record<string, number>;          // 每个 speaker 的节点数
-  crossSpeakerEdgeRatio: number;      // 跨 speaker 边数 / edgeCount
-  opposesCrossSpeakerRatio: number;   // 跨 speaker 的 opposes 边数 / opposesCount（opposesCount=0 时为 null）
+  crossSpeakerEdgeRatio: number | null; // 跨 speaker 边数 / edgeCount；edgeCount=0 时为 null
+  opposesCrossSpeakerRatio: number | null; // 跨 speaker 的 opposes 边数 / opposesCount；opposesCount=0 时为 null
 
   // —— 空间可读性信号（判断"布局会不会挤/标签会不会重叠"）——
   longLabelNodeCount: number;         // text 长度 > LONG_LABEL_THRESHOLD（默认 40 字符）的节点数
@@ -168,7 +173,23 @@ export const LONG_LABEL_THRESHOLD = 40;
 - `opposesCrossSpeakerRatio`：直接量化"这条对立是不是两个不同观点阵营的对立"。比单纯数 opposes 边强得多。
 - `longLabelNodeCount`：长标签节点是空间布局失败的高频来源（重叠/溢出），给 LLM 一个客观信号判断"挤不挤"。
 
-### 3.4 第一轮 YAGNI（明确不加）
+### 3.4 除零与 null 规则（写死，metrics test 必须遵守）
+
+所有 ratio 字段的分母为 0 时统一返回 `null`（不用 0、不用 NaN）：
+
+| 字段 | 分母 | 分母=0 时 |
+|---|---|---|
+| `opposesRatio` | `edgeCount` | `null` |
+| `crossSpeakerEdgeRatio` | `edgeCount` | `null` |
+| `opposesCrossSpeakerRatio` | `opposesCount` | `null` |
+| `largestComponentRatio` | `nodeCount` | `null` |
+| `avgDegree` | `nodeCount` | `null`（类型已为 number，此处特例：用 `null`，类型改 `number \| null`） |
+
+> `avgDegree` 类型相应改为 `number | null`（上方类型定义同步修正）。
+
+非 ratio 字段不受影响：`maxOutDegree`/`maxInDegree` 在空图时为 `0`，对应 `*NodeId` 为 `null`。
+
+### 3.5 第一轮 YAGNI（明确不加）
 
 - ❌ 平均路径长度、聚类系数（结构信号弱，第二轮需要再加）
 - ❌ speaker 切换次数（crossSpeakerEdgeRatio 已覆盖核心信号）
@@ -200,26 +221,37 @@ export function whatDetectorSays(graph: MergedGraph): {
 
 ### 4.1 灌图方案：新增 DEV-only `loadGraph`
 
-**位置**：`apps/extension/src/sidepanel/fixture-sequence-dev.ts`（仅 DEV 构建）。
+**涉及文件**（见 1.4 白名单）：主要是 `fixture-sequence-controller.ts`（新增方法 + 状态字段 + `status()` 改动）；`fixture-sequence-dev.ts` 无逻辑变化；`vite-env.d.ts` 通常无需改；补/新增 controller 的 DEV 测试。
 
-**修改类型**：`ListenGraphicFixtureAPI` 增加 `loadGraph` 方法。
+**修改类型**：`ListenGraphicFixtureAPI` 增加 `loadGraph` 方法（仅 DEV 构建暴露，受 `import.meta.env.DEV` 守卫）。
 
 ### 4.2 ⚠️ 修改 1：`loadGraph` 必须静态装载，不复用 `deliverStep`
 
-**问题**：现有 `deliverStep`（`fixture-sequence-controller.ts:60-86`）会：
+**问题 1**：现有 `deliverStep`（`fixture-sequence-controller.ts:60-86`）会：
 - 调 `setAutoTourSeed`（第 78 行）→ 触发导览高亮/动画，污染截图
 - 把所有节点当"新增"处理
 
 **正确路径**：走 `FIXTURE_SEQUENCE_ARM` action（`fixture-sequence-controller.ts:162-168`）。该 action 只 dispatch + 设 `graphRef`，**不调 `setAutoTourSeed`**，是静态装载。
 
+**问题 2（Blocker）**：`loadGraph` 不设 `state.armed = true`（避免键盘监听），但 `status()`（`fixture-sequence-controller.ts:221-234`）的 `nodeCount` 只在 `state.armed=true` 时读 `graphRef.current`，否则读 `currentGraph()`。而 `loadGraph` 会把 `state.sequence = null`，导致 `currentGraph()` 返回 null → `nodeCount = 0` → `waitForFixtureGraph`（4.3）永远等不到图。
+
+**修复**：`ControllerState` 新增 `loadedGraph: MergedGraph | null` 字段，作为 `loadGraph` 的载体；`status()` 改为优先读 `loadedGraph`。
+
 **`loadGraph` 实现要点**：
 
 ```typescript
-// fixture-sequence-dev.ts 新增（仅 DEV 构建，受现有 import.meta.env.DEV 守卫保护）
-// ListenGraphicFixtureAPI 类型新增方法：
-//   loadGraph: (graph: MergedGraph) => void;
+// fixture-sequence-controller.ts
+type ControllerState = {
+  armed: boolean;
+  fixtureId: string | null;
+  stepIndex: number;
+  sequence: SequenceFixture | null;
+  loadedGraph: MergedGraph | null;   // 新增：loadGraph 的载体
+};
 
-// fixture-sequence-controller.ts 内 api 对象新增：
+// 初始 state 加 loadedGraph: null
+
+// api 对象新增：
 loadGraph: (graph: MergedGraph) => {
   const deps = getDeps();
   // 1. reset（清掉任何已 armed 的键盘监听/状态）
@@ -236,13 +268,46 @@ loadGraph: (graph: MergedGraph) => {
     type: 'FIXTURE_SEQUENCE_ARM',
     payload: { sessionId: graph.sessionId, initialGraph: graph },
   });
-  // 4. 更新 graphRef，让 status() 能读到
+  // 4. 更新 graphRef + loadedGraph，让 status() 能读到
   deps.graphRef.current = graph;
+  state.loadedGraph = graph;
   deps.addLog(`[fixture-lab] loaded graph rev=${graph.revision} nodes=${graph.nodes.length}`);
 },
 ```
 
-> **注意**：此方法**不**设置 `state.armed = true`，因此不注册键盘监听（`]`/`[`/`Esc`），避免误操作。它是纯装载。
+**`status()` 同步修改**（让 `waitForFixtureGraph` 能读到 `loadedGraph`）：
+
+```typescript
+// fixture-sequence-controller.ts，status() 内部 graph 取值改为：
+status: () => {
+  const graph = state.loadedGraph
+    ?? (state.armed ? getDeps().graphRef.current : null)
+    ?? currentGraph();
+  return {
+    isArmed: state.armed,
+    id: state.fixtureId,
+    step: state.stepIndex,
+    total: state.sequence?.steps.length ?? 0,
+    revision: graph?.revision ?? 0,
+    nodeCount: graph?.nodes?.length ?? 0,
+    edgeCount: graph?.edges?.length ?? 0,
+  };
+},
+```
+
+**`arm`/`disarm` 时清掉 `loadedGraph`**（避免 armed sequence 与 loadedGraph 互相干扰）：
+
+```typescript
+// arm() 里设置 state.armed = true 之前加：
+state.loadedGraph = null;
+
+// disarm() 里加：
+state.loadedGraph = null;
+```
+
+> **注意**：`loadGraph` **不**设置 `state.armed = true`，因此不注册键盘监听（`]`/`[`/`Esc`），避免误操作。它是纯装载。`loadedGraph` 是它的唯一可见出口（经 `status()` 暴露）。
+>
+> **已验证（关闭原开放问题）**：`FIXTURE_SEQUENCE_ARM` handler（`panel-reducer.ts:574-594`）只消费 `payload.sessionId` 和 `payload.initialGraph`，**不依赖 sequence 结构**。所以 `loadGraph` 复用该 action 传任意 `MergedGraph` 是安全的，无需新增 `LAYOUT_LAB_LOAD` action。
 
 ### 4.3 ⚠️ 修改 2：新建 `waitForFixtureGraph`，不复用 `waitForGraph`
 
@@ -273,7 +338,7 @@ export async function waitForFixtureGraph(
 }
 ```
 
-**为什么用 `status()` 而不是数 DOM**：`status()`（`fixture-sequence-controller.ts:221-234`）读 `graphRef.current`，与 React state 同源；数 DOM 节点（`graph-node-card-*`）耦合渲染细节且可能受动画/虚拟化影响。`status()` 更可靠。
+**为什么用 `status()` 而不是数 DOM**：`status()`（4.2 改后）优先读 `state.loadedGraph`（`loadGraph` 设置），与 React state 同源；数 DOM 节点（`graph-node-card-*`）耦合渲染细节且可能受动画/虚拟化影响。`status()` 更可靠。**前置依赖**：4.2 的 `loadedGraph` 改动必须先落地，否则 `status().nodeCount` 恒为 0（Blocker）。
 
 ### 4.4 ⚠️ 修改 3：截图口径改为"fixture-lab build 下最接近真实 sidepanel"
 
@@ -329,13 +394,27 @@ async function captureAll(dumpPath: string, outDir: string) {
 - 显式关闭 auto-tour（防止任何残留导览高亮）
 - 等 React Flow `fitView` 完成（可监听 `onLoad`/`onMove` end，或固定 timeout）
 
-### 4.7 构建要求
+### 4.7 构建要求（跨平台）
 
-截图脚本要求扩展以 fixture-lab build 启动。README 写明：
+截图脚本要求扩展以 fixture-lab build 启动。由于开发环境是 Windows PowerShell，**不能**用 POSIX 写法 `VITE_FIXTURE_LAB=true pnpm ...`（会报错）。采用**新增 npm 脚本**方案，跨平台且不引入 `cross-env` 依赖：
+
+**改动**：`apps/extension/package.json` 的 `scripts` 新增：
+```json
+"build:fixture-lab": "vite build --mode fixture-lab"
+```
+
+并在 `apps/extension/` 下新增 vite env 文件 `.env.fixture-lab`：
+```
+VITE_FIXTURE_LAB=true
+```
+
+> vite 原生支持 `--mode <name>` 加载 `.env.<name>`，跨平台、零依赖。
+
+**README 命令**（跨平台通用）：
 ```bash
 # 构建 fixture-lab 版扩展 dist
-VITE_FIXTURE_LAB=true pnpm --filter extension build
-# 然后跑截图
+pnpm --filter extension build:fixture-lab
+# 跑截图
 npx tsx tools/layout-lab/run/run-all.mjs --stage=capture
 ```
 
@@ -487,12 +566,14 @@ LLM 草标只是起点，人的校准才是产物。即使 LLM 系统性误判�
 
 - **LLM 模型选择**：spec 不绑死，环境变量配置（5.4）。实现时由用户指定。
 - **`stabilizeForScreenshot` 的具体实现**：是监听 React Flow `onMoveEnd` 还是固定 timeout，实现时根据实际渲染稳定性决定（4.6）。
-- **`FIXTURE_SEQUENCE_ARM` handler 是否依赖 sequence 结构**：`loadGraph`（4.2）复用该 action 但传任意 `MergedGraph`，而非 `sequence.steps[0].graph`。实现时**必须先读 `panel-reducer` 的 `FIXTURE_SEQUENCE_ARM` handler**，确认它只消费 `payload.initialGraph` + `payload.sessionId`，不依赖 sequence 步骤。若 handler 有 sequence 耦合，需新增一个独立的 `LAYOUT_LAB_LOAD` action（同样静态、不触发 auto-tour），而非复用 ARM。这是 4.2 落地前的**前置验证**。
+- ~~**`FIXTURE_SEQUENCE_ARM` handler 是否依赖 sequence 结构**~~：**已关闭**。已验证 `panel-reducer.ts:574-594` 只消费 `sessionId` + `initialGraph`，无 sequence 耦合。`loadGraph` 复用该 action 安全（见 4.2）。
 - **第二轮方向**：本轮不预设（7.2）。
 
 ---
 
-## 附录 A：5 项修改对照（用户审核要求）
+## 附录 A：修改对照（用户两轮审核要求）
+
+### 第一轮审核（5 项）
 
 | # | 原设计 | 修改后 | 依据 |
 |---|---|---|---|
@@ -501,6 +582,15 @@ LLM 草标只是起点，人的校准才是产物。即使 LLM 系统性误判�
 | 3 | "真实扩展截图 100% 一致" | "fixture-lab build 下最接近真实 sidepanel 的可复现截图" | fixture API 不在生产 bundle，需 lab build |
 | 4 | metrics 12 个字段 | 加 `speakerCounts`/`crossSpeakerEdgeRatio`/`opposesCrossSpeakerRatio`/`longLabelNodeCount` | 判断"是否真争论"和"空间失败"的关键信号 |
 | 5 | "详细校正 15-25 条" | 全量快速扫 + 重点详细校正 15-25 条 | 防 LLM 系统性偏差，又不让人手写 62 条 |
+
+### 第二轮审核（4 项）
+
+| # | 问题 | 修改 | 依据 |
+|---|---|---|---|
+| 6 (Blocker) | `waitForFixtureGraph` 永远等不到图：`loadGraph` 不设 `armed=true`，`status()` 走 `currentGraph()` 返回 null | `ControllerState` 加 `loadedGraph`，`loadGraph` 设它，`status()` 优先读 `loadedGraph`，`arm`/`disarm` 清它 | `fixture-sequence-controller.ts:221` 的 status 分支逻辑 |
+| 7 (Major) | `opposesCrossSpeakerRatio` 类型 `number` 与注释"为 null"矛盾 | 改 `number \| null`，并写死全部 ratio 除零规则（3.4 节） | 类型一致性 |
+| 8 (Medium) | 第 4 节产品代码 touch 范围写窄为"仅 dev.ts" | 1.4 节加 4 文件白名单（controller/dev/vite-env/test） | 实际要改 controller 的 API/type/状态 |
+| 9 (Medium) | README 构建命令 POSIX 写法在 Windows PowerShell 失败 | 新增 `build:fixture-lab` 脚本 + `.env.fixture-lab`，用 vite `--mode` 跨平台 | 当前环境为 win32 PowerShell |
 
 ## 附录 B：关键代码位置索引
 
