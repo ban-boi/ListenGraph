@@ -27,6 +27,7 @@ export type ListenGraphicFixtureAPI = {
   next: () => boolean;
   prev: () => boolean;
   reset: () => void;
+  loadGraph: (graph: MergedGraph) => void;
   status: () => {
     isArmed: boolean;
     id: string | null;
@@ -43,6 +44,7 @@ type ControllerState = {
   fixtureId: string | null;
   stepIndex: number;
   sequence: SequenceFixture | null;
+  loadedGraph: MergedGraph | null;
 };
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -62,6 +64,7 @@ export function createFixtureSequenceController(
     fixtureId: null,
     stepIndex: 0,
     sequence: null,
+    loadedGraph: null,
   };
 
   let keydownHandler: ((event: KeyboardEvent) => void) | null = null;
@@ -142,6 +145,7 @@ export function createFixtureSequenceController(
     arm: (id: string) => {
       const deps = getDeps();
       const sequence = registry.load(id);
+      state.loadedGraph = null;
       if (!sequence) {
         deps.addLog(`[fixture] unknown sequence: ${id}`);
         return;
@@ -187,6 +191,7 @@ export function createFixtureSequenceController(
       state.fixtureId = null;
       state.stepIndex = 0;
       state.sequence = null;
+      state.loadedGraph = null;
       deps.onFixtureLabDisarm?.();
       deps.dispatch({ type: 'FIXTURE_SEQUENCE_DISARM' });
       deps.addLog('[fixture] disarmed');
@@ -218,10 +223,31 @@ export function createFixtureSequenceController(
       api.arm(id);
     },
 
+    loadGraph: (graph: MergedGraph) => {
+      const deps = getDeps();
+      if (state.armed) {
+        removeKeyboardListener();
+        state.armed = false;
+        state.fixtureId = null;
+        state.sequence = null;
+      }
+      deps.onFixtureLabReset(graph.sessionId);
+      deps.dispatch({
+        type: 'FIXTURE_SEQUENCE_ARM',
+        payload: { sessionId: graph.sessionId, initialGraph: graph },
+      });
+      deps.graphRef.current = graph;
+      state.loadedGraph = graph;
+      deps.addLog(
+        `[fixture-lab] loaded graph rev=${graph.revision} nodes=${graph.nodes.length}`,
+      );
+    },
+
     status: () => {
-      const graph = state.armed
-        ? getDeps().graphRef.current
-        : currentGraph();
+      const graph =
+        state.loadedGraph
+        ?? (state.armed ? getDeps().graphRef.current : null)
+        ?? currentGraph();
       return {
         isArmed: state.armed,
         id: state.fixtureId,
