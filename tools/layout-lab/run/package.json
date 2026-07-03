@@ -1,0 +1,20 @@
+{
+  "name": "listen-graph-layout-lab",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "export": "tsx ../src/export-snapshot.ts",
+    "capture": "tsx ../src/capture-screenshots.ts",
+    "annotate": "tsx ../src/llm-annotate.ts",
+    "gallery": "tsx ../src/render-gallery.ts",
+    "all": "tsx ./run-all.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "vitest": "^1.0.0",
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^20.0.0"
+  }
+}
