@@ -46,6 +46,10 @@ npx tsx ../src/render-gallery.ts         # 4. 拼 HTML + 抽样（秒级）
 
 纯文本标注（无多模态 API 时降级）：`npx tsx ../src/llm-annotate.ts --no-screenshot`
 
+> **⚠️ 注意**：`build:fixture-lab` 会覆盖 `apps/extension/dist/`（与 prod build 共用输出目录）。
+> 跑完 capture 后，若要恢复 prod 测试（`fixture-build.prod.test.ts` 会检查 dist 不含 `__listenGraphicFixture`），
+> 需重新执行 `pnpm --filter extension build` 把 dist 恢复成 prod 版本。
+
 ## 人工审核
 
 1. 打开 `outputs/gallery.html`，**全量扫 62 张缩略图**（5-10 分钟，catching 系统性偏差）
