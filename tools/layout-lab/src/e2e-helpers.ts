@@ -38,6 +38,22 @@ export async function openSidepanelPage(
   return page;
 }
 
+// 等待 fixture 控制器就绪：__listenGraphicFixture 由 App.tsx 的 useEffect 通过
+// 动态 import('./fixture-sequence-dev') 异步安装。domcontentloaded 之后该 chunk
+// 可能尚未加载完成，此时 globalThis.__listenGraphicFixture 仍为 undefined，
+// 直接调用 loadGraph 会被可选链 ?. 静默吞掉（status().nodeCount 永远为 0）。
+// 必须先确认控制器挂载完成，才能安全 loadGraph。
+export async function waitForFixtureReady(page: Page, timeout = 15_000): Promise<void> {
+  await expect
+    .poll(
+      async () => {
+        return await page.evaluate(() => typeof globalThis.__listenGraphicFixture);
+      },
+      { timeout },
+    )
+    .toBe('object');
+}
+
 // 关键：不复用 waitForGraph（它查 service worker snapshot）。
 // fixture loadGraph 直接灌 sidepanel React state，service worker 不知情。
 // 这里读 __listenGraphicFixture.status().nodeCount（依赖 Task 5 的 loadedGraph 修复）。
@@ -73,7 +89,19 @@ export async function waitForFixtureGraph(
 //    => 没有可点击的真实 selector。
 //
 // 因此本函数的 tour 抑制是 no-op 防护：loadGraph 路径下导览本就不启动。
-// 这里的等待只是为了 fitView 落定（AUTO_FIT_DURATION_MS = 240ms，留足余量）。
+//
+// **关键：必须手动点击「适配视图」按钮触发 fitView。**
+// React Flow 实例在 App 首次 onInit 时创建并 fitView 一次，但之后每次 loadGraph
+// 仅替换 nodes/edges，视口停留在上一张图的缩放/平移位置（App.tsx 的 fitView 触发点
+// 只有 onInit / ResizeObserver / 手动按钮，没有 fit-on-graph-change）。
+// 后续 graph 的节点会渲染在视口之外，fullPage 截图只能拍到空白网格。
+// ViewSwitcher 渲染的「适配视图」按钮 onClick => requestAutoFit({ force: true })，
+// 点击它即可对当前节点重新 fitView（动画 AUTO_FIT_DURATION_MS = 240ms，留足余量）。
 export async function stabilizeForScreenshot(page: Page): Promise<void> {
+  // 点击「适配视图」按钮强制重新 fitView（force:true 绕过降级逻辑）。
+  // 按钮在节点数为 0 时 disabled，截图前节点已 >0，故存在且可点。
+  const fitButton = page.getByRole('button', { name: '适配视图' });
+  await fitButton.click({ timeout: 5_000 });
+  // 等 fitView 动画落定（AUTO_FIT_DURATION_MS = 240ms，留余量）。
   await page.waitForTimeout(600);
 }
