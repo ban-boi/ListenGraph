@@ -4,7 +4,7 @@ import type { MergedGraph, GraphNode, GraphEdge } from '@listen-graphic/schema';
 import { partitionClusters } from './cluster-partition';
 import { buildStableReactFlowDebugGraph } from '../../../apps/extension/src/sidepanel/graph-utils.ts';
 import { toHierarchyRendererGraph } from '../../../packages/graph-renderers/src/hierarchy.ts';
-import { layoutTopologicalLayers, layoutFanOut, layoutColumnGrouped, type Position } from './cluster-internal-layouts';
+import { layoutTopologicalLayers, layoutFanOut, layoutColumnGrouped, layoutForceDirected, type Position } from './cluster-internal-layouts';
 import { CARD_WIDTH, CARD_HEIGHT } from './round2-types';
 
 const DUMP_PATH = path.resolve(import.meta.dirname, '../inputs/real-graphs-dump.json');
@@ -108,12 +108,16 @@ function main() {
   // 4. Strategy C: Column grouped
   const positionsC = layoutColumnGrouped(clusterNodes, clusterEdges);
 
+  // 5. Strategy D: Force-directed
+  const positionsD = layoutForceDirected(clusterNodes, clusterEdges);
+
   // Generate comparison HTML
   const fragments = [
     renderLayoutFragment('Baseline（当前布局·层级视图）', clusterNodes, clusterEdges, baselinePositions),
     renderLayoutFragment('Strategy A：拓扑分层', clusterNodes, clusterEdges, positionsA),
     renderLayoutFragment('Strategy B：扇形展开', clusterNodes, clusterEdges, positionsB),
     renderLayoutFragment('Strategy C：列内分组', clusterNodes, clusterEdges, positionsC),
+    renderLayoutFragment('Strategy D：力导向（铺成面）', clusterNodes, clusterEdges, positionsD),
   ];
 
   const html = `<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8"><title>簇内布局策略对比</title>
@@ -132,7 +136,8 @@ h1{font-size:18px}
   <b>Baseline</b>：当前层级视图（固定两列 x=60/x=340）<br>
   <b>Strategy A</b>：拓扑分层（BFS 深度分层，同层横向排开，层间纵向连线）<br>
   <b>Strategy B</b>：扇形展开（子节点围绕父节点横向展开，树状）<br>
-  <b>Strategy C</b>：列内分组（保持两列，但同一父节点的子节点紧凑放一起，不同父节点间加间隔）
+  <b>Strategy C</b>：列内分组（保持两列，但同一父节点的子节点紧凑放一起，不同父节点间加间隔）<br>
+  <b>Strategy D</b>：力导向（节点互斥+边弹簧，自然展开成 2D 面，连线短的优先靠近）
 </div>
 ${fragments.join('\n')}
 </body></html>`;

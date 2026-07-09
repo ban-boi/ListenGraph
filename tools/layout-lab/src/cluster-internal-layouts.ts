@@ -260,3 +260,110 @@ export function layoutColumnGrouped(
 
   return positions;
 }
+
+// ── Strategy D: Force-directed layout ──
+// Classic force-directed: nodes repel each other, edges act as springs.
+// Iteratively simulates physics until positions stabilize.
+// This spreads network/graph structures into a 2D plane instead of a line.
+export function layoutForceDirected(
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  iterations = 300,
+): Record<string, Position> {
+  if (nodes.length === 0) return {};
+  if (nodes.length === 1) return { [nodes[0].id]: { x: 0, y: 0 } };
+
+  const nodeIds = new Set(nodes.map(n => n.id));
+  const structuralTypes = new Set<EdgeType>(['causes', 'supports', 'example_of', 'follows', 'opposes']);
+
+  // Build edge list (only structural edges between existing nodes)
+  const edgeList: Array<{ source: string; target: string }> = [];
+  for (const e of edges) {
+    if (!structuralTypes.has(e.type)) continue;
+    if (!nodeIds.has(e.source) || !nodeIds.has(e.target)) continue;
+    if (e.source === e.target) continue;
+    edgeList.push({ source: e.source, target: e.target });
+  }
+
+  // Initialize positions in a circle (deterministic seed based on node order)
+  const positions: Record<string, Position> = {};
+  const radius = Math.max(300, nodes.length * 25);
+  nodes.forEach((n, i) => {
+    const angle = (i / nodes.length) * Math.PI * 2;
+    positions[n.id] = {
+      x: Math.cos(angle) * radius + (i % 3) * 10, // small jitter to break symmetry
+      y: Math.sin(angle) * radius + (i % 3) * 10,
+    };
+  });
+
+  // Parameters
+  const REPULSION = 80000;      // repulsion constant (higher = more spread)
+  const SPRING_LENGTH = 180;    // ideal edge length
+  const SPRING_K = 0.04;        // spring stiffness
+  const DAMPING = 0.85;         // velocity damping
+  const MAX_DISPLACEMENT = 50;  // per-iteration cap to prevent explosion
+
+  const velocities: Record<string, Position> = {};
+  for (const n of nodes) velocities[n.id] = { x: 0, y: 0 };
+
+  for (let iter = 0; iter < iterations; iter++) {
+    const forces: Record<string, Position> = {};
+    for (const n of nodes) forces[n.id] = { x: 0, y: 0 };
+
+    // Repulsion: all pairs
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j];
+        const dx = positions[a.id].x - positions[b.id].x;
+        const dy = positions[a.id].y - positions[b.id].y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 1) dist = 1; // avoid division by zero
+        const force = REPULSION / (dist * dist);
+        const fx = (dx / dist) * force;
+        const fy = (dy / dist) * force;
+        forces[a.id].x += fx;
+        forces[a.id].y += fy;
+        forces[b.id].x -= fx;
+        forces[b.id].y -= fy;
+      }
+    }
+
+    // Spring attraction: edges
+    for (const edge of edgeList) {
+      const dx = positions[edge.target].x - positions[edge.source].x;
+      const dy = positions[edge.target].y - positions[edge.source].y;
+      let dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 1) dist = 1;
+      const displacement = dist - SPRING_LENGTH;
+      const force = SPRING_K * displacement;
+      const fx = (dx / dist) * force;
+      const fy = (dy / dist) * force;
+      forces[edge.source].x += fx;
+      forces[edge.source].y += fy;
+      forces[edge.target].x -= fx;
+      forces[edge.target].y -= fy;
+    }
+
+    // Apply forces with damping and displacement cap
+    for (const n of nodes) {
+      velocities[n.id].x = (velocities[n.id].x + forces[n.id].x) * DAMPING;
+      velocities[n.id].y = (velocities[n.id].y + forces[n.id].y) * DAMPING;
+      // Cap displacement
+      const vx = Math.max(-MAX_DISPLACEMENT, Math.min(MAX_DISPLACEMENT, velocities[n.id].x));
+      const vy = Math.max(-MAX_DISPLACEMENT, Math.min(MAX_DISPLACEMENT, velocities[n.id].y));
+      positions[n.id].x += vx;
+      positions[n.id].y += vy;
+    }
+  }
+
+  // Normalize: shift so min x and min y are 0
+  const allPos = Object.values(positions);
+  const minX = Math.min(...allPos.map(p => p.x));
+  const minY = Math.min(...allPos.map(p => p.y));
+  for (const id of Object.keys(positions)) {
+    positions[id].x -= minX;
+    positions[id].y -= minY;
+  }
+
+  return positions;
+}
