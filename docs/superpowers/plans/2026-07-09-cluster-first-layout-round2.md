@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 验证连通分量分区 + minor 打包是否比当前 baseline 布局更可读，产出 A/B/C 截图对比 gallery 供人眼 go/no-go。
+**Goal:** 验证连通分量分区 + minor 打包是否比当前 baseline 布局更可读，产出 baseline/A/B 截图对比 gallery 供人眼 go/no-go。
 
 **Architecture:** 在 `tools/layout-lab/` 上扩展（复用第一轮管线）。三个候选（baseline/A/B）各算坐标 → 同一套离线 HTML renderer 渲染 → Playwright 截图 → 三栏并排 gallery。baseline 直接 import 已 export 的 `buildStableReactFlowDebugGraph`（已验证 tsx 能解析依赖链）。cluster 布局用 UnionFind 连通分量分区，major 簇内复用 baseline 坐标算法，minor 簇打包为 Loose Notes。**不碰产品代码。**
 
@@ -561,6 +561,43 @@ describe('computeClusterLayoutA', () => {
       }
     }
   });
+
+  it('row packing：多 cluster 超过 1200px 宽度时换行，换行后 cluster 不重叠', () => {
+    // 构造 3 个大 major cluster，每个宽度约 500px，总宽 1500 > 1200 → 应换行
+    const nodes: string[] = [];
+    const edges: Array<[string, string]> = [];
+    for (let c = 0; c < 3; c++) {
+      const base = c * 6;
+      for (let i = 0; i < 6; i++) nodes.push(`c${c}n${i}`);
+      edges.push([`c${c}n0`, `c${c}n1`], [`c${c}n1`, `c${c}n2`], [`c${c}n2`, `c${c}n3`]);
+    }
+    const graph: MergedGraph = {
+      sessionId: 's1', revision: 1, topics: [], updatedAt: 0,
+      nodes: nodes.map((id) => ({ id, type: 'claim' as const, text: id, timestampMs: 0, status: 'confirmed' as const })),
+      edges: edges.map(([s, t], i) => ({ id: `e${i}`, source: s, target: t, type: 'supports' as const })),
+    };
+    const model = computeClusterLayoutA(graph, 0);
+    // 应有 3 个 cluster
+    expect(model.clusters.length).toBe(3);
+    // 至少有一个 cluster 的 y 与第一个不同（发生了换行）
+    const yValues = model.clusters.map((c) => c.bounds.y);
+    const hasWrap = yValues.some((y) => y !== yValues[0]);
+    expect(hasWrap).toBe(true);
+    // 换行后仍不重叠
+    for (let i = 0; i < model.clusters.length; i++) {
+      for (let j = i + 1; j < model.clusters.length; j++) {
+        const a = model.clusters[i].bounds;
+        const b = model.clusters[j].bounds;
+        const overlaps = !(
+          a.x + a.width + 10 <= b.x ||
+          b.x + b.width + 10 <= a.x ||
+          a.y + a.height + 10 <= b.y ||
+          b.y + b.height + 10 <= a.y
+        );
+        expect(overlaps).toBe(false);
+      }
+    }
+  });
 });
 ```
 
@@ -581,7 +618,8 @@ import type { RenderModel, RenderItem, RenderEdge, ClusterInfo, Position } from 
 import { CARD_WIDTH, CARD_HEIGHT, CLUSTER_GAP, LOOSE_NOTE_ITEM_HEIGHT, LOOSE_NOTE_ITEM_WIDTH } from './round2-types';
 
 // 对单个 cluster 的子图跑 baseline 坐标算法
-function layoutClusterInternal(
+// 对单个 cluster 的子图跑 baseline 坐标算法（B 也复用，故 export）
+export function layoutClusterInternal(
   graph: MergedGraph,
   clusterNodeIds: string[],
   clusterEdges: Array<{ source: string; target: string; type: EdgeType }>,
@@ -610,8 +648,8 @@ function layoutClusterInternal(
   return result.layoutState.positions;
 }
 
-// 算一个 cluster 的 local bounds
-function computeBounds(positions: Record<string, Position>, isLoose: boolean): {
+// 算一个 cluster 的 local bounds（B 也复用，故 export）
+export function computeBounds(positions: Record<string, Position>, isLoose: boolean): {
   x: number; y: number; width: number; height: number;
 } {
   const pos = Object.values(positions);
@@ -641,84 +679,80 @@ export function computeClusterLayoutA(
   const edges: RenderEdge[] = [];
   const clusters: ClusterInfo[] = [];
 
+  const MAX_ROW_WIDTH = 1200;
   let currentX = 0;
   let currentY = 0;
   let rowMaxY = 0;
 
   for (const cluster of partition.clusters) {
-    let clusterPositions: Record<string, Position> = {};
-    let clusterItems: RenderItem[] = [];
+    // —— 第 1 步：先算 local 坐标（原点 0,0），不 offset ——
+    let localPositions: Record<string, Position> = {};
+    let localItems: RenderItem[] = [];
 
     if (cluster.type === 'major') {
-      // major cluster：内部跑 baseline 坐标
-      clusterPositions = layoutClusterInternal(graph, cluster.nodeIds, cluster.edges);
-      clusterItems = cluster.nodeIds
-        .filter((id) => clusterPositions[id])
+      localPositions = layoutClusterInternal(graph, cluster.nodeIds, cluster.edges);
+      localItems = cluster.nodeIds
+        .filter((id) => localPositions[id])
         .map((id) => ({
           kind: 'fullNode' as const,
           nodeId: id,
-          position: {
-            x: clusterPositions[id].x + currentX,
-            y: clusterPositions[id].y + currentY,
-          },
+          position: localPositions[id], // local 坐标，稍后 offset
         }));
-
-      // 收集簇内边
       for (const e of cluster.edges) {
-        if (clusterPositions[e.source] && clusterPositions[e.target]) {
-          edges.push({
-            source: e.source,
-            target: e.target,
-            type: e.type,
-          });
+        if (localPositions[e.source] && localPositions[e.target]) {
+          edges.push({ source: e.source, target: e.target, type: e.type });
         }
       }
     } else {
-      // minor cluster → loose notes：按时间排序打包成单列
+      // minor → loose notes：按时间排序
       const nodeById = new Map(graph.nodes.map((n) => [n.id, n]));
       const sorted = [...cluster.nodeIds].sort((a, b) => {
-        const ta = nodeById.get(a)?.timestampMs ?? 0;
-        const tb = nodeById.get(b)?.timestampMs ?? 0;
-        return ta - tb;
+        return (nodeById.get(a)?.timestampMs ?? 0) - (nodeById.get(b)?.timestampMs ?? 0);
       });
       sorted.forEach((id, i) => {
-        clusterPositions[id] = {
-          x: currentX,
-          y: currentY + i * LOOSE_NOTE_ITEM_HEIGHT,
-        };
-        clusterItems.push({
+        localPositions[id] = { x: 0, y: i * LOOSE_NOTE_ITEM_HEIGHT };
+        localItems.push({
           kind: 'looseNoteItem' as const,
           nodeId: id,
-          position: clusterPositions[id],
+          position: localPositions[id],
         });
       });
     }
 
-    items.push(...clusterItems);
+    // —— 第 2 步：算 local bounds ——
+    const localBounds = computeBounds(localPositions, cluster.type === 'minor');
 
-    const bounds = computeBounds(clusterPositions, cluster.type === 'minor');
+    // —— 第 3 步：决定 placement（先判断换行，再定 placeX/placeY）——
+    if (currentX + localBounds.width + CLUSTER_GAP > MAX_ROW_WIDTH && currentX > 0) {
+      currentX = 0;
+      currentY = rowMaxY + CLUSTER_GAP;
+      rowMaxY = 0;
+    }
+    const placeX = currentX;
+    const placeY = currentY;
+
+    // —— 第 4 步：offset 节点坐标到最终位置 ——
+    for (const item of localItems) {
+      if ('position' in item) {
+        items.push({
+          ...item,
+          position: {
+            x: item.position.x + placeX,
+            y: item.position.y + placeY,
+          },
+        });
+      }
+    }
+
+    // —— 第 5 步：写 cluster bounds + 推进游标 ——
     clusters.push({
       id: cluster.id,
       type: cluster.type,
       nodeIds: cluster.nodeIds,
-      bounds: {
-        x: currentX,
-        y: currentY,
-        width: bounds.width,
-        height: bounds.height,
-      },
+      bounds: { x: placeX, y: placeY, width: localBounds.width, height: localBounds.height },
     });
-
-    // row packing：同行往右排，超宽则换行
-    const MAX_ROW_WIDTH = 1200;
-    if (currentX + bounds.width + CLUSTER_GAP > MAX_ROW_WIDTH) {
-      currentX = 0;
-      currentY = rowMaxY + CLUSTER_GAP;
-      rowMaxY = 0;
-    } else {
-      currentX += bounds.width + CLUSTER_GAP;
-    }
-    rowMaxY = Math.max(rowMaxY, currentY + bounds.height);
+    currentX = placeX + localBounds.width + CLUSTER_GAP;
+    rowMaxY = Math.max(rowMaxY, placeY + localBounds.height);
   }
 
   const majorCount = partition.clusters.filter((c) => c.type === 'major').length;
@@ -822,7 +856,7 @@ Expected: FAIL — `computeClusterLayoutB is not a function`
 ```typescript
 import type { MergedGraph, EdgeType } from '@listen-graphic/schema';
 import { partitionClusters } from './cluster-partition';
-import { computeClusterLayoutA } from './cluster-layout';
+import { computeClusterLayoutA, layoutClusterInternal, computeBounds } from './cluster-layout';
 import type { RenderModel, RenderItem, RenderEdge, ClusterInfo, Position } from './round2-types';
 import { CARD_WIDTH, CARD_HEIGHT, CLUSTER_GAP, LOOSE_NOTE_ITEM_HEIGHT, LOOSE_NOTE_ITEM_WIDTH } from './round2-types';
 
@@ -841,92 +875,106 @@ export function computeClusterLayoutB(
     return computeClusterLayoutA(graph, graphIndex);
   }
 
-  // 先算 A 的完整布局，拿到前 4 个 major 的坐标
-  const layoutA = computeClusterLayoutA(graph, graphIndex);
-
-  // 重建：前 4 个 major 用 A 的 fullNode，第 5+ major 变 summary，minor 全 loose-notes
+  // B 不复用 A 的坐标，完全独立重算（和 A 一样的 local → decide → offset 流程）
+  // 区别：第 5+ major 替换为 clusterSummary，不画具体节点
   const items: RenderItem[] = [];
   const edges: RenderEdge[] = [];
   const clusters: ClusterInfo[] = [];
 
-  let majorRank = 0;
+  const MAX_ROW_WIDTH = 1200;
   let currentX = 0;
   let currentY = 0;
   let rowMaxY = 0;
-  const MAX_ROW_WIDTH = 1200;
+  let majorRank = 0;
+
+  const SUMMARY_WIDTH = 200;
+  const SUMMARY_HEIGHT = 80;
 
   for (const cluster of partition.clusters) {
+    // —— 第 1 步：先算 local 坐标 / summary 信息 ——
+    let localItems: RenderItem[] = [];
+    let localWidth = 0;
+    let localHeight = 0;
+
     if (cluster.type === 'major') {
       if (majorRank < TOP_MAJOR_EXPAND) {
-        // 展开：从 layoutA 找对应的 fullNode
-        const clusterFullNodes = layoutA.items.filter(
-          (i) => i.kind === 'fullNode' && cluster.nodeIds.includes(i.nodeId),
-        );
-        items.push(...clusterFullNodes);
-
-        // 簇内边
+        // 展开：跑 baseline 坐标（local 原点 0,0）
+        const localPositions = layoutClusterInternal(graph, cluster.nodeIds, cluster.edges);
+        localItems = cluster.nodeIds
+          .filter((id) => localPositions[id])
+          .map((id) => ({
+            kind: 'fullNode' as const,
+            nodeId: id,
+            position: localPositions[id],
+          }));
         for (const e of cluster.edges) {
-          if (cluster.nodeIds.includes(e.source) && cluster.nodeIds.includes(e.target)) {
+          if (localPositions[e.source] && localPositions[e.target]) {
             edges.push({ source: e.source, target: e.target, type: e.type });
           }
         }
-
-        const bounds = clusterFullNodes.length > 0
-          ? computeFullNodeBounds(clusterFullNodes.map((i) => (i.kind === 'fullNode' ? i.position : { x: 0, y: 0 })))
-          : { width: CARD_WIDTH, height: CARD_HEIGHT };
-        clusters.push({
-          id: cluster.id, type: 'major', nodeIds: cluster.nodeIds,
-          bounds: { x: currentX, y: currentY, width: bounds.width, height: bounds.height },
-        });
-
-        currentX += bounds.width + CLUSTER_GAP;
+        const localBounds = computeBounds(localPositions, false);
+        localWidth = localBounds.width;
+        localHeight = localBounds.height;
       } else {
-        // 第 5+ major：summary 块
-        const summaryWidth = 200;
-        const summaryHeight = 80;
-        items.push({
-          kind: 'clusterSummary',
+        // 第 5+ major：summary（不画节点，只占位）
+        localItems = [{
+          kind: 'clusterSummary' as const,
           clusterId: cluster.id,
-          position: { x: currentX, y: currentY },
+          position: { x: 0, y: 0 }, // local，稍后 offset
           nodeCount: cluster.nodeIds.length,
           edgeCount: cluster.edges.length,
-        });
-        clusters.push({
-          id: cluster.id, type: 'major', nodeIds: cluster.nodeIds,
-          bounds: { x: currentX, y: currentY, width: summaryWidth, height: summaryHeight },
-        });
-        currentX += summaryWidth + CLUSTER_GAP;
+        }];
+        localWidth = SUMMARY_WIDTH;
+        localHeight = SUMMARY_HEIGHT;
       }
       majorRank++;
     } else {
-      // minor → loose notes
+      // minor → loose notes（local 原点 0,0）
       const nodeById = new Map(graph.nodes.map((n) => [n.id, n]));
       const sorted = [...cluster.nodeIds].sort((a, b) => {
         return (nodeById.get(a)?.timestampMs ?? 0) - (nodeById.get(b)?.timestampMs ?? 0);
       });
       sorted.forEach((id, i) => {
-        items.push({
-          kind: 'looseNoteItem',
+        localItems.push({
+          kind: 'looseNoteItem' as const,
           nodeId: id,
-          position: { x: currentX, y: currentY + i * LOOSE_NOTE_ITEM_HEIGHT },
+          position: { x: 0, y: i * LOOSE_NOTE_ITEM_HEIGHT },
         });
       });
-      const h = sorted.length * LOOSE_NOTE_ITEM_HEIGHT;
-      clusters.push({
-        id: cluster.id, type: 'minor', nodeIds: cluster.nodeIds,
-        bounds: { x: currentX, y: currentY, width: LOOSE_NOTE_ITEM_WIDTH, height: h },
-      });
-      currentX += LOOSE_NOTE_ITEM_WIDTH + CLUSTER_GAP;
+      localWidth = LOOSE_NOTE_ITEM_WIDTH;
+      localHeight = sorted.length * LOOSE_NOTE_ITEM_HEIGHT;
     }
 
-    // row packing
-    const lastCluster = clusters[clusters.length - 1];
-    if (currentX > MAX_ROW_WIDTH) {
+    // —— 第 2 步：决定 placement（先判断换行）——
+    if (currentX + localWidth + CLUSTER_GAP > MAX_ROW_WIDTH && currentX > 0) {
       currentX = 0;
       currentY = rowMaxY + CLUSTER_GAP;
       rowMaxY = 0;
     }
-    rowMaxY = Math.max(rowMaxY, currentY + (lastCluster?.bounds.height ?? 0));
+    const placeX = currentX;
+    const placeY = currentY;
+
+    // —— 第 3 步：offset 节点坐标到最终位置 ——
+    for (const item of localItems) {
+      if ('position' in item) {
+        items.push({
+          ...item,
+          position: { x: item.position.x + placeX, y: item.position.y + placeY },
+        });
+      } else {
+        items.push(item);
+      }
+    }
+
+    // —— 第 4 步：写 cluster bounds + 推进游标 ——
+    clusters.push({
+      id: cluster.id,
+      type: cluster.type,
+      nodeIds: cluster.nodeIds,
+      bounds: { x: placeX, y: placeY, width: localWidth, height: localHeight },
+    });
+    currentX = placeX + localWidth + CLUSTER_GAP;
+    rowMaxY = Math.max(rowMaxY, placeY + localHeight);
   }
 
   return {
@@ -942,16 +990,6 @@ export function computeClusterLayoutB(
       majorCount: majorClusters.length,
       minorCount: minorClusters.length,
     },
-  };
-}
-
-function computeFullNodeBounds(positions: Position[]) {
-  if (positions.length === 0) return { width: CARD_WIDTH, height: CARD_HEIGHT };
-  const xs = positions.map((p) => p.x);
-  const ys = positions.map((p) => p.y);
-  return {
-    width: Math.max(...xs) + CARD_WIDTH - Math.min(...xs),
-    height: Math.max(...ys) + CARD_HEIGHT - Math.min(...ys),
   };
 }
 ```
@@ -1229,11 +1267,10 @@ Expected: 打印每条图的进度，最终 `全部完成：23 条图 × 3 候�
 - [ ] **Step 3: 抽查截图非空白**
 
 ```bash
-ls -la tools/layout-lab/outputs/round2-screenshots/49-baseline.png
-ls -la tools/layout-lab/outputs/round2-screenshots/49-A.png
-ls -la tools/layout-lab/outputs/round2-screenshots/49-B.png
+# 跨平台：用 node 检查文件存在和大小
+node -e "['49-baseline','49-A','49-B'].forEach(n=>{const fs=require('fs');const p='tools/layout-lab/outputs/round2-screenshots/'+n+'.png';const s=fs.statSync(p);console.log(n+'.png:',s.size,'bytes',s.size>10240?'OK':'TOO SMALL')})"
 ```
-Expected: 三张文件都存在且 size > 10KB
+Expected: 三张文件都存在且 size > 10KB（打印 OK）
 
 - [ ] **Step 4: Commit**
 
@@ -1250,15 +1287,22 @@ git commit -m "feat(layout-lab): render-round2 主流程（三候选坐标→HTM
 - Create: `tools/layout-lab/src/round2-gallery.ts`
 - Create: `tools/layout-lab/src/round2-evaluate.ts`
 
-- [ ] **Step 1: 实现 round2-gallery.ts（三栏并排对比 HTML）**
+- [ ] **Step 1: 实现 round2-gallery.ts（三栏并排对比 HTML + 指标 + 评分模板）**
 
 `tools/layout-lab/src/round2-gallery.ts`：
 ```typescript
 import fs from 'node:fs';
 import path from 'node:path';
+import type { MergedGraph } from '@listen-graphic/schema';
+import { computeBaselinePositions } from './baseline-layout';
+import { computeClusterLayoutA } from './cluster-layout';
+import { computeClusterLayoutB } from './cluster-overview';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const SHOT_DIR = path.join(ROOT, 'outputs/round2-screenshots');
+const DUMP_PATH = path.join(ROOT, 'inputs/real-graphs-dump.json');
+
+// spec 4.x 代表样本（23 条）
 const SAMPLE_INDICES = [
   49, 41, 48, 34, 47, 40, 29, 28, 39, 61, 31, 46,
   37, 32, 58, 57,
@@ -1266,19 +1310,45 @@ const SAMPLE_INDICES = [
   33, 51,
 ];
 
+// 大图/小图分类（spec 5.3 go/no-go 门槛按类别判定）
+function category(idx: number): 'large' | 'small' {
+  return idx >= 30 || [49, 41, 48, 34, 47, 40, 29, 28, 39, 61, 31, 46, 37, 32, 33, 51].includes(idx)
+    ? 'large' : 'small';
+}
+
 export function renderRound2Gallery(): void {
+  const dump = JSON.parse(fs.readFileSync(DUMP_PATH, 'utf8')) as MergedGraph[];
   const rows: string[] = [];
 
+  // 同时生成人工评分模板
+  const reviewTemplate: unknown[] = [];
+
   for (const idx of SAMPLE_INDICES) {
+    const graph = dump[idx];
+    if (!graph) continue;
     const padded = String(idx).padStart(2, '0');
+    const cat = category(idx);
     const shot = (c: string) => {
       const p = path.join(SHOT_DIR, `${padded}-${c}.png`);
       return fs.existsSync(p) ? `round2-screenshots/${padded}-${c}.png` : '';
     };
 
+    // 算三候选 meta（用于 gallery 显示指标）
+    const baseline = computeBaselinePositions(graph, idx);
+    const a = computeClusterLayoutA(graph, idx);
+    const b = computeClusterLayoutB(graph, idx);
+
+    const metaStr = (m: typeof baseline.meta) =>
+      `${m.nodeCount}节点 ${m.edgeCount}边 ${m.clusterCount}簇(${m.majorCount}M/${m.minorCount}m)`;
+
     rows.push(`
-      <div class="graph-row">
-        <h3>#${idx}</h3>
+      <div class="graph-row" data-index="${idx}" data-category="${cat}">
+        <h3>#${idx} <span class="cat cat-${cat}">${cat === 'large' ? '大图' : '小图'}</span></h3>
+        <div class="metas">
+          <span><b>Baseline:</b> ${metaStr(baseline.meta)}</span>
+          <span><b>A:</b> ${metaStr(a.meta)}</span>
+          <span><b>B:</b> ${metaStr(b.meta)}</span>
+        </div>
         <div class="candidates">
           <div class="cand"><h4>Baseline</h4><img src="${shot('baseline')}" loading="lazy" /></div>
           <div class="cand"><h4>Candidate A</h4><img src="${shot('A')}" loading="lazy" /></div>
@@ -1286,15 +1356,28 @@ export function renderRound2Gallery(): void {
         </div>
       </div>
     `);
+
+    reviewTemplate.push({
+      graphIndex: idx,
+      category: cat,
+      winner: '',              // 'baseline' | 'A' | 'B' | 'tie'
+      aVsBaseline: '',         // 'better' | 'worse' | 'same'
+      bVsBaseline: '',         // 'better' | 'worse' | 'same'
+      smallHarm: cat === 'small' ? '' : null,  // 小图是否明显更差: 'yes' | 'no'
+      notes: '',
+    });
   }
 
   const html = `<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8"><title>Round 2 Cluster-First Layout A/B</title>
 <style>
 body{font-family:system-ui,sans-serif;margin:16px;background:#fafafa}
 .graph-row{background:#fff;border:1px solid #ddd;border-radius:6px;padding:12px;margin-bottom:16px}
+.metas{display:flex;gap:16px;font-size:12px;color:#666;margin-bottom:8px}
 .candidates{display:flex;gap:12px}
 .cand{flex:1;min-width:0}
 .cand img{width:100%;border:1px solid #eee;border-radius:4px}
+.cat{font-size:11px;padding:1px 6px;border-radius:3px;color:#fff}
+.cat-large{background:#d97706}.cat-small{background:#16a34a}
 h3{margin:0 0 8px}h4{margin:0 0 4px;font-size:13px;color:#666}
 </style></head><body>
 <h1>Round 2: Cluster-First Layout A/B 对比</h1>
@@ -1303,7 +1386,12 @@ ${rows.join('')}
 </body></html>`;
 
   fs.writeFileSync(path.join(ROOT, 'outputs/round2-gallery.html'), html);
-  console.log(`[round2-gallery] 完成 → outputs/round2-gallery.html`);
+  // 生成人工评分模板（填完后用于 spec 5.3 go/no-go 70%/20% 判定）
+  fs.writeFileSync(
+    path.join(ROOT, 'outputs/round2-human-review-template.json'),
+    JSON.stringify(reviewTemplate, null, 2),
+  );
+  console.log(`[round2-gallery] 完成 → outputs/round2-gallery.html + round2-human-review-template.json`);
 }
 
 renderRound2Gallery();
@@ -1442,9 +1530,10 @@ git commit -m "feat(layout-lab): round2 gallery + LLM 草评"
 - [ ] 全部测试通过：`cd tools/layout-lab/run && npx vitest run`
 - [ ] baseline 等价验证通过（3 图 positions 与产品函数一致）
 - [ ] 23 条图 × 3 候选 = 69 张截图生成且非空白
-- [ ] `round2-gallery.html` 可在浏览器打开，三栏并排
+- [ ] `round2-gallery.html` 可在浏览器打开，三栏并排，每行含指标/cluster 统计
+- [ ] `round2-human-review-template.json` 生成（人工评分模板，含 category/winner/aVsBaseline/bVsBaseline/smallHarm/notes）
 - [ ] `round2-llm-eval.json` 生成（23 条 LLM 草评）
-- [ ] **人眼审核 gallery**：按 spec 5.3 go/no-go 门槛判定
+- [ ] **人眼审核 gallery**：填 `round2-human-review-template.json`，按 spec 5.3 go/no-go 门槛判定（大图 70% 优于 baseline、小图不超 20% 更差）
 
 ## 不在本计划范围
 
