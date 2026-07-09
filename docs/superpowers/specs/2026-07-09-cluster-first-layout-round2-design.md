@@ -66,12 +66,31 @@
 ```
 MergedGraph
   → 坐标算法（baseline / A / B，都是纯函数）
-  → positions: Record<string, {x, y}>
-  → HTML renderer（坐标 → div+css 节点卡片 + svg 边）
+  → RenderModel（positions + renderItems 类型标注）
+  → HTML renderer（RenderModel → div+css 节点卡片 + svg 边）
   → 静态 HTML 文件
   → Playwright page.goto + screenshot
   → PNG
 ```
+
+**RenderModel**：三种 render item 类型，让 Loose Notes 和 summary block 有类型语义，不只是坐标：
+
+```typescript
+export type RenderItem =
+  | { kind: 'fullNode'; nodeId: string; position: { x: number; y: number } }
+  | { kind: 'looseNoteItem'; nodeId: string; position: { x: number; y: number } }  // 紧凑列表项
+  | { kind: 'clusterSummary'; clusterId: string; position: { x: number; y: number }; nodeCount: number; edgeCount: number };  // 缩略块
+
+export type RenderModel = {
+  items: RenderItem[];
+  edges: Array<{ source: string; target: string; type: string }>;  // 只含 fullNode 之间的边
+  clusters?: Array<{ id: string; type: 'major' | 'minor'; nodeIds: string[]; bounds: { x: number; y: number; width: number; height: number } }>;
+};
+```
+
+- `fullNode`：完整卡片（220×132px），用于 baseline 所有节点 + Candidate A/B 的 major cluster 内节点
+- `looseNoteItem`：紧凑列表项（小色点 + 截断文本），用于 minor cluster 打包
+- `clusterSummary`：占位矩形（标题 + 节点数 + 边数），用于 Candidate B 的未展开 major cluster
 
 **HTML renderer 规格**：
 - 节点：`div` 圆角矩形，宽 220px 高 132px（与产品 `STABLE_LAYOUT_CARD_WIDTH/HEIGHT` 一致）
@@ -93,6 +112,8 @@ MergedGraph
 
 **复刻保真度**：离线 baseline 和真实 sidepanel 不会 100% 像素一致（字体渲染、CSS 变量、React Flow viewport 缩放有差异），但**坐标算法一致**，布局结构一致。A/B 对比看的是结构差异，不是像素差异。
 
+**等价验证（必须做）**：抽 3-5 张图（含大图 #49、中图 #32、小图 #18），对比 `baseline-layout.ts` 输出的 positions 与现有 `buildStableReactFlowDebugGraph` 在 hierarchy 视图下产出的 positions **完全一致**（逐节点 x/y 相等）。若不一致，说明提取有遗漏或参数差异，必须修到一致才能开始 A/B 对比——否则 baseline 不是当前 baseline，A/B 对比失去意义。
+
 ## 3. 分区算法
 
 ### 3.1 连通分量（UnionFind 无向）
@@ -113,7 +134,7 @@ MergedGraph
 
 - 每个 major cluster 内部继续用 baseline 的坐标算法（anchor 排位 + pattern hints）
 - 旧 pattern（claim-reason-example、opposition 等）只在簇内生效，不决定全图
-- cluster 之间用固定间隔（x 轴 400px + y 轴 200px）
+- cluster 之间按 bounds + gap 做 row packing：先算每个 cluster 的 local bounds（maxX/maxY），再按 gap（如 60px padding）逐个排到下一位置。大簇占大空间，小簇紧凑排，不用固定位移常量
 
 ### 3.4 minor cluster → Loose Notes 区
 
@@ -128,9 +149,9 @@ MergedGraph
 
 ### 3.6 Candidate B 的 overview/focus
 
-- 展开前 4 个 major clusters
+- 展开前 4 个 major clusters（按 3.5 排序）
+- 第 5 个及以后的 major clusters 全部缩略为 cluster summary（标题 + 节点数 + 边数，不画具体节点）
 - minor cluster 全部汇总成 Loose Notes
-- 如果 major 超过 6 个，第 7 个以后缩略为 cluster summary（标题 + 节点数 + 边数，不画具体节点）
 - **缩略块不代表语义合并**，只代表"未展开分区"
 - 不做点击展开交互（截图评不了）
 
@@ -155,28 +176,33 @@ MergedGraph
 
 ### 4.2 中等多分量（4 条）
 
-| # | 节点 | 边 | 分量 | 选因 |
-|---|---|---|---|---|
-| 37 | 103 | 94 | 11 | 中等多分量 |
-| 32 | 91 | 86 | 13 | |
-| 57 | ~20-30 | | 多分量 | 中等规模多分量 |
-| 58 | ~20-30 | | 多分量 | |
+| # | 节点 | 边 | 分量 | 最大簇% | 选因 |
+|---|---|---|---|---|---|
+| 37 | 103 | 94 | 11 | 38% | 中等多分量 |
+| 32 | 91 | 86 | 13 | 21% | |
+| 58 | 31 | 20 | 11 | 23% | 中等规模多分量 |
+| 57 | 13 | 9 | 5 | 46% | 小但多分量 |
 
 ### 4.3 小图 / 单分量（防伤害对照，5 条）
 
-| # | 节点 | 边 | 分量 | 选因 |
-|---|---|---|---|---|
-| 18 | ~5-8 | | 1 | 单分量解释图 |
-| 21 | ~5-8 | | 1 | 单分量 |
-| 16 | 2 | 2 | 2 | 真争论小图 |
-| 12 | 2 | 1 | 1 | 解释小图 |
-| 6 | 12 | 0 | 12 | 纯碎片图（Loose Notes 极限） |
+| # | 节点 | 边 | 分量 | opposes | 选因 |
+|---|---|---|---|---|---|
+| 18 | 8 | 7 | 1 | 1 | 单分量争论图（LLM 标为争论，有 1 条 opposes） |
+| 21 | 5 | 4 | 1 | 1 | 单分量争论图（LLM 标为争论） |
+| 16 | 2 | 2 | 2 | 0 | 2 孤立节点 + dangling edge 防伤害（LLM 误标为争论，实为无连通边） |
+| 12 | 2 | 1 | 1 | 0 | 解释小图 |
+| 6 | 12 | 0 | 12 | 0 | 纯碎片图（12 孤立节点，Loose Notes 极限） |
 
-### 4.4 长标签压力（已覆盖）
+### 4.4 长标签压力（2 条，补充）
 
-#61、#39、#40、#34 已在大图样本里。补 #33 或 #51。
+#61(53)、#39(43)、#40(43)、#34(44) 已在大图样本里。补：
 
-**总数约 22-24 条。** 每条截 3 张（baseline/A/B）→ 约 66-72 张截图。
+| # | 节点 | 边 | 分量 | longLabel | 选因 |
+|---|---|---|---|---|---|
+| 33 | 64 | 56 | 11 | 28 | 长标签 + 多分量 |
+| 51 | 66 | 37 | 29 | 22 | 长标签 + 极多分量 |
+
+**总数 23 条。** 每条截 3 张（baseline/A/B）→ 69 张截图。
 
 ## 5. 评估
 
@@ -238,6 +264,8 @@ tools/layout-lab/outputs/
 
 ## 附录 A：用户审核修正对照
 
+### 第一轮审核（8 项）
+
 | # | 原设计 | 修正后 | 依据 |
 |---|---|---|---|
 | 1 | 渲染路径留悬念（"实现时再定"） | 明确离线 HTML + Playwright，不走 sidepanel | 第 3 节内在矛盾：纯函数 vs 复用 graph-utils |
@@ -248,3 +276,13 @@ tools/layout-lab/outputs/
 | 6 | 样本偏大 | 补小图 #18/#21、纯碎片 #6、中等 #57/#58 | 防伤害 + 边界覆盖 |
 | 7 | go/no-go "明显更可读"太主观 | 改为 70%/20%/B 额外价值/弱收益处理 四条可操作门槛 | 可判定 |
 | 8 | LLM 评"压迫感更低" | 收窄为只评分区合理性 + 不适合图 + 语义组织 | LLM 看不到截图 |
+
+### 第二轮审核（5 项）
+
+| # | 问题 | 修正 | 依据 |
+|---|---|---|---|
+| 9 | Candidate B 展开规则自相矛盾（top 4 展开 vs major>6 缩略，第 5/6 个未定义） | 统一为：top 4 major 展开，第 5+ 全 summary，minor 全 Loose Notes | 消除歧义 |
+| 10 | cluster 间固定间隔 400x+200y 会重叠（大簇远超此尺寸） | 改为 bounds + gap 的 row packing | 大簇不会重叠 |
+| 11 | 输出模型只有 positions，无法表达 Loose Notes / summary block | 引入 RenderModel + RenderItem 三类型（fullNode/looseNoteItem/clusterSummary） | 折叠节点有类型语义 |
+| 12 | baseline 提取无等价验证 | 加验收：3-5 张图对比提取后 positions 与原 buildStableReactFlowDebugGraph 逐节点一致 | 确保 baseline 是当前 baseline |
+| 13 | 样本表数据不精确（#57 写 ~20-30 实为 13，#16 误标为真争论） | 全部改为查证后的精确指标，#16 重新定性为 dangling edge 防伤害样本 | 数据准确性 |
