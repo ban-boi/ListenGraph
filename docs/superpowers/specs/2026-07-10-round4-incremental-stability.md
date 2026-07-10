@@ -103,10 +103,33 @@ PIN_K = (1-u) × 0.10 + u × 0.025
 - 新增 ≥30%：PIN_K = 0.025，允许 cluster 明显重组
 - 超过 30% 不再继续降低
 
+### 4.3.1 跨 revision cluster 身份匹配（必须定义，不能按 clusterId 继承）
+
+现有 `partitionClusters` 的 cluster ID 是 `cluster_${i}`，每轮重新生成 + 重新排序，不能跨 revision 追踪同一个 cluster。必须用 **nodeId 交集匹配**。
+
+**匹配规则**：
+
+```
+对每个 newCluster，找上一 revision 中与之有 nodeId 交集的 oldCluster：
+
+无交集           → 新 cluster（无旧坐标继承）
+一个前驱         → 继承该前驱的全局 origin + 所有旧节点的全局坐标
+多个前驱（merge）→ cluster 合并：所有旧节点保留各自全局坐标，新全局 origin = 旧 origins 加权平均
+一个旧簇→多个新簇（split）→ 各子簇继承自己节点的旧坐标
+```
+
+**力计算边界**：力计算仍以当前连通分量为边界。不同 cluster 之间不计算斥力。全局坐标只是为了保存 origin 和跨 revision 的位置连续性，不代表所有节点一起跑一个巨型 force simulation。
+
+**major/minor 跨 revision 行为**：
+- add-only 序列里 major 状态单调：只要任一前驱曾是 major，后继 cluster 继承保持 major
+- minor→major 时（簇长大了），使用旧节点的中心坐标作为完整卡片的初始中心
+- major→minor 不会发生（add-only 只增不减）
+- 位移指标使用节点中心 `(cx, cy)`，不使用 top-left
+
 ### 4.4 最大漂移保护
 
 ```
-R_max = (1-u) × 50 + u × 120
+R_max = (1-u) × 50 + u × 100
 ```
 
 每轮 Apply 后检查旧节点位移是否超过 R_max，超过则 clamp 回 R_max 半径内，并衰减速度到 25%。
@@ -153,17 +176,25 @@ positions[newId] = {
 
 ### 4.7 带 Mobility 的碰撞消除
 
+Mobility 与 PIN_K 共享同一个变化率 u（4.3 节），不是独立调参轴：
+
 ```typescript
+u = clamp(r / 0.30, 0, 1);  // 与 PIN_K 相同的 u
 newNodeMobility = 1.0;
-oldNodeMobility = 0.2 ～ 0.6; // 根据 PIN_K 变化
+oldNodeMobility = 0.2 + 0.4 × u;
 ```
 
-old/new 重叠时，新节点承担大部分位移：
+即：少量更新（Pin 紧）→ 旧节点 mobility=0.2；大量更新（Pin 松）→ 旧节点 mobility=0.6。
+
+碰撞位移分配（完整公式）：
 ```
-Δp_a = correction × mobility_a / (mobility_a + mobility_b)
+Δp_a =  correction × mobility_a / (mobility_a + mobility_b)
+Δp_b = -correction × mobility_b / (mobility_a + mobility_b)
 ```
 
-旧旧重叠双方小幅移动，且移动后仍受 R_max 限制。
+碰撞修正后，旧节点再次执行 R_max drift clamp。
+
+**"触发漂移上限比例"定义**：本 revision 中至少触发过一次 clamp 的唯一旧节点数 / 本 revision 旧节点数。不按迭代触发次数统计。
 
 ### 4.8 参数配置
 
@@ -176,7 +207,7 @@ PIN_K_TIGHT = 0.10;
 PIN_K_LOOSE = 0.025;
 PIN_SOFTEN_RATIO = 0.30;
 MAX_DRIFT_TIGHT = 50;
-MAX_DRIFT_LOOSE = 120;
+MAX_DRIFT_LOOSE = 100;
 ```
 
 **本轮只调两个轴**：`PIN_K` 和 `MAX_DRIFT`。R3b 的斥力、弹簧、宽度惩罚不再调。
@@ -203,18 +234,31 @@ MAX_DRIFT_LOOSE = 120;
 - #49：120 unique timestamps → 14 批（每批 ~20 节点）
 - #41：75 unique timestamps → 13 批
 
+**timestamp 回放确定性规则**：
+1. 相同 `timestampMs` 的节点不得拆到不同批次（同时间戳的节点作为一个原子批次一起进入）
+2. 边仅在 source 和 target 都已进入当前 revision 后才加入（不存在 dangling edge）
+3. 最后一个 revision 的 nodes/edges 必须与原始图完全一致（回放完整性验证）
+
+**第一个非空 revision 一致性**：R3b incremental 的第一个非空 revision 必须与 R3b full-recompute 使用**同一初始布局**（相同的圆形初始化 + 相同迭代）。否则后续差异既包含增量策略差异，也包含初始条件差异，无法归因。
+
 ### 6.3 小图防伤害
 
 `seq-pattern-opposition`（4-5 节点）确保增量不伤害简单图。
 
 ## 7. 验证方式
 
-### 7.1 逐步截图对比
+### 7.1 时序可视化契约（心理地图是时间维度验收，不能只靠独立缩略图）
 
-每个 revision 截 3 张（baseline / R3b full / R3b incremental），并排对比。重点看：
-- 旧节点位置是否稳定
-- 新节点是否合理落位
-- 哪种策略的"跳动"最小
+**固定坐标系**：
+- 每个 candidate 在同一个 sequence 内使用**固定原点、固定 1:1 像素比例**
+- 画布尺寸取该 sequence **最终 revision** 的 bounds，所有 earlier revision 共用同一画布尺寸
+- **不允许每一帧独立 fit-to-content**（独立 fit 会让没动的节点也看起来移动）
+- canvas 尺寸不同会导致缩放差异，掩盖或放大真实位移
+
+**Revision 导航**：
+- gallery 必须提供 revision slider 或 autoplay（从 rev 0 到最终，按时间间隔播放）
+- 3-5 个追踪节点在**所有帧**保持相同的红色圈标记
+- 位移热力图（可选）：节点颜色按本 transition 位移大小着色（绿=没动，红=移动大）
 
 ### 7.2 指标（自动计算，每 revision）
 
@@ -232,11 +276,33 @@ MAX_DRIFT_LOOSE = 120;
 
 ### 7.4 Go/No-Go 门槛
 
+**位移门槛（每个相邻 revision transition 单独判定，不可聚合后掩盖坏步骤）**：
+
+| 门槛 | 聚合方式 | 标准 |
+|---|---|---|
+| 旧节点中位位移 | 每个 transition 单独算，只统计两 revision 都存在的节点。**所有 transition 都必须满足。** 同时输出全 sequence 的 p50/p95。 | median < 30px |
+| 旧节点最大位移 | 同上。R_max clamp 保证 ≤ 100px。 | max ≤ 100px（硬上限，无例外） |
+| 触发漂移上限比例 | 每 transition：至少触发过一次 clamp 的唯一旧节点数 / 旧节点数 | < 10%（否则 Pin 参数应 NO-GO） |
+
+**最终态质量门槛（最后一个 revision vs Round 3 全量重算，逐项判定，不可平均）**：
+
+对每个指标，定义退化率：
+
+```
+degradation = max(0, incremental_value - static_value) / max(static_value, 1)
+```
+
+| 指标 | 标准 |
+|---|---|
+| avgEdgeLength | degradation < 15% |
+| edgeCrossings | degradation < 15% |
+| overlapPairs / nodeCount | degradation < 15%（Pin 最容易用重叠换稳定，必须查） |
+| longEdgeRatio | degradation < 15% |
+
+**每项都必须满足**。不能平均后判定。
+
 | 门槛 | 标准 |
 |---|---|
-| 旧节点稳定性 | 增长序列中，旧节点中位位移 < 30px |
-| 旧节点上限 | 旧节点最大位移 < 100px（exception: cluster 大规模重组时允许更大） |
-| 最终态质量 | 最后 revision 的边长/穿越与 Round 3 静态 R3b 差距 < 15% |
 | 新节点落位 | 新节点有合理初始位置（不是随机散开），肉眼判断 |
 
 ## 8. 文件结构
