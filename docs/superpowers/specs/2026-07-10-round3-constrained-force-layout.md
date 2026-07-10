@@ -5,7 +5,7 @@
 > **前置**：
 > - Round 1 诊断集结论：多话题 74%，真实争论 6%，detector 误导 90%
 > - Round 2 验证结论：cluster-first 分区方向对，但簇内复用 hierarchy 固定 lane 布局不行；力导向（Strategy D）"好太多了"
-> - 簇内对比实验结论：D2（力导向 + 软宽度惩罚）是甜点——窄到 sidepanel 友好（宽高比 0.23），关系可读性好（长边 0%，穿越 23 vs baseline 39）
+> - 簇内对比实验结论：力导向（Strategy D 系列）远好于直线排布（拓扑/扇形/列分组）；D1（center-axis gravity）和 D2（soft width penalty）在单簇对比上看不出明显差异，两者都推到 Round 3 做全图验证
 
 ## 0. 目标
 
@@ -45,10 +45,11 @@ function computeNodeSize(text: string): { width: number; height: number } {
 }
 ```
 
-**尺寸范围**（基于真实数据 P50=21字、P90=42字）：
-- 21 字节点：宽 ~200px（MAX_WIDTH），高 ~82px（3 行）
-- 42 字节点：宽 200px，高 ~100px（4 行）
-- 10 字节点：宽 ~140px，高 ~64px（2 行）
+**尺寸范围**（基于真实数据 P50=21字、P90=42字，公式实际输出已验证）：
+- 21 字节点：宽 200px，高 76px（2 行，14 字/行）
+- 42 字节点：宽 200px，高 94px（3 行，14 字/行）
+- 10 字节点：宽 144px，高 58px（1 行）
+- 60 字节点：宽 200px，高 130px（5 行）
 
 ### 1.2 D2 力导向簇内布局（升级版）
 
@@ -90,14 +91,39 @@ function resolveOverlaps(positions, sizes, edges, rounds = 20) {
 
 **不变**：分区算法、major/minor 规则、排序、row packing 逻辑都复用 Round 2 已测试的代码。
 
+**改变**：外层 packing 的 `MAX_ROW_WIDTH` 从 Round 2 的 1200 改为 `OUTER_TARGET_WIDTH = 800`（sidepanel/mobile 友好）。major cluster 默认纵向堆叠（一个簇占一行），不横向并排。
+
 ## 2. 候选定义
 
 | 候选 | 簇内布局 | 节点大小 | 外层 |
 |---|---|---|---|
-| **Baseline** | 当前产品布局（viewHints.defaultView） | 固定 220×132 | 无分簇 |
-| **Candidate R3** | D2 力导向（面积斥力 + 碰撞消除） | 自适应（80-200px 宽） | cluster-first packing |
+| **Baseline** | 当前产品布局，view 跟随 `graph.viewHints?.defaultView ?? 'causal'`（已修正，见 commit `0af2a38`） | 固定 220×132 | 无分簇 |
+| **Candidate R3a** | D1 力导向（引力收窄 + 面积斥力 + 碰撞消除） | 自适应（80-200px 宽） | cluster-first packing |
+| **Candidate R3b** | D2 力导向（宽度惩罚 + 面积斥力 + 碰撞消除） | 自适应（80-200px 宽） | cluster-first packing |
 
-只做 1 个候选（R3），不做多候选对比。因为 Round 2 已经证明 D2 是最好的力导向变体，现在验证的是"D2 + 自适应 + 全图组合"的整体效果，不是 D2 变体之间的对比。
+做 2 个候选（R3a/R3b），因为单簇对比看不出 D1/D2 谁更好，需要全图 + 自适应节点后才能判定。
+
+### 2.1 力定义（R3a 和 R3b 共用，区别只在竖向约束力）
+
+每个力导向簇内布局包含以下力的完整组合：
+
+1. **Spring attraction**（边弹簧）：相连节点之间有弹簧力，目标长度 `SPRING_LENGTH`，刚度 `SPRING_K`。
+2. **Area repulsion**（面积斥力）：所有节点对之间有斥力，斥力大小 ∝ `√(areaA × areaB)`（大节点斥力更大）。
+3. **Damping**（阻尼）：每轮迭代速度乘以 `DAMPING`。
+4. **竖向约束力**（R3a vs R3b 的唯一区别）：
+   - **R3a（center-axis gravity）**：每个节点受一个朝向 X 中心轴的持续引力 `force.x = (centerX - node.x) × GRAVITY_STRENGTH`。温和收窄。
+   - **R3b（soft width penalty）**：只有节点 X 超出 `[0, targetWidth]` 时才有反推力 `force.x = overshoot × PENALTY_STRENGTH`。越界才管。
+5. **Post-process: resolveOverlaps**（碰撞消除）：力导向迭代结束后，做 N 轮碰撞消除——重叠的节点对沿连线方向推开。
+
+**`targetWidth`**：R3a 和 R3b 都用 `targetWidth = 600`（sidepanel 友好宽度）。
+
+### 2.2 坐标语义（必须统一）
+
+力 simulation 内部使用**节点中心点** `(cx, cy)`。
+- 渲染时：`left = cx - width/2`，`top = cy - height/2`
+- 边端点：用中心点 `(cx, cy)`
+- 碰撞矩形：由中心点 + 尺寸推出 `{left: cx-w/2, right: cx+w/2, top: cy-h/2, bottom: cy+h/2}`
+- 面积斥力：用 `width × height`
 
 ## 3. 代表样本
 
@@ -107,7 +133,7 @@ function resolveOverlaps(positions, sizes, edges, rounds = 20) {
 - 小图/防伤害：#18(8), #21(5), #16(2), #12(2), #6(12 孤立)
 - 长标签：#33(64), #51(66)
 
-每条图截 2 张（baseline + R3）→ 46 张截图。
+每条图截 3 张（baseline + R3a + R3b）→ 69 张截图。
 
 ## 4. 验证方式
 
@@ -135,13 +161,14 @@ Round 2 的 `html-renderer.ts` 需要两个改动：
 
 ### 4.3 人眼终判
 
-打开 `outputs/round3-gallery.html`，两栏并排（baseline | R3），含指标。
+打开 `outputs/round3-gallery.html`，三栏并排（baseline | R3a | R3b），含指标。
 
 **主要看**：
 1. 大图是否不再"一片乱"？关系一眼能看懂？
-2. 节点是否不重叠了？自适应大小是否合理？
-3. 画布是否竖向收窄了？sidepanel 友好？
-4. 小图是否没被伤害？
+2. R3a（引力收窄）和 R3b（宽度惩罚）在全图上谁更好？（单簇看不出差异，全图才能判定）
+3. 节点是否不重叠了？自适应大小是否合理？
+4. 画布是否竖向收窄了？sidepanel 友好？
+5. 小图是否没被伤害？
 
 ### 4.4 Go/No-Go 门槛
 
@@ -149,19 +176,19 @@ Round 2 的 `html-renderer.ts` 需要两个改动：
 |---|---|
 | 大图收益 | 大图样本里 R3 在 70%+ 被人眼判为优于 baseline |
 | 小图防伤害 | 小图样本里 R3 不超 20% 被判为明显更差 |
-| 节点重叠 | R3 的节点重叠对数 < 节点数 × 0.3 |
-| 宽高比 | R3 大图的画布宽高比中位数 < 0.5 |
+| 节点重叠 | 大图样本中，R3a 和 R3b 的 `overlapPairs / nodeCount` 中位数均 < 0.3 |
+| 宽高比 | R3a 和 R3b 大图画布宽高比中位数 < 0.5 |
 
 ## 5. 文件结构
 
 ```
 tools/layout-lab/src/
 ├── round3-types.ts           # 自适应节点尺寸类型 + NodeSize 计算
-├── force-layout-v2.ts        # D2 升级：面积斥力 + 碰撞消除 + 自适应节点
-├── cluster-force-layout.ts   # cluster 外层 + D2 簇内 = 完整 R3 候选
+├── force-layout-v2.ts        # 力导向核心（面积斥力 + spring + damping + resolveOverlaps）
+├── cluster-force-layout.ts   # cluster 外层 + 力导向簇内 = R3a/R3b 候选
 ├── html-renderer-v2.ts       # 自适应节点 HTML 渲染（升级 html-renderer.ts）
-├── render-round3.ts          # 主流程：baseline + R3 坐标 → HTML → Playwright 截图
-├── round3-gallery.ts         # 两栏 gallery + 指标 + 评分模板
+├── render-round3.ts          # 主流程：baseline + R3a + R3b → HTML → Playwright 截图
+├── round3-gallery.ts         # 三栏 gallery + 指标 + 评分模板
 └── ...（Round 1/2 文件保留不动）
 tools/layout-lab/outputs/
 ├── round3-html/              # 每条图 2 个 HTML
