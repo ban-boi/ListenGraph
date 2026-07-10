@@ -36,7 +36,7 @@ export type RenderModel = {
   edges: RenderEdge[];
   clusters: ClusterInfo[];
   meta: {
-    candidate: 'baseline' | 'A' | 'B';
+    candidate: 'baseline' | 'A' | 'B' | 'R3a' | 'R3b';
     graphIndex: number;
     nodeCount: number;
     edgeCount: number;
