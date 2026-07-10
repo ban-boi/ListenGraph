@@ -40,23 +40,32 @@ export async function renderRound3(): Promise<void> {
     console.log(`[round3] #${padded}: baseline=${baseline.items.length}items R3a=${r3a.meta.clusterCount}clusters R3b=${r3b.meta.clusterCount}clusters`);
   }
 
-  // Chromium 全页截图单边上限约 16384px；R3a/R3b 力导向布局对大图可能堆出超长画布，
-  // 超限的候选会触发 Playwright Protocol error。这里按候选 try/catch，单张失败不中断整体。
-  const failed: string[] = [];
+  // Chromium 全页截图单边上限约 16384px；大图的力导向布局可能超过此限制。
+  // 用固定 viewport 宽度 + clip 截图，最多截 16000px 高（首屏 + 滚动区域）。
+  const MAX_SCREENSHOT_HEIGHT = 16000;
   const browser = await chromium.launch({ headless: true });
   for (const idx of SAMPLE_INDICES) {
     const padded = String(idx).padStart(2, '0');
     for (const cand of ['baseline', 'R3a', 'R3b'] as const) {
       const htmlPath = path.join(HTML_DIR, `${padded}-${cand}.html`);
       if (!fs.existsSync(htmlPath)) continue;
-      const page = await browser.newPage();
+      const page = await browser.newPage({ viewport: { width: 1000, height: 800 } });
       try {
         await page.goto(`file:///${htmlPath.replace(/\\/g, '/')}`);
         await page.waitForLoadState('domcontentloaded');
         await page.waitForTimeout(300);
-        await page.screenshot({ path: path.join(SHOT_DIR, `${padded}-${cand}.png`), fullPage: true });
+        // 测量实际画布尺寸，截取 min(实际高度, MAX) 的区域
+        const dims = await page.evaluate(() => {
+          const canvas = document.querySelector('.canvas') as HTMLElement;
+          return { w: canvas?.scrollWidth ?? document.body.scrollWidth, h: canvas?.scrollHeight ?? document.body.scrollHeight };
+        });
+        const clipH = Math.min(dims.h, MAX_SCREENSHOT_HEIGHT);
+        await page.setViewportSize({ width: Math.min(dims.w + 20, 2000), height: Math.min(clipH, 800) });
+        await page.screenshot({
+          path: path.join(SHOT_DIR, `${padded}-${cand}.png`),
+          clip: { x: 0, y: 0, width: Math.min(dims.w + 20, 2000), height: clipH },
+        });
       } catch (err) {
-        failed.push(`${padded}-${cand}`);
         console.warn(`[round3] #${padded} ${cand} 截图失败：${(err as Error).message.split('\n')[0]}`);
       } finally {
         await page.close();
@@ -66,9 +75,6 @@ export async function renderRound3(): Promise<void> {
   }
   await browser.close();
   console.log(`[round3] 全部完成：${SAMPLE_INDICES.length} 条图 × 3 候选`);
-  if (failed.length > 0) {
-    console.warn(`[round3] ${failed.length} 张截图因画布超限失败：\n  ${failed.join('\n  ')}`);
-  }
 }
 
 void renderRound3();

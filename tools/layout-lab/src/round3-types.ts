@@ -8,12 +8,12 @@ export type NodeSize = { width: number; height: number };
 
 // 力导向参数
 export const FORCE_PARAMS = {
-  REPULSION_K: 80000,
-  SPRING_LENGTH: 160,
-  SPRING_K: 0.04,
-  DAMPING: 0.85,
-  MAX_DISPLACEMENT: 50,
-  ITERATIONS: 300,
+  REPULSION_K: 120,
+  SPRING_LENGTH: 140,
+  SPRING_K: 0.06,
+  DAMPING: 0.82,
+  MAX_DISPLACEMENT: 40,
+  ITERATIONS: 250,
   OVERLAP_ROUNDS: 20,
 } as const;
 

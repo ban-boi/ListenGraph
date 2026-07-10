@@ -131,7 +131,9 @@ export function computeClusterForceLayout(
   const edges: RenderEdge[] = [];
   const clusters: ClusterInfo[] = [];
 
+  let currentX = 0;
   let currentY = 0;
+  let rowMaxY = 0;
 
   for (const cluster of partition.clusters) {
     const clusterNodes = graph.nodes.filter((n) => cluster.nodeIds.includes(n.id));
@@ -192,13 +194,20 @@ export function computeClusterForceLayout(
       localHeight = sorted.length * LOOSE_NOTE_ITEM_HEIGHT;
     }
 
-    // offset 到外层（纵向堆叠）
+    // offset 到外层（row packing：宽度内横向排，超宽换行）
+    if (currentX + localWidth + CLUSTER_GAP > OUTER_TARGET_WIDTH && currentX > 0) {
+      currentX = 0;
+      currentY = rowMaxY + CLUSTER_GAP;
+      rowMaxY = 0;
+    }
+    const placeX = currentX;
     const placeY = currentY;
+
     for (const item of localItems) {
       if ('position' in item) {
         items.push({
           ...item,
-          position: { x: item.position.x, y: item.position.y + placeY },
+          position: { x: item.position.x + placeX, y: item.position.y + placeY },
         });
       }
     }
@@ -207,10 +216,11 @@ export function computeClusterForceLayout(
       id: cluster.id,
       type: cluster.type,
       nodeIds: cluster.nodeIds,
-      bounds: { x: 0, y: placeY, width: Math.min(localWidth, OUTER_TARGET_WIDTH), height: localHeight },
+      bounds: { x: placeX, y: placeY, width: localWidth, height: localHeight },
     });
 
-    currentY = placeY + localHeight + CLUSTER_GAP;
+    currentX = placeX + localWidth + CLUSTER_GAP;
+    rowMaxY = Math.max(rowMaxY, placeY + localHeight);
   }
 
   const majorCount = partition.clusters.filter((c) => c.type === 'major').length;
