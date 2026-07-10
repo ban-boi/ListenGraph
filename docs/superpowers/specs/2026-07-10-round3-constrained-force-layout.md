@@ -9,7 +9,7 @@
 
 ## 0. 目标
 
-**验证"D2 力导向簇内布局 + cluster-first 外层组织 + 自适应节点大小"是否比当前 baseline 更可读。**
+**验证"受约束力导向簇内布局（D1 引力 / D2 宽度惩罚）+ cluster-first 外层组织 + 自适应节点大小"是否比当前 baseline 更可读。**
 
 这是 go/no-go 决策实验。如果收益明显，下一步产品化；如果没收益，砍掉不背债。
 
@@ -23,6 +23,7 @@
 
 ```typescript
 // 宽高都根据文本长度自适应
+// 注意：尺寸基于截断后的显示文本（与 renderer 的 truncate 同源），不是全文
 // 字符宽度估算：中文约 14px，英文约 8px，混合取 12px/字
 const CHAR_WIDTH = 12;
 const LINE_HEIGHT = 18;
@@ -32,6 +33,9 @@ const MAX_WIDTH = 200;        // 最大宽度（超长截断）
 const MIN_HEIGHT = 50;        // 最小高度（1行 + type 标签）
 const TYPE_LABEL_HEIGHT = 16; // 类型标签高度
 
+// 调用前必须先截断文本，保证尺寸与实际显示一致：
+// const displayText = truncate(node.text, 60);
+// const size = computeNodeSize(displayText);
 function computeNodeSize(text: string): { width: number; height: number } {
   const textLen = text.length;
   // 宽度：按字符数估算，限制在 MIN-MAX 之间
@@ -51,9 +55,9 @@ function computeNodeSize(text: string): { width: number; height: number } {
 - 10 字节点：宽 144px，高 58px（1 行）
 - 60 字节点：宽 200px，高 130px（5 行）
 
-### 1.2 D2 力导向簇内布局（升级版）
+### 1.2 力导向簇内布局（升级版）
 
-**基于 Round 2 的 D2 原型，两个改进**：
+**基于 Round 2 的 D1/D2 原型，两个改进**（R3a 和 R3b 共用这些改进，区别只在竖向约束力）：
 
 1. **斥力按实际节点尺寸算**：两个节点之间的斥力不再是固定常数，而是跟它们面积成正比——大节点斥力更大，自然推开得更远，减少重叠。
 
@@ -65,16 +69,34 @@ const areaB = sizeB.width * sizeB.height;
 const repulsion = REPULSION_K * Math.sqrt(areaA * areaB) / (dist * dist);
 ```
 
-2. **碰撞检测用实际矩形**：弹簧松弛后做一次碰撞消除——如果两个节点矩形重叠，把它们沿连线方向轻微推开。这是 D0-D2 原型缺的后处理。
+2. **碰撞检测用实际矩形**：弹簧松弛后做一次碰撞消除——如果两个节点矩形重叠，把它们沿较小重叠轴推开。这是 D0-D2 原型缺的后处理。
 
 ```typescript
 // 力导向迭代结束后，做 N 轮碰撞消除
+// 使用 AABB minimum translation：计算 overlapX/overlapY，沿较小重叠轴各推一半
+// 中心重合时按稳定 node id 决定方向（id 字母序小的往左/上推），保证结果可重复
 function resolveOverlaps(positions, sizes, edges, rounds = 20) {
   for (let r = 0; r < rounds; r++) {
     for (each pair (a, b) that overlaps) {
-      // 沿 a→b 方向推开，位移 ∝ 重叠量
-      const overlap = computeOverlap(positions[a], sizes[a], positions[b], sizes[b]);
-      push apart by overlap * 0.5;
+      // AABB 重叠量
+      const overlapX = (sizes[a].width + sizes[b].width) / 2 - Math.abs(positions[a].cx - positions[b].cx);
+      const overlapY = (sizes[a].height + sizes[b].height) / 2 - Math.abs(positions[a].cy - positions[b].cy);
+      if (overlapX <= 0 || overlapY <= 0) continue; // 不重叠
+      // 沿较小重叠轴推开
+      if (overlapX < overlapY) {
+        const dir = positions[a].cx <= positions[b].cx ? -1 : 1; // a 往左/右
+        // 中心重合时按 id 稳定方向
+        const stableDir = positions[a].cx === positions[b].cx
+          ? (a < b ? -1 : 1) : dir;
+        positions[a].cx += stableDir * overlapX / 2;
+        positions[b].cx -= stableDir * overlapX / 2;
+      } else {
+        const dir = positions[a].cy <= positions[b].cy ? -1 : 1;
+        const stableDir = positions[a].cy === positions[b].cy
+          ? (a < b ? -1 : 1) : dir;
+        positions[a].cy += stableDir * overlapY / 2;
+        positions[b].cy -= stableDir * overlapY / 2;
+      }
     }
   }
 }
@@ -85,7 +107,7 @@ function resolveOverlaps(positions, sizes, edges, rounds = 20) {
 复用 Round 2 已验证的 cluster partition + row packing：
 - UnionFind 连通分量分区
 - major/minor 分类（major: nodeCount≥3 或 edgeCount≥2 或 maxDegree≥2）
-- major 簇独立布局（这次用 D2 力导向，不再用 hierarchy）
+- major 簇独立布局（这次用力导向布局，不再用 hierarchy）
 - minor 簇 → loose notes 打包
 - cluster 间 row packing（bounds + gap）
 
@@ -112,7 +134,13 @@ function resolveOverlaps(positions, sizes, edges, rounds = 20) {
 3. **Damping**（阻尼）：每轮迭代速度乘以 `DAMPING`。
 4. **竖向约束力**（R3a vs R3b 的唯一区别）：
    - **R3a（center-axis gravity）**：每个节点受一个朝向 X 中心轴的持续引力 `force.x = (centerX - node.x) × GRAVITY_STRENGTH`。温和收窄。
-   - **R3b（soft width penalty）**：只有节点 X 超出 `[0, targetWidth]` 时才有反推力 `force.x = overshoot × PENALTY_STRENGTH`。越界才管。
+   - **R3b（soft width penalty）**：只有节点矩形边界超出 `[0, targetWidth]` 时才有反推力。按矩形边界判断（不是中心点）：
+     ```typescript
+     const leftOvershoot = Math.max(0, size.width / 2 - cx);      // 左边界超出 0
+     const rightOvershoot = Math.max(0, cx + size.width / 2 - targetWidth); // 右边界超出 targetWidth
+     force.x += leftOvershoot * PENALTY_STRENGTH - rightOvershoot * PENALTY_STRENGTH;
+     ```
+     越界才管。
 5. **Post-process: resolveOverlaps**（碰撞消除）：力导向迭代结束后，做 N 轮碰撞消除——重叠的节点对沿连线方向推开。
 
 **`targetWidth`**：R3a 和 R3b 都用 `targetWidth = 600`（sidepanel 友好宽度）。
@@ -174,8 +202,12 @@ Round 2 的 `html-renderer.ts` 需要两个改动：
 
 | 门槛 | 标准 |
 |---|---|
-| 大图收益 | 大图样本里 R3 在 70%+ 被人眼判为优于 baseline |
-| 小图防伤害 | 小图样本里 R3 不超 20% 被判为明显更差 |
+**评分规则**：R3a、R3b 各自独立与 baseline 配对评分。任一候选同时满足以下四项门槛，Round 3 即 GO。不得按每张图挑较优候选后拼成虚拟结果。
+
+| 门槛 | 标准 |
+|---|---|
+| 大图收益 | 大图样本里该候选在 70%+ 被人眼判为优于 baseline |
+| 小图防伤害 | 小图样本里该候选不超 20% 被判为明显更差 |
 | 节点重叠 | 大图样本中，R3a 和 R3b 的 `overlapPairs / nodeCount` 中位数均 < 0.3 |
 | 宽高比 | R3a 和 R3b 大图画布宽高比中位数 < 0.5 |
 
@@ -192,15 +224,15 @@ tools/layout-lab/src/
 └── ...（Round 1/2 文件保留不动）
 tools/layout-lab/outputs/
 ├── round3-html/              # 每条图 2 个 HTML
-├── round3-screenshots/       # 每条图 2 张 PNG
-├── round3-gallery.html       # 两栏并排对比
+├── round3-screenshots/       # 每条图 3 张 PNG（baseline + R3a + R3b）
+├── round3-gallery.html       # 三栏并排对比
 ├── round3-metrics.json       # 全部指标数据
 └── round3-human-review-template.json
 ```
 
 ## 6. 明确不做
 
-- ❌ 不做 D0/D1 对比（Round 2 已证明 D2 最好）
+- ❌ 不做 D0 对比（Round 2 已证明力导向远好于直线排布；D1/D2 的差异是 Round 3 的验证目标）
 - ❌ 不做 Candidate C（opposition 强化）
 - ❌ 不碰产品代码（不改 graph-utils / React Flow / panel-reducer）
 - ❌ 不做点击展开交互
