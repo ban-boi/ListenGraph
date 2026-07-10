@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { computeBaselinePositions } from './baseline-layout';
-import { buildStableReactFlowDebugGraph } from '../../../apps/extension/src/sidepanel/graph-utils.ts';
-import { toHierarchyRendererGraph } from '../../../packages/graph-renderers/src/hierarchy.ts';
+import { buildStableReactFlowDebugGraph, getRendererGraph } from '../../../apps/extension/src/sidepanel/graph-utils.ts';
 import type { MergedGraph } from '@listen-graphic/schema';
 
 const DUMP_PATH = path.resolve(import.meta.dirname, '../inputs/real-graphs-dump.json');
@@ -18,14 +17,15 @@ describe('computeBaselinePositions 等价验证', () => {
   const testIndices = [49, 32, 18];
 
   for (const idx of testIndices) {
-    it(`graph #${idx} 的 positions 与 buildStableReactFlowDebugGraph 一致`, () => {
+    it(`graph #${idx} 的 positions 与 buildStableReactFlowDebugGraph 一致（view 跟随 defaultView）`, () => {
       const graph = loadGraph(idx);
-      const rendererGraph = toHierarchyRendererGraph(graph);
+      const view = graph.viewHints?.defaultView ?? 'causal';
+      const rendererGraph = getRendererGraph(graph, view);
 
       // 直接调产品函数
       const productResult = buildStableReactFlowDebugGraph({
         rendererGraph,
-        view: 'hierarchy',
+        view,
         currentTimeMs: 0,
         selectedNodeId: null,
         previousLayoutState: { positions: {} },
