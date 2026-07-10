@@ -367,3 +367,320 @@ export function layoutForceDirected(
 
   return positions;
 }
+
+// ── Strategy D1: Force-directed + center-axis gravity ──
+// Same as D0 but adds a continuous gentle pull toward the vertical center axis (x = targetWidth/2).
+// This "encourages" the layout to be narrow without hard constraints.
+// GRAVITY_STRENGTH controls how aggressively nodes are pulled toward center.
+export function layoutForceDirectedGravity(
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  iterations = 300,
+  targetWidth = 600,
+): Record<string, Position> {
+  if (nodes.length === 0) return {};
+  if (nodes.length === 1) return { [nodes[0].id]: { x: targetWidth / 2, y: 0 } };
+
+  const nodeIds = new Set(nodes.map(n => n.id));
+  const structuralTypes = new Set<EdgeType>(['causes', 'supports', 'example_of', 'follows', 'opposes']);
+  const edgeList: Array<{ source: string; target: string }> = [];
+  for (const e of edges) {
+    if (!structuralTypes.has(e.type)) continue;
+    if (!nodeIds.has(e.source) || !nodeIds.has(e.target)) continue;
+    if (e.source === e.target) continue;
+    edgeList.push({ source: e.source, target: e.target });
+  }
+
+  const positions: Record<string, Position> = {};
+  const radius = Math.max(200, nodes.length * 15);
+  nodes.forEach((n, i) => {
+    const angle = (i / nodes.length) * Math.PI * 2;
+    positions[n.id] = {
+      x: Math.cos(angle) * radius + (i % 3) * 10,
+      y: Math.sin(angle) * radius + (i % 3) * 10,
+    };
+  });
+
+  const REPULSION = 80000;
+  const SPRING_LENGTH = 160;
+  const SPRING_K = 0.04;
+  const DAMPING = 0.85;
+  const MAX_DISPLACEMENT = 50;
+  // Center-axis gravity: pull each node toward x = targetWidth/2
+  const GRAVITY_STRENGTH = 0.015;
+  const centerX = targetWidth / 2;
+
+  const velocities: Record<string, Position> = {};
+  for (const n of nodes) velocities[n.id] = { x: 0, y: 0 };
+
+  for (let iter = 0; iter < iterations; iter++) {
+    const forces: Record<string, Position> = {};
+    for (const n of nodes) forces[n.id] = { x: 0, y: 0 };
+
+    // Repulsion
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j];
+        const dx = positions[a.id].x - positions[b.id].x;
+        const dy = positions[a.id].y - positions[b.id].y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 1) dist = 1;
+        const force = REPULSION / (dist * dist);
+        forces[a.id].x += (dx / dist) * force;
+        forces[a.id].y += (dy / dist) * force;
+        forces[b.id].x -= (dx / dist) * force;
+        forces[b.id].y -= (dy / dist) * force;
+      }
+    }
+
+    // Spring attraction
+    for (const edge of edgeList) {
+      const dx = positions[edge.target].x - positions[edge.source].x;
+      const dy = positions[edge.target].y - positions[edge.source].y;
+      let dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 1) dist = 1;
+      const force = SPRING_K * (dist - SPRING_LENGTH);
+      forces[edge.source].x += (dx / dist) * force;
+      forces[edge.source].y += (dy / dist) * force;
+      forces[edge.target].x -= (dx / dist) * force;
+      forces[edge.target].y -= (dy / dist) * force;
+    }
+
+    // Center-axis gravity (only on X)
+    for (const n of nodes) {
+      const dx = centerX - positions[n.id].x;
+      forces[n.id].x += dx * GRAVITY_STRENGTH;
+    }
+
+    // Apply
+    for (const n of nodes) {
+      velocities[n.id].x = (velocities[n.id].x + forces[n.id].x) * DAMPING;
+      velocities[n.id].y = (velocities[n.id].y + forces[n.id].y) * DAMPING;
+      positions[n.id].x += Math.max(-MAX_DISPLACEMENT, Math.min(MAX_DISPLACEMENT, velocities[n.id].x));
+      positions[n.id].y += Math.max(-MAX_DISPLACEMENT, Math.min(MAX_DISPLACEMENT, velocities[n.id].y));
+    }
+  }
+
+  // Normalize
+  const allPos = Object.values(positions);
+  const minX = Math.min(...allPos.map(p => p.x));
+  const minY = Math.min(...allPos.map(p => p.y));
+  for (const id of Object.keys(positions)) {
+    positions[id].x -= minX;
+    positions[id].y -= minY;
+  }
+  return positions;
+}
+
+// ── Strategy D2: Force-directed + soft width penalty ──
+// Same as D0 but adds a conditional force: if a node's X exceeds targetWidth,
+// a penalty pushes it back inward. Nodes within the width are free.
+// PENALTY_STRENGTH controls how hard the boundary pushes back.
+export function layoutForceDirectedWidthPenalty(
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  iterations = 300,
+  targetWidth = 600,
+): Record<string, Position> {
+  if (nodes.length === 0) return {};
+  if (nodes.length === 1) return { [nodes[0].id]: { x: 0, y: 0 } };
+
+  const nodeIds = new Set(nodes.map(n => n.id));
+  const structuralTypes = new Set<EdgeType>(['causes', 'supports', 'example_of', 'follows', 'opposes']);
+  const edgeList: Array<{ source: string; target: string }> = [];
+  for (const e of edges) {
+    if (!structuralTypes.has(e.type)) continue;
+    if (!nodeIds.has(e.source) || !nodeIds.has(e.target)) continue;
+    if (e.source === e.target) continue;
+    edgeList.push({ source: e.source, target: e.target });
+  }
+
+  const positions: Record<string, Position> = {};
+  const radius = Math.max(200, nodes.length * 15);
+  nodes.forEach((n, i) => {
+    const angle = (i / nodes.length) * Math.PI * 2;
+    positions[n.id] = {
+      x: Math.cos(angle) * radius + (i % 3) * 10,
+      y: Math.sin(angle) * radius + (i % 3) * 10,
+    };
+  });
+
+  const REPULSION = 80000;
+  const SPRING_LENGTH = 160;
+  const SPRING_K = 0.04;
+  const DAMPING = 0.85;
+  const MAX_DISPLACEMENT = 50;
+  // Soft width penalty: push back if x < 0 or x > targetWidth
+  const PENALTY_STRENGTH = 0.08;
+
+  const velocities: Record<string, Position> = {};
+  for (const n of nodes) velocities[n.id] = { x: 0, y: 0 };
+
+  for (let iter = 0; iter < iterations; iter++) {
+    const forces: Record<string, Position> = {};
+    for (const n of nodes) forces[n.id] = { x: 0, y: 0 };
+
+    // Repulsion
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j];
+        const dx = positions[a.id].x - positions[b.id].x;
+        const dy = positions[a.id].y - positions[b.id].y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 1) dist = 1;
+        const force = REPULSION / (dist * dist);
+        forces[a.id].x += (dx / dist) * force;
+        forces[a.id].y += (dy / dist) * force;
+        forces[b.id].x -= (dx / dist) * force;
+        forces[b.id].y -= (dy / dist) * force;
+      }
+    }
+
+    // Spring attraction
+    for (const edge of edgeList) {
+      const dx = positions[edge.target].x - positions[edge.source].x;
+      const dy = positions[edge.target].y - positions[edge.source].y;
+      let dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 1) dist = 1;
+      const force = SPRING_K * (dist - SPRING_LENGTH);
+      forces[edge.source].x += (dx / dist) * force;
+      forces[edge.source].y += (dy / dist) * force;
+      forces[edge.target].x -= (dx / dist) * force;
+      forces[edge.target].y -= (dy / dist) * force;
+    }
+
+    // Soft width penalty: only on X, only when out of bounds
+    for (const n of nodes) {
+      const x = positions[n.id].x;
+      if (x < 0) {
+        forces[n.id].x += (-x) * PENALTY_STRENGTH; // push right
+      } else if (x > targetWidth) {
+        forces[n.id].x -= (x - targetWidth) * PENALTY_STRENGTH; // push left
+      }
+    }
+
+    // Apply
+    for (const n of nodes) {
+      velocities[n.id].x = (velocities[n.id].x + forces[n.id].x) * DAMPING;
+      velocities[n.id].y = (velocities[n.id].y + forces[n.id].y) * DAMPING;
+      positions[n.id].x += Math.max(-MAX_DISPLACEMENT, Math.min(MAX_DISPLACEMENT, velocities[n.id].x));
+      positions[n.id].y += Math.max(-MAX_DISPLACEMENT, Math.min(MAX_DISPLACEMENT, velocities[n.id].y));
+    }
+  }
+
+  // Normalize
+  const allPos = Object.values(positions);
+  const minX = Math.min(...allPos.map(p => p.x));
+  const minY = Math.min(...allPos.map(p => p.y));
+  for (const id of Object.keys(positions)) {
+    positions[id].x -= minX;
+    positions[id].y -= minY;
+  }
+  return positions;
+}
+
+// ── Layout quality metrics ──
+// Computes quantitative metrics for comparing layouts.
+export type LayoutMetrics = {
+  aspectRatio: number;       // width / height (lower = more vertical/narrow)
+  avgEdgeLength: number;     // average Euclidean distance of edges
+  longEdgeRatio: number;     // fraction of edges longer than 30% of canvas diagonal
+  edgeCrossings: number;     // count of edge-node intersections (edge passes through a node card)
+};
+
+export function computeLayoutMetrics(
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  positions: Record<string, Position>,
+  cardWidth = 220,
+  cardHeight = 132,
+): LayoutMetrics {
+  const validIds = new Set(Object.keys(positions));
+  const validEdges = edges.filter(e => validIds.has(e.source) && validIds.has(e.target) && e.source !== e.target);
+
+  // Canvas dimensions
+  const allPos = Object.values(positions);
+  if (allPos.length === 0) {
+    return { aspectRatio: 0, avgEdgeLength: 0, longEdgeRatio: 0, edgeCrossings: 0 };
+  }
+  const minX = Math.min(...allPos.map(p => p.x));
+  const maxX = Math.max(...allPos.map(p => p.x)) + cardWidth;
+  const minY = Math.min(...allPos.map(p => p.y));
+  const maxY = Math.max(...allPos.map(p => p.y)) + cardHeight;
+  const width = maxX - minX;
+  const height = maxY - minY;
+  const diagonal = Math.sqrt(width * width + height * height);
+
+  // Edge lengths
+  const edgeLengths = validEdges.map(e => {
+    const s = positions[e.source], t = positions[e.target];
+    return Math.sqrt((s.x - t.x) ** 2 + (s.y - t.y) ** 2);
+  });
+  const avgEdgeLength = edgeLengths.length > 0
+    ? edgeLengths.reduce((a, b) => a + b, 0) / edgeLengths.length
+    : 0;
+  const longEdgeRatio = edgeLengths.length > 0
+    ? edgeLengths.filter(l => l > diagonal * 0.3).length / edgeLengths.length
+    : 0;
+
+  // Edge crossings through node cards (approximate: does the edge line segment
+  // intersect any node's bounding rect that isn't its own source/target?)
+  let edgeCrossings = 0;
+  for (const edge of validEdges) {
+    const s = positions[edge.source];
+    const t = positions[edge.target];
+    for (const node of nodes) {
+      if (node.id === edge.source || node.id === edge.target) continue;
+      if (!validIds.has(node.id)) continue;
+      const np = positions[node.id];
+      // Check if line segment (s→t) intersects rect (np.x, np.y, cardWidth, cardHeight)
+      if (lineIntersectsRect(s, t, np.x, np.y, cardWidth, cardHeight)) {
+        edgeCrossings++;
+      }
+    }
+  }
+
+  return {
+    aspectRatio: height > 0 ? width / height : 0,
+    avgEdgeLength: Math.round(avgEdgeLength),
+    longEdgeRatio: Math.round(longEdgeRatio * 100) / 100,
+    edgeCrossings,
+  };
+}
+
+// Line segment vs axis-aligned rect intersection test
+function lineIntersectsRect(
+  p1: Position, p2: Position,
+  rx: number, ry: number, rw: number, rh: number,
+): boolean {
+  // Check if either endpoint is inside the rect
+  if (p1.x >= rx && p1.x <= rx + rw && p1.y >= ry && p1.y <= ry + rh) return true;
+  if (p2.x >= rx && p2.x <= rx + rw && p2.y >= ry && p2.y <= ry + rh) return true;
+
+  // Check intersection with 4 rect edges
+  const r1 = { x: rx, y: ry };           // top-left
+  const r2 = { x: rx + rw, y: ry };       // top-right
+  const r3 = { x: rx + rw, y: ry + rh };  // bottom-right
+  const r4 = { x: rx, y: ry + rh };       // bottom-left
+
+  return (
+    segmentsIntersect(p1, p2, r1, r2) || // top
+    segmentsIntersect(p1, p2, r2, r3) || // right
+    segmentsIntersect(p1, p2, r3, r4) || // bottom
+    segmentsIntersect(p1, p2, r4, r1)    // left
+  );
+}
+
+function segmentsIntersect(a: Position, b: Position, c: Position, d: Position): boolean {
+  const d1 = crossProduct(c, d, a);
+  const d2 = crossProduct(c, d, b);
+  const d3 = crossProduct(a, b, c);
+  const d4 = crossProduct(a, b, d);
+  if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
+      ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) return true;
+  return false;
+}
+
+function crossProduct(o: Position, a: Position, b: Position): number {
+  return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+}
