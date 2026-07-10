@@ -7,8 +7,11 @@ export type CenterPos = { cx: number; cy: number };
 export type NodeSize = { width: number; height: number };
 
 // 力导向参数
+// REPULSION_K 与面积配合：力 = K × √(areaA×areaB) / dist²
+// 原 D0-D2 用固定 80000/dist²，换算到面积版 K ≈ 80000/area ≈ 5.3
+// 用 6 让面积斥力略强于固定版（自适应节点更小，需要稍强斥力防重叠）
 export const FORCE_PARAMS = {
-  REPULSION_K: 120,
+  REPULSION_K: 6,
   SPRING_LENGTH: 140,
   SPRING_K: 0.06,
   DAMPING: 0.82,
