@@ -33,8 +33,12 @@ function extractPositions(items: Array<{ kind: string; nodeId?: string; position
 }
 
 // Count node overlap pairs (separate from edgeCrossings)
-function countOverlaps(positions: Record<string, Position>, graph: MergedGraph): number {
-  const sizes = computeAllNodeSizes(graph.nodes);
+// sizes 参数控制用固定还是自适应尺寸
+function countOverlaps(
+  positions: Record<string, Position>,
+  graph: MergedGraph,
+  sizes: Record<string, { width: number; height: number }>,
+): number {
   const ids = Object.keys(positions);
   let overlaps = 0;
   for (let i = 0; i < ids.length; i++) {
@@ -78,13 +82,19 @@ export function renderRound3Gallery(): void {
     const ap = extractPositions(r3a.items);
     const bp2 = extractPositions(r3b.items);
 
-    const bm = computeLayoutMetrics(graph.nodes, graph.edges, bp);
-    const am = computeLayoutMetrics(graph.nodes, graph.edges, ap);
-    const bm2 = computeLayoutMetrics(graph.nodes, graph.edges, bp2);
+    // 尺寸口径修正：baseline 用固定 220×132（产品实际），R3 用自适应尺寸
+    const adaptiveSizes = computeAllNodeSizes(graph.nodes);
+    const fixedSizes: Record<string, { width: number; height: number }> = {};
+    for (const n of graph.nodes) fixedSizes[n.id] = { width: 220, height: 132 };
 
-    const bo = countOverlaps(bp, graph);
-    const ao = countOverlaps(ap, graph);
-    const bo2 = countOverlaps(bp2, graph);
+    const bm = computeLayoutMetrics(graph.nodes, graph.edges, bp, 220, 132, fixedSizes);
+    const am = computeLayoutMetrics(graph.nodes, graph.edges, ap, 220, 132, adaptiveSizes);
+    const bm2 = computeLayoutMetrics(graph.nodes, graph.edges, bp2, 220, 132, adaptiveSizes);
+
+    // countOverlaps 同理：baseline 用固定尺寸
+    const bo = countOverlaps(bp, graph, fixedSizes);
+    const ao = countOverlaps(ap, graph, adaptiveSizes);
+    const bo2 = countOverlaps(bp2, graph, adaptiveSizes);
 
     const metricsStr = (m: LayoutMetrics, overlaps: number) =>
       `宽高比:${m.aspectRatio.toFixed(2)} 边长:${m.avgEdgeLength} 长边:${(m.longEdgeRatio * 100).toFixed(0)}% 穿越:${m.edgeCrossings} 重叠:${overlaps}`;

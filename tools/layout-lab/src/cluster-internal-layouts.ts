@@ -594,19 +594,23 @@ export function computeLayoutMetrics(
   positions: Record<string, Position>,
   cardWidth = 220,
   cardHeight = 132,
+  nodeSizes?: Record<string, { width: number; height: number }>,
 ): LayoutMetrics {
   const validIds = new Set(Object.keys(positions));
   const validEdges = edges.filter(e => validIds.has(e.source) && validIds.has(e.target) && e.source !== e.target);
 
-  // Canvas dimensions
-  const allPos = Object.values(positions);
-  if (allPos.length === 0) {
+  // Helper: 获取节点尺寸（有逐节点尺寸就用，否则 fallback 到固定 cardWidth/cardHeight）
+  const getSize = (id: string) => nodeSizes?.[id] ?? { width: cardWidth, height: cardHeight };
+
+  // Canvas dimensions（用逐节点实际尺寸）
+  const allIds = Object.keys(positions);
+  if (allIds.length === 0) {
     return { aspectRatio: 0, avgEdgeLength: 0, longEdgeRatio: 0, edgeCrossings: 0 };
   }
-  const minX = Math.min(...allPos.map(p => p.x));
-  const maxX = Math.max(...allPos.map(p => p.x)) + cardWidth;
-  const minY = Math.min(...allPos.map(p => p.y));
-  const maxY = Math.max(...allPos.map(p => p.y)) + cardHeight;
+  const minX = Math.min(...allIds.map(id => positions[id].x));
+  const maxX = Math.max(...allIds.map(id => positions[id].x + getSize(id).width));
+  const minY = Math.min(...allIds.map(id => positions[id].y));
+  const maxY = Math.max(...allIds.map(id => positions[id].y + getSize(id).height));
   const width = maxX - minX;
   const height = maxY - minY;
   const diagonal = Math.sqrt(width * width + height * height);
@@ -623,8 +627,7 @@ export function computeLayoutMetrics(
     ? edgeLengths.filter(l => l > diagonal * 0.3).length / edgeLengths.length
     : 0;
 
-  // Edge crossings through node cards (approximate: does the edge line segment
-  // intersect any node's bounding rect that isn't its own source/target?)
+  // Edge crossings through node cards（用逐节点实际尺寸）
   let edgeCrossings = 0;
   for (const edge of validEdges) {
     const s = positions[edge.source];
@@ -633,8 +636,8 @@ export function computeLayoutMetrics(
       if (node.id === edge.source || node.id === edge.target) continue;
       if (!validIds.has(node.id)) continue;
       const np = positions[node.id];
-      // Check if line segment (s→t) intersects rect (np.x, np.y, cardWidth, cardHeight)
-      if (lineIntersectsRect(s, t, np.x, np.y, cardWidth, cardHeight)) {
+      const ns = getSize(node.id);
+      if (lineIntersectsRect(s, t, np.x, np.y, ns.width, ns.height)) {
         edgeCrossings++;
       }
     }

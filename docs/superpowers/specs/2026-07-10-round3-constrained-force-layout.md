@@ -1,6 +1,6 @@
 # Round 3：Constrained Force Layout + Cluster + 自适应节点设计文档
 
-> **状态**：方向已确认，待 spec 审阅后转入 writing-plans。
+> **状态**：✅ **已完成。GO，选择 R3b。** 实现完成（6 Task，47/47 测试，69 截图），人工判断大图可读性大幅提升、小图无伤害。指标口径已修正（baseline 固定尺寸/R3 自适应尺寸）。决策记录见 `tools/layout-lab/outputs/round3-decision.md`。下一轮进入产品化验证（Round 4）。
 > **日期**：2026-07-10
 > **前置**：
 > - Round 1 诊断集结论：多话题 74%，真实争论 6%，detector 误导 90%
