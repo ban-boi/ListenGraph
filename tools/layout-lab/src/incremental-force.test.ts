@@ -1,0 +1,71 @@
+import { describe, expect, it } from 'vitest';
+import { computeIncrementalLayout, type IncrementalState } from './incremental-force';
+import type { MergedGraph } from '@listen-graphic/schema';
+
+function makeGraph(nodes: string[], edges: Array<[string, string]>, ts: number[] = []): MergedGraph {
+  return {
+    sessionId: 's1', revision: 1, topics: [], updatedAt: 0,
+    nodes: nodes.map((id, i) => ({
+      id, type: 'claim' as const, text: id, timestampMs: ts[i] ?? i * 1000, status: 'confirmed' as const,
+    })),
+    edges: edges.map(([s, t], i) => ({ id: `e${i}`, source: s, target: t, type: 'supports' as const })),
+  };
+}
+
+const emptyState = (): IncrementalState => ({ positions: {}, sizes: {}, clusterOrigins: {}, prevClusters: [] });
+
+describe('computeIncrementalLayout', () => {
+  it('第一个 revision：所有节点有坐标', () => {
+    const graph = makeGraph(['a', 'b', 'c'], [['a', 'b'], ['b', 'c']]);
+    const result = computeIncrementalLayout(graph, emptyState());
+    expect(result.positions).toHaveProperty('a');
+    expect(result.positions).toHaveProperty('b');
+    expect(result.positions).toHaveProperty('c');
+  });
+
+  it('增量：旧节点位移 < 100px（drift clamp 保证）', () => {
+    const graph1 = makeGraph(['a', 'b', 'c'], [['a', 'b'], ['b', 'c']], [0, 1000, 2000]);
+    const result1 = computeIncrementalLayout(graph1, emptyState());
+
+    const graph2 = makeGraph(['a', 'b', 'c', 'd'], [['a', 'b'], ['b', 'c'], ['c', 'd']], [0, 1000, 2000, 3000]);
+    const result2 = computeIncrementalLayout(graph2, result1.state);
+
+    for (const id of ['a', 'b', 'c']) {
+      const p1 = result1.state.positions[id];
+      const p2 = result2.state.positions[id];
+      const dist = Math.hypot(p2.cx - p1.cx, p2.cy - p1.cy);
+      expect(dist).toBeLessThan(101); // MAX_DRIFT_LOOSE = 100
+    }
+  });
+
+  it('新节点在邻居附近（< 500px）', () => {
+    const graph1 = makeGraph(['a', 'b'], [['a', 'b']]);
+    const result1 = computeIncrementalLayout(graph1, emptyState());
+    const graph2 = makeGraph(['a', 'b', 'c'], [['a', 'b'], ['b', 'c']]);
+    const result2 = computeIncrementalLayout(graph2, result1.state);
+
+    const newPos = result2.positions['c'];
+    const neighborPos = result2.positions['b'];
+    const dist = Math.hypot(newPos.cx - neighborPos.cx, newPos.cy - neighborPos.cy);
+    expect(dist).toBeLessThan(500);
+  });
+
+  it('统计：displacementStats 含 median/max/capHitRate', () => {
+    const graph1 = makeGraph(['a', 'b', 'c'], [['a', 'b'], ['b', 'c']]);
+    const result1 = computeIncrementalLayout(graph1, emptyState());
+    const graph2 = makeGraph(['a', 'b', 'c', 'd'], [['a', 'b'], ['b', 'c'], ['c', 'd']]);
+    const result2 = computeIncrementalLayout(graph2, result1.state);
+
+    expect(result2.stats).toBeDefined();
+    expect(result2.stats!.medianDisplacement).toBeGreaterThanOrEqual(0);
+    expect(result2.stats!.maxDisplacement).toBeGreaterThanOrEqual(0);
+    expect(result2.stats!.capHitRate).toBeGreaterThanOrEqual(0);
+    expect(result2.stats!.capHitRate).toBeLessThanOrEqual(1);
+  });
+
+  it('第一个 revision stats 为 null', () => {
+    const graph = makeGraph(['a', 'b'], [['a', 'b']]);
+    const result = computeIncrementalLayout(graph, emptyState());
+    expect(result.stats).toBeNull();
+  });
+});
