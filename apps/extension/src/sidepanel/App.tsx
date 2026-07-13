@@ -581,6 +581,44 @@ export default function App() {
     [addLog, canExport, exportSessionId],
   );
 
+  const handleExportAllGraphs = useCallback(async () => {
+    try {
+      const response = (await chrome.runtime.sendMessage({
+        type: 'EXPORT_ALL_GRAPHS',
+        target: 'service-worker',
+        payload: {},
+      } as AppMessage)) as
+        | { success: true; exportData: { filename: string; mimeType: string; content: string } }
+        | { success: false; error?: string };
+
+      if (!response?.success) {
+        addLog(`导出失败：${response?.error ?? '未知错误'}`);
+        return;
+      }
+
+      if (response.exportData) {
+        const caseCount = JSON.parse(response.exportData.content).length;
+        const sizeKB = Math.round(new Blob([response.exportData.content]).size / 1024);
+
+        const confirmed = window.confirm(
+          `即将导出 ${caseCount} 个 graph 快照（${sizeKB} KB）。\n` +
+            '包含会话派生的节点文本，提交到仓库前请确认无敏感内容。\n\n' +
+            '是否继续？',
+        );
+        if (!confirmed) return;
+
+        downloadTextFile(
+          response.exportData.filename,
+          response.exportData.content,
+          response.exportData.mimeType,
+        );
+        addLog(`已导出 ${response.exportData.filename}（${caseCount} 个 case）`);
+      }
+    } catch (err) {
+      addLog(`导出异常：${err instanceof Error ? err.message : String(err)}`);
+    }
+  }, [addLog]);
+
   // ===== 调试 =====
   const loadDebugSession = useCallback(async () => {
     if (!exportSessionId) { setDebugData(null); return; }
@@ -899,6 +937,9 @@ export default function App() {
                 { id: 'export-json', label: '导出 JSON', disabled: !canExport, testId: 'overflow-menu-export-json' },
                 { id: 'export-markdown', label: '导出 Markdown', disabled: !canExport, testId: 'overflow-menu-export-markdown' },
                 { id: 'export-mermaid', label: '导出 Mermaid', disabled: !canExport, testId: 'overflow-menu-export-mermaid' },
+                ...(import.meta.env.DEV
+                  ? [{ id: 'export-all-graphs', label: '📦 导出 Graph Corpus', testId: 'overflow-menu-export-all-graphs' }]
+                  : []),
                 { id: 'debug', label: '调试', active: debugOpen, testId: 'overflow-menu-debug' },
                 { id: 'replay', label: '回放', disabled: !canReplay, active: replayOpen, testId: 'overflow-menu-replay' },
               ]}
@@ -907,6 +948,7 @@ export default function App() {
                   case 'export-json': handleExport('json'); break;
                   case 'export-markdown': handleExport('markdown'); break;
                   case 'export-mermaid': handleExport('mermaid'); break;
+                  case 'export-all-graphs': void handleExportAllGraphs(); break;
                   case 'debug': setDebugOpen((p) => !p); break;
                   case 'replay': void handleToggleReplay(); break;
                 }
