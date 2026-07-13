@@ -7,6 +7,7 @@ import {
 } from './round3-types';
 import {
   computePinK, computeMaxDrift, computeOldMobility, stableHash,
+  matchClusters,
   type IncrementalState,
 } from './incremental-types';
 
@@ -236,18 +237,56 @@ export function computeIncrementalLayout(
   }
   resolveOverlapsWithMobility(positions, allSizes, mobilities, FORCE_PARAMS.OVERLAP_ROUNDS);
 
+  // Cluster 匹配 + clusterOrigins 继承（spec 4.3.1 + 4.6）
+  const newClusters = partition.clusters.map((c) => ({ id: c.id, nodeIds: c.nodeIds, type: c.type as 'major' | 'minor' }));
+  const clusterOrigins: Record<string, { x: number; y: number }> = {};
+
+  if (!isFirstRevision) {
+    const matches = matchClusters(
+      newClusters.map((c) => ({ id: c.id, nodeIds: c.nodeIds })),
+      prevState.prevClusters,
+    );
+    for (const m of matches) {
+      if (m.isNew) {
+        // 新 cluster：用其节点的最小坐标作为 origin
+        const clusterNodeIds = newClusters.find((c) => c.id === m.newClusterId)?.nodeIds ?? [];
+        const xs = clusterNodeIds.map((id) => positions[id]?.cx ?? 0);
+        const ys = clusterNodeIds.map((id) => positions[id]?.cy ?? 0);
+        clusterOrigins[m.newClusterId] = {
+          x: xs.length > 0 ? Math.min(...xs) : 0,
+          y: ys.length > 0 ? Math.min(...ys) : 0,
+        };
+      } else if (m.predecessorIds.length === 1) {
+        // 继承：从父 cluster 继承 origin
+        const parentId = m.predecessorIds[0];
+        clusterOrigins[m.newClusterId] = prevState.clusterOrigins[parentId] ?? { x: 0, y: 0 };
+      } else {
+        // Merge：取所有父 cluster origins 的平均
+        const parentOrigins = m.predecessorIds
+          .map((pid) => prevState.clusterOrigins[pid])
+          .filter(Boolean) as Array<{ x: number; y: number }>;
+        if (parentOrigins.length > 0) {
+          clusterOrigins[m.newClusterId] = {
+            x: parentOrigins.reduce((s, o) => s + o.x, 0) / parentOrigins.length,
+            y: parentOrigins.reduce((s, o) => s + o.y, 0) / parentOrigins.length,
+          };
+        }
+      }
+    }
+  }
+
   const newState: IncrementalState = {
     positions: { ...positions },
     sizes: allSizes,
-    clusterOrigins: {},
-    prevClusters: partition.clusters.map((c) => ({ id: c.id, nodeIds: c.nodeIds, type: c.type })),
+    clusterOrigins,
+    prevClusters: newClusters,
   };
 
   return {
     state: newState,
     positions,
     stats,
-    clusters: partition.clusters.map((c) => ({ id: c.id, nodeIds: c.nodeIds, type: c.type })),
+    clusters: newClusters,
   };
 }
 

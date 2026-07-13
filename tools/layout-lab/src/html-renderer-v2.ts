@@ -21,6 +21,7 @@ export function renderModelToHtmlV2(
   model: RenderModel,
   graph: MergedGraph,
   outputPath: string,
+  fixedCanvasSize?: { width: number; height: number },
 ): void {
   const nodeById = new Map(graph.nodes.map((n) => [n.id, n]));
 
@@ -73,6 +74,11 @@ export function renderModelToHtmlV2(
   for (const c of model.clusters) {
     maxX = Math.max(maxX, c.bounds.x + c.bounds.width);
     maxY = Math.max(maxY, c.bounds.y + c.bounds.height);
+  }
+  // 如果传了固定画布尺寸，强制使用（spec 7.1 时序视觉契约：同一序列所有帧共用最终尺寸）
+  if (fixedCanvasSize) {
+    maxX = fixedCanvasSize.width;
+    maxY = fixedCanvasSize.height;
   }
 
   const clusterDivs = model.clusters
