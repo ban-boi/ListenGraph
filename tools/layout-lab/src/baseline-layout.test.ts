@@ -17,9 +17,9 @@ describe('computeBaselinePositions 等价验证', () => {
   const testIndices = [49, 32, 18];
 
   for (const idx of testIndices) {
-    it(`graph #${idx} 的 positions 与 buildStableReactFlowDebugGraph 一致（view 跟随 defaultView）`, () => {
+    it(`graph #${idx} 的 positions 与 buildStableReactFlowDebugGraph 一致（固定 causal view）`, () => {
       const graph = loadGraph(idx);
-      const view = graph.viewHints?.defaultView ?? 'causal';
+      const view = 'causal' as const;
       const rendererGraph = getRendererGraph(graph, view);
 
       // 直接调产品函数

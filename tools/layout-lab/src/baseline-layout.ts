@@ -3,12 +3,13 @@ import { buildStableReactFlowDebugGraph, getRendererGraph } from '../../../apps/
 import type { RenderModel, RenderItem, RenderEdge } from './round2-types';
 
 // baseline 封装：直接调用产品函数算坐标，转成 RenderModel
-// view 跟随图自带的 viewHints.defaultView（与扩展行为一致），而非硬编码 hierarchy
+// 固定用 causal 视图（用户实际默认看到的），不用 viewHints.defaultView
+// 因为 pickDefaultView 对 supports 密集图偏向 hierarchy，但 hierarchy 是不满意的视图
 export function computeBaselinePositions(
   graph: MergedGraph,
   graphIndex: number,
 ): RenderModel {
-  const view: ViewType = graph.viewHints?.defaultView ?? 'causal';
+  const view: ViewType = 'causal';
   const rendererGraph = getRendererGraph(graph, view);
 
   const result = buildStableReactFlowDebugGraph({
