@@ -88,6 +88,9 @@ export function createMergedGraphRepository(tables: {
       const graphs = await tables.mergedGraphs.toArray();
       return graphs.find((graph) => graph.sessionId === sessionId);
     },
+    async listAll() {
+      return tables.mergedGraphs.toArray();
+    },
   };
 }
 
