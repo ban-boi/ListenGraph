@@ -295,6 +295,7 @@ function resolveOverlapsWithMobility(
   sizes: Record<string, NodeSize>,
   mobilities: Record<string, number>,
   rounds: number,
+  padding: number = 16,
 ): void {
   const ids = Object.keys(positions).sort();
   for (let r = 0; r < rounds; r++) {
@@ -306,9 +307,10 @@ function resolveOverlapsWithMobility(
         const sa = sizes[a], sb = sizes[b];
         const dx = positions[a].cx - positions[b].cx;
         const dy = positions[a].cy - positions[b].cy;
-        const overlapX = (sa.width + sb.width) / 2 - Math.abs(dx);
-        const overlapY = (sa.height + sb.height) / 2 - Math.abs(dy);
-        if (overlapX <= 0 || overlapY <= 0) continue;
+        // 带 padding 的 penetration（与 force-core-v2 一致）
+        const penX = (sa.width + sb.width) / 2 + padding - Math.abs(dx);
+        const penY = (sa.height + sb.height) / 2 + padding - Math.abs(dy);
+        if (penX <= 0 || penY <= 0) continue;
         anyOverlap = true;
         const ma = mobilities[a] ?? 1.0;
         const mb = mobilities[b] ?? 1.0;
@@ -316,18 +318,19 @@ function resolveOverlapsWithMobility(
         const ratioA = totalMob > 0 ? ma / totalMob : 0.5;
         const ratioB = totalMob > 0 ? mb / totalMob : 0.5;
 
-        if (overlapX < overlapY) {
+        // 沿较小 penetration 轴推开
+        if (penX < penY) {
           let dir: number;
           if (dx === 0) { dir = a < b ? -1 : 1; }
           else { dir = dx > 0 ? 1 : -1; }
-          positions[a].cx += dir * overlapX * ratioA;
-          positions[b].cx -= dir * overlapX * ratioB;
+          positions[a].cx += dir * penX * ratioA;
+          positions[b].cx -= dir * penX * ratioB;
         } else {
           let dir: number;
           if (dy === 0) { dir = a < b ? -1 : 1; }
           else { dir = dy > 0 ? 1 : -1; }
-          positions[a].cy += dir * overlapY * ratioA;
-          positions[b].cy -= dir * overlapY * ratioB;
+          positions[a].cy += dir * penY * ratioA;
+          positions[b].cy -= dir * penY * ratioB;
         }
       }
     }
