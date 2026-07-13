@@ -42,12 +42,17 @@ export { getAddedNodeIds, getAutoRevealAnchorNodeIds } from '@listen-graphic/gra
 // ===== 视口几何 =====
 
 /** 根据节点位置 + 固定卡片尺寸计算节点包围盒。 */
-export function getNodeBounds(node: { position: { x: number; y: number } }): ViewBounds {
+export function getNodeBounds(node: {
+  position: { x: number; y: number };
+  data?: { nodeSize?: { width: number; height: number } };
+}): ViewBounds {
+  const width = node.data?.nodeSize?.width ?? STABLE_LAYOUT_CARD_WIDTH;
+  const height = node.data?.nodeSize?.height ?? STABLE_LAYOUT_CARD_HEIGHT;
   return {
     left: node.position.x,
     top: node.position.y,
-    right: node.position.x + STABLE_LAYOUT_CARD_WIDTH,
-    bottom: node.position.y + STABLE_LAYOUT_CARD_HEIGHT,
+    right: node.position.x + width,
+    bottom: node.position.y + height,
   };
 }
 
