@@ -3,7 +3,7 @@
 // handleGetDebugSession、loadDebugSessionData、handleGetReplaySession、
 // loadReplaySessionData、handleTestStructurerSessionRun、persistInjectedStructurerSeed
 
-import { mergedGraphSchema } from '@listen-graphic/graph-fixtures';
+import { mergedGraphSchema } from '@listen-graphic/graph-fixtures/schemas';
 import type {
   MergedGraph,
   TranscriptChunk,
