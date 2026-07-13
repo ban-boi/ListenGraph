@@ -13,4 +13,5 @@ export interface GraphNodeCardData {
   isTourAnchor?: boolean;
   isTourAdded?: boolean;
   onClickTime: (ms: number) => void;
+  nodeSize?: { width: number; height: number };
 }

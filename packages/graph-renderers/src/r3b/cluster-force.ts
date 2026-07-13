@@ -195,7 +195,7 @@ export function computeClusterForceLayout(
     // 用实际节点 left/top/right/bottom 算 local bounds（修正：之前用近似公式导致 bounds 没包住节点）
     let localMinX = Infinity, localMinY = Infinity, localMaxX = 0, localMaxY = 0;
     for (const item of localItems) {
-      if ('position' in item) {
+      if (item.kind === 'fullNode' || item.kind === 'looseNoteItem') {
         const size = cluster.type === 'major'
           ? clusterSizes[item.nodeId] ?? { width: 200, height: 100 }
           : { width: LOOSE_NOTE_ITEM_WIDTH, height: LOOSE_NOTE_ITEM_HEIGHT };
