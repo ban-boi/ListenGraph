@@ -4,6 +4,7 @@ import { chromium } from '@playwright/test';
 import type { MergedGraph } from '@listen-graphic/schema';
 import { computeBaselinePositions } from './baseline-layout';
 import { computeClusterForceLayout } from './cluster-force-layout';
+import { computeAllNodeSizes } from './round3-types';
 import { renderModelToHtml } from './html-renderer';        // v1：baseline 固定 220×132
 import { renderModelToHtmlV2 } from './html-renderer-v2';   // v2：R3a/R3b 自适应尺寸
 
@@ -29,8 +30,9 @@ export async function renderRound3(): Promise<void> {
     const padded = String(idx).padStart(2, '0');
 
     const baseline = computeBaselinePositions(graph, idx);
-    const r3a = computeClusterForceLayout(graph, idx, 'R3a');
-    const r3b = computeClusterForceLayout(graph, idx, 'R3b');
+    const sizes = computeAllNodeSizes(graph.nodes);
+    const r3a = computeClusterForceLayout(graph, idx, 'R3a', sizes);
+    const r3b = computeClusterForceLayout(graph, idx, 'R3b', sizes);
 
     // baseline 用 v1（固定 220×132），R3a/R3b 用 v2（自适应尺寸）
     renderModelToHtml(baseline, graph, path.join(HTML_DIR, `${padded}-baseline.html`));

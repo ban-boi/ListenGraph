@@ -103,8 +103,9 @@ export async function replayAll(): Promise<void> {
     for (let rev = 0; rev < seq.revisions.length; rev++) {
       const graph = seq.revisions[rev];
       const baseline = computeBaselinePositions(graph, rev);
-      const r3bFull = computeClusterForceLayout(graph, rev, 'R3b');
-      const r3bIncr = computeIncrementalLayout(graph, incrState);
+      const sizes = computeAllNodeSizes(graph.nodes);
+      const r3bFull = computeClusterForceLayout(graph, rev, 'R3b', sizes);
+      const r3bIncr = computeIncrementalLayout(graph, incrState, 'R3b', sizes);
       incrState = r3bIncr.state;
       revResults.push({ graph, rev, baseline, r3bFull, r3bIncr });
     }

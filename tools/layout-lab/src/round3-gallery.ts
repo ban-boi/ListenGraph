@@ -75,15 +75,15 @@ export function renderRound3Gallery(): void {
     };
 
     const baseline = computeBaselinePositions(graph, idx);
-    const r3a = computeClusterForceLayout(graph, idx, 'R3a');
-    const r3b = computeClusterForceLayout(graph, idx, 'R3b');
+    const adaptiveSizes = computeAllNodeSizes(graph.nodes);
+    const r3a = computeClusterForceLayout(graph, idx, 'R3a', adaptiveSizes);
+    const r3b = computeClusterForceLayout(graph, idx, 'R3b', adaptiveSizes);
 
     const bp = extractPositions(baseline.items);
     const ap = extractPositions(r3a.items);
     const bp2 = extractPositions(r3b.items);
 
     // 尺寸口径修正：baseline 用固定 220×132（产品实际），R3 用自适应尺寸
-    const adaptiveSizes = computeAllNodeSizes(graph.nodes);
     const fixedSizes: Record<string, { width: number; height: number }> = {};
     for (const n of graph.nodes) fixedSizes[n.id] = { width: 220, height: 132 };
 
