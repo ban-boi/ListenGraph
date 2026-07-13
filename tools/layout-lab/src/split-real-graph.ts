@@ -9,7 +9,7 @@ import type { MergedGraph } from '@listen-graphic/schema';
  *
  * 最后一个 revision 应与原图节点/边一致（完整性检查）。
  */
-export function splitGraphByTimestamp(graph: MergedGraph, batchSize = 20): MergedGraph[] {
+export function splitGraphByTimestamp(graph: MergedGraph, batchSize = 1): MergedGraph[] {
   const timestamps = [...new Set(graph.nodes.map((n) => n.timestampMs))].sort((a, b) => a - b);
   const batches: number[][] = [];
   let currentBatch: number[] = [];

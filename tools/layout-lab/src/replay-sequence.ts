@@ -43,7 +43,7 @@ function loadSequences(): Array<{ name: string; revisions: MergedGraph[]; trackN
   // Real graph splits
   const dump = JSON.parse(fs.readFileSync(DUMP_PATH, 'utf8')) as MergedGraph[];
   for (const idx of [49, 41, 32]) {
-    const revisions = splitGraphByTimestamp(dump[idx], 20);
+    const revisions = splitGraphByTimestamp(dump[idx]); // 真实节奏：每个 timestamp 一批
     const trackNodeIds = revisions[0]?.nodes?.slice(0, 3).map((n) => n.id) ?? [];
     sequences.push({ name: `real-${idx}`, revisions, trackNodeIds });
   }
