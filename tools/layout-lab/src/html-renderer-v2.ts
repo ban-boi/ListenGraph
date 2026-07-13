@@ -28,6 +28,33 @@ export function renderModelToHtmlV2(
   const sizes: Record<string, { width: number; height: number }> = {};
   for (const n of graph.nodes) sizes[n.id] = computeNodeSize(n.text);
 
+  // Normalize：shift 所有坐标让 minX/minY ≥ 0（修复力导向产生负坐标导致节点被截）
+  let normMinX = Infinity, normMinY = Infinity;
+  for (const item of model.items) {
+    if ('position' in item) {
+      normMinX = Math.min(normMinX, item.position.x);
+      normMinY = Math.min(normMinY, item.position.y);
+    }
+  }
+  for (const c of model.clusters) {
+    normMinX = Math.min(normMinX, c.bounds.x);
+    normMinY = Math.min(normMinY, c.bounds.y);
+  }
+  const shiftX = normMinX < 0 ? -normMinX : 0;
+  const shiftY = normMinY < 0 ? -normMinY : 0;
+  if (shiftX > 0 || shiftY > 0) {
+    for (const item of model.items) {
+      if ('position' in item) {
+        item.position.x += shiftX;
+        item.position.y += shiftY;
+      }
+    }
+    for (const c of model.clusters) {
+      c.bounds.x += shiftX;
+      c.bounds.y += shiftY;
+    }
+  }
+
   // 算画布尺寸
   let maxX = 0, maxY = 0;
   for (const item of model.items) {
