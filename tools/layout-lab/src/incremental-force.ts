@@ -2,7 +2,7 @@ import type { MergedGraph, GraphNode, GraphEdge, EdgeType } from '@listen-graphi
 import { partitionClusters } from './cluster-partition';
 import type { CenterPos } from './force-core-v2';
 import {
-  computeAllNodeSizes, FORCE_PARAMS, PENALTY_STRENGTH, TARGET_WIDTH,
+  computeAllNodeSizes, FORCE_PARAMS, PENALTY_STRENGTH, GRAVITY_STRENGTH, TARGET_WIDTH,
   type NodeSize,
 } from './round3-types';
 import {
@@ -53,6 +53,7 @@ function initNewNode(
 export function computeIncrementalLayout(
   graph: MergedGraph,
   prevState: IncrementalState,
+  variant: 'R3a' | 'R3b' = 'R3b',
 ): IncrementalResult {
   const partition = partitionClusters(graph);
   const allSizes = computeAllNodeSizes(graph.nodes);
@@ -180,13 +181,20 @@ export function computeIncrementalLayout(
         }
       }
 
-      // Width penalty：只对新节点
-      for (const n of forceNodes) {
-        const w = allSizes[n.id].width;
-        const cx = positions[n.id].cx;
-        const leftOvershoot = Math.max(0, w / 2 - cx);
-        const rightOvershoot = Math.max(0, cx + w / 2 - TARGET_WIDTH);
-        forces[n.id].x += leftOvershoot * PENALTY_STRENGTH - rightOvershoot * PENALTY_STRENGTH;
+      // 竖向约束力：R3a 引力收窄 / R3b 宽度惩罚
+      if (variant === 'R3a') {
+        const centerX = TARGET_WIDTH / 2;
+        for (const n of forceNodes) {
+          forces[n.id].x += (centerX - positions[n.id].cx) * GRAVITY_STRENGTH;
+        }
+      } else {
+        for (const n of forceNodes) {
+          const w = allSizes[n.id].width;
+          const cx = positions[n.id].cx;
+          const leftOvershoot = Math.max(0, w / 2 - cx);
+          const rightOvershoot = Math.max(0, cx + w / 2 - TARGET_WIDTH);
+          forces[n.id].x += leftOvershoot * PENALTY_STRENGTH - rightOvershoot * PENALTY_STRENGTH;
+        }
       }
 
       // Apply + damping（只对新节点）
