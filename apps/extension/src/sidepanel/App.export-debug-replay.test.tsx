@@ -531,6 +531,144 @@ describe('App - 调试与回放', () => {
     expect(anchorClickSpy).toHaveBeenCalled();
   });
 
+  it('确认导出 Graph Corpus 后会下载 JSON 文件', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: null,
+              state: 'stopped',
+              currentTimeMs: 30000,
+              currentView: 'timeline',
+              currentViewPinned: false,
+              graph: {
+                sessionId: 'session_graph_only',
+                revision: 1,
+                topics: [],
+                nodes: [
+                  {
+                    id: 'n1',
+                    type: 'claim',
+                    text: '停止后仍可导出',
+                    timestampMs: 0,
+                    status: 'confirmed',
+                  },
+                ],
+                edges: [],
+                updatedAt: 200,
+              },
+            },
+          });
+        }
+        if (message?.type === 'EXPORT_ALL_GRAPHS') {
+          return Promise.resolve({
+            success: true,
+            exportData: {
+              filename: 'graph-corpus-2026-07-13.json',
+              mimeType: 'application/json',
+              content: JSON.stringify([
+                {
+                  sessionId: 's1',
+                  revision: 1,
+                  topics: [],
+                  nodes: [{ id: 'n1', type: 'claim', text: '测试', timestampMs: 0, status: 'confirmed' }],
+                  edges: [],
+                  updatedAt: 100,
+                },
+              ]),
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    const user = userEvent.setup();
+    await renderApp();
+
+    await clickOverflowMenuItem(user, 'overflow-menu-export-all-graphs');
+
+    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'EXPORT_ALL_GRAPHS',
+        payload: {},
+      }),
+    );
+    expect(anchorClickSpy).toHaveBeenCalled();
+  });
+
+  it('取消 Graph Corpus 确认时不会触发下载', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
+      (message: { type?: string }) => {
+        if (message?.type === 'GET_RUNTIME_SNAPSHOT') {
+          return Promise.resolve({
+            success: true,
+            snapshot: {
+              sessionId: null,
+              state: 'stopped',
+              currentTimeMs: 30000,
+              currentView: 'timeline',
+              currentViewPinned: false,
+              graph: {
+                sessionId: 'session_graph_only',
+                revision: 1,
+                topics: [],
+                nodes: [
+                  {
+                    id: 'n1',
+                    type: 'claim',
+                    text: '停止后仍可导出',
+                    timestampMs: 0,
+                    status: 'confirmed',
+                  },
+                ],
+                edges: [],
+                updatedAt: 200,
+              },
+            },
+          });
+        }
+        if (message?.type === 'EXPORT_ALL_GRAPHS') {
+          return Promise.resolve({
+            success: true,
+            exportData: {
+              filename: 'graph-corpus-2026-07-13.json',
+              mimeType: 'application/json',
+              content: JSON.stringify([
+                {
+                  sessionId: 's1',
+                  revision: 1,
+                  topics: [],
+                  nodes: [{ id: 'n1', type: 'claim', text: '测试', timestampMs: 0, status: 'confirmed' }],
+                  edges: [],
+                  updatedAt: 100,
+                },
+              ]),
+            },
+          });
+        }
+        return Promise.resolve({ success: true });
+      },
+    );
+
+    const user = userEvent.setup();
+    await renderApp();
+
+    await clickOverflowMenuItem(user, 'overflow-menu-export-all-graphs');
+
+    expect((globalThis as any).chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'EXPORT_ALL_GRAPHS',
+        payload: {},
+      }),
+    );
+    expect(anchorClickSpy).not.toHaveBeenCalled();
+  });
+
   it('点击回放后会拉取回放资产并显示当前片段', async () => {
     (globalThis as any).chrome.runtime.sendMessage.mockImplementation(
       (message: { type?: string }) => {

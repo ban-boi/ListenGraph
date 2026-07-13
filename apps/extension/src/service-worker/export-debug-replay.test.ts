@@ -11,6 +11,7 @@ import {
   listSegmentGraphsBySessionMock,
   saveMergedGraphMock,
   getMergedGraphBySessionMock,
+  listAllMergedGraphsMock,
   getSessionMock,
   bootstrapStructurerWindow,
   startRealtimeSession,
@@ -625,5 +626,131 @@ describe('Service Worker - 导出、调试与回放', () => {
     expect(replayResponse.replayData.transcripts).toHaveLength(2);
     expect(replayResponse.replayData.durationMs).toBe(60000);
     expect(replayResponse.replayData.graph.nodes[0].text).toBe('回放节点');
+  });
+
+  it('EXPORT_ALL_GRAPHS 通过 dispatchMessage 正确路由', async () => {
+    listAllMergedGraphsMock.mockResolvedValue([
+      {
+        sessionId: 's1',
+        revision: 1,
+        topics: [],
+        nodes: [
+          {
+            id: 'n1',
+            type: 'claim',
+            text: '测试',
+            timestampMs: 0,
+            status: 'confirmed',
+          },
+        ],
+        edges: [],
+        updatedAt: 100,
+      },
+    ]);
+
+    const response = await dispatchMessage({
+      type: 'EXPORT_ALL_GRAPHS',
+      target: 'service-worker',
+      payload: {},
+    });
+
+    expect(response.success).toBe(true);
+    const parsed = JSON.parse(response.exportData.content);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].sessionId).toBe('s1');
+    expect(response.exportData.mimeType).toBe('application/json');
+    expect(response.exportData.filename).toMatch(/^graph-corpus-\d{4}-\d{2}-\d{2}\.json$/);
+  });
+
+  it('EXPORT_ALL_GRAPHS 在无有效 graph 时返回失败', async () => {
+    listAllMergedGraphsMock.mockResolvedValue([]);
+
+    const response = await dispatchMessage({
+      type: 'EXPORT_ALL_GRAPHS',
+      target: 'service-worker',
+      payload: {},
+    });
+
+    expect(response.success).toBe(false);
+    expect(response.error).toBe('没有有效的 graph 数据可导出');
+  });
+
+  it('EXPORT_ALL_GRAPHS 会过滤损坏 graph 并按 sessionId 升序排列', async () => {
+    listAllMergedGraphsMock.mockResolvedValue([
+      {
+        sessionId: 's3',
+        revision: 1,
+        topics: [],
+        nodes: [
+          {
+            id: 'n3',
+            type: 'claim',
+            text: '第三个',
+            timestampMs: 0,
+            status: 'confirmed',
+          },
+        ],
+        edges: [],
+        updatedAt: 300,
+      },
+      {
+        sessionId: 's1',
+        revision: 1,
+        topics: [],
+        nodes: [
+          {
+            id: 'n1',
+            type: 'claim',
+            text: '第一个',
+            timestampMs: 0,
+            status: 'confirmed',
+          },
+        ],
+        edges: [],
+        updatedAt: 100,
+      },
+      {
+        sessionId: 'corrupt',
+        revision: 1,
+        topics: [],
+        nodes: [],
+        edges: [],
+        updatedAt: 50,
+      },
+      {
+        sessionId: 'invalid',
+      },
+      {
+        sessionId: 's2',
+        revision: 1,
+        topics: [],
+        nodes: [
+          {
+            id: 'n2',
+            type: 'claim',
+            text: '第二个',
+            timestampMs: 0,
+            status: 'confirmed',
+          },
+        ],
+        edges: [],
+        updatedAt: 200,
+      },
+    ]);
+
+    const response = await dispatchMessage({
+      type: 'EXPORT_ALL_GRAPHS',
+      target: 'service-worker',
+      payload: {},
+    });
+
+    expect(response.success).toBe(true);
+    const parsed = JSON.parse(response.exportData.content);
+    expect(parsed).toHaveLength(3);
+    expect(parsed.map((graph: { sessionId: string }) => graph.sessionId)).toEqual([
+      's1',
+      's2',
+      's3',
+    ]);
   });
 });

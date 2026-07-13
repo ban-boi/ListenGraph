@@ -29,6 +29,7 @@ export let appendSegmentGraphMock: Mock;
 export let listSegmentGraphsBySessionMock: Mock;
 export let saveMergedGraphMock: Mock;
 export let getMergedGraphBySessionMock: Mock;
+export let listAllMergedGraphsMock: Mock;
 export let getProviderConfigMock: Mock;
 export let createRuntimeProvidersMock: Mock;
 export let asrResetMock: Mock;
@@ -96,6 +97,7 @@ export async function setupServiceWorkerTests() {
   listSegmentGraphsBySessionMock = vi.fn(async () => []);
   saveMergedGraphMock = vi.fn(async () => undefined);
   getMergedGraphBySessionMock = vi.fn(async () => undefined);
+  listAllMergedGraphsMock = vi.fn(async () => []);
   getProviderConfigMock = vi.fn(async () => ({
     asr: {
       type: 'mock',
@@ -206,6 +208,7 @@ export async function initializeModule() {
     createMergedGraphRepository: () => ({
       save: saveMergedGraphMock,
       getBySession: getMergedGraphBySessionMock,
+      listAll: listAllMergedGraphsMock,
     }),
     createSettingsRepository: () => ({
       getProviderConfig: getProviderConfigMock,
