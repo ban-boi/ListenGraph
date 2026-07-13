@@ -3,6 +3,7 @@
 // handleGetDebugSession、loadDebugSessionData、handleGetReplaySession、
 // loadReplaySessionData、handleTestStructurerSessionRun、persistInjectedStructurerSeed
 
+import { mergedGraphSchema } from '@listen-graphic/graph-fixtures';
 import type {
   MergedGraph,
   TranscriptChunk,
@@ -61,6 +62,33 @@ function isValidStructureUnit(item: unknown): item is StructureUnitDebug {
 }
 
 export { isValidAssemblerRun, isValidStructureUnit };
+
+/**
+ * 校验 MergedGraph 的完整性。
+ * 使用 graph-fixtures 的 mergedGraphSchema 做完整 schema 校验，
+ * 再补引用完整性、ID 唯一性和空图规则。
+ * 只排除损坏数据，不过滤小图或无边图。
+ */
+function validateMergedGraph(graph: unknown): MergedGraph | null {
+  const parsed = mergedGraphSchema.safeParse(graph);
+  if (!parsed.success) return null;
+
+  const g = parsed.data;
+
+  if (g.nodes.length === 0) return null;
+
+  const nodeIds = g.nodes.map((n) => n.id);
+  if (new Set(nodeIds).size !== nodeIds.length) return null;
+  const edgeIds = g.edges.map((e) => e.id);
+  if (new Set(edgeIds).size !== edgeIds.length) return null;
+
+  const nodeIdSet = new Set(nodeIds);
+  for (const edge of g.edges) {
+    if (!nodeIdSet.has(edge.source) || !nodeIdSet.has(edge.target)) return null;
+  }
+
+  return g as MergedGraph;
+}
 
 export async function getAssemblerTraceForSession(
   sessionId: string,
@@ -211,6 +239,41 @@ export async function handleExportSession(
       mimeType: string;
       content: string;
     };
+  };
+}
+
+/**
+ * 导出所有有效 MergedGraph 快照。
+ * 只做 schema 校验，不过滤小图或无边图。
+ * 按 sessionId 升序排列，保证确定性。
+ */
+export async function handleExportAllGraphs(
+  deps: {
+    ensureHydrated: () => Promise<void>;
+    mergedGraphRepository: {
+      listAll(): Promise<MergedGraph[]>;
+    };
+  },
+): Promise<ServiceWorkerResponse> {
+  await deps.ensureHydrated();
+
+  const allGraphs = await deps.mergedGraphRepository.listAll();
+  const validGraphs = allGraphs
+    .map(validateMergedGraph)
+    .filter((g): g is MergedGraph => g !== null)
+    .sort((a, b) => a.sessionId.localeCompare(b.sessionId));
+
+  if (validGraphs.length === 0) {
+    return { success: false, error: '没有有效的 graph 数据可导出' };
+  }
+
+  const content = JSON.stringify(validGraphs, null, 2);
+  const timestamp = new Date().toISOString().slice(0, 10);
+  const filename = `graph-corpus-${timestamp}.json`;
+
+  return {
+    success: true,
+    exportData: { filename, mimeType: 'application/json', content },
   };
 }
 

@@ -88,6 +88,7 @@ import {
   handleNodeClicked,
   handleViewSelected,
   handleExportSession,
+  handleExportAllGraphs,
   handleGetDebugSession,
   handleGetReplaySession,
   handleTestStructurerSessionRun,
@@ -294,6 +295,15 @@ async function handleMessage(
         loadMergedGraphAsset: (sessionId) =>
           loadMergedGraphAsset(sessionId, structurerDeps),
         buildSessionExport,
+      });
+    case 'EXPORT_ALL_GRAPHS':
+      // DEV gating：生产环境直接拒绝，不只是隐藏 UI
+      if (!import.meta.env.DEV) {
+        return { success: false, error: '此功能仅在开发环境可用' };
+      }
+      return handleExportAllGraphs({
+        ensureHydrated: () => ensureHydrated(persistenceDeps),
+        mergedGraphRepository,
       });
     case 'GET_DEBUG_SESSION':
       return handleGetDebugSession(message.payload.sessionId, S, {

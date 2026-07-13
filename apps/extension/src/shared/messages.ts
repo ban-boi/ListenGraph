@@ -367,6 +367,11 @@ export type AppMessage =
       payload: { sessionId: string; format: ExportFormat };
     }
   | {
+      type: 'EXPORT_ALL_GRAPHS';
+      target: 'service-worker';
+      payload: {};
+    }
+  | {
       type: 'GET_DEBUG_SESSION';
       target: 'service-worker';
       payload: { sessionId: string };
