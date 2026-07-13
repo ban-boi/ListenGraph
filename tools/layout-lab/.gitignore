@@ -1,7 +1,4 @@
-# inputs/ 下的真实 graph dump 是核心回归数据，纳入版本控制
-# 其他临时输入文件继续忽略
-inputs/*
-!inputs/real-graphs-dump.json
+inputs/
 outputs/
 .tmp/
 node_modules/
