@@ -90,9 +90,18 @@ export function computeIncrementalLayout(
   for (const n of graph.nodes) velocities[n.id] = { x: 0, y: 0 };
 
   // Per-cluster force simulation
+  // 硬固定模式：增量时旧节点完全跳过力迭代（0px 移动），只对新节点算力
   for (const cluster of partition.clusters) {
     const clusterNodeIds = new Set(cluster.nodeIds);
-    const clusterNodes = graph.nodes.filter((n) => clusterNodeIds.has(n.id));
+
+    // 增量模式下：forceNodes 只含新节点；旧节点作为"固定障碍物"参与斥力但不接受力
+    const forceNodes = isFirstRevision
+      ? graph.nodes.filter((n) => clusterNodeIds.has(n.id))
+      : graph.nodes.filter((n) => clusterNodeIds.has(n.id) && !isOldNode(n.id));
+
+    if (forceNodes.length === 0) continue; // 全是旧节点，跳过
+
+    const clusterAllNodes = graph.nodes.filter((n) => clusterNodeIds.has(n.id)); // 含旧节点（作为斥力源）
     const clusterEdges = graph.edges.filter(
       (e) => clusterNodeIds.has(e.source) && clusterNodeIds.has(e.target) && e.source !== e.target,
     );
@@ -101,57 +110,50 @@ export function computeIncrementalLayout(
       if (STRUCTURAL_TYPES.has(e.type)) edgeList.push({ source: e.source, target: e.target });
     }
 
-    let pinK = 0, maxDrift = 0;
-    if (!isFirstRevision && cluster.type === 'major') {
-      const oldInCluster = cluster.nodeIds.filter(isOldNode);
-      const newInCluster = cluster.nodeIds.filter((id) => !isOldNode(id));
-      const affectedOld = new Set<string>();
-      for (const e of clusterEdges) {
-        if (newInCluster.includes(e.source) && oldInCluster.includes(e.target)) affectedOld.add(e.target);
-        if (newInCluster.includes(e.target) && oldInCluster.includes(e.source)) affectedOld.add(e.source);
-      }
-      const r = (newInCluster.length + 0.5 * affectedOld.size) / Math.max(1, oldInCluster.length);
-      pinK = computePinK(r);
-      maxDrift = computeMaxDrift(r);
-    }
-
     for (let iter = 0; iter < ITERATIONS; iter++) {
       const forces: Record<string, { x: number; y: number }> = {};
-      for (const n of clusterNodes) forces[n.id] = { x: 0, y: 0 };
+      for (const n of forceNodes) forces[n.id] = { x: 0, y: 0 };
 
-      // Area repulsion
-      for (let i = 0; i < clusterNodes.length; i++) {
-        for (let j = i + 1; j < clusterNodes.length; j++) {
-          const a = clusterNodes[i], b = clusterNodes[j];
-          const dx = positions[a.id].cx - positions[b.id].cx;
-          const dy = positions[a.id].cy - positions[b.id].cy;
+      // Area repulsion：新节点 vs 所有节点（含旧节点作为固定障碍物）
+      for (const fn of forceNodes) {
+        for (const other of clusterAllNodes) {
+          if (fn.id === other.id) continue;
+          const dx = positions[fn.id].cx - positions[other.id].cx;
+          const dy = positions[fn.id].cy - positions[other.id].cy;
           let dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 1) dist = 1;
-          const areaA = allSizes[a.id].width * allSizes[a.id].height;
-          const areaB = allSizes[b.id].width * allSizes[b.id].height;
+          const areaA = allSizes[fn.id].width * allSizes[fn.id].height;
+          const areaB = allSizes[other.id].width * allSizes[other.id].height;
           const repulsion = REPULSION_K * Math.sqrt(areaA * areaB) / (dist * dist);
-          forces[a.id].x += (dx / dist) * repulsion;
-          forces[a.id].y += (dy / dist) * repulsion;
-          forces[b.id].x -= (dx / dist) * repulsion;
-          forces[b.id].y -= (dy / dist) * repulsion;
+          forces[fn.id].x += (dx / dist) * repulsion;
+          forces[fn.id].y += (dy / dist) * repulsion;
         }
       }
 
-      // Spring
+      // Spring：只对新节点施加弹簧力（旧节点端不受力）
       for (const edge of edgeList) {
+        const isNewSource = !isFirstRevision && !isOldNode(edge.source);
+        const isNewTarget = !isFirstRevision && !isOldNode(edge.target);
+        if (!isNewSource && !isNewTarget) continue; // 两端都是旧节点，跳过
+
         const dx = positions[edge.target].cx - positions[edge.source].cx;
         const dy = positions[edge.target].cy - positions[edge.source].cy;
         let dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 1) dist = 1;
         const force = SPRING_K * (dist - SPRING_LENGTH);
-        forces[edge.source].x += (dx / dist) * force;
-        forces[edge.source].y += (dy / dist) * force;
-        forces[edge.target].x -= (dx / dist) * force;
-        forces[edge.target].y -= (dy / dist) * force;
+        // 只给新节点施加力
+        if (isNewSource) {
+          forces[edge.source].x += (dx / dist) * force;
+          forces[edge.source].y += (dy / dist) * force;
+        }
+        if (isNewTarget) {
+          forces[edge.target].x -= (dx / dist) * force;
+          forces[edge.target].y -= (dy / dist) * force;
+        }
       }
 
-      // Width penalty (R3b)
-      for (const n of clusterNodes) {
+      // Width penalty：只对新节点
+      for (const n of forceNodes) {
         const w = allSizes[n.id].width;
         const cx = positions[n.id].cx;
         const leftOvershoot = Math.max(0, w / 2 - cx);
@@ -159,74 +161,42 @@ export function computeIncrementalLayout(
         forces[n.id].x += leftOvershoot * PENALTY_STRENGTH - rightOvershoot * PENALTY_STRENGTH;
       }
 
-      // Pin spring (old nodes only)
-      if (!isFirstRevision && pinK > 0) {
-        for (const n of clusterNodes) {
-          if (isOldNode(n.id) && prevState.positions[n.id]) {
-            const anchor = prevState.positions[n.id];
-            forces[n.id].x += pinK * (anchor.cx - positions[n.id].cx);
-            forces[n.id].y += pinK * (anchor.cy - positions[n.id].cy);
-          }
-        }
-      }
-
-      // Apply + damping
-      for (const n of clusterNodes) {
+      // Apply + damping（只对新节点）
+      for (const n of forceNodes) {
         velocities[n.id].x = (velocities[n.id].x + forces[n.id].x) * DAMPING;
         velocities[n.id].y = (velocities[n.id].y + forces[n.id].y) * DAMPING;
         positions[n.id].cx += Math.max(-MAX_DISPLACEMENT, Math.min(MAX_DISPLACEMENT, velocities[n.id].x));
         positions[n.id].cy += Math.max(-MAX_DISPLACEMENT, Math.min(MAX_DISPLACEMENT, velocities[n.id].y));
       }
-
-      // Drift clamp (old nodes)
-      if (!isFirstRevision && maxDrift > 0) {
-        for (const n of clusterNodes) {
-          if (isOldNode(n.id) && prevState.positions[n.id]) {
-            const anchor = prevState.positions[n.id];
-            const dx = positions[n.id].cx - anchor.cx;
-            const dy = positions[n.id].cy - anchor.cy;
-            const distance = Math.hypot(dx, dy);
-            if (distance > maxDrift) {
-              const scale = maxDrift / distance;
-              positions[n.id].cx = anchor.cx + dx * scale;
-              positions[n.id].cy = anchor.cy + dy * scale;
-              velocities[n.id].x *= 0.25;
-              velocities[n.id].y *= 0.25;
-            }
-          }
-        }
-      }
     }
   }
 
-  // Displacement stats
+  // Displacement stats（硬固定模式：旧节点位移应全为 0，除非碰撞消除微调）
   let stats: DisplacementStats | null = null;
-  const capHitNodes = new Set<string>();
   if (!isFirstRevision) {
     const displacements: number[] = [];
     for (const n of graph.nodes) {
       if (oldNodeIds.has(n.id) && prevState.positions[n.id]) {
         const dx = positions[n.id].cx - prevState.positions[n.id].cx;
         const dy = positions[n.id].cy - prevState.positions[n.id].cy;
-        const dist = Math.hypot(dx, dy);
-        displacements.push(dist);
-        if (dist >= 99) capHitNodes.add(n.id);
+        displacements.push(Math.hypot(dx, dy));
       }
     }
     displacements.sort((a, b) => a - b);
     const mid = Math.floor(displacements.length / 2);
+    const movedNodes = displacements.filter((d) => d > 0.5).length;
     stats = {
       medianDisplacement: Math.round(displacements.length > 0 ? displacements[mid] : 0),
       maxDisplacement: Math.round(displacements.length > 0 ? displacements[displacements.length - 1] : 0),
-      capHitRate: displacements.length > 0 ? capHitNodes.size / displacements.length : 0,
+      capHitRate: displacements.length > 0 ? movedNodes / displacements.length : 0,
       oldNodeCount: displacements.length,
     };
   }
 
-  // Mobility-aware overlap resolution
+  // Mobility-aware overlap resolution：旧节点 mobility=0（完全不动），新节点承担全部位移
   const mobilities: Record<string, number> = {};
   for (const n of graph.nodes) {
-    mobilities[n.id] = isFirstRevision ? 1.0 : (isOldNode(n.id) ? 0.4 : 1.0);
+    mobilities[n.id] = isFirstRevision ? 1.0 : (isOldNode(n.id) ? 0.0 : 1.0);
   }
   resolveOverlapsWithMobility(positions, allSizes, mobilities, FORCE_PARAMS.OVERLAP_ROUNDS);
 
