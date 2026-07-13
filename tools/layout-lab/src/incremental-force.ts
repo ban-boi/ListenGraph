@@ -114,41 +114,69 @@ export function computeIncrementalLayout(
       const forces: Record<string, { x: number; y: number }> = {};
       for (const n of forceNodes) forces[n.id] = { x: 0, y: 0 };
 
-      // Area repulsion：新节点 vs 所有节点（含旧节点作为固定障碍物）
-      for (const fn of forceNodes) {
-        for (const other of clusterAllNodes) {
-          if (fn.id === other.id) continue;
-          const dx = positions[fn.id].cx - positions[other.id].cx;
-          const dy = positions[fn.id].cy - positions[other.id].cy;
-          let dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 1) dist = 1;
-          const areaA = allSizes[fn.id].width * allSizes[fn.id].height;
-          const areaB = allSizes[other.id].width * allSizes[other.id].height;
-          const repulsion = REPULSION_K * Math.sqrt(areaA * areaB) / (dist * dist);
-          forces[fn.id].x += (dx / dist) * repulsion;
-          forces[fn.id].y += (dy / dist) * repulsion;
+      if (isFirstRevision) {
+        // 第一个 revision：对称斥力（和 R3b full-recompute 一致）
+        for (let i = 0; i < forceNodes.length; i++) {
+          for (let j = i + 1; j < forceNodes.length; j++) {
+            const a = forceNodes[i], b = forceNodes[j];
+            const dx = positions[a.id].cx - positions[b.id].cx;
+            const dy = positions[a.id].cy - positions[b.id].cy;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 1) dist = 1;
+            const areaA = allSizes[a.id].width * allSizes[a.id].height;
+            const areaB = allSizes[b.id].width * allSizes[b.id].height;
+            const repulsion = REPULSION_K * Math.sqrt(areaA * areaB) / (dist * dist);
+            forces[a.id].x += (dx / dist) * repulsion;
+            forces[a.id].y += (dy / dist) * repulsion;
+            forces[b.id].x -= (dx / dist) * repulsion;
+            forces[b.id].y -= (dy / dist) * repulsion;
+          }
+        }
+      } else {
+        // 增量：新节点 vs 所有节点（旧节点作为固定障碍物，不对称）
+        for (const fn of forceNodes) {
+          for (const other of clusterAllNodes) {
+            if (fn.id === other.id) continue;
+            const dx = positions[fn.id].cx - positions[other.id].cx;
+            const dy = positions[fn.id].cy - positions[other.id].cy;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 1) dist = 1;
+            const areaA = allSizes[fn.id].width * allSizes[fn.id].height;
+            const areaB = allSizes[other.id].width * allSizes[other.id].height;
+            const repulsion = REPULSION_K * Math.sqrt(areaA * areaB) / (dist * dist);
+            forces[fn.id].x += (dx / dist) * repulsion;
+            forces[fn.id].y += (dy / dist) * repulsion;
+          }
         }
       }
 
-      // Spring：只对新节点施加弹簧力（旧节点端不受力）
+      // Spring
       for (const edge of edgeList) {
-        const isNewSource = !isFirstRevision && !isOldNode(edge.source);
-        const isNewTarget = !isFirstRevision && !isOldNode(edge.target);
-        if (!isNewSource && !isNewTarget) continue; // 两端都是旧节点，跳过
-
         const dx = positions[edge.target].cx - positions[edge.source].cx;
         const dy = positions[edge.target].cy - positions[edge.source].cy;
         let dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 1) dist = 1;
         const force = SPRING_K * (dist - SPRING_LENGTH);
-        // 只给新节点施加力
-        if (isNewSource) {
+
+        if (isFirstRevision) {
+          // 第一个 revision：对称施加（和 full 一致）
           forces[edge.source].x += (dx / dist) * force;
           forces[edge.source].y += (dy / dist) * force;
-        }
-        if (isNewTarget) {
           forces[edge.target].x -= (dx / dist) * force;
           forces[edge.target].y -= (dy / dist) * force;
+        } else {
+          // 增量：只给新节点施加力
+          const isNewSource = !isOldNode(edge.source);
+          const isNewTarget = !isOldNode(edge.target);
+          if (!isNewSource && !isNewTarget) continue;
+          if (isNewSource) {
+            forces[edge.source].x += (dx / dist) * force;
+            forces[edge.source].y += (dy / dist) * force;
+          }
+          if (isNewTarget) {
+            forces[edge.target].x -= (dx / dist) * force;
+            forces[edge.target].y -= (dy / dist) * force;
+          }
         }
       }
 
