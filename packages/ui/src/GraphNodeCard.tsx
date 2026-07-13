@@ -58,8 +58,9 @@ export function GraphNodeCard({
           isActive || isTourAdded
             ? '0 0 8px rgba(245, 158, 11, 0.4)'
             : 'var(--shadow-xs)',
-        minWidth: isCompact ? 140 : 220,
-        maxWidth: isCompact ? 200 : 260,
+        ...(data.nodeSize
+          ? { width: data.nodeSize.width, height: data.nodeSize.height, boxSizing: 'border-box' as const, overflow: 'hidden' as const }
+          : { minWidth: isCompact ? 140 : 220, maxWidth: isCompact ? 200 : 260 }),
         opacity: status === 'draft' ? 0.7 : isTourAnchor ? 0.72 : 1,
         transition: 'all var(--dur-normal) var(--ease-out)',
       }}
