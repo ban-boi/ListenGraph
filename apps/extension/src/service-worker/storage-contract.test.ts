@@ -166,6 +166,59 @@ describe('storage repositories contract', () => {
     expect(latest?.nodes[0]?.text).toBe('latest');
   });
 
+  it('listAll 返回所有已保存的 graph', async () => {
+    const repository = createMergedGraphRepository({
+      mergedGraphs: mergedGraphTable,
+    });
+
+    await repository.save({
+      sessionId: 's1',
+      revision: 1,
+      topics: [],
+      nodes: [
+        {
+          id: 'n1',
+          type: 'claim',
+          text: '节点1',
+          timestampMs: 0,
+          status: 'confirmed',
+        },
+      ],
+      edges: [],
+      updatedAt: 100,
+    });
+    await repository.save({
+      sessionId: 's2',
+      revision: 1,
+      topics: [],
+      nodes: [
+        {
+          id: 'n2',
+          type: 'reason',
+          text: '节点2',
+          timestampMs: 0,
+          status: 'confirmed',
+        },
+      ],
+      edges: [],
+      updatedAt: 200,
+    });
+
+    const all = await repository.listAll();
+    expect(all).toHaveLength(2);
+    const sessionIds = all.map((g) => g.sessionId).sort();
+    expect(sessionIds).toEqual(['s1', 's2']);
+  });
+
+  it('listAll 空表返回空数组', async () => {
+    const repository = createMergedGraphRepository({
+      mergedGraphs: mergedGraphTable,
+    });
+
+    const all = await repository.listAll();
+    expect(all).toEqual([]);
+  });
+
   it('settings repository 可以保存 provider 配置并单独清除密钥字段', async () => {
     const repository = createSettingsRepository({
       settings: settingsTable,
