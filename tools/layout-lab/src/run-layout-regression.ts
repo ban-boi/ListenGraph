@@ -37,10 +37,14 @@ if (values['case-id']) {
   console.log(JSON.stringify(result, null, 2));
   process.exit(result.passed ? 0 : 1);
 } else {
-  const suiteResult = runRegressionSuite(allCases, adapter, values.split);
+  const split = values.split;
+  const suiteResult = runRegressionSuite(allCases, adapter, split);
   console.log(formatRegressionReport(suiteResult));
-  const regressionStats = suiteResult.passRateBySplit['regression'];
-  const regressionFailed =
-    regressionStats && regressionStats.passed < regressionStats.total - regressionStats.skipped;
-  process.exit(regressionFailed ? 1 : 0);
+
+  // 退出码：基于实际运行的 case 判定（修复 B2）。
+  // 原实现硬编码只看 passRateBySplit['regression']，--split holdout/tuning 时
+  // 该 key 不存在 → undefined → 恒 exit 0，即使所有硬约束全挂 CI 也绿。
+  // candidate 状态的 case 本就预期失败（需先 accept-baseline），不参与门禁。
+  const failed = suiteResult.results.some((r) => !r.passed && r.status !== 'candidate');
+  process.exit(failed ? 1 : 0);
 }
