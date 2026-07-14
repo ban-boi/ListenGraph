@@ -7,6 +7,8 @@
     "capture": "tsx ../src/capture-screenshots.ts",
     "annotate": "tsx ../src/llm-annotate.ts",
     "gallery": "tsx ../src/render-gallery.ts",
+    "promote-regression": "tsx ../src/promote-regression-case.ts",
+    "run-regression": "tsx ../src/run-layout-regression.ts",
     "all": "tsx ./run-all.mjs",
     "test": "vitest run"
   },
