@@ -8,11 +8,19 @@
     "annotate": "tsx ../src/llm-annotate.ts",
     "gallery": "tsx ../src/render-gallery.ts",
     "promote-regression": "tsx ../src/promote-regression-case.ts",
+    "accept-baseline": "tsx ../src/accept-baseline.ts",
+    "seed-regression": "tsx ../src/seed-regression-corpus.ts",
     "run-regression": "tsx ../src/run-layout-regression.ts",
+    "round5-verify": "tsx ../src/round5-verify.ts",
+    "release-gate": "tsx ../src/r3b-release-gate.ts",
     "all": "tsx ./run-all.mjs",
     "test": "vitest run"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@listen-graphic/graph-fixtures": "workspace:*",
+    "@listen-graphic/graph-renderers": "workspace:*",
+    "@listen-graphic/schema": "workspace:*"
+  },
   "devDependencies": {
     "tsx": "^4.0.0",
     "vitest": "^1.0.0",

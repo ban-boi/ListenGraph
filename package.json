@@ -27,7 +27,11 @@
     "segment:asr:local": "pnpm --filter extension segment:asr:local",
     "compare:structure": "pnpm --filter extension compare:structure",
     "compare:structure:segments": "pnpm --filter extension compare:structure:segments",
-    "judge:acceptance": "pnpm --filter extension judge:acceptance"
+    "judge:acceptance": "pnpm --filter extension judge:acceptance",
+    "test:layout-lab": "pnpm --filter listen-graph-layout-lab test",
+    "test:layout-regression": "pnpm --filter listen-graph-layout-lab run-regression -- --split regression",
+    "test:layout-regression:holdout": "pnpm --filter listen-graph-layout-lab run-regression -- --split holdout",
+    "test:r3b-release-gate": "pnpm --filter listen-graph-layout-lab release-gate"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
