@@ -7,7 +7,10 @@ import { resolve } from 'path';
 export default defineConfig({
   test: {
     root: resolve(__dirname, '..'),
-    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    include: [
+      'src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+      '../../packages/graph-renderers/src/r3b/**/*.test.ts',
+    ],
   },
   resolve: {
     alias: {

@@ -8,6 +8,8 @@
     "dev:chrome": "vite build --watch --mode development",
     "build": "tsc -b && vite build",
     "build:fixture-lab": "vite build --mode fixture-lab",
+    "build:r3b": "tsc -b && vite build --mode r3b",
+    "build:r3b:fixture-lab": "tsc -b && vite build --mode r3b-fixture-lab",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
     "prepare:asr:real": "node ./scripts/prepare-asr-realtime-fixtures.mjs",

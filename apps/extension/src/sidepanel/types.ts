@@ -11,6 +11,7 @@ export type ReactFlowDebugNode = {
   type: 'graphNode';
   position: { x: number; y: number };
   data: ReactFlowDebugNodeData;
+  style?: Record<string, unknown>;
 };
 
 export type ReactFlowDebugEdge = {

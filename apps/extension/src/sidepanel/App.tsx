@@ -30,6 +30,10 @@ import {
   timelineEventsToExportLines,
 } from './timeline-utils';
 import { createEmptyStableLayoutCache, buildDebugViewArtifacts } from './graph-utils';
+import { buildR3bGeometry } from './r3b-geometry';
+import { decorateR3bArtifacts } from './r3b-decorate';
+import { createEmptyIncrementalState } from '@listen-graphic/graph-renderers';
+import type { IncrementalState } from '@listen-graphic/graph-renderers';
 import {
   createEmptyGraph,
   MOCK_TRANSCRIPTS,
@@ -83,6 +87,7 @@ const nodeTypes = { graphNode: GraphNodeCard };
 
 const AUTO_FIT_PADDING = 0.16;
 const AUTO_FIT_DURATION_MS = 240;
+const isR3b = import.meta.env.VITE_LAYOUT_ENGINE === 'r3b';
 
 function getReadableAutoFitMinZoom(readableFontPx: number) {
   return readableFontPx / GRAPH_NODE_BODY_FONT_PX;
@@ -108,6 +113,7 @@ export default function App() {
   const userPinnedViewRef = useRef(false);
   const graphRef = useRef<MergedGraph>(createEmptyGraph());
   const layoutCacheRef = useRef<StableLayoutCache>(createEmptyStableLayoutCache());
+  const r3bStateRef = useRef<IncrementalState>(createEmptyIncrementalState());
   const layoutCacheSessionRef = useRef<string | null>(null);
   const activeViewSessionRef = useRef<string | null>(null);
   const fixtureLabIdRef = useRef<string | null>(null);
@@ -161,11 +167,16 @@ export default function App() {
     layoutCacheRef.current = createEmptyStableLayoutCache();
   }, []);
 
+  const resetR3bState = useCallback(() => {
+    r3bStateRef.current = createEmptyIncrementalState();
+  }, []);
+
   const resetLayoutCache = useCallback(() => {
     resetLayoutCacheData();
+    resetR3bState();
     layoutCacheSessionRef.current = null;
     hasAutoFitRef.current = false;
-  }, [resetLayoutCacheData]);
+  }, [resetLayoutCacheData, resetR3bState]);
 
   // ===== Auto-tour refs（通过 ref 传入避免陈旧闭包）=====
   const debugViewArtifactsRef = useRef<Record<ViewType, any>>({} as any);
@@ -646,20 +657,52 @@ export default function App() {
   // ===== 图谱布局 =====
   const viewScores = useMemo(() => scoreViews(panel.graph), [panel.graph]);
 
-  const layoutBuild = useMemo(
-    () => buildDebugViewArtifacts({
+  // 层 1：Geometry Transition（只由 graph revision 触发，不依赖 time/view/selected）
+  const r3bGeometry = useMemo(() => {
+    if (!isR3b) return null;
+    return buildR3bGeometry(panel.graph, r3bStateRef.current);
+  }, [panel.graph]); // 只依赖 graph
+
+  // 提交 R3b 状态（useLayoutEffect，不在 render 中写 ref）
+  useLayoutEffect(() => {
+    if (r3bGeometry && r3bGeometry.geometryKey !== r3bStateRef.current.geometryKey) {
+      // 校验：result key 仍对应当前 graph（防止提交过期 render 的结果）
+      if (r3bGeometry.nextState.appliedSessionId === panel.graph.sessionId) {
+        r3bStateRef.current = r3bGeometry.nextState;
+      }
+    }
+  }, [r3bGeometry, panel.graph.sessionId]);
+
+  // stable layout build（非 R3b）
+  const stableLayoutBuild = useMemo(() => {
+    if (isR3b) return null;
+    return buildDebugViewArtifacts({
       graph: panel.graph,
       currentTimeMs: panel.currentTimeMs,
       selectedNodeId: panel.selectedNodeId,
       previousLayoutCache: layoutCacheRef.current,
-    }),
-    [panel.currentTimeMs, panel.graph, panel.selectedNodeId],
-  );
-  const debugViewArtifacts = layoutBuild.artifacts;
+    });
+  }, [panel.currentTimeMs, panel.graph, panel.selectedNodeId]);
 
   useLayoutEffect(() => {
-    layoutCacheRef.current = layoutBuild.nextLayoutCache;
-  }, [layoutBuild]);
+    if (stableLayoutBuild) {
+      layoutCacheRef.current = stableLayoutBuild.nextLayoutCache;
+    }
+  }, [stableLayoutBuild]);
+
+  // 层 2：Artifact（stable layout 或 R3b decoration）
+  const debugViewArtifacts = useMemo(() => {
+    if (isR3b && r3bGeometry) {
+      return decorateR3bArtifacts(
+        panel.graph,
+        r3bGeometry,
+        currentView,
+        panel.currentTimeMs,
+        panel.selectedNodeId,
+      );
+    }
+    return stableLayoutBuild!.artifacts;
+  }, [panel.graph, panel.currentTimeMs, panel.selectedNodeId, currentView, r3bGeometry, stableLayoutBuild]);
 
   const flowEdges = useMemo<Edge[]>(
     () => debugViewArtifacts[currentView].reactFlow.edges,

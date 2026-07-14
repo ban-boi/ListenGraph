@@ -139,12 +139,17 @@ function getNodeLaneX(
   return getLaneX(view, node.type, node.speaker, sortedSpeakers);
 }
 
-function getNodeRect(position: StableNodePosition) {
+function getNodeRect(
+  position: StableNodePosition,
+  size?: { width: number; height: number },
+) {
+  const width = size?.width ?? STABLE_LAYOUT_CARD_WIDTH;
+  const height = size?.height ?? STABLE_LAYOUT_CARD_HEIGHT;
   return {
     left: position.x,
-    right: position.x + STABLE_LAYOUT_CARD_WIDTH,
+    right: position.x + width,
     top: position.y,
-    bottom: position.y + STABLE_LAYOUT_CARD_HEIGHT,
+    bottom: position.y + height,
   };
 }
 
@@ -243,12 +248,14 @@ function getHandlePosition(
 export function resolveEdgeHandles(
   sourcePosition: StableNodePosition,
   targetPosition: StableNodePosition,
+  sourceSize?: { width: number; height: number },
+  targetSize?: { width: number; height: number },
 ): {
   sourceHandle: SourceHandleId;
   targetHandle: TargetHandleId;
 } {
-  const sourceRect = getNodeRect(sourcePosition);
-  const targetRect = getNodeRect(targetPosition);
+  const sourceRect = getNodeRect(sourcePosition, sourceSize);
+  const targetRect = getNodeRect(targetPosition, targetSize);
 
   let bestScore = -Infinity;
   let bestCombo: typeof VISIBLE_HANDLE_COMBINATIONS[number] = VISIBLE_HANDLE_COMBINATIONS[0];
