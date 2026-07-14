@@ -13,6 +13,7 @@
     "run-regression": "tsx ../src/run-layout-regression.ts",
     "round5-verify": "tsx ../src/round5-verify.ts",
     "release-gate": "tsx ../src/r3b-release-gate.ts",
+    "stability": "tsx ../src/sidepanel-stability.ts",
     "all": "tsx ./run-all.mjs",
     "test": "vitest run"
   },
