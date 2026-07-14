@@ -1,0 +1,74 @@
+{
+  "id": "reg-r3b-004",
+  "kind": "regression",
+  "description": "R3b release corpus dump#4 (1n/0e)",
+  "problemDescription": "Release-gate readability / overlap / clearance contract",
+  "split": "regression",
+  "source": "real-graphs-dump.json#4",
+  "status": "baselined",
+  "graph": {
+    "sessionId": "regression_reg-r3b-004",
+    "revision": 1,
+    "topics": [
+      {
+        "topicId": "topic_1774927051663_4",
+        "title": "Topic 1",
+        "startMs": 1774927035562,
+        "endMs": 1774927045562
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "type": "claim",
+        "text": "N1 N1 N1 N1 N1 N1 N1 ",
+        "timestampMs": 1774927035562,
+        "status": "draft",
+        "evidenceChunkIds": []
+      }
+    ],
+    "edges": [],
+    "viewHints": {
+      "defaultView": "timeline",
+      "scores": {
+        "causal": 0,
+        "comparison": 0,
+        "hierarchy": 0,
+        "timeline": 0
+      }
+    },
+    "updatedAt": 1774927051663
+  },
+  "hardExpectations": {
+    "physicalOverlapPairs": 0,
+    "clearanceViolationPairs": 0,
+    "coordinateValidity": true,
+    "minClearancePx": 16
+  },
+  "degradationBudget": {
+    "edgeNodeOcclusions": 0.15,
+    "edgeEdgeCrossings": 0.15,
+    "avgEdgeLength": 0.15,
+    "longEdgeRatio": 0.15,
+    "canvasWidth": 0.2
+  },
+  "tags": [
+    "r3b-release",
+    "dump-4",
+    "regression"
+  ],
+  "softBaselines": {
+    "edgeNodeOcclusions": 0,
+    "edgeEdgeCrossings": 0,
+    "avgEdgeLength": 0,
+    "p95EdgeLength": 0,
+    "longEdgeRatio": 0,
+    "canvasWidth": 200,
+    "canvasHeight": 76,
+    "aspectRatio": 2.6315789473684212
+  },
+  "algorithmId": "r3b",
+  "algorithmVersion": "round3",
+  "metricsVersion": "v2",
+  "clearancePx": 16
+}

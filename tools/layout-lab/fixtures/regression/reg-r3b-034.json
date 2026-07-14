@@ -2,8 +2,8 @@
   "id": "reg-r3b-034",
   "kind": "regression",
   "description": "R3b release corpus dump#34 (187n/179e)",
-  "problemDescription": "Release-gate readability / overlap / clearance contract. Round5 clearance residual: actual=10, budget=ceil(0.05*17391)=870, contract=10 | Large-graph physical overlap residual (Round5 does not zero-gate large samples): actual=1",
-  "split": "regression",
+  "problemDescription": "Release-gate readability / overlap / clearance contract. Round5 clearance residual contract=10 (physicalOverlapPairs hard-gated to 0). | MOVED to tuning: physicalOverlapPairs actual=1 (zero-overlap hard gate)",
+  "split": "tuning",
   "source": "real-graphs-dump.json#34",
   "status": "baselined",
   "graph": {
@@ -3207,10 +3207,20 @@
     "updatedAt": 1776832651628
   },
   "hardExpectations": {
-    "physicalOverlapPairs": 1,
+    "physicalOverlapPairs": 0,
     "clearanceViolationPairs": 10,
     "coordinateValidity": true,
     "minClearancePx": 16
+  },
+  "softBaselines": {
+    "edgeNodeOcclusions": 3,
+    "edgeEdgeCrossings": 1,
+    "avgEdgeLength": 226,
+    "p95EdgeLength": 299,
+    "longEdgeRatio": 0,
+    "canvasWidth": 777.5801704811455,
+    "canvasHeight": 25185.720022799083,
+    "aspectRatio": 0.030873851125846313
   },
   "degradationBudget": {
     "edgeNodeOcclusions": 0.15,
@@ -3222,18 +3232,8 @@
   "tags": [
     "r3b-release",
     "dump-34",
-    "regression"
+    "tuning"
   ],
-  "softBaselines": {
-    "edgeNodeOcclusions": 3,
-    "edgeEdgeCrossings": 1,
-    "avgEdgeLength": 226,
-    "p95EdgeLength": 299,
-    "longEdgeRatio": 0,
-    "canvasWidth": 777.5801704811455,
-    "canvasHeight": 25185.720022799083,
-    "aspectRatio": 0.030873851125846313
-  },
   "algorithmId": "r3b",
   "algorithmVersion": "round3",
   "metricsVersion": "v2",

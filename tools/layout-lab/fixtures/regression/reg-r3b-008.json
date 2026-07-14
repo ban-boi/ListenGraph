@@ -1,0 +1,176 @@
+{
+  "id": "reg-r3b-008",
+  "kind": "regression",
+  "description": "R3b release corpus dump#8 (7n/5e)",
+  "problemDescription": "Release-gate readability / overlap / clearance contract",
+  "split": "holdout",
+  "source": "real-graphs-dump.json#8",
+  "status": "baselined",
+  "graph": {
+    "sessionId": "regression_reg-r3b-008",
+    "revision": 4,
+    "topics": [
+      {
+        "topicId": "topic_1774937385510_9",
+        "title": "Topic 1",
+        "startMs": 1774937301348,
+        "endMs": 1774937331348
+      },
+      {
+        "topicId": "topic_1774937454618_13",
+        "title": "Topic 2",
+        "startMs": 1774937331348,
+        "endMs": 1774937341348
+      },
+      {
+        "topicId": "topic_1774937465391_16",
+        "title": "Topic 3",
+        "startMs": 1774937341348,
+        "endMs": 1774937351348
+      },
+      {
+        "topicId": "topic_1774937541753_20",
+        "title": "Topic 4",
+        "startMs": 1774937351348,
+        "endMs": 1774937361348
+      }
+    ],
+    "nodes": [
+      {
+        "id": "segment_1774937337960_5:n1",
+        "type": "claim",
+        "text": "N1 N1 N1 N1 N1",
+        "timestampMs": 1774937321348,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1774937337960_5:n2",
+        "type": "claim",
+        "text": "N2 N2 N2 N2 N2 N",
+        "timestampMs": 1774937321348,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1774937337960_5:n3",
+        "type": "claim",
+        "text": "N3 N3 N3 N3",
+        "timestampMs": 1774937321348,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1774937337960_5:n4",
+        "type": "reason",
+        "text": "N4 N4 N4 N4 N4 N4 N4 N4",
+        "timestampMs": 1774937321348,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1774937390055_11:n5",
+        "type": "claim",
+        "text": "N5 N5 N5 N5 N",
+        "timestampMs": 1774937331348,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1774937461004_15:fallback",
+        "type": "claim",
+        "text": "N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 ",
+        "timestampMs": 1774937341348,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1774937471963_18:n1",
+        "type": "claim",
+        "text": "N7 N7 N7 N7 ",
+        "timestampMs": 1774937351348,
+        "status": "draft",
+        "evidenceChunkIds": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_1774937385509_6",
+        "source": "segment_1774937337960_5:n1",
+        "target": "segment_1774937337960_5:n2",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1774937385509_7",
+        "source": "segment_1774937337960_5:n2",
+        "target": "segment_1774937337960_5:n3",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1774937385509_8",
+        "source": "segment_1774937337960_5:n3",
+        "target": "segment_1774937337960_5:n4",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1774937454613_12",
+        "source": "segment_1774937337960_5:n4",
+        "target": "segment_1774937390055_11:n5",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1774937541749_19",
+        "source": "segment_1774937471963_18:n1",
+        "target": "segment_1774937390055_11:n5",
+        "type": "follows",
+        "evidenceChunkIds": []
+      }
+    ],
+    "viewHints": {
+      "defaultView": "timeline",
+      "scores": {
+        "causal": 3,
+        "comparison": 3,
+        "hierarchy": 2,
+        "timeline": 4
+      }
+    },
+    "updatedAt": 1774937541754
+  },
+  "hardExpectations": {
+    "physicalOverlapPairs": 0,
+    "clearanceViolationPairs": 0,
+    "coordinateValidity": true,
+    "minClearancePx": 16
+  },
+  "degradationBudget": {
+    "edgeNodeOcclusions": 0.15,
+    "edgeEdgeCrossings": 0.15,
+    "avgEdgeLength": 0.15,
+    "longEdgeRatio": 0.15,
+    "canvasWidth": 0.2
+  },
+  "tags": [
+    "r3b-release",
+    "dump-8",
+    "holdout"
+  ],
+  "softBaselines": {
+    "edgeNodeOcclusions": 0,
+    "edgeEdgeCrossings": 0,
+    "avgEdgeLength": 194,
+    "p95EdgeLength": 200,
+    "longEdgeRatio": 0,
+    "canvasWidth": 535.6083588032227,
+    "canvasHeight": 1215.8021709903012,
+    "aspectRatio": 0.4405390708974934
+  },
+  "algorithmId": "r3b",
+  "algorithmVersion": "round3",
+  "metricsVersion": "v2",
+  "clearancePx": 16
+}

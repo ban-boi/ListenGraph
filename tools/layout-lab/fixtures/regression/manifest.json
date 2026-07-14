@@ -7,7 +7,7 @@
       "tags": [
         "r3b-release",
         "dump-49",
-        "regression"
+        "tuning"
       ],
       "description": "R3b release corpus dump#49 (271n/255e)"
     },
@@ -17,7 +17,7 @@
       "tags": [
         "r3b-release",
         "dump-41",
-        "regression"
+        "tuning"
       ],
       "description": "R3b release corpus dump#41 (258n/242e)"
     },
@@ -27,7 +27,7 @@
       "tags": [
         "r3b-release",
         "dump-48",
-        "regression"
+        "tuning"
       ],
       "description": "R3b release corpus dump#48 (237n/223e)"
     },
@@ -37,7 +37,7 @@
       "tags": [
         "r3b-release",
         "dump-34",
-        "regression"
+        "tuning"
       ],
       "description": "R3b release corpus dump#34 (187n/179e)"
     },
@@ -47,7 +47,7 @@
       "tags": [
         "r3b-release",
         "dump-47",
-        "regression"
+        "tuning"
       ],
       "description": "R3b release corpus dump#47 (180n/171e)"
     },
@@ -57,7 +57,7 @@
       "tags": [
         "r3b-release",
         "dump-40",
-        "regression"
+        "tuning"
       ],
       "description": "R3b release corpus dump#40 (161n/154e)"
     },
@@ -67,7 +67,7 @@
       "tags": [
         "r3b-release",
         "dump-29",
-        "regression"
+        "tuning"
       ],
       "description": "R3b release corpus dump#29 (140n/131e)"
     },
@@ -77,7 +77,7 @@
       "tags": [
         "r3b-release",
         "dump-28",
-        "regression"
+        "tuning"
       ],
       "description": "R3b release corpus dump#28 (137n/127e)"
     },
@@ -117,7 +117,7 @@
       "tags": [
         "r3b-release",
         "dump-33",
-        "regression"
+        "tuning"
       ],
       "description": "R3b release corpus dump#33 (64n/56e)"
     },
@@ -127,7 +127,7 @@
       "tags": [
         "r3b-release",
         "dump-39",
-        "holdout"
+        "tuning"
       ],
       "description": "R3b release corpus dump#39 (118n/115e)"
     },
@@ -137,7 +137,7 @@
       "tags": [
         "r3b-release",
         "dump-61",
-        "holdout"
+        "tuning"
       ],
       "description": "R3b release corpus dump#61 (116n/84e)"
     },
@@ -177,9 +177,129 @@
       "tags": [
         "r3b-release",
         "dump-51",
-        "holdout"
+        "tuning"
       ],
       "description": "R3b release corpus dump#51 (66n/37e)"
+    },
+    {
+      "id": "reg-r3b-046",
+      "file": "reg-r3b-046.json",
+      "tags": [
+        "r3b-release",
+        "dump-46",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#46 (105n/99e)"
+    },
+    {
+      "id": "reg-r3b-032",
+      "file": "reg-r3b-032.json",
+      "tags": [
+        "r3b-release",
+        "dump-32",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#32 (91n/86e)"
+    },
+    {
+      "id": "reg-r3b-002",
+      "file": "reg-r3b-002.json",
+      "tags": [
+        "r3b-release",
+        "dump-2",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#2 (1n/0e)"
+    },
+    {
+      "id": "reg-r3b-004",
+      "file": "reg-r3b-004.json",
+      "tags": [
+        "r3b-release",
+        "dump-4",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#4 (1n/0e)"
+    },
+    {
+      "id": "reg-r3b-011",
+      "file": "reg-r3b-011.json",
+      "tags": [
+        "r3b-release",
+        "dump-11",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#11 (1n/1e)"
+    },
+    {
+      "id": "reg-r3b-043",
+      "file": "reg-r3b-043.json",
+      "tags": [
+        "r3b-release",
+        "dump-43",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#43 (1n/0e)"
+    },
+    {
+      "id": "reg-r3b-001",
+      "file": "reg-r3b-001.json",
+      "tags": [
+        "r3b-release",
+        "dump-1",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#1 (3n/2e)"
+    },
+    {
+      "id": "reg-r3b-044",
+      "file": "reg-r3b-044.json",
+      "tags": [
+        "r3b-release",
+        "dump-44",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#44 (4n/2e)"
+    },
+    {
+      "id": "reg-r3b-000",
+      "file": "reg-r3b-000.json",
+      "tags": [
+        "r3b-release",
+        "dump-0",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#0 (5n/4e)"
+    },
+    {
+      "id": "reg-r3b-008",
+      "file": "reg-r3b-008.json",
+      "tags": [
+        "r3b-release",
+        "dump-8",
+        "holdout"
+      ],
+      "description": "R3b release corpus dump#8 (7n/5e)"
+    },
+    {
+      "id": "reg-r3b-010",
+      "file": "reg-r3b-010.json",
+      "tags": [
+        "r3b-release",
+        "dump-10",
+        "holdout"
+      ],
+      "description": "R3b release corpus dump#10 (8n/6e)"
+    },
+    {
+      "id": "reg-r3b-025",
+      "file": "reg-r3b-025.json",
+      "tags": [
+        "r3b-release",
+        "dump-25",
+        "holdout"
+      ],
+      "description": "R3b release corpus dump#25 (8n/7e)"
     }
   ]
 }

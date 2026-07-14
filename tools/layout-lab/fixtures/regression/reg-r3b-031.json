@@ -2,7 +2,7 @@
   "id": "reg-r3b-031",
   "kind": "regression",
   "description": "R3b release corpus dump#31 (112n/111e)",
-  "problemDescription": "Release-gate readability / overlap / clearance contract. Round5 clearance residual: actual=3, budget=ceil(0.05*6216)=311, contract=3",
+  "problemDescription": "Release-gate readability / overlap / clearance contract. Round5 clearance residual contract=3 (physicalOverlapPairs hard-gated to 0).",
   "split": "holdout",
   "source": "real-graphs-dump.json#31",
   "status": "baselined",
@@ -1934,6 +1934,16 @@
     "coordinateValidity": true,
     "minClearancePx": 16
   },
+  "softBaselines": {
+    "edgeNodeOcclusions": 4,
+    "edgeEdgeCrossings": 2,
+    "avgEdgeLength": 244,
+    "p95EdgeLength": 383,
+    "longEdgeRatio": 0,
+    "canvasWidth": 847.9999525808947,
+    "canvasHeight": 13224.542552502995,
+    "aspectRatio": 0.06412319739712997
+  },
   "degradationBudget": {
     "edgeNodeOcclusions": 0.15,
     "edgeEdgeCrossings": 0.15,
@@ -1946,16 +1956,6 @@
     "dump-31",
     "holdout"
   ],
-  "softBaselines": {
-    "edgeNodeOcclusions": 4,
-    "edgeEdgeCrossings": 2,
-    "avgEdgeLength": 244,
-    "p95EdgeLength": 383,
-    "longEdgeRatio": 0,
-    "canvasWidth": 847.9999525808947,
-    "canvasHeight": 13224.542552502995,
-    "aspectRatio": 0.06412319739712997
-  },
   "algorithmId": "r3b",
   "algorithmVersion": "round3",
   "metricsVersion": "v2",

@@ -1,0 +1,149 @@
+{
+  "id": "reg-r3b-000",
+  "kind": "regression",
+  "description": "R3b release corpus dump#0 (5n/4e)",
+  "problemDescription": "Release-gate readability / overlap / clearance contract",
+  "split": "regression",
+  "source": "real-graphs-dump.json#0",
+  "status": "baselined",
+  "graph": {
+    "sessionId": "regression_reg-r3b-000",
+    "revision": 5,
+    "topics": [
+      {
+        "topicId": "topic_1774438593126_5",
+        "title": "Topic 1",
+        "startMs": 1774438580108,
+        "endMs": 1774438630108
+      }
+    ],
+    "nodes": [
+      {
+        "id": "node_1774438593126_3",
+        "type": "claim",
+        "text": "N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N",
+        "speaker": "S1",
+        "timestampMs": 1774438580108,
+        "confidence": 0.82,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "node_1774438603193_7",
+        "type": "reason",
+        "text": "N2 N2 N2 N2 N2 N2 N2 N2 N2 N2 N2 N2 N2 N2 N2 N2 N2 N2 N2 N2 N2 N2 N2 ",
+        "speaker": "S2",
+        "timestampMs": 1774438590108,
+        "confidence": 0.85,
+        "status": "confirmed",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "node_1774438613184_11",
+        "type": "example",
+        "text": "N3 N3 N3 N3 N3 N3 N3 N3 N3 N3 N3 N3 N3 N3 N3 N3 N3 N3 N3 N3 N3 N3 N3 N3 N3",
+        "speaker": "S3",
+        "timestampMs": 1774438600108,
+        "confidence": 0.8799999999999999,
+        "status": "confirmed",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "node_1774438623199_15",
+        "type": "question",
+        "text": "N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N4 N",
+        "speaker": "S1",
+        "timestampMs": 1774438610108,
+        "confidence": 0.9099999999999999,
+        "status": "confirmed",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "node_1774438633228_19",
+        "type": "conclusion",
+        "text": "N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 ",
+        "speaker": "S2",
+        "timestampMs": 1774438620108,
+        "confidence": 0.82,
+        "status": "draft",
+        "evidenceChunkIds": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_1774438603193_8",
+        "source": "node_1774438593126_3",
+        "target": "node_1774438603193_7",
+        "type": "opposes",
+        "confidence": 0.87,
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1774438613184_12",
+        "source": "node_1774438603193_7",
+        "target": "node_1774438613184_11",
+        "type": "causes",
+        "confidence": 0.8999999999999999,
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1774438623199_16",
+        "source": "node_1774438613184_11",
+        "target": "node_1774438623199_15",
+        "type": "follows",
+        "confidence": 0.84,
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1774438633228_20",
+        "source": "node_1774438623199_15",
+        "target": "node_1774438633228_19",
+        "type": "example_of",
+        "confidence": 0.87,
+        "evidenceChunkIds": []
+      }
+    ],
+    "viewHints": {
+      "defaultView": "causal",
+      "scores": {
+        "causal": 3,
+        "comparison": 3,
+        "hierarchy": 2,
+        "timeline": 2
+      }
+    },
+    "updatedAt": 1774438633228
+  },
+  "hardExpectations": {
+    "physicalOverlapPairs": 0,
+    "clearanceViolationPairs": 0,
+    "coordinateValidity": true,
+    "minClearancePx": 16
+  },
+  "degradationBudget": {
+    "edgeNodeOcclusions": 0.15,
+    "edgeEdgeCrossings": 0.15,
+    "avgEdgeLength": 0.15,
+    "longEdgeRatio": 0.15,
+    "canvasWidth": 0.2
+  },
+  "tags": [
+    "r3b-release",
+    "dump-0",
+    "regression"
+  ],
+  "softBaselines": {
+    "edgeNodeOcclusions": 0,
+    "edgeEdgeCrossings": 0,
+    "avgEdgeLength": 223,
+    "p95EdgeLength": 229,
+    "longEdgeRatio": 0,
+    "canvasWidth": 511.5221852244565,
+    "canvasHeight": 966.6247074336126,
+    "aspectRatio": 0.5291838510755092
+  },
+  "algorithmId": "r3b",
+  "algorithmVersion": "round3",
+  "metricsVersion": "v2",
+  "clearancePx": 16
+}

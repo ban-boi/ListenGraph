@@ -1,0 +1,82 @@
+{
+  "id": "reg-r3b-011",
+  "kind": "regression",
+  "description": "R3b release corpus dump#11 (1n/1e)",
+  "problemDescription": "Release-gate readability / overlap / clearance contract",
+  "split": "regression",
+  "source": "real-graphs-dump.json#11",
+  "status": "baselined",
+  "graph": {
+    "sessionId": "regression_reg-r3b-011",
+    "revision": 1,
+    "topics": [
+      {
+        "topicId": "topic_1775731986095_7",
+        "title": "Topic 1",
+        "startMs": 1775731929152,
+        "endMs": 1775731959152
+      }
+    ],
+    "nodes": [
+      {
+        "id": "segment_1775731962299_5:n1",
+        "type": "claim",
+        "text": "N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1",
+        "timestampMs": 1775731949152,
+        "status": "draft",
+        "evidenceChunkIds": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_1775731986092_6",
+        "source": "segment_1775731962299_5:n1",
+        "target": "segment_1775731962299_5:n1",
+        "type": "follows",
+        "evidenceChunkIds": []
+      }
+    ],
+    "viewHints": {
+      "defaultView": "timeline",
+      "scores": {
+        "causal": 0,
+        "comparison": 0,
+        "hierarchy": 0,
+        "timeline": 2
+      }
+    },
+    "updatedAt": 1775731986095
+  },
+  "hardExpectations": {
+    "physicalOverlapPairs": 0,
+    "clearanceViolationPairs": 0,
+    "coordinateValidity": true,
+    "minClearancePx": 16
+  },
+  "degradationBudget": {
+    "edgeNodeOcclusions": 0.15,
+    "edgeEdgeCrossings": 0.15,
+    "avgEdgeLength": 0.15,
+    "longEdgeRatio": 0.15,
+    "canvasWidth": 0.2
+  },
+  "tags": [
+    "r3b-release",
+    "dump-11",
+    "regression"
+  ],
+  "softBaselines": {
+    "edgeNodeOcclusions": 0,
+    "edgeEdgeCrossings": 0,
+    "avgEdgeLength": 0,
+    "p95EdgeLength": 0,
+    "longEdgeRatio": 0,
+    "canvasWidth": 200,
+    "canvasHeight": 94,
+    "aspectRatio": 2.127659574468085
+  },
+  "algorithmId": "r3b",
+  "algorithmVersion": "round3",
+  "metricsVersion": "v2",
+  "clearancePx": 16
+}
