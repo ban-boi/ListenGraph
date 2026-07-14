@@ -220,7 +220,7 @@ export function normalizeText(value: string) {
  */
 export function splitAnchor(normalizedCandidate: string): string[] {
   // 按常见分隔符拆分：斜杠、竖线、逗号、分号、顿号、空格、中文标点
-  const parts = normalizedCandidate.split(/[\/｜|，,；;、\s]+/).filter(Boolean);
+  const parts = normalizedCandidate.split(/[/｜|，,；;、\s]+/).filter(Boolean);
   // 过滤掉过短 token（< 2 字符），避免「的」「和」等无意义词产生误匹配
   const meaningful = parts.filter((p) => p.length >= 2);
   // 若过滤后为空（如候选本身是单字），回退到原始候选，保持原有行为

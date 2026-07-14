@@ -8,7 +8,6 @@ interface ImportMetaEnv {
 import type { ListenGraphicFixtureAPI } from './sidepanel/fixture-sequence-controller';
 
 declare global {
-  // eslint-disable-next-line no-var
   var __listenGraphicFixture: ListenGraphicFixtureAPI | undefined;
 }
 

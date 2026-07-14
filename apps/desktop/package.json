@@ -10,7 +10,7 @@
     "postinstall": "node ./scripts/ensure-electron.mjs",
     "build": "tsc --noEmit && vite build && tsc -p tsconfig.electron.json",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
-    "lint": "cross-env ESLINT_USE_FLAT_CONFIG=false eslint src electron --ext .ts,.tsx",
+    "lint": "eslint src electron",
     "test": "vitest run",
     "smoke": "pnpm run build && cross-env LISTEN_GRAPH_DESKTOP_SMOKE=1 electron ."
   },

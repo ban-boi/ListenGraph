@@ -133,7 +133,6 @@ describeReal('Structure-focused real structurer', () => {
   });
 
   async function initializeModule() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 测试 mock 的 chrome 对象，需要访问 vi.fn() 方法
     const chromeMock = (globalThis as Record<string, unknown>).chrome as any;
     messageListeners = [];
     const nativeFetch = globalThis.fetch?.bind(globalThis);

@@ -75,7 +75,7 @@ export function partitionClusters(graph: MergedGraph): ClusterPartition {
 
   // 分 major / minor
   const nodeById = new Map(nodes.map((n) => [n.id, n]));
-  let clusters = Array.from(groups.entries()).map(([root, clusterNodeIds], i) => {
+  const clusters = Array.from(groups.entries()).map(([root, clusterNodeIds], i) => {
     const clusterEdges = edges.filter(
       (e) =>
         e.source !== e.target &&

@@ -369,6 +369,7 @@ export function looselyMatchesNormalizedText(actual: string, expected: string) {
 }
 
 export function sanitizeFileName(value: string) {
+  // eslint-disable-next-line no-control-regex -- 有意过滤文件名中的控制字符（\x00-\x1F），这是 sanitize 的本职
   return value.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
 }
 

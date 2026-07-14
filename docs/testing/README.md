@@ -27,8 +27,14 @@
 pnpm run test:ext:contract
 ```
 
-实际执行：
-- `apps/extension/src/service-worker/index.test.ts`
+实际执行（`apps/extension/package.json` 的 `test:contract`，12 个测试文件 / ~101 用例）：
+- `provider-contract.test.ts`、`provider-registry.test.ts`、`provider-recovery.test.ts`：provider 配置进入 runtime、契约与异常恢复
+- `session-lifecycle.test.ts`、`realtime-asr.test.ts`：启动/停止状态流、ASR 编排
+- `storage-contract.test.ts`、`state-persistence.test.ts`：持久化与并发
+- `assembler.test.ts`、`assembler-flight-recorder.test.ts`、`audio-processing.test.ts`：音频处理、结构化与 assembler 契约
+- `export-debug-replay.test.ts`、`export-formatters.test.ts`：export/debug/replay 资产契约
+
+> 历史：曾有一个聚合文件 `src/service-worker/index.test.ts`，后按 `docs/superpowers/plans/2026-05-08-large-file-decomposition.md` 拆分为上述 12 个文件。老的 `vitest run src/service-worker/index.test.ts` 入口在拆分后失效，已在 2026-07 修复为指向真实文件集合。
 
 适合放这里的问题：
 - 启动/停止状态流
