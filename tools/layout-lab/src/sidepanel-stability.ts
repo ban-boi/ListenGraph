@@ -25,15 +25,18 @@ const SEQUENCES = [
   'seq-view-switch-mid',
 ] as const;
 
-const DRIFT_TOLERANCE = 0.01;
+/** Plan requires strict 0px — no slack tolerance. */
+const DRIFT_TOLERANCE = 0;
 const VIEW_LABELS = ['因果', '时间线', '对比', '层级'] as const;
 
 type Center = { cx: number; cy: number };
 type Centers = Record<string, Center>;
 
-type ActionResult =
-  | { skipped: true; reason: string }
-  | { skipped?: false; maxDrift: number; ok: boolean };
+type ActionResult = {
+  ok: boolean;
+  maxDrift?: number;
+  reason?: string;
+};
 
 type SequenceResult = {
   id: string;
@@ -180,7 +183,7 @@ async function runTimeTick(
   );
   const count = await timeButtons.count();
   if (count === 0) {
-    return { skipped: true, reason: 'no time control' };
+    return { ok: false, reason: 'no time control' };
   }
 
   const before = await readNodeCenters(page);
@@ -199,7 +202,7 @@ async function runSelect(
   oldNodeIds: string[],
 ): Promise<ActionResult> {
   if (oldNodeIds.length === 0) {
-    return { skipped: true, reason: 'no nodes to select' };
+    return { ok: false, reason: 'no nodes to select' };
   }
 
   const before = await readNodeCenters(page);
@@ -215,9 +218,11 @@ async function runSelect(
   return { maxDrift: drift, ok: drift <= DRIFT_TOLERANCE };
 }
 
-function actionOk(result: ActionResult): boolean {
-  if (result.skipped) return true;
-  return result.ok;
+function formatActionLog(action: ActionResult): string {
+  if (action.reason && action.maxDrift === undefined) {
+    return `FAIL (${action.reason})`;
+  }
+  return `maxDrift=${action.maxDrift!.toFixed(4)} ok=${action.ok}`;
 }
 
 async function runSequence(page: Page, sequenceId: string): Promise<SequenceResult> {
@@ -226,33 +231,15 @@ async function runSequence(page: Page, sequenceId: string): Promise<SequenceResu
   console.log(`[stability] ${sequenceId}: oldNodes=${nodeCount} ids=${oldNodeIds.slice(0, 5).join(',')}${oldNodeIds.length > 5 ? '…' : ''}`);
 
   const view = await runViewSwitch(page, oldNodeIds);
-  console.log(
-    `[stability] ${sequenceId} view: ${
-      'skipped' in view && view.skipped
-        ? `skipped (${view.reason})`
-        : `maxDrift=${(view as { maxDrift: number }).maxDrift.toFixed(4)} ok=${(view as { ok: boolean }).ok}`
-    }`,
-  );
+  console.log(`[stability] ${sequenceId} view: ${formatActionLog(view)}`);
 
   const tick = await runTimeTick(page, oldNodeIds);
-  console.log(
-    `[stability] ${sequenceId} tick: ${
-      tick.skipped
-        ? `skipped (${tick.reason})`
-        : `maxDrift=${tick.maxDrift.toFixed(4)} ok=${tick.ok}`
-    }`,
-  );
+  console.log(`[stability] ${sequenceId} tick: ${formatActionLog(tick)}`);
 
   const select = await runSelect(page, oldNodeIds);
-  console.log(
-    `[stability] ${sequenceId} select: ${
-      select.skipped
-        ? `skipped (${select.reason})`
-        : `maxDrift=${select.maxDrift.toFixed(4)} ok=${select.ok}`
-    }`,
-  );
+  console.log(`[stability] ${sequenceId} select: ${formatActionLog(select)}`);
 
-  const ok = actionOk(view) && actionOk(tick) && actionOk(select);
+  const ok = view.ok && tick.ok && select.ok;
   return {
     id: sequenceId,
     oldNodeIds,
@@ -304,8 +291,11 @@ async function main(): Promise<void> {
       .map((s) => {
         const parts: string[] = [];
         for (const [name, action] of Object.entries(s.actions)) {
-          if (!action.skipped && 'ok' in action && !action.ok) {
-            parts.push(`${name}=${action.maxDrift.toFixed(4)}px`);
+          if (!action.ok) {
+            parts.push(
+              action.reason ??
+                `${name}=${action.maxDrift!.toFixed(4)}px`,
+            );
           }
         }
         return `${s.id}: ${parts.join(', ')}`;
