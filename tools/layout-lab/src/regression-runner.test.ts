@@ -5,6 +5,7 @@ import type { RegressionCase } from '../../../packages/graph-fixtures/src/types'
 
 import type { LayoutEngineAdapter } from './layout-engine-adapter';
 import {
+  evaluateSuiteExit,
   formatRegressionReport,
   runRegressionCase,
   runRegressionSuite,
@@ -153,5 +154,52 @@ describe('formatRegressionReport', () => {
     const report = formatRegressionReport(runRegressionSuite(cases, makeSimpleAdapter()));
     expect(report).toContain('regression:');
     expect(report).toContain('通过');
+  });
+});
+
+describe('evaluateSuiteExit', () => {
+  it('0 case → exit 1', () => {
+    const r = evaluateSuiteExit(
+      { totalCases: 0, passedCases: 0, failedCases: 0, skippedCases: 0, results: [], passRateBySplit: {} },
+      { split: 'regression', minBaselined: 1 },
+    );
+    expect(r.code).toBe(1);
+    expect(r.reason).toMatch(/0 case/i);
+  });
+
+  it('全部 candidate → exit 1', () => {
+    const r = evaluateSuiteExit(
+      {
+        totalCases: 2,
+        passedCases: 0,
+        failedCases: 2,
+        skippedCases: 2,
+        results: [
+          { caseId: 'a', split: 'regression', status: 'candidate', passed: false, hardResults: [], softResults: [] },
+          { caseId: 'b', split: 'regression', status: 'candidate', passed: false, hardResults: [], softResults: [] },
+        ],
+        passRateBySplit: { regression: { passed: 0, total: 2, skipped: 2 } },
+      },
+      { split: 'regression', minBaselined: 1 },
+    );
+    expect(r.code).toBe(1);
+    expect(r.reason).toMatch(/candidate|baselined/i);
+  });
+
+  it('baselined 全绿且数量够 → exit 0', () => {
+    const r = evaluateSuiteExit(
+      {
+        totalCases: 1,
+        passedCases: 1,
+        failedCases: 0,
+        skippedCases: 0,
+        results: [
+          { caseId: 'a', split: 'regression', status: 'baselined', passed: true, hardResults: [], softResults: [] },
+        ],
+        passRateBySplit: { regression: { passed: 1, total: 1, skipped: 0 } },
+      },
+      { split: 'regression', minBaselined: 1 },
+    );
+    expect(r.code).toBe(0);
   });
 });

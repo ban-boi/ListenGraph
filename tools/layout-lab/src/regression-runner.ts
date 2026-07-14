@@ -256,3 +256,35 @@ export function formatRegressionReport(suiteResult: RegressionSuiteResult): stri
 
   return lines.join('\n');
 }
+
+export type SuiteExitOptions = {
+  /** 当前运行的 split；undefined = 全部 */
+  split?: string;
+  /** regression split 要求的最少 baselined 数量；默认 1 */
+  minBaselined?: number;
+};
+
+export function evaluateSuiteExit(
+  suite: RegressionSuiteResult,
+  options: SuiteExitOptions = {},
+): { code: 0 | 1; reason: string } {
+  const minBaselined = options.minBaselined ?? 1;
+  if (suite.totalCases === 0) {
+    return { code: 1, reason: '0 case in suite — refusing green exit' };
+  }
+
+  const baselined = suite.results.filter((r) => r.status === 'baselined');
+  if (baselined.length < minBaselined) {
+    return {
+      code: 1,
+      reason: `only ${baselined.length} baselined case(s); need >= ${minBaselined} (candidates alone are not a gate)`,
+    };
+  }
+
+  const failed = suite.results.filter((r) => !r.passed && r.status !== 'candidate');
+  if (failed.length > 0) {
+    return { code: 1, reason: `${failed.length} baselined case(s) failed` };
+  }
+
+  return { code: 0, reason: 'ok' };
+}

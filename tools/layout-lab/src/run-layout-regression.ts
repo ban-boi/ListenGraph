@@ -11,6 +11,7 @@ import { parseArgs } from 'node:util';
 
 import { createR3bAdapter } from './layout-engine-adapter';
 import {
+  evaluateSuiteExit,
   formatRegressionReport,
   runRegressionCase,
   runRegressionSuite,
@@ -41,10 +42,10 @@ if (values['case-id']) {
   const suiteResult = runRegressionSuite(allCases, adapter, split);
   console.log(formatRegressionReport(suiteResult));
 
-  // 退出码：基于实际运行的 case 判定（修复 B2）。
-  // 原实现硬编码只看 passRateBySplit['regression']，--split holdout/tuning 时
-  // 该 key 不存在 → undefined → 恒 exit 0，即使所有硬约束全挂 CI 也绿。
-  // candidate 状态的 case 本就预期失败（需先 accept-baseline），不参与门禁。
-  const failed = suiteResult.results.some((r) => !r.passed && r.status !== 'candidate');
-  process.exit(failed ? 1 : 0);
+  const minBaselined = split === 'holdout' ? 1 : split === 'regression' || !split ? 12 : 1;
+  const exit = evaluateSuiteExit(suiteResult, { split, minBaselined });
+  if (exit.code !== 0) {
+    console.error(`[gate] FAIL: ${exit.reason}`);
+  }
+  process.exit(exit.code);
 }
