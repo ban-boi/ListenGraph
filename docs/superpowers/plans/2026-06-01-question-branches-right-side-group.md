@@ -1,6 +1,8 @@
 # question-branches 右侧分组列表布局 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **状态：✅ 已完成（commit 3dbc5c4，2026-06）。** 所有 5 个 Task 已实现并通过测试，fixture `seq-pattern-question-incremental.json` 已加入 runtime registry。下方 checkbox 全部为已勾选状态。本文件保留作设计参考，**不要再当作待办执行**。
+
+> **For agentic workers:** 本 plan 已全部实现，下方 checkbox 为历史记录（均已勾选）。如需在此基础上扩展其余 4 类语义模式的布局强化，参考 commit 3dbc5c4 的实现路径（Phase 3 reflow + handle 覆盖）。
 
 **Goal:** 将 question-branches 语义模式从"几何扇形 fanout"改为"右侧分组列表"，实现强稳定、强可读的图形语法。
 
@@ -27,7 +29,7 @@
 - Modify: `apps/extension/src/sidepanel/graph-utils.ts:309-326` (删除 fanout 预计算)
 - Modify: `apps/extension/src/sidepanel/graph-utils.ts:372-387` (删除 fanout 居中公式)
 
-- [ ] **Step 1: 删除 FANOUT_PATTERNS 常量**
+- [x] **Step 1: 删除 FANOUT_PATTERNS 常量**
 
 在 `graph-utils.ts` 中，删除第 50-54 行：
 
@@ -40,7 +42,7 @@ const FANOUT_PATTERNS: ReadonlySet<string> = new Set([
 ]);
 ```
 
-- [ ] **Step 2: 删除 buildStableReactFlowDebugGraph 中的 fanout 预计算块**
+- [x] **Step 2: 删除 buildStableReactFlowDebugGraph 中的 fanout 预计算块**
 
 在函数内部，删除第 309-326 行的 fanout 预计算代码：
 
@@ -66,7 +68,7 @@ const FANOUT_PATTERNS: ReadonlySet<string> = new Set([
   }
 ```
 
-- [ ] **Step 3: 回退分支定位到原始公式**
+- [x] **Step 3: 回退分支定位到原始公式**
 
 将第 372-387 行的 fanout 居中逻辑替换回简单公式：
 
@@ -93,19 +95,19 @@ const FANOUT_PATTERNS: ReadonlySet<string> = new Set([
       const branchY = anchorPosition.y + STABLE_LAYOUT_BRANCH_GAP * (branchCount + 1);
 ```
 
-- [ ] **Step 4: 删除 fanout 居中测试**
+- [x] **Step 4: 删除 fanout 居中测试**
 
 在 `graph-utils.test.ts` 中，删除以下 3 个测试：
 - `fanout 模式下分支围绕锚点垂直中心居中分布`
 - `fanout 模式下两个分支也居中分布`
 - `fanout 模式下五个分支居中且无重叠`
 
-- [ ] **Step 5: 运行测试验证**
+- [x] **Step 5: 运行测试验证**
 
 Run: `pnpm --filter extension test:run -- --reporter=verbose src/sidepanel/graph-utils.test.ts`
 Expected: 所有 19 个测试通过（回到 fanout 居中之前的状态）
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```
 refactor(graph-utils): 移除 fanout 居中逻辑，为右侧分组列表布局做准备
@@ -120,7 +122,7 @@ refactor(graph-utils): 移除 fanout 居中逻辑，为右侧分组列表布局�
 
 核心设计：在 Phase 2 之后增加 Phase 3，对 question-branches 模式的所有 branch 节点统一重排为右侧垂直分组。
 
-- [ ] **Step 1: 在 buildStableReactFlowDebugGraph 中，Phase 2 结束后添加 reflow 逻辑**
+- [x] **Step 1: 在 buildStableReactFlowDebugGraph 中，Phase 2 结束后添加 reflow 逻辑**
 
 在 `occupied.push(nextPosition);` 的 `}` 闭合花括号之后（约第 418 行），`const nodes: ReactFlowDebugNode[]` 之前，插入：
 
@@ -160,7 +162,7 @@ refactor(graph-utils): 移除 fanout 居中逻辑，为右侧分组列表布局�
   }
 ```
 
-- [ ] **Step 2: 写测试验证分组布局的 y 位置**
+- [x] **Step 2: 写测试验证分组布局的 y 位置**
 
 在 `graph-utils.test.ts` 的 `describe('semantic hierarchy layout grammar')` 内，在现有 `问题分三点` 测试之后，添加：
 
@@ -219,12 +221,12 @@ refactor(graph-utils): 移除 fanout 居中逻辑，为右侧分组列表布局�
   });
 ```
 
-- [ ] **Step 3: 运行测试验证**
+- [x] **Step 3: 运行测试验证**
 
 Run: `pnpm --filter extension test:run -- --reporter=verbose src/sidepanel/graph-utils.test.ts`
 Expected: PASS（20 tests）
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```
 feat(graph-utils): question-branches 分支组 reflown 为右侧垂直分组列表
@@ -237,7 +239,7 @@ feat(graph-utils): question-branches 分支组 reflown 为右侧垂直分组列�
 **Files:**
 - Modify: `apps/extension/src/sidepanel/graph-utils.ts` (edge 构建部分，约第 454 行)
 
-- [ ] **Step 1: 在 edge 构建中添加 handle 覆盖**
+- [x] **Step 1: 在 edge 构建中添加 handle 覆盖**
 
 在 `const edges: ReactFlowDebugEdge[] = params.rendererGraph.edges` 的 `.map((edge) => {` 内部，将第 455 行：
 
@@ -256,7 +258,7 @@ feat(graph-utils): question-branches 分支组 reflown 为右侧垂直分组列�
         : resolveEdgeHandles(positions[edge.source], positions[edge.target]);
 ```
 
-- [ ] **Step 2: 写测试验证 5 分支全部 source-right → target-left**
+- [x] **Step 2: 写测试验证 5 分支全部 source-right → target-left**
 
 在 `graph-utils.test.ts` 的 `describe('semantic hierarchy layout grammar')` 内添加：
 
@@ -294,12 +296,12 @@ feat(graph-utils): question-branches 分支组 reflown 为右侧垂直分组列�
   });
 ```
 
-- [ ] **Step 3: 运行测试验证**
+- [x] **Step 3: 运行测试验证**
 
 Run: `pnpm --filter extension test:run -- --reporter=verbose src/sidepanel/graph-utils.test.ts`
 Expected: PASS（21 tests）
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```
 feat(graph-utils): question-branches 强制 source-right → target-left，不依赖几何评分
@@ -318,7 +320,7 @@ Phase 3 reflow 每次都根据当前图的 `branchNodeIds` 全量重排，不依
 2. Phase 2 放置新分支
 3. Phase 3 将所有分支（旧+新）统一重排
 
-- [ ] **Step 1: 写增量 reflow 测试**
+- [x] **Step 1: 写增量 reflow 测试**
 
 在 `graph-utils.test.ts` 的 `describe('semantic hierarchy layout grammar')` 内添加辅助函数和测试：
 
@@ -407,12 +409,12 @@ it('question-branches：增量到达时整个分支组 reflown 重排', () => {
 });
 ```
 
-- [ ] **Step 2: 运行测试验证**
+- [x] **Step 2: 运行测试验证**
 
 Run: `pnpm --filter extension test:run -- --reporter=verbose src/sidepanel/graph-utils.test.ts`
 Expected: PASS（22 tests）
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```
 test(graph-utils): 增量到达时分支组 reflown 重排测试
@@ -425,7 +427,7 @@ test(graph-utils): 增量到达时分支组 reflown 重排测试
 **Files:**
 - Create: `packages/graph-fixtures/fixtures/sequences/seq-pattern-question-incremental.json`
 
-- [ ] **Step 1: 创建增量 fixture 文件**
+- [x] **Step 1: 创建增量 fixture 文件**
 
 创建 `packages/graph-fixtures/fixtures/sequences/seq-pattern-question-incremental.json`：
 
@@ -530,7 +532,7 @@ test(graph-utils): 增量到达时分支组 reflown 重排测试
 }
 ```
 
-- [ ] **Step 2: 验证 fixture 能被加载**
+- [x] **Step 2: 验证 fixture 能被加载**
 
 确认 `fixture-sequence-dev.ts` 会自动扫描 `sequences/` 目录下的 JSON 文件。运行 dev 服务器后在侧栏 console 输入：
 
@@ -540,7 +542,7 @@ __listenGraphicFixture.list()
 
 Expected: 返回的列表中包含 `seq-pattern-question-incremental`
 
-- [ ] **Step 3: 手动视觉验收**
+- [x] **Step 3: 手动视觉验收**
 
 在 DEV 侧栏中：
 
@@ -555,7 +557,7 @@ Expected: 返回的列表中包含 `seq-pattern-question-incremental`
 - 分支不重叠
 - 新分支到达后旧分支位置不变（顶部对齐天然稳定）
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```
 feat(graph-fixtures): 新增 question-branches 增量 fixture 用于视觉验收

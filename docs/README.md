@@ -13,9 +13,9 @@
   - 设备内声音与外界实时录音的跨端能力边界
   - 为什么下一步优先做桌面端
 - [Desktop V2 音频采集验收](C:/Users/finni/Desktop/ListenGraph/docs/product/desktop-v2-acceptance.md)
-  - 本轮封口：真实麦克风 / 系统声音进入 AudioWorklet 的采集验证
-  - 静态回归结论与手动验收清单
-  - 当前限制：图谱仍由 mock transcript 驱动，未接真实 ASR
+  - 真实麦克风 / 系统声音进入 AudioWorklet 的采集验证
+  - 阶段二：共享 ASR runtime 已接入，真实 final transcript 驱动图谱
+  - 当前限制：structurer 仍是 mock；Sherpa 真实模型验收待人工执行
 
 ### 运行时现状与关键决策
 - [扩展运行时主链路基线](C:/Users/finni/Desktop/ListenGraph/docs/extension/runtime-mainline.md)

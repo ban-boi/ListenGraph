@@ -160,8 +160,8 @@ pnpm dev:sherpa-asr-bridge -- --encoder .tmp/sherpa-model/.../encoder.int8.onnx 
 1. **structurer 仍为 mock**：`MockStructurerProvider` 只按节点数轮换类型/说话人，图谱语义质量不代表真实抽取。真实 structurer 接入是下一阶段。
 2. **无混音、无设置 UI、无打包**：同阶段一限制 5/6/7。
 3. **Sherpa 真实模型验收待人工执行**：见上节。
-4. **既存非本次引入**：`App.fixture-sequence.test.tsx`（UI）失败与 `.real.test.ts`（需 Tencent 凭证）失败在阶段二之前即存在；`pnpm test:ext:contract` 脚本指向的 `src/service-worker/index.test.ts` 已不存在（项目重构遗留），实际契约测试在 `provider-contract.test.ts` 等文件，已单独验证通过。
-5. **全仓 ESLint v9 与 `.eslintrc.cjs` 不兼容**：本机 ESLint 已升至 v9，`pnpm lint` 全仓 12 包均失败，属环境既存问题，非本次引入；本次以 `tsc --noEmit`（typecheck）作为等价静态门禁。
+4. **既存非本次引入**：`App.fixture-sequence.test.tsx`（UI）失败与 `.real.test.ts`（需 Tencent 凭证）失败在阶段二之前即存在。~~`pnpm test:ext:contract` 脚本指向的 `src/service-worker/index.test.ts` 已不存在（项目重构遗留）~~ **已于 2026-07 修复**：`test:ext:contract` 与 extension 的 `test:contract` 现指向拆分后的 12 个真实契约文件集合（101 用例），详见 `docs/testing/README.md`。
+5. **~~全仓 ESLint v9 与 `.eslintrc.cjs` 不兼容~~ 已于 2026-07 修复**：迁移到根级 `eslint.config.mjs`（flat config），12 个包的 lint 脚本去掉 `--ext`、新增 `@eslint/js` + `globals` 依赖，`pnpm lint` 12/12 包通过。详情见根 `eslint.config.mjs` 注释。
 
 ## 下一阶段
 
@@ -169,6 +169,6 @@ pnpm dev:sherpa-asr-bridge -- --encoder .tmp/sherpa-model/.../encoder.int8.onnx 
 
 - 接入真实 structurer（替换 `MockStructurerProvider`），验证语义图谱质量
 - 人工执行 Sherpa 真实模型验收，确认真实语音 → 图谱闭环
-- 解决全仓 ESLint v9 flat-config 迁移
+- ~~解决全仓 ESLint v9 flat-config 迁移~~ **已完成（2026-07）**
 
 本验收文档随后续阶段继续更新。
