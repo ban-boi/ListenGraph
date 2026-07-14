@@ -107,19 +107,20 @@ function toSampleMetrics(m: ReturnType<typeof computeDomLayoutMetrics>): SampleM
 async function measureReactCommitP95(page: Page, graph: MergedGraph): Promise<number> {
   const times: number[] = [];
   for (let i = 0; i < 10; i++) {
+    // Avoid nested named fns inside evaluate — tsx/esbuild keepNames injects
+    // `__name(...)` which is undefined in the browser page context.
     const ms = await page.evaluate(async (g) => {
       const t0 = performance.now();
       globalThis.__listenGraphicFixture?.loadGraph(g);
-      await new Promise<void>((resolve, reject) => {
-        const start = performance.now();
-        const tick = () => {
-          const n = document.querySelectorAll('[data-testid^="graph-node-card-"]').length;
-          if (n >= g.nodes.length) return resolve();
-          if (performance.now() - start > 10000) return reject(new Error('commit timeout'));
-          requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
-      });
+      const deadline = performance.now() + 10000;
+      for (;;) {
+        const n = document.querySelectorAll('[data-testid^="graph-node-card-"]').length;
+        if (n >= g.nodes.length) break;
+        if (performance.now() > deadline) throw new Error('commit timeout');
+        await new Promise<void>((r) => {
+          requestAnimationFrame(() => r());
+        });
+      }
       return performance.now() - t0;
     }, graph);
     times.push(ms);
