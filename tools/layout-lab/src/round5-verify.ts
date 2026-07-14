@@ -13,7 +13,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { chromium, expect, type BrowserContext, type Page } from '@playwright/test';
+import { chromium, type BrowserContext, type Page } from '@playwright/test';
 import type { MergedGraph } from '@listen-graphic/schema';
 import {
   computeIncrementalLayout,
@@ -22,18 +22,30 @@ import {
 } from '../../../packages/graph-renderers/src/r3b/index.ts';
 import { waitForFixtureReady, waitForFixtureGraph, stabilizeForScreenshot } from './e2e-helpers';
 import { nearestRankPercentile } from './layout-metrics-v2';
+import { computeDomLayoutMetrics, type DomRect } from './dom-metrics';
+import {
+  evaluateRound5Gate,
+  type Round5Summary,
+  type SampleMetrics,
+} from './round5-gates';
 
 const ROOT = path.resolve(import.meta.dirname, '../../..');
 const DUMP = path.resolve(import.meta.dirname, '../inputs/real-graphs-dump.json');
 const OUT = path.resolve(import.meta.dirname, '../outputs/round5');
 const USER_DATA = path.resolve(import.meta.dirname, '../.tmp/round5-user-data');
 
+/** 前 16 = large，后 7 = small（与 Round5 plan 对齐） */
 const SAMPLE_INDICES = [
   49, 41, 48, 34, 47, 40, 29, 28, 39, 61, 31, 46,
   37, 32, 58, 57,
   18, 21, 16, 12, 6,
   33, 51,
 ];
+const LARGE_INDICES = SAMPLE_INDICES.slice(0, 16);
+const SMALL_INDICES = SAMPLE_INDICES.slice(16);
+
+/** JSON-safe sentinel when React commit p95 was not measured (shots skipped). */
+const REACT_COMMIT_P95_SKIPPED = 9999;
 
 const DIST_STABLE = path.resolve(ROOT, 'apps/extension/dist-stable-fixture');
 const DIST_R3B = path.resolve(ROOT, 'apps/extension/dist');
@@ -65,57 +77,62 @@ async function openSidepanel(context: BrowserContext, extensionId: string): Prom
   return page;
 }
 
-type DomMetrics = {
-  avgEdgeLength: number;
-  overlapPairs: number;
-  minGap: number;
-  nodeCount: number;
-};
-
-async function collectDomMetrics(page: Page): Promise<DomMetrics> {
+async function collectDomRects(page: Page): Promise<DomRect[]> {
   return page.evaluate(() => {
     const cards = Array.from(document.querySelectorAll('[data-testid^="graph-node-card-"]'));
-    const rects = cards.map((el) => {
+    return cards.map((el) => {
       const r = el.getBoundingClientRect();
-      return { id: el.getAttribute('data-testid') ?? '', left: r.left, top: r.top, right: r.right, bottom: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
+      return {
+        id: el.getAttribute('data-testid') ?? '',
+        left: r.left,
+        top: r.top,
+        right: r.right,
+        bottom: r.bottom,
+      };
     });
-    let overlapPairs = 0;
-    let minGap = Infinity;
-    let edgeSum = 0;
-    let edgeCount = 0;
-    for (let i = 0; i < rects.length; i++) {
-      for (let j = i + 1; j < rects.length; j++) {
-        const a = rects[i], b = rects[j];
-        const overlap = !(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top);
-        if (overlap) overlapPairs++;
-        // 修复 M2/M3（review finding）：
-        // - 原 gapX/gapY 算完没用（死代码，被 gap 覆盖）
-        // - 原 gap 公式有 typo：a.cx - b.cy（应为 a.cx - b.cx），且把矩形当圆做中心距近似，
-        //   与 kernel 侧 computeClearance（AABB 最小平移距离）口径不一致。
-        // 现改用与 kernel 一致的 AABB 净距语义：两轴 gap 取 max（<0 表示该轴重叠），
-        // 净距 = max(gapX, gapY)；重叠时为负。
-        const gapX = Math.min(b.left - a.right, a.left - b.right);
-        const gapY = Math.min(b.top - a.bottom, a.top - b.bottom);
-        const clearance = overlap ? 0 : Math.max(0, Math.max(gapX, gapY));
-        if (Number.isFinite(clearance)) minGap = Math.min(minGap, clearance);
-        edgeSum += Math.hypot(a.cx - b.cx, a.cy - b.cy);
-        edgeCount++;
-      }
-    }
-    return {
-      avgEdgeLength: edgeCount ? Math.round(edgeSum / edgeCount) : 0,
-      overlapPairs,
-      minGap: minGap === Infinity ? 0 : Math.round(minGap),
-      nodeCount: rects.length,
-    };
   });
+}
+
+function toSampleMetrics(m: ReturnType<typeof computeDomLayoutMetrics>): SampleMetrics {
+  return {
+    avgEdgeLength: m.avgEdgeLength,
+    overlapPairs: m.overlapPairs,
+    clearanceViolationPairs: m.clearanceViolationPairs,
+    pairCount: m.pairCount,
+    edgeEdgeCrossings: m.edgeEdgeCrossings,
+    nodeCount: m.nodeCount,
+  };
+}
+
+async function measureReactCommitP95(page: Page, graph: MergedGraph): Promise<number> {
+  const times: number[] = [];
+  for (let i = 0; i < 10; i++) {
+    const ms = await page.evaluate(async (g) => {
+      const t0 = performance.now();
+      globalThis.__listenGraphicFixture?.loadGraph(g);
+      await new Promise<void>((resolve, reject) => {
+        const start = performance.now();
+        const tick = () => {
+          const n = document.querySelectorAll('[data-testid^="graph-node-card-"]').length;
+          if (n >= g.nodes.length) return resolve();
+          if (performance.now() - start > 10000) return reject(new Error('commit timeout'));
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+      return performance.now() - t0;
+    }, graph);
+    times.push(ms);
+  }
+  times.sort((a, b) => a - b);
+  return nearestRankPercentile(times, 95);
 }
 
 async function captureVariant(
   label: 'stable' | 'r3b',
   distPath: string,
   dump: MergedGraph[],
-): Promise<Record<number, DomMetrics>> {
+): Promise<{ metrics: Record<number, SampleMetrics>; reactCommitP95?: number }> {
   const outDir = path.join(OUT, `shots-${label}`);
   fs.mkdirSync(outDir, { recursive: true });
   const userData = path.join(USER_DATA, label);
@@ -123,7 +140,7 @@ async function captureVariant(
 
   const { context, extensionId } = await launchExt(distPath, userData);
   const page = await openSidepanel(context, extensionId);
-  const metrics: Record<number, DomMetrics> = {};
+  const metrics: Record<number, SampleMetrics> = {};
 
   for (const idx of SAMPLE_INDICES) {
     const graph = dump[idx];
@@ -138,28 +155,54 @@ async function captureVariant(
     await stabilizeForScreenshot(page);
     const padded = String(idx).padStart(2, '0');
     await page.screenshot({ path: path.join(outDir, `${padded}-causal.png`), fullPage: true });
-    metrics[idx] = await collectDomMetrics(page);
-    console.log(`[${label}] #${padded} nodes=${graph.nodes.length} avgEdge=${metrics[idx].avgEdgeLength} overlaps=${metrics[idx].overlapPairs}`);
+    const rects = await collectDomRects(page);
+    const edges = graph.edges.map((e) => ({ source: e.source, target: e.target }));
+    const dom = computeDomLayoutMetrics(rects, edges, { clearanceThreshold: 16 });
+    metrics[idx] = toSampleMetrics(dom);
+    console.log(
+      `[${label}] #${padded} nodes=${dom.nodeCount} avgEdge=${Math.round(dom.avgEdgeLength)} overlaps=${dom.overlapPairs} crossings=${dom.edgeEdgeCrossings}`,
+    );
+  }
+
+  let reactCommitP95: number | undefined;
+  if (label === 'r3b' && dump[49]) {
+    reactCommitP95 = await measureReactCommitP95(page, dump[49]);
+    console.log(`[perf] #49 react commit p95=${reactCommitP95.toFixed(1)}ms`);
   }
 
   await context.close();
-  return metrics;
+  return { metrics, reactCommitP95 };
 }
 
 async function verifySequenceIncremental(dump: MergedGraph[]): Promise<void> {
   // Kernel-level: simulate incremental growth with computeIncrementalLayout and assert old nodes stay put
-  // Prefer real sequence if available via fixture arm/next in browser; also assert kernel hard-pin.
   const base = dump[18];
   if (!base) throw new Error('dump[18] missing for sequence kernel check');
 
   let state = createEmptyIncrementalState();
-  const g1 = { ...base, revision: 1, nodes: base.nodes.slice(0, Math.min(8, base.nodes.length)), edges: base.edges.filter((e) => base.nodes.slice(0, 8).some((n) => n.id === e.source) && base.nodes.slice(0, 8).some((n) => n.id === e.target)) };
+  const g1 = {
+    ...base,
+    revision: 1,
+    nodes: base.nodes.slice(0, Math.min(8, base.nodes.length)),
+    edges: base.edges.filter(
+      (e) =>
+        base.nodes.slice(0, 8).some((n) => n.id === e.source) &&
+        base.nodes.slice(0, 8).some((n) => n.id === e.target),
+    ),
+  };
   const sizes1 = computeAllNodeSizes(g1.nodes);
   const r1 = computeIncrementalLayout(g1, state, 'R3b', sizes1);
   state = r1.state;
 
   const g2Nodes = base.nodes.slice(0, Math.min(12, base.nodes.length));
-  const g2 = { ...base, revision: 2, nodes: g2Nodes, edges: base.edges.filter((e) => g2Nodes.some((n) => n.id === e.source) && g2Nodes.some((n) => n.id === e.target)) };
+  const g2 = {
+    ...base,
+    revision: 2,
+    nodes: g2Nodes,
+    edges: base.edges.filter(
+      (e) => g2Nodes.some((n) => n.id === e.source) && g2Nodes.some((n) => n.id === e.target),
+    ),
+  };
   const sizes2 = computeAllNodeSizes(g2.nodes);
   const r2 = computeIncrementalLayout(g2, state, 'R3b', sizes2);
 
@@ -179,7 +222,6 @@ function measureP95(dump: MergedGraph[]): { p95: number; times: number[]; ok: bo
   const graph = dump[49];
   if (!graph) throw new Error('dump[49] missing');
   const sizes = computeAllNodeSizes(graph.nodes);
-  // warmup
   for (let i = 0; i < 3; i++) {
     computeIncrementalLayout(graph, createEmptyIncrementalState(), 'R3b', sizes);
   }
@@ -190,15 +232,29 @@ function measureP95(dump: MergedGraph[]): { p95: number; times: number[]; ok: bo
     times.push(performance.now() - t0);
   }
   times.sort((a, b) => a - b);
-  // 修复 M1：统一使用 nearestRankPercentile（与 layout-metrics-v2 一致），
-  // 原用 ceil-1 公式与 metrics 模块的 floor 公式不一致。
   const p95 = nearestRankPercentile(times, 95);
-  console.log(`[perf] #49 computeIncrementalLayout times(ms)=${times.map((t) => t.toFixed(1)).join(',')} p95=${p95.toFixed(1)}`);
+  console.log(
+    `[perf] #49 computeIncrementalLayout times(ms)=${times.map((t) => t.toFixed(1)).join(',')} p95=${p95.toFixed(1)}`,
+  );
   const ok = p95 < 200;
   if (!ok) {
-    console.warn(`[perf] WARNING: p95 ${p95.toFixed(1)}ms >= 200ms gate (record only; continue verification)`);
+    console.error(`[perf] FAIL: compute p95 ${p95.toFixed(1)}ms >= 200ms`);
   }
   return { p95, times, ok };
+}
+
+function writeSummaryAndExit(summary: Round5Summary): never {
+  const gate = evaluateRound5Gate(summary);
+  fs.writeFileSync(
+    path.join(OUT, 'summary.json'),
+    JSON.stringify({ ...summary, gate }, null, 2),
+  );
+  if (gate.code !== 0) {
+    console.error('[round5] FAIL:\n - ' + gate.failures.join('\n - '));
+    process.exit(1);
+  }
+  console.log('[round5] PASS');
+  process.exit(0);
 }
 
 async function main(): Promise<void> {
@@ -207,36 +263,62 @@ async function main(): Promise<void> {
   fs.mkdirSync(OUT, { recursive: true });
 
   console.log('=== Step: p95 perf (#49) ===');
-  const perf = measureP95(dump);
+  const perfKernel = measureP95(dump);
 
   console.log('=== Step: sequence incremental (kernel) ===');
   await verifySequenceIncremental(dump);
 
-  const hasStable = fs.existsSync(path.join(DIST_STABLE, 'sidepanel', 'sidepanel.js'))
-    || fs.existsSync(path.join(DIST_STABLE, 'manifest.json'));
-  const hasR3b = fs.existsSync(path.join(DIST_R3B, 'sidepanel', 'sidepanel.js'))
-    || fs.existsSync(path.join(DIST_R3B, 'manifest.json'));
+  const hasStable =
+    fs.existsSync(path.join(DIST_STABLE, 'sidepanel', 'sidepanel.js')) ||
+    fs.existsSync(path.join(DIST_STABLE, 'manifest.json'));
+  const hasR3b =
+    fs.existsSync(path.join(DIST_R3B, 'sidepanel', 'sidepanel.js')) ||
+    fs.existsSync(path.join(DIST_R3B, 'manifest.json'));
 
   if (!hasStable || !hasR3b) {
     console.warn(`[shots] skip screenshots: stable=${hasStable} r3b=${hasR3b}`);
     console.warn(`  Prepare with:`);
-    console.warn(`    pnpm --filter extension build:fixture-lab && xcopy /E /I /Y apps\\extension\\dist apps\\extension\\dist-stable-fixture`);
+    console.warn(
+      `    pnpm --filter extension build:fixture-lab && xcopy /E /I /Y apps\\extension\\dist apps\\extension\\dist-stable-fixture`,
+    );
     console.warn(`    pnpm --filter extension build:r3b:fixture-lab`);
     console.warn(`  Then re-run this script.`);
-    fs.writeFileSync(path.join(OUT, 'summary.json'), JSON.stringify({ perf, sequenceOk: true, shotsSkipped: true }, null, 2));
-    return;
+    writeSummaryAndExit({
+      shotsSkipped: true,
+      sampleIndices: SAMPLE_INDICES,
+      largeIndices: LARGE_INDICES,
+      smallIndices: SMALL_INDICES,
+      stableMetrics: {},
+      r3bMetrics: {},
+      perf: {
+        computeP95: perfKernel.p95,
+        reactCommitP95: REACT_COMMIT_P95_SKIPPED,
+        ok: perfKernel.ok,
+      },
+      sequenceOk: true,
+    });
   }
 
   console.log('=== Step: capture stable fixture-lab ===');
-  const stableMetrics = await captureVariant('stable', DIST_STABLE, dump);
+  const stable = await captureVariant('stable', DIST_STABLE, dump);
   console.log('=== Step: capture r3b fixture-lab ===');
-  const r3bMetrics = await captureVariant('r3b', DIST_R3B, dump);
+  const r3b = await captureVariant('r3b', DIST_R3B, dump);
 
-  fs.writeFileSync(
-    path.join(OUT, 'summary.json'),
-    JSON.stringify({ sampleIndices: SAMPLE_INDICES, stableMetrics, r3bMetrics, perf, sequenceOk: true }, null, 2),
-  );
-  console.log(`[round5] done → ${OUT}`);
+  const reactCommitP95 = r3b.reactCommitP95 ?? REACT_COMMIT_P95_SKIPPED;
+  writeSummaryAndExit({
+    shotsSkipped: false,
+    sampleIndices: SAMPLE_INDICES,
+    largeIndices: LARGE_INDICES,
+    smallIndices: SMALL_INDICES,
+    stableMetrics: stable.metrics,
+    r3bMetrics: r3b.metrics,
+    perf: {
+      computeP95: perfKernel.p95,
+      reactCommitP95,
+      ok: perfKernel.ok,
+    },
+    sequenceOk: true,
+  });
 }
 
 void main().catch((err) => {
