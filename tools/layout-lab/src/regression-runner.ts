@@ -137,9 +137,17 @@ export function runRegressionCase(
     for (const name of softMetricNames) {
       const baseline = testCase.softBaselines[name];
       const actual = actualMetrics[name];
-      const budget =
-        (testCase.degradationBudget as Record<string, number | undefined>)[name] ?? 0.15;
-      const degradation = baseline === 0 ? (actual > 0 ? 1 : 0) : (actual - baseline) / baseline;
+      const budget = testCase.degradationBudget[name] ?? 0.15;
+      // 修复 B3（review finding）：baseline=0 时，"从无到有"应直接判失败，
+      // 不受 budget 调节（原实现把无穷大退化率压成常数 1，budget>=1 时漏检）。
+      // degradation 仍记录实际退化幅度（baseline>0 时为比例，baseline=0 且 actual>0 记 Infinity）。
+      const degradation =
+        baseline === 0
+          ? actual > 0
+            ? Infinity
+            : 0
+          : (actual - baseline) / baseline;
+      const passed = baseline === 0 ? actual === 0 : degradation <= budget;
 
       softResults.push({
         name,
@@ -147,7 +155,7 @@ export function runRegressionCase(
         actual,
         degradation,
         budget,
-        passed: degradation <= budget,
+        passed,
       });
     }
   }

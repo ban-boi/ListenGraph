@@ -258,10 +258,25 @@ export async function handleExportAllGraphs(
   await deps.ensureHydrated();
 
   const allGraphs = await deps.mergedGraphRepository.listAll();
+  // 修复 M3（review finding）：原实现静默丢弃 schema 不过的图，无日志。
+  // 对"语料导出"用途有数据完整性隐患——现记录被丢弃的数量与 sessionId。
+  const droppedSessionIds: string[] = [];
   const validGraphs = allGraphs
-    .map(validateMergedGraph)
+    .map((g) => {
+      const validated = validateMergedGraph(g);
+      if (validated === null && g && typeof g === 'object' && 'sessionId' in g) {
+        droppedSessionIds.push(String((g as { sessionId: unknown }).sessionId));
+      }
+      return validated;
+    })
     .filter((g): g is MergedGraph => g !== null)
     .sort((a, b) => a.sessionId.localeCompare(b.sessionId));
+
+  if (droppedSessionIds.length > 0) {
+    console.warn(
+      `[export-all-graphs] 丢弃 ${droppedSessionIds.length} 个无效图（schema 校验失败）: ${droppedSessionIds.join(', ')}`,
+    );
+  }
 
   if (validGraphs.length === 0) {
     return { success: false, error: '没有有效的 graph 数据可导出' };

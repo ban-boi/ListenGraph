@@ -21,6 +21,7 @@ import {
   createEmptyIncrementalState,
 } from '../../../packages/graph-renderers/src/r3b/index.ts';
 import { waitForFixtureReady, waitForFixtureGraph, stabilizeForScreenshot } from './e2e-helpers';
+import { nearestRankPercentile } from './layout-metrics-v2';
 
 const ROOT = path.resolve(import.meta.dirname, '../../..');
 const DUMP = path.resolve(import.meta.dirname, '../inputs/real-graphs-dump.json');
@@ -87,14 +88,16 @@ async function collectDomMetrics(page: Page): Promise<DomMetrics> {
         const a = rects[i], b = rects[j];
         const overlap = !(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top);
         if (overlap) overlapPairs++;
-        const gapX = Math.max(0, Math.max(a.left, b.left) === a.left ? b.left - a.right : a.left - b.right);
-        const gapY = Math.max(0, Math.max(a.top, b.top) === a.top ? b.top - a.bottom : a.top - b.bottom);
-        // axis-aligned gap approximation
-        const gap = overlap ? 0 : Math.min(
-          Math.hypot(a.cx - b.cx, a.cy - b.cy) - ((a.right - a.left) + (b.right - b.left)) / 2,
-          Math.hypot(a.cx - b.cx, a.cy - b.cy) - ((a.bottom - a.top) + (b.bottom - b.top)) / 2,
-        );
-        if (Number.isFinite(gap)) minGap = Math.min(minGap, Math.max(0, gap));
+        // 修复 M2/M3（review finding）：
+        // - 原 gapX/gapY 算完没用（死代码，被 gap 覆盖）
+        // - 原 gap 公式有 typo：a.cx - b.cy（应为 a.cx - b.cx），且把矩形当圆做中心距近似，
+        //   与 kernel 侧 computeClearance（AABB 最小平移距离）口径不一致。
+        // 现改用与 kernel 一致的 AABB 净距语义：两轴 gap 取 max（<0 表示该轴重叠），
+        // 净距 = max(gapX, gapY)；重叠时为负。
+        const gapX = Math.min(b.left - a.right, a.left - b.right);
+        const gapY = Math.min(b.top - a.bottom, a.top - b.bottom);
+        const clearance = overlap ? 0 : Math.max(0, Math.max(gapX, gapY));
+        if (Number.isFinite(clearance)) minGap = Math.min(minGap, clearance);
         edgeSum += Math.hypot(a.cx - b.cx, a.cy - b.cy);
         edgeCount++;
       }
@@ -187,7 +190,9 @@ function measureP95(dump: MergedGraph[]): { p95: number; times: number[]; ok: bo
     times.push(performance.now() - t0);
   }
   times.sort((a, b) => a - b);
-  const p95 = times[Math.min(times.length - 1, Math.ceil(times.length * 0.95) - 1)];
+  // 修复 M1：统一使用 nearestRankPercentile（与 layout-metrics-v2 一致），
+  // 原用 ceil-1 公式与 metrics 模块的 floor 公式不一致。
+  const p95 = nearestRankPercentile(times, 95);
   console.log(`[perf] #49 computeIncrementalLayout times(ms)=${times.map((t) => t.toFixed(1)).join(',')} p95=${p95.toFixed(1)}`);
   const ok = p95 < 200;
   if (!ok) {

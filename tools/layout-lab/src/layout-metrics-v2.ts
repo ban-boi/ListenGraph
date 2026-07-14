@@ -12,6 +12,24 @@ export type CenterPos = { cx: number; cy: number };
 /** 边的端点信息（用于指标计算） */
 export type Edge = { source: string; target: string };
 
+// ── 百分位辅助 ──
+
+/**
+ * nearest-rank 百分位：对升序数组取第 p 百分位的值。
+ * 修复 M1（review finding）：原三处百分位公式不一致（floor vs ceil-1），
+ * 小样本下 p95≈max。现统一为 nearest-rank（index = floor(p/100 * n)，clamp 到 [0,n-1]），
+ * 并集中文档化小样本退化行为。
+ *
+ * 注意：n ≤ 20 时 p95 退化为最大值（nearest-rank 特性），这是偏保守的门禁，
+ * 非精确分位数。需要精确分位数时应改用 linear interpolation。
+ */
+export function nearestRankPercentile(sortedAsc: number[], percentile: number): number {
+  const n = sortedAsc.length;
+  if (n === 0) return 0;
+  const idx = Math.min(n - 1, Math.max(0, Math.floor((percentile / 100) * n)));
+  return sortedAsc[idx];
+}
+
 // ── 输出类型 ──
 
 /** 硬约束指标：任何 case 都不能违反 */
@@ -208,8 +226,7 @@ export function computeClearance(
 
   const violationPairs = clearances.filter((c) => c.clearance < violationThreshold).length;
   const minEntry = clearances[0];
-  const p05Index = Math.max(0, Math.floor(clearances.length * 0.05));
-  const p05 = clearances[p05Index]?.clearance ?? Infinity;
+  const p05 = nearestRankPercentile(clearances.map((c) => c.clearance), 5);
 
   return {
     violationPairs,
@@ -442,8 +459,7 @@ export function computeEdgeLengthStats(
   lengths.sort((a, b) => a - b);
 
   const avg = lengths.reduce((a, b) => a + b, 0) / lengths.length;
-  const p95Index = Math.min(lengths.length - 1, Math.floor(lengths.length * 0.95));
-  const p95 = lengths[p95Index];
+  const p95 = nearestRankPercentile(lengths, 95);
 
   const canvas = computeCanvasMetrics(positions, sizes);
   const diagonal = Math.sqrt(canvas.canvasWidth ** 2 + canvas.canvasHeight ** 2);

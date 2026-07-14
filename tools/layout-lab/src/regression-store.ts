@@ -2,7 +2,7 @@
  * 回归 case 存储。
  * 独立于 write-fixtures.mjs，不会被覆盖。
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -15,6 +15,16 @@ import type { RegressionCase, RegressionManifest } from '../../../packages/graph
 const REGRESSION_DIR = join(dirname(fileURLToPath(import.meta.url)), '../fixtures/regression');
 const MANIFEST_PATH = join(REGRESSION_DIR, 'manifest.json');
 
+/**
+ * 原子写入：先写临时文件再 rename，避免崩溃留下半写文件（修复 M4 review finding）。
+ * rename 在同一文件系统上是原子的（POSIX/NTFS 均保证）。
+ */
+function atomicWrite(filePath: string, content: string): void {
+  const tmp = `${filePath}.tmp`;
+  writeFileSync(tmp, content, 'utf-8');
+  renameSync(tmp, filePath);
+}
+
 export function loadRegressionManifest(): RegressionManifest {
   if (!existsSync(MANIFEST_PATH)) {
     return { version: 1, cases: [] };
@@ -25,7 +35,7 @@ export function loadRegressionManifest(): RegressionManifest {
 
 export function saveRegressionManifest(manifest: RegressionManifest): void {
   mkdirSync(dirname(MANIFEST_PATH), { recursive: true });
-  writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2), 'utf-8');
+  atomicWrite(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
 }
 
 export function loadRegressionCase(id: string): RegressionCase {
@@ -57,7 +67,8 @@ export function saveRegressionCase(testCase: RegressionCase): void {
   }
 
   mkdirSync(REGRESSION_DIR, { recursive: true });
-  writeFileSync(filePath, JSON.stringify(testCase, null, 2), 'utf-8');
+  // 先原子写 case 文件，成功后再更新 manifest——保证 manifest 只在 case 落盘后指向它
+  atomicWrite(filePath, JSON.stringify(testCase, null, 2));
   saveRegressionManifest(manifest);
 }
 

@@ -62,6 +62,12 @@ export function matchClusters(
 
 export type IncrementalState = {
   positions: Record<string, CenterPos>;
+  /**
+   * 上一轮的节点尺寸快照。注意：incremental 内核不读取此字段——
+   * sizes 始终作为 computeIncrementalLayout 的参数由调用方按当前 revision 重新计算传入
+   *（见 incremental.ts:58）。保留此字段供调试/外部消费方读取，但不要假设内核会继承它。
+   * 修复 M4（review finding）：原无注释，易让人误以为增量会自动沿用上一轮尺寸。
+   */
   sizes: Record<string, NodeSize>;
   clusterOrigins: Record<string, { x: number; y: number }>;
   prevClusters: Array<{ id: string; nodeIds: string[]; type: 'major' | 'minor' }>;

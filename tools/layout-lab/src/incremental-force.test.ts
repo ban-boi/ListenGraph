@@ -28,7 +28,11 @@ describe('computeIncrementalLayout', () => {
     expect(result.positions).toHaveProperty('c');
   });
 
-  it('增量：旧节点位移 < 100px（drift clamp 保证）', () => {
+  it('增量：旧节点硬固定（hard-pin）—— 位移 ≈ 0px', () => {
+    // 修复 M2（review finding）：原断言 < 101px 引用已废弃的 MAX_DRIFT_LOOSE=100，
+    // 但 incremental-force 已改为硬固定模式（mobility[old]=0，旧节点 0px 移动），
+    // 真实漂移为 0。101px 上限宽松 ∞ 倍，任何把硬固定改回 drift clamp 的回归都测不出。
+    // 现收紧到 0.5px（仅容忍 overlap resolution 的浮点噪声）。
     const graph1 = makeGraph(['a', 'b', 'c'], [['a', 'b'], ['b', 'c']], [0, 1000, 2000]);
     const result1 = run(graph1, emptyState());
 
@@ -39,7 +43,7 @@ describe('computeIncrementalLayout', () => {
       const p1 = result1.state.positions[id];
       const p2 = result2.state.positions[id];
       const dist = Math.hypot(p2.cx - p1.cx, p2.cy - p1.cy);
-      expect(dist).toBeLessThan(101); // MAX_DRIFT_LOOSE = 100
+      expect(dist).toBeLessThan(0.5); // hard-pin：旧节点钉死，仅容忍浮点噪声
     }
   });
 
