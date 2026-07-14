@@ -28,8 +28,13 @@ if (values['all-candidates']) {
     process.exit(1);
   }
   for (const c of candidates) {
-    const updated = acceptBaseline(c.id, adapter);
-    console.log(`✅ baselined ${updated.id}`);
+    try {
+      const updated = acceptBaseline(c.id, adapter);
+      console.log(`baselined ${updated.id}`);
+    } catch (err) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
   }
   process.exit(0);
 }
@@ -39,5 +44,10 @@ if (!values['case-id']) {
   process.exit(1);
 }
 
-const updated = acceptBaseline(values['case-id'], adapter);
-console.log(`✅ baselined ${updated.id} (algorithm=${updated.algorithmId}@${updated.algorithmVersion})`);
+try {
+  const updated = acceptBaseline(values['case-id'], adapter);
+  console.log(`baselined ${updated.id} (algorithm=${updated.algorithmId}@${updated.algorithmVersion})`);
+} catch (err) {
+  console.error(err instanceof Error ? err.message : String(err));
+  process.exit(1);
+}
