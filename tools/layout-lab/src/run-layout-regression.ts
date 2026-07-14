@@ -43,7 +43,7 @@ if (values['case-id']) {
   console.log(formatRegressionReport(suiteResult));
 
   const minBaselined = split === 'holdout' ? 1 : split === 'regression' || !split ? 12 : 1;
-  const exit = evaluateSuiteExit(suiteResult, { split, minBaselined });
+  const exit = evaluateSuiteExit(suiteResult, { minBaselined });
   if (exit.code !== 0) {
     console.error(`[gate] FAIL: ${exit.reason}`);
   }

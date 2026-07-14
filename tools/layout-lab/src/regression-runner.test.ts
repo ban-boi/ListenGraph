@@ -161,7 +161,7 @@ describe('evaluateSuiteExit', () => {
   it('0 case → exit 1', () => {
     const r = evaluateSuiteExit(
       { totalCases: 0, passedCases: 0, failedCases: 0, skippedCases: 0, results: [], passRateBySplit: {} },
-      { split: 'regression', minBaselined: 1 },
+      { minBaselined: 1 },
     );
     expect(r.code).toBe(1);
     expect(r.reason).toMatch(/0 case/i);
@@ -180,7 +180,7 @@ describe('evaluateSuiteExit', () => {
         ],
         passRateBySplit: { regression: { passed: 0, total: 2, skipped: 2 } },
       },
-      { split: 'regression', minBaselined: 1 },
+      { minBaselined: 1 },
     );
     expect(r.code).toBe(1);
     expect(r.reason).toMatch(/candidate|baselined/i);
@@ -198,8 +198,34 @@ describe('evaluateSuiteExit', () => {
         ],
         passRateBySplit: { regression: { passed: 1, total: 1, skipped: 0 } },
       },
-      { split: 'regression', minBaselined: 1 },
+      { minBaselined: 1 },
     );
     expect(r.code).toBe(0);
+  });
+
+  it('baselined 失败 → exit 1', () => {
+    const r = evaluateSuiteExit(
+      {
+        totalCases: 1,
+        passedCases: 0,
+        failedCases: 1,
+        skippedCases: 0,
+        results: [
+          {
+            caseId: 'a',
+            split: 'regression',
+            status: 'baselined',
+            passed: false,
+            reason: 'hard constraint failed',
+            hardResults: [],
+            softResults: [],
+          },
+        ],
+        passRateBySplit: { regression: { passed: 0, total: 1, skipped: 0 } },
+      },
+      { minBaselined: 1 },
+    );
+    expect(r.code).toBe(1);
+    expect(r.reason).toMatch(/failed/i);
   });
 });

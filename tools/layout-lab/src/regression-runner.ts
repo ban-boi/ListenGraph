@@ -258,9 +258,7 @@ export function formatRegressionReport(suiteResult: RegressionSuiteResult): stri
 }
 
 export type SuiteExitOptions = {
-  /** 当前运行的 split；undefined = 全部 */
-  split?: string;
-  /** regression split 要求的最少 baselined 数量；默认 1 */
+  /** 要求的最少 baselined 数量；默认 1 */
   minBaselined?: number;
 };
 
