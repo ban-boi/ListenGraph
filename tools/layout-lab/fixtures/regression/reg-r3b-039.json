@@ -1,0 +1,2115 @@
+{
+  "id": "reg-r3b-039",
+  "kind": "regression",
+  "description": "R3b release corpus dump#39 (118n/115e)",
+  "problemDescription": "Release-gate readability / overlap / clearance contract. Round5 clearance residual: actual=11, budget=ceil(0.05*6903)=346, contract=11 | Large-graph physical overlap residual (Round5 does not zero-gate large samples): actual=1",
+  "split": "holdout",
+  "source": "real-graphs-dump.json#39",
+  "status": "baselined",
+  "graph": {
+    "sessionId": "regression_reg-r3b-039",
+    "revision": 67,
+    "topics": [
+      {
+        "topicId": "topic_1776919482940_80",
+        "title": "Topic 1",
+        "startMs": 0,
+        "endMs": 61240
+      },
+      {
+        "topicId": "topic_1776919523203_86",
+        "title": "Topic 2",
+        "startMs": 61240,
+        "endMs": 81640
+      },
+      {
+        "topicId": "topic_1776919544010_91",
+        "title": "Topic 3",
+        "startMs": 81640,
+        "endMs": 102040
+      },
+      {
+        "topicId": "topic_1776919564285_96",
+        "title": "Topic 4",
+        "startMs": 102040,
+        "endMs": 122440
+      },
+      {
+        "topicId": "topic_1776919584478_101",
+        "title": "Topic 5",
+        "startMs": 122440,
+        "endMs": 142840
+      },
+      {
+        "topicId": "topic_1776919606334_106",
+        "title": "Topic 6",
+        "startMs": 142840,
+        "endMs": 163240
+      },
+      {
+        "topicId": "topic_1776919626208_111",
+        "title": "Topic 7",
+        "startMs": 163240,
+        "endMs": 183640
+      },
+      {
+        "topicId": "topic_1776919646779_116",
+        "title": "Topic 8",
+        "startMs": 183640,
+        "endMs": 204040
+      },
+      {
+        "topicId": "topic_1776919667107_121",
+        "title": "Topic 9",
+        "startMs": 204040,
+        "endMs": 224440
+      },
+      {
+        "topicId": "topic_1776919687996_127",
+        "title": "Topic 10",
+        "startMs": 224440,
+        "endMs": 244840
+      },
+      {
+        "topicId": "topic_1776919706508_132",
+        "title": "Topic 11",
+        "startMs": 244840,
+        "endMs": 265240
+      },
+      {
+        "topicId": "topic_1776919728380_136",
+        "title": "Topic 12",
+        "startMs": 265240,
+        "endMs": 285640
+      },
+      {
+        "topicId": "topic_1776919749642_141",
+        "title": "Topic 13",
+        "startMs": 285640,
+        "endMs": 312640
+      },
+      {
+        "topicId": "topic_1776919775959_151",
+        "title": "Topic 14",
+        "startMs": 312640,
+        "endMs": 353440
+      },
+      {
+        "topicId": "topic_1776919815098_160",
+        "title": "Topic 15",
+        "startMs": 353440,
+        "endMs": 394240
+      },
+      {
+        "topicId": "topic_1776919855604_171",
+        "title": "Topic 16",
+        "startMs": 394240,
+        "endMs": 414640
+      },
+      {
+        "topicId": "topic_1776919877285_176",
+        "title": "Topic 17",
+        "startMs": 414640,
+        "endMs": 435040
+      },
+      {
+        "topicId": "topic_1776919896916_181",
+        "title": "Topic 18",
+        "startMs": 435040,
+        "endMs": 455440
+      },
+      {
+        "topicId": "topic_1776919918249_186",
+        "title": "Topic 19",
+        "startMs": 455440,
+        "endMs": 475840
+      },
+      {
+        "topicId": "topic_1776919937201_191",
+        "title": "Topic 20",
+        "startMs": 475840,
+        "endMs": 496240
+      },
+      {
+        "topicId": "topic_1776919946458_196",
+        "title": "Topic 21",
+        "startMs": 496240,
+        "endMs": 505240
+      },
+      {
+        "topicId": "topic_1776919967861_201",
+        "title": "Topic 22",
+        "startMs": 505240,
+        "endMs": 546040
+      },
+      {
+        "topicId": "topic_1776920007693_210",
+        "title": "Topic 23",
+        "startMs": 546040,
+        "endMs": 566440
+      },
+      {
+        "topicId": "topic_1776920014820_215",
+        "title": "Topic 24",
+        "startMs": 566440,
+        "endMs": 593440
+      },
+      {
+        "topicId": "topic_1776920054634_223",
+        "title": "Topic 25",
+        "startMs": 593440,
+        "endMs": 613840
+      },
+      {
+        "topicId": "topic_1776920075620_227",
+        "title": "Topic 26",
+        "startMs": 613840,
+        "endMs": 634240
+      },
+      {
+        "topicId": "topic_1776920097439_232",
+        "title": "Topic 27",
+        "startMs": 634240,
+        "endMs": 682240
+      },
+      {
+        "topicId": "topic_1776920144758_243",
+        "title": "Topic 28",
+        "startMs": 682240,
+        "endMs": 702640
+      },
+      {
+        "topicId": "topic_1776920166400_249",
+        "title": "Topic 29",
+        "startMs": 702640,
+        "endMs": 723040
+      },
+      {
+        "topicId": "topic_1776920187810_255",
+        "title": "Topic 30",
+        "startMs": 723040,
+        "endMs": 743440
+      },
+      {
+        "topicId": "topic_1776920202516_261",
+        "title": "Topic 31",
+        "startMs": 743440,
+        "endMs": 765640
+      },
+      {
+        "topicId": "topic_1776920228975_270",
+        "title": "Topic 32",
+        "startMs": 765640,
+        "endMs": 784840
+      },
+      {
+        "topicId": "topic_1776920246701_274",
+        "title": "Topic 33",
+        "startMs": 784840,
+        "endMs": 805240
+      },
+      {
+        "topicId": "topic_1776920267496_279",
+        "title": "Topic 34",
+        "startMs": 805240,
+        "endMs": 825640
+      },
+      {
+        "topicId": "topic_1776920277385_284",
+        "title": "Topic 35",
+        "startMs": 825640,
+        "endMs": 841840
+      },
+      {
+        "topicId": "topic_1776920297385_293",
+        "title": "Topic 36",
+        "startMs": 841840,
+        "endMs": 871840
+      },
+      {
+        "topicId": "topic_1776920334642_301",
+        "title": "Topic 37",
+        "startMs": 871840,
+        "endMs": 901240
+      },
+      {
+        "topicId": "topic_1776920362985_309",
+        "title": "Topic 38",
+        "startMs": 901240,
+        "endMs": 921640
+      },
+      {
+        "topicId": "topic_1776920365181_313",
+        "title": "Topic 39",
+        "startMs": 921640,
+        "endMs": 929440
+      },
+      {
+        "topicId": "topic_1776920372775_320",
+        "title": "Topic 40",
+        "startMs": 929440,
+        "endMs": 931840
+      },
+      {
+        "topicId": "topic_1776920389375_325",
+        "title": "Topic 41",
+        "startMs": 931840,
+        "endMs": 946840
+      },
+      {
+        "topicId": "topic_1776920409180_330",
+        "title": "Topic 42",
+        "startMs": 946840,
+        "endMs": 982840
+      },
+      {
+        "topicId": "topic_1776920445208_341",
+        "title": "Topic 43",
+        "startMs": 982840,
+        "endMs": 1001440
+      },
+      {
+        "topicId": "topic_1776920446007_343",
+        "title": "Topic 44",
+        "startMs": 1001440,
+        "endMs": 1025440
+      },
+      {
+        "topicId": "topic_1776920493699_356",
+        "title": "Topic 45",
+        "startMs": 1025440,
+        "endMs": 1049440
+      },
+      {
+        "topicId": "topic_1776920497218_361",
+        "title": "Topic 46",
+        "startMs": 1049440,
+        "endMs": 1053040
+      },
+      {
+        "topicId": "topic_1776920515651_366",
+        "title": "Topic 47",
+        "startMs": 1053040,
+        "endMs": 1073440
+      },
+      {
+        "topicId": "topic_1776920517890_370",
+        "title": "Topic 48",
+        "startMs": 1073440,
+        "endMs": 1077040
+      },
+      {
+        "topicId": "topic_1776920528814_375",
+        "title": "Topic 49",
+        "startMs": 1077040,
+        "endMs": 1104640
+      }
+    ],
+    "nodes": [
+      {
+        "id": "segment_1776919480134_77:n1",
+        "type": "claim",
+        "text": "N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 N1 ",
+        "timestampMs": 20440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919480134_77:n2",
+        "type": "example",
+        "text": "N2 N2 N2 N2 N2 N2 N2 N",
+        "timestampMs": 20440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919480134_77:n3",
+        "type": "reason",
+        "text": "N3 N3 N3 N3 N3 N3 N3 N3 N3",
+        "timestampMs": 20440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919520939_84:n1",
+        "type": "claim",
+        "text": "N4 N4 N4 N4 N4 N4 N4 N4 N4 N4",
+        "timestampMs": 61240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919520939_84:n2",
+        "type": "example",
+        "text": "N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5",
+        "timestampMs": 61240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919541340_88:n4",
+        "type": "claim",
+        "text": "N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6",
+        "timestampMs": 81640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919541340_88:n5",
+        "type": "reason",
+        "text": "N7 N7 N7 N7 N7 N7 N7 N7 N7 N7 N7 N7 N7 N7 N7 ",
+        "timestampMs": 81640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919561734_93:n6",
+        "type": "example",
+        "text": "N8 N8 N8 N8 N8 N8 N8 N8 N8 N8 N8 N8 N8 N8 N8 N8 N8 N8 N8 N8 N8 N8 N8",
+        "timestampMs": 102040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919561734_93:n7",
+        "type": "reason",
+        "text": "N9 N9 N9 N9 N9 N9 N9 N9 N9 N9 N9 N9 N9 N9 N9 N9 N",
+        "timestampMs": 102040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919582135_98:n8",
+        "type": "reason",
+        "text": "N10 N10 N10 N10 N10 N10 N10 N10 N10 N10 N10 N10 N10 ",
+        "timestampMs": 122440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919582135_98:n9",
+        "type": "reason",
+        "text": "N11 N11 N11 N11 N11 N11 N11 N11",
+        "timestampMs": 122440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919602555_103:n10",
+        "type": "reason",
+        "text": "N12 N12 N12 N12 N12 N12 N12 N12 N12 N12 N",
+        "timestampMs": 142840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919602555_103:n11",
+        "type": "claim",
+        "text": "N13 N13 N13 N13 N13 N",
+        "timestampMs": 142840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919622932_108:n12",
+        "type": "example",
+        "text": "N14 N14 N14 N14 N14 N14 N14 N14 N14 N14 N14 N14 N14 N14 N14 N14 N14 N14 ",
+        "timestampMs": 163240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919622932_108:n13",
+        "type": "question",
+        "text": "N15 N15 N15 N15 N15 N15 N15 N",
+        "timestampMs": 163240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919643335_113:n14",
+        "type": "claim",
+        "text": "N16 N16 N16 N16 N16 N16 N16 N16 N16 ",
+        "timestampMs": 183640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919643335_113:n15",
+        "type": "reason",
+        "text": "N17 N17 N17 N17 N17 N17 N17 N17 N17 N17 N1",
+        "timestampMs": 183640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919663731_118:n16",
+        "type": "claim",
+        "text": "N18 N18 N18 N18 N18 N18 N1",
+        "timestampMs": 204040,
+        "confidence": 0,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919663731_118:n17",
+        "type": "reason",
+        "text": "N19 N19 N19 N19 N19 N19 N1",
+        "timestampMs": 204040,
+        "confidence": 0,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919684135_123:n20",
+        "type": "reason",
+        "text": "N20 N20 N20 N20 N20 N20 N20 N20 N20 N20 N20 N20 N20 N20",
+        "timestampMs": 224440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919704541_129:n18",
+        "type": "claim",
+        "text": "N21 N21 N21 N21 N21 N21 N21 N21",
+        "timestampMs": 244840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919704541_129:n19",
+        "type": "reason",
+        "text": "N22 N22 N22 N22 N22 N22 N22 N22 N",
+        "timestampMs": 244840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919724938_134:n21",
+        "type": "claim",
+        "text": "N23 N23 N23 N23 N23 N23 N23 N23 N23",
+        "timestampMs": 265240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919724938_134:n22",
+        "type": "reason",
+        "text": "N24 N24 N24 N24 N24 N24 N24 N24 N24 N24 N2",
+        "timestampMs": 265240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919745337_138:n23",
+        "type": "claim",
+        "text": "N25 N25 N25 N25 N25 N25 N25 N25 N25 N25 N25 N25 N25 ",
+        "timestampMs": 285640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919745337_138:n24",
+        "type": "reason",
+        "text": "N26 N26 N26 N26 N26 N26 N26 N26 N26 N26 N26 N26 N26 N2",
+        "timestampMs": 285640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919745337_138:n25",
+        "type": "question",
+        "text": "N27 N27 N27 N27 N27 N27 N27 ",
+        "timestampMs": 285640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919751924_143:n26",
+        "type": "example",
+        "text": "N28 N28 N28 N28 N28 N28 N28 N28 N28",
+        "timestampMs": 306040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919772337_146:n27",
+        "type": "claim",
+        "text": "N29 N29 N29 N29 N29 N29 N29 N29 N29 N29 N29",
+        "timestampMs": 312640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919772337_146:n28",
+        "type": "reason",
+        "text": "N30 N30 N30 N30 N30 N30 N30 N30 N30 N30 N3",
+        "timestampMs": 312640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919772337_146:n29",
+        "type": "claim",
+        "text": "N31 N31 N31 N31 N31 N31 N31 N31 N31 N31 N31",
+        "timestampMs": 312640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919792731_153:n30",
+        "type": "reason",
+        "text": "N32 N32 N32 N32 N32 N32 N32 N32 N32 N32 N32 N32 N32 N32 N32 N32 N32 N32 N32 ",
+        "timestampMs": 333040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919792731_153:n31",
+        "type": "claim",
+        "text": "N33 N33 N33 N33 N33 N33 N33 N33 N33 N33 N33 N",
+        "timestampMs": 333040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919813131_158:n32",
+        "type": "claim",
+        "text": "N34 N34 N34 N34 N",
+        "timestampMs": 353440,
+        "confidence": 0,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919813131_158:n33",
+        "type": "reason",
+        "text": "N35 N35 N35 N35 N35 N35 N35 N35 N35 N35 N35 N35",
+        "timestampMs": 353440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919833531_162:n35",
+        "type": "reason",
+        "text": "N36 N36 N36 N36 N36 N36 ",
+        "timestampMs": 373840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919833531_162:n36",
+        "type": "example",
+        "text": "N37 N37 N37 N37 N3",
+        "timestampMs": 373840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919833531_162:n37",
+        "type": "reason",
+        "text": "N38 N38 N38 N38 N38 N38",
+        "timestampMs": 373840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919853939_168:n38",
+        "type": "claim",
+        "text": "N39 N39 N39 N39 N39 N39 N39 N39 N39 N39 N39 N39 N39 ",
+        "timestampMs": 394240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919853939_168:n39",
+        "type": "reason",
+        "text": "N40 N40 N40 N40 N40 N40 N40 N",
+        "timestampMs": 394240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919874340_173:n40",
+        "type": "claim",
+        "text": "N41 N41 N41 N41 N41 N41 N41 N41 N4",
+        "timestampMs": 414640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919874340_173:n41",
+        "type": "reason",
+        "text": "N42 N42 N42 N42 N42 N42 N42 N42 N42 N42 N42 N42 N42",
+        "timestampMs": 414640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919894755_178:n42",
+        "type": "reason",
+        "text": "N43 N43 N43 N43 N43 N43 N43 N43 N43 N43 N43",
+        "timestampMs": 435040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919894755_178:n43",
+        "type": "reason",
+        "text": "N44 N44 N44 N44 N44 N44 N44 N44",
+        "timestampMs": 435040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919915148_183:n44",
+        "type": "reason",
+        "text": "N45 N45 N45 N45 N45 N45 N45 N45 N4",
+        "timestampMs": 455440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919915148_183:n45",
+        "type": "example",
+        "text": "N46 N46 N46 N46 N46 N46 N46 N46 N46 ",
+        "timestampMs": 455440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919935536_188:n46",
+        "type": "claim",
+        "text": "N47 N47 N47 N47 N47 N47 N47 N47 ",
+        "timestampMs": 475840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919935536_188:n47",
+        "type": "reason",
+        "text": "N48 N48 N48 N48 N48 N48 N48 N48 N48 N48 N48 ",
+        "timestampMs": 475840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919944530_193:n48",
+        "type": "question",
+        "text": "N49 N49 N49 N49 ",
+        "timestampMs": 496240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919944530_193:n49",
+        "type": "claim",
+        "text": "N50 N50 N50 N50 N50 N50 N50 N50 N50 ",
+        "timestampMs": 496240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919964990_198:n50",
+        "type": "reason",
+        "text": "N51 N51 N51 N51 N51 N51 N51 N51 N5",
+        "timestampMs": 505240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919964990_198:n51",
+        "type": "claim",
+        "text": "N52 N52 N52 N52 N52 N52 N52 N52 ",
+        "timestampMs": 505240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919985332_203:n52",
+        "type": "reason",
+        "text": "N53 N53 N53 N53 N53 N53 N53 N53 N53 N5",
+        "timestampMs": 525640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776919985332_203:n53",
+        "type": "claim",
+        "text": "N54 N54 N54 N54 N54 N54 N54 N54 N54 N",
+        "timestampMs": 525640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920005738_207:n54",
+        "type": "claim",
+        "text": "N55 N55 N55 N55 N55 N55 N55 N55 N55 N5",
+        "timestampMs": 546040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920005738_207:n55",
+        "type": "reason",
+        "text": "N56 N56 N56 N56 N56 N56 N5",
+        "timestampMs": 546040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920012322_212:n56",
+        "type": "reason",
+        "text": "N57 N57 N57 N57 N57 N57 N57 N57",
+        "timestampMs": 566440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920012322_212:n57",
+        "type": "claim",
+        "text": "N58 N58 N58 N58 N58 N",
+        "timestampMs": 566440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920032737_217:n58",
+        "type": "reason",
+        "text": "N59 N59 N59 N59 N59 N59 N59 N59 N59 N59 N5",
+        "timestampMs": 573040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920053136_221:n59",
+        "type": "claim",
+        "text": "N60 N60 N60 N60 N60 N60 N60 N60 N60 ",
+        "timestampMs": 593440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920073538_225:n60",
+        "type": "example",
+        "text": "N61 N61 N61 N61 N61 N61 N61 N61 N61 N61 N61 N",
+        "timestampMs": 613840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920093966_229:n61",
+        "type": "claim",
+        "text": "N62 N62 N62 N62 N62 N62 N62 N62 N62 N62 N62 N",
+        "timestampMs": 634240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920093966_229:n62",
+        "type": "claim",
+        "text": "N63 N63 N63 N63 N63 N63 N63 N63 N63 N63 N63 N63 N63",
+        "timestampMs": 634240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920101122_234:n63",
+        "type": "claim",
+        "text": "N64 N64 N64 N64 N64 N64 N64 N64 N64 N64 ",
+        "timestampMs": 654640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920121529_237:n64",
+        "type": "reason",
+        "text": "N65 N65 N65 N65 N65 N65 N65 N65 N65 ",
+        "timestampMs": 661840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920121529_237:n65",
+        "type": "claim",
+        "text": "N66 N66 N66 N66 N66 N66 N66 N66 N66",
+        "timestampMs": 661840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920141937_241:n66",
+        "type": "claim",
+        "text": "N67 N67 N67 N67 N67 N67 N67 N",
+        "timestampMs": 682240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920141937_241:n67",
+        "type": "reason",
+        "text": "N68 N68 N68 N68 N68 N68 N68 N68 N68 N68 N68 ",
+        "timestampMs": 682240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920162345_245:n68",
+        "type": "claim",
+        "text": "N69 N69 N69 N69 N69 N69 N69 N69 N69 N69 N69 N69 ",
+        "timestampMs": 702640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920162345_245:n69",
+        "type": "reason",
+        "text": "N70 N70 N70 N70 N70 N70 N70 N70 N70 N70 N70 N70 N70 N70 N70 N",
+        "timestampMs": 702640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920182745_251:n70",
+        "type": "claim",
+        "text": "N71 N71 N71 N71 N71 N71 N71 N",
+        "timestampMs": 723040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920182745_251:n71",
+        "type": "reason",
+        "text": "N72 N72 N72 N72 N72 N72 N72 N72",
+        "timestampMs": 723040,
+        "confidence": 0,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920182745_251:n72",
+        "type": "claim",
+        "text": "N73 N73 N73 N73 N73 N73 N73 N73 N73 N73 N",
+        "timestampMs": 723040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920199527_257:n73",
+        "type": "claim",
+        "text": "N74 N74 N74 N74 N74 N74 N74 N74 N74 N74 N74 N74 N",
+        "timestampMs": 743440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920199527_257:n74",
+        "type": "reason",
+        "text": "N75 N75 N75 N75 N75 N75 N75 N75 N75 N75 N75 N75 N",
+        "timestampMs": 743440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920224138_266:n75",
+        "type": "claim",
+        "text": "N76 N76 N76 N76 N76 N76 N76 N76 N7",
+        "timestampMs": 765640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920224138_266:n76",
+        "type": "reason",
+        "text": "N77 N77 N77 N77 N77 N77 N77 N77 N77 N77 N77 N77 N77 N77 N7",
+        "timestampMs": 765640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920224138_266:n77",
+        "type": "reason",
+        "text": "N78 N78 N78 N78 N78 N78 N78 N78 N78 N78 N78 N78 N78 N78 N78 N78 N78 N78 N78 N7",
+        "timestampMs": 765640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920244537_272:n78",
+        "type": "claim",
+        "text": "N79 N79 N79 N79 N79 N79 N79 N79 ",
+        "timestampMs": 784840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920264960_276:n79",
+        "type": "reason",
+        "text": "N80 N80 N80 N80 N80 N80 N80 N80 N80 N80",
+        "timestampMs": 805240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920264960_276:n80",
+        "type": "claim",
+        "text": "N81 N81 N81 N81 N81 N81 N81 N81 N8",
+        "timestampMs": 805240,
+        "confidence": 0,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920275136_281:n81",
+        "type": "reason",
+        "text": "N82 N82 N82 N82 N82 N82 N82",
+        "timestampMs": 825640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920281129_286:n82",
+        "type": "reason",
+        "text": "N83 N83 N83 N83 N83 N83 N83 N83 N83 N83 ",
+        "timestampMs": 835840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920293728_289:n83",
+        "type": "reason",
+        "text": "N84 N84 N84 N84 N84 N84 N84 N84 N84 N84 N84 N84 N84 N84 N84 ",
+        "timestampMs": 841840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920293728_289:n84",
+        "type": "claim",
+        "text": "N85 N85 N85 N85 N85 N85 N85 N85 N85 N85 N85 N85 N85 N85 N85 N85",
+        "timestampMs": 841840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920311136_295:n85",
+        "type": "claim",
+        "text": "N86 N86 N86 N86 N86 N86 N86 N86 N86 N86 N86 N86",
+        "timestampMs": 854440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920331564_298:n86",
+        "type": "claim",
+        "text": "N87 N87 N87 N87 ",
+        "timestampMs": 871840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920331564_298:n87",
+        "type": "reason",
+        "text": "N88 N88 N88 N88 N88 N88 N88",
+        "timestampMs": 871840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920331564_298:n88",
+        "type": "claim",
+        "text": "N89 N89 N89 N89",
+        "timestampMs": 871840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920340526_303:n89",
+        "type": "reason",
+        "text": "N90 N90 N90 N90 N90 N90 N90 N90 N90 N90 N90 N90 N90 N90 N90 N",
+        "timestampMs": 892240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920360936_306:n89_new",
+        "type": "reason",
+        "text": "N91 N91 N91 N91 N91 N91 N91 N91 N91 N91 N91 N91 N91 N91 ",
+        "timestampMs": 901240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920363079_310:n90",
+        "type": "claim",
+        "text": "N92 N92 N92 N92 N92 N92 N92 N92 N92 N92 N92 N92 N92 N92 N92 N92 N92 N92 N",
+        "timestampMs": 921640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920363079_310:n91",
+        "type": "reason",
+        "text": "N93 N93 N93 N93 N93 N93 N93 N93 N93 N93 N93 N",
+        "timestampMs": 921640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920368730_315:n92",
+        "type": "question",
+        "text": "N94 N94 N94 N94 N94 N94",
+        "timestampMs": 923440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920371129_318:n93",
+        "type": "claim",
+        "text": "N95 N95 N",
+        "timestampMs": 929440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920386130_322:n94",
+        "type": "reason",
+        "text": "N96 N96 N96 N96 N96 N9",
+        "timestampMs": 931840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920386130_322:n95",
+        "type": "claim",
+        "text": "N97 N97 N97 N97 N97 N97 N97 N97",
+        "timestampMs": 931840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920406555_327:n100",
+        "type": "claim",
+        "text": "N98 N98 N98 N98 N98 N98 N98 N",
+        "timestampMs": 946840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920406555_327:n101",
+        "type": "reason",
+        "text": "N99 N99 N99 N99 N99 N99 N99 ",
+        "timestampMs": 946840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920406555_327:n102",
+        "type": "reason",
+        "text": "N100 N100 N100 N100 N",
+        "timestampMs": 946840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920422146_332:n103",
+        "type": "example",
+        "text": "N101 N101 N101 N101 N10",
+        "timestampMs": 967240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920440738_335:n104",
+        "type": "claim",
+        "text": "N102 N102 N102 ",
+        "timestampMs": 982840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920440738_335:n105",
+        "type": "reason",
+        "text": "N103 N103 N103 N103 N103 N1",
+        "timestampMs": 982840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920440738_335:n106",
+        "type": "reason",
+        "text": "N104 N104 N104 N104 ",
+        "timestampMs": 982840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920440738_335:n107",
+        "type": "claim",
+        "text": "N105 N105 N105 N105 N105 N10",
+        "timestampMs": 982840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920440738_335:n108",
+        "type": "reason",
+        "text": "N106 N106 N106 N106 N106 ",
+        "timestampMs": 982840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920464733_345:n109",
+        "type": "reason",
+        "text": "N107 N107 N107 N107 N107 N107 N107 ",
+        "timestampMs": 1005040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920464733_345:n110",
+        "type": "reason",
+        "text": "N108 N108 N108 N108 N108 N10",
+        "timestampMs": 1005040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920464733_345:n111",
+        "type": "reason",
+        "text": "N109 N109 N109 N109 N10",
+        "timestampMs": 1005040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920483336_350:n112",
+        "type": "claim",
+        "text": "N110 N110 N110 N110 N110 N110 ",
+        "timestampMs": 1025440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920483336_350:n113",
+        "type": "reason",
+        "text": "N111 N111 N111 N111 N",
+        "timestampMs": 1025440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920483336_350:n114",
+        "type": "example",
+        "text": "N112 N112 N112 N112 N112 N112 N",
+        "timestampMs": 1025440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920483336_350:n115",
+        "type": "question",
+        "text": "N113 N113 ",
+        "timestampMs": 1025440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920493810_357:n116",
+        "type": "claim",
+        "text": "N114 N114 N114 N114 N114 N114 ",
+        "timestampMs": 1044040,
+        "confidence": 0,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920512748_363:n117",
+        "type": "claim",
+        "text": "N115 N115 N115 N115 N1",
+        "timestampMs": 1053040,
+        "confidence": 0,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920512748_363:n118",
+        "type": "reason",
+        "text": "N116 N116 N116 N116 N116 N116 N116",
+        "timestampMs": 1053040,
+        "confidence": 0,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920516335_368:n119",
+        "type": "example",
+        "text": "N117 N117 N117 N117 N117 N117 N117",
+        "timestampMs": 1073440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776920524732_372:n122",
+        "type": "example",
+        "text": "N118 N118 N118 N118 N118 N118 N118 N11",
+        "timestampMs": 1077040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_1776919482938_78",
+        "source": "segment_1776919480134_77:n1",
+        "target": "segment_1776919480134_77:n3",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919482938_79",
+        "source": "segment_1776919480134_77:n1",
+        "target": "segment_1776919480134_77:n2",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919523201_85",
+        "source": "segment_1776919520939_84:n1",
+        "target": "segment_1776919520939_84:n2",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919544008_89",
+        "source": "segment_1776919520939_84:n1",
+        "target": "segment_1776919541340_88:n4",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919544008_90",
+        "source": "segment_1776919541340_88:n4",
+        "target": "segment_1776919541340_88:n5",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919564283_94",
+        "source": "segment_1776919561734_93:n7",
+        "target": "segment_1776919541340_88:n5",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919564283_95",
+        "source": "segment_1776919561734_93:n6",
+        "target": "segment_1776919561734_93:n7",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919584476_99",
+        "source": "segment_1776919582135_98:n8",
+        "target": "segment_1776919561734_93:n6",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919584476_100",
+        "source": "segment_1776919582135_98:n9",
+        "target": "segment_1776919561734_93:n6",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919606331_104",
+        "source": "segment_1776919602555_103:n10",
+        "target": "segment_1776919602555_103:n11",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919606331_105",
+        "source": "segment_1776919602555_103:n10",
+        "target": "segment_1776919541340_88:n5",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919626206_109",
+        "source": "segment_1776919602555_103:n11",
+        "target": "segment_1776919622932_108:n12",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919626206_110",
+        "source": "segment_1776919622932_108:n12",
+        "target": "segment_1776919622932_108:n13",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919646777_114",
+        "source": "segment_1776919643335_113:n14",
+        "target": "segment_1776919643335_113:n15",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919646777_115",
+        "source": "segment_1776919643335_113:n14",
+        "target": "segment_1776919622932_108:n12",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919667105_119",
+        "source": "segment_1776919663731_118:n16",
+        "target": "segment_1776919643335_113:n14",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919667105_120",
+        "source": "segment_1776919663731_118:n17",
+        "target": "segment_1776919622932_108:n12",
+        "type": "supports",
+        "confidence": 0,
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919687994_124",
+        "source": "segment_1776919663731_118:n16",
+        "target": "segment_1776919663731_118:n17",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919687994_126",
+        "source": "segment_1776919684135_123:n20",
+        "target": "segment_1776919663731_118:n16",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919706505_130",
+        "source": "segment_1776919704541_129:n18",
+        "target": "segment_1776919704541_129:n19",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919706505_131",
+        "source": "segment_1776919704541_129:n18",
+        "target": "segment_1776919663731_118:n16",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919728377_135",
+        "source": "segment_1776919724938_134:n21",
+        "target": "segment_1776919724938_134:n22",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919749640_139",
+        "source": "segment_1776919745337_138:n23",
+        "target": "segment_1776919745337_138:n24",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919749640_140",
+        "source": "segment_1776919745337_138:n23",
+        "target": "segment_1776919745337_138:n25",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919753755_144",
+        "source": "segment_1776919745337_138:n23",
+        "target": "segment_1776919751924_143:n26",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919775957_147",
+        "source": "segment_1776919751924_143:n26",
+        "target": "segment_1776919772337_146:n27",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919775957_148",
+        "source": "segment_1776919772337_146:n27",
+        "target": "segment_1776919772337_146:n28",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919775957_149",
+        "source": "segment_1776919745337_138:n23",
+        "target": "segment_1776919772337_146:n27",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919775957_150",
+        "source": "segment_1776919772337_146:n27",
+        "target": "segment_1776919772337_146:n29",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919796474_154",
+        "source": "segment_1776919745337_138:n23",
+        "target": "segment_1776919792731_153:n31",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919796474_155",
+        "source": "segment_1776919772337_146:n27",
+        "target": "segment_1776919792731_153:n30",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919796474_156",
+        "source": "segment_1776919792731_153:n30",
+        "target": "segment_1776919745337_138:n23",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919815096_159",
+        "source": "segment_1776919813131_158:n33",
+        "target": "segment_1776919813131_158:n32",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919838852_164",
+        "source": "segment_1776919813131_158:n32",
+        "target": "segment_1776919833531_162:n35",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919838852_165",
+        "source": "segment_1776919833531_162:n35",
+        "target": "segment_1776919833531_162:n36",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919838852_166",
+        "source": "segment_1776919833531_162:n36",
+        "target": "segment_1776919833531_162:n37",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919855602_169",
+        "source": "segment_1776919813131_158:n32",
+        "target": "segment_1776919853939_168:n38",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919855602_170",
+        "source": "segment_1776919853939_168:n38",
+        "target": "segment_1776919853939_168:n39",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919877284_174",
+        "source": "segment_1776919853939_168:n38",
+        "target": "segment_1776919874340_173:n40",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919877284_175",
+        "source": "segment_1776919874340_173:n40",
+        "target": "segment_1776919874340_173:n41",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919896913_179",
+        "source": "segment_1776919874340_173:n40",
+        "target": "segment_1776919894755_178:n42",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919896913_180",
+        "source": "segment_1776919874340_173:n40",
+        "target": "segment_1776919894755_178:n43",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919918247_184",
+        "source": "segment_1776919894755_178:n43",
+        "target": "segment_1776919915148_183:n44",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919918247_185",
+        "source": "segment_1776919874340_173:n40",
+        "target": "segment_1776919915148_183:n45",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919937197_189",
+        "source": "segment_1776919935536_188:n46",
+        "target": "segment_1776919935536_188:n47",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919937197_190",
+        "source": "segment_1776919915148_183:n45",
+        "target": "segment_1776919935536_188:n46",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919946454_194",
+        "source": "segment_1776919944530_193:n48",
+        "target": "segment_1776919944530_193:n49",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919946454_195",
+        "source": "segment_1776919944530_193:n49",
+        "target": "segment_1776919935536_188:n46",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919967841_199",
+        "source": "segment_1776919964990_198:n50",
+        "target": "segment_1776919964990_198:n51",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919967841_200",
+        "source": "segment_1776919964990_198:n51",
+        "target": "segment_1776919944530_193:n49",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919987660_204",
+        "source": "segment_1776919985332_203:n52",
+        "target": "segment_1776919985332_203:n53",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776919987660_205",
+        "source": "segment_1776919985332_203:n52",
+        "target": "segment_1776919964990_198:n51",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920007690_208",
+        "source": "segment_1776920005738_207:n54",
+        "target": "segment_1776919985332_203:n53",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920007690_209",
+        "source": "segment_1776920005738_207:n55",
+        "target": "segment_1776920005738_207:n54",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920014817_213",
+        "source": "segment_1776920012322_212:n56",
+        "target": "segment_1776920012322_212:n57",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920014817_214",
+        "source": "segment_1776920005738_207:n54",
+        "target": "segment_1776920012322_212:n56",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920036492_218",
+        "source": "segment_1776920032737_217:n58",
+        "target": "segment_1776920005738_207:n54",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920036492_219",
+        "source": "segment_1776920032737_217:n58",
+        "target": "segment_1776920012322_212:n56",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920054631_222",
+        "source": "segment_1776920053136_221:n59",
+        "target": "segment_1776920032737_217:n58",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920075618_226",
+        "source": "segment_1776920053136_221:n59",
+        "target": "segment_1776920073538_225:n60",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920097435_230",
+        "source": "segment_1776920093966_229:n61",
+        "target": "segment_1776920073538_225:n60",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920097435_231",
+        "source": "segment_1776920093966_229:n62",
+        "target": "segment_1776920073538_225:n60",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920103922_235",
+        "source": "segment_1776920101122_234:n63",
+        "target": "segment_1776920093966_229:n62",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920124850_238",
+        "source": "segment_1776920121529_237:n64",
+        "target": "segment_1776920121529_237:n65",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920124850_239",
+        "source": "segment_1776920121529_237:n65",
+        "target": "segment_1776920053136_221:n59",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920144755_242",
+        "source": "segment_1776920141937_241:n66",
+        "target": "segment_1776920141937_241:n67",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920166397_246",
+        "source": "segment_1776920141937_241:n66",
+        "target": "segment_1776920162345_245:n68",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920166397_247",
+        "source": "segment_1776920141937_241:n67",
+        "target": "segment_1776920162345_245:n69",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920166397_248",
+        "source": "segment_1776920162345_245:n68",
+        "target": "segment_1776920141937_241:n66",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920187808_252",
+        "source": "segment_1776920182745_251:n70",
+        "target": "segment_1776920162345_245:n68",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920187808_253",
+        "source": "segment_1776920182745_251:n71",
+        "target": "segment_1776920141937_241:n66",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920187808_254",
+        "source": "segment_1776920182745_251:n72",
+        "target": "segment_1776920141937_241:n66",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920202512_258",
+        "source": "segment_1776920199527_257:n73",
+        "target": "segment_1776920141937_241:n66",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920202512_259",
+        "source": "segment_1776920199527_257:n74",
+        "target": "segment_1776920162345_245:n68",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920202512_260",
+        "source": "segment_1776920199527_257:n74",
+        "target": "segment_1776920141937_241:n66",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920228970_267",
+        "source": "segment_1776920224138_266:n75",
+        "target": "segment_1776920224138_266:n76",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920228970_268",
+        "source": "segment_1776920224138_266:n75",
+        "target": "segment_1776920224138_266:n77",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920228970_269",
+        "source": "segment_1776920224138_266:n77",
+        "target": "segment_1776920162345_245:n68",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920246699_273",
+        "source": "segment_1776920244537_272:n78",
+        "target": "segment_1776920224138_266:n75",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920267493_277",
+        "source": "segment_1776920264960_276:n80",
+        "target": "segment_1776920264960_276:n79",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920267493_278",
+        "source": "segment_1776920264960_276:n80",
+        "target": "segment_1776920244537_272:n78",
+        "type": "example_of",
+        "confidence": 0,
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920277382_282",
+        "source": "segment_1776920275136_281:n81",
+        "target": "segment_1776920244537_272:n78",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920283668_287",
+        "source": "segment_1776920281129_286:n82",
+        "target": "segment_1776920244537_272:n78",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920297379_290",
+        "source": "segment_1776920293728_289:n83",
+        "target": "segment_1776920244537_272:n78",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920297379_291",
+        "source": "segment_1776920293728_289:n84",
+        "target": "segment_1776920224138_266:n75",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920297379_292",
+        "source": "segment_1776920293728_289:n84",
+        "target": "segment_1776920281129_286:n82",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920313570_296",
+        "source": "segment_1776920311136_295:n85",
+        "target": "segment_1776920293728_289:n83",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920334639_299",
+        "source": "segment_1776920331564_298:n86",
+        "target": "segment_1776920331564_298:n87",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920334639_300",
+        "source": "segment_1776920331564_298:n86",
+        "target": "segment_1776920331564_298:n88",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920342871_304",
+        "source": "segment_1776920340526_303:n89",
+        "target": "segment_1776920331564_298:n86",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920362977_308",
+        "source": "segment_1776920360936_306:n89_new",
+        "target": "segment_1776920331564_298:n86",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920365177_311",
+        "source": "segment_1776920363079_310:n90",
+        "target": "segment_1776920331564_298:n86",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920365177_312",
+        "source": "segment_1776920363079_310:n91",
+        "target": "segment_1776920363079_310:n90",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920370082_316",
+        "source": "segment_1776920368730_315:n92",
+        "target": "segment_1776920331564_298:n86",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920372773_319",
+        "source": "segment_1776920371129_318:n93",
+        "target": "segment_1776920363079_310:n90",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920389373_323",
+        "source": "segment_1776920386130_322:n94",
+        "target": "segment_1776920368730_315:n92",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920389373_324",
+        "source": "segment_1776920386130_322:n95",
+        "target": "segment_1776920368730_315:n92",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920409176_328",
+        "source": "segment_1776920406555_327:n100",
+        "target": "segment_1776920406555_327:n101",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920409176_329",
+        "source": "segment_1776920406555_327:n101",
+        "target": "segment_1776920406555_327:n102",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920423858_333",
+        "source": "segment_1776920422146_332:n103",
+        "target": "segment_1776920406555_327:n102",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920445206_337",
+        "source": "segment_1776920440738_335:n104",
+        "target": "segment_1776920440738_335:n105",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920445206_338",
+        "source": "segment_1776920440738_335:n105",
+        "target": "segment_1776920440738_335:n106",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920445206_339",
+        "source": "segment_1776920440738_335:n106",
+        "target": "segment_1776920440738_335:n107",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920445206_340",
+        "source": "segment_1776920440738_335:n107",
+        "target": "segment_1776920440738_335:n108",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920468299_346",
+        "source": "segment_1776920464733_345:n109",
+        "target": "segment_1776920464733_345:n110",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920468299_347",
+        "source": "segment_1776920464733_345:n110",
+        "target": "segment_1776920464733_345:n111",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920468299_348",
+        "source": "segment_1776920440738_335:n108",
+        "target": "segment_1776920464733_345:n109",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920493696_353",
+        "source": "segment_1776920483336_350:n112",
+        "target": "segment_1776920483336_350:n113",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920493696_354",
+        "source": "segment_1776920483336_350:n112",
+        "target": "segment_1776920483336_350:n114",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920493696_355",
+        "source": "segment_1776920483336_350:n114",
+        "target": "segment_1776920483336_350:n115",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920495431_358",
+        "source": "segment_1776920483336_350:n115",
+        "target": "segment_1776920493810_357:n116",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920515646_364",
+        "source": "segment_1776920512748_363:n117",
+        "target": "segment_1776920512748_363:n118",
+        "type": "supports",
+        "confidence": 0,
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920515646_365",
+        "source": "segment_1776920493810_357:n116",
+        "target": "segment_1776920512748_363:n117",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920517885_369",
+        "source": "segment_1776920512748_363:n118",
+        "target": "segment_1776920516335_368:n119",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776920528809_374",
+        "source": "segment_1776920512748_363:n118",
+        "target": "segment_1776920524732_372:n122",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      }
+    ],
+    "viewHints": {
+      "defaultView": "hierarchy",
+      "scores": {
+        "causal": 76,
+        "comparison": 9,
+        "hierarchy": 133,
+        "timeline": 18
+      }
+    },
+    "updatedAt": 1776920557670
+  },
+  "hardExpectations": {
+    "physicalOverlapPairs": 1,
+    "clearanceViolationPairs": 11,
+    "coordinateValidity": true,
+    "minClearancePx": 16
+  },
+  "degradationBudget": {
+    "edgeNodeOcclusions": 0.15,
+    "edgeEdgeCrossings": 0.15,
+    "avgEdgeLength": 0.15,
+    "longEdgeRatio": 0.15,
+    "canvasWidth": 0.2
+  },
+  "tags": [
+    "r3b-release",
+    "dump-39",
+    "holdout"
+  ],
+  "softBaselines": {
+    "edgeNodeOcclusions": 2,
+    "edgeEdgeCrossings": 0,
+    "avgEdgeLength": 236,
+    "p95EdgeLength": 337,
+    "longEdgeRatio": 0,
+    "canvasWidth": 847.9999224797423,
+    "canvasHeight": 16122.973113278777,
+    "aspectRatio": 0.05259575368151765
+  },
+  "algorithmId": "r3b",
+  "algorithmVersion": "round3",
+  "metricsVersion": "v2",
+  "clearancePx": 16
+}

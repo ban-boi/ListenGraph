@@ -1,0 +1,168 @@
+{
+  "id": "reg-r3b-006",
+  "kind": "regression",
+  "description": "R3b release corpus dump#6 (12n/0e)",
+  "problemDescription": "Release-gate readability / overlap / clearance contract",
+  "split": "regression",
+  "source": "real-graphs-dump.json#6",
+  "status": "baselined",
+  "graph": {
+    "sessionId": "regression_reg-r3b-006",
+    "revision": 4,
+    "topics": [
+      {
+        "topicId": "topic_1774935899145_44",
+        "title": "Topic 1",
+        "startMs": 1774935880875,
+        "endMs": 1774935910875
+      },
+      {
+        "topicId": "topic_1774935954753_53",
+        "title": "Topic 2",
+        "startMs": 1774935910875,
+        "endMs": 1774935920875
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "type": "claim",
+        "text": "N1 N1 N1 N1",
+        "timestampMs": 1774935880875,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "n2",
+        "type": "claim",
+        "text": "N2 N2 N2 ",
+        "timestampMs": 1774935880875,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "n3",
+        "type": "conclusion",
+        "text": "N3 N3",
+        "timestampMs": 1774935880875,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "n4",
+        "type": "reason",
+        "text": "N4 N4 N4 N4",
+        "timestampMs": 1774935880875,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "node_1774935918357_47",
+        "type": "claim",
+        "text": "N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 ",
+        "timestampMs": 1774935890875,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "node_1774935942093_50",
+        "type": "claim",
+        "text": "N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N6 N",
+        "timestampMs": 1774935900875,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "0",
+        "type": "claim",
+        "text": "N7 N7 N7 N7 N7 N7 N",
+        "timestampMs": 1774935910875,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "1",
+        "type": "question",
+        "text": "N8 N8 N",
+        "timestampMs": 1774935910875,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "2",
+        "type": "claim",
+        "text": "N9 N9 N9 ",
+        "timestampMs": 1774935910875,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "3",
+        "type": "reason",
+        "text": "N10 N10 N10 N10 N10 N10",
+        "timestampMs": 1774935910875,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "4",
+        "type": "reason",
+        "text": "N11 N11 N11 N1",
+        "timestampMs": 1774935910875,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "5",
+        "type": "conclusion",
+        "text": "N12 N12 N12 N12 N12 ",
+        "timestampMs": 1774935910875,
+        "status": "draft",
+        "evidenceChunkIds": []
+      }
+    ],
+    "edges": [],
+    "viewHints": {
+      "defaultView": "timeline",
+      "scores": {
+        "causal": 0,
+        "comparison": 0,
+        "hierarchy": 0,
+        "timeline": 0
+      }
+    },
+    "updatedAt": 1774935954753
+  },
+  "hardExpectations": {
+    "physicalOverlapPairs": 0,
+    "clearanceViolationPairs": 0,
+    "coordinateValidity": true,
+    "minClearancePx": 16
+  },
+  "degradationBudget": {
+    "edgeNodeOcclusions": 0.15,
+    "edgeEdgeCrossings": 0.15,
+    "avgEdgeLength": 0.15,
+    "longEdgeRatio": 0.15,
+    "canvasWidth": 0.2
+  },
+  "tags": [
+    "r3b-release",
+    "dump-6",
+    "regression"
+  ],
+  "softBaselines": {
+    "edgeNodeOcclusions": 0,
+    "edgeEdgeCrossings": 0,
+    "avgEdgeLength": 0,
+    "p95EdgeLength": 0,
+    "longEdgeRatio": 0,
+    "canvasWidth": 200,
+    "canvasHeight": 2100,
+    "aspectRatio": 0.09523809523809523
+  },
+  "algorithmId": "r3b",
+  "algorithmVersion": "round3",
+  "metricsVersion": "v2",
+  "clearancePx": 16
+}

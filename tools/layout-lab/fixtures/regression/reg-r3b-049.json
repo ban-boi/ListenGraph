@@ -1,0 +1,4626 @@
+{
+  "id": "reg-r3b-049",
+  "kind": "regression",
+  "description": "R3b release corpus dump#49 (271n/255e)",
+  "problemDescription": "Release-gate readability / overlap / clearance contract. Round5 clearance residual: actual=7, budget=ceil(0.05*36585)=1830, contract=7 | Large-graph physical overlap residual (Round5 does not zero-gate large samples): actual=2",
+  "split": "regression",
+  "source": "real-graphs-dump.json#49",
+  "status": "baselined",
+  "graph": {
+    "sessionId": "regression_reg-r3b-049",
+    "revision": 125,
+    "topics": [
+      {
+        "topicId": "topic_1779423164124_7",
+        "title": "Topic 1",
+        "startMs": 0,
+        "endMs": 30040
+      },
+      {
+        "topicId": "topic_1779423185343_12",
+        "title": "Topic 2",
+        "startMs": 30040,
+        "endMs": 50440
+      },
+      {
+        "topicId": "topic_1779423206699_19",
+        "title": "Topic 3",
+        "startMs": 50440,
+        "endMs": 70840
+      },
+      {
+        "topicId": "topic_1779423225400_22",
+        "title": "Topic 4",
+        "startMs": 70840,
+        "endMs": 91240
+      },
+      {
+        "topicId": "topic_1779423245926_28",
+        "title": "Topic 5",
+        "startMs": 91240,
+        "endMs": 111040
+      },
+      {
+        "topicId": "topic_1779423264658_34",
+        "title": "Topic 6",
+        "startMs": 111040,
+        "endMs": 151840
+      },
+      {
+        "topicId": "topic_1779423306091_43",
+        "title": "Topic 7",
+        "startMs": 151840,
+        "endMs": 172240
+      },
+      {
+        "topicId": "topic_1779423326351_47",
+        "title": "Topic 8",
+        "startMs": 172240,
+        "endMs": 192640
+      },
+      {
+        "topicId": "topic_1779423344890_52",
+        "title": "Topic 9",
+        "startMs": 192640,
+        "endMs": 213040
+      },
+      {
+        "topicId": "topic_1779423365002_56",
+        "title": "Topic 10",
+        "startMs": 213040,
+        "endMs": 233440
+      },
+      {
+        "topicId": "topic_1779423388960_63",
+        "title": "Topic 11",
+        "startMs": 233440,
+        "endMs": 253840
+      },
+      {
+        "topicId": "topic_1779423408119_69",
+        "title": "Topic 12",
+        "startMs": 253840,
+        "endMs": 274240
+      },
+      {
+        "topicId": "topic_1779423430860_76",
+        "title": "Topic 13",
+        "startMs": 274240,
+        "endMs": 294640
+      },
+      {
+        "topicId": "topic_1779423451245_82",
+        "title": "Topic 14",
+        "startMs": 294640,
+        "endMs": 315040
+      },
+      {
+        "topicId": "topic_1779423468397_90",
+        "title": "Topic 15",
+        "startMs": 315040,
+        "endMs": 335440
+      },
+      {
+        "topicId": "topic_1779423495393_99",
+        "title": "Topic 16",
+        "startMs": 335440,
+        "endMs": 355840
+      },
+      {
+        "topicId": "topic_1779423509385_106",
+        "title": "Topic 17",
+        "startMs": 355840,
+        "endMs": 376240
+      },
+      {
+        "topicId": "topic_1779423520355_109",
+        "title": "Topic 18",
+        "startMs": 376240,
+        "endMs": 387640
+      },
+      {
+        "topicId": "topic_1779423543756_117",
+        "title": "Topic 19",
+        "startMs": 387640,
+        "endMs": 433840
+      },
+      {
+        "topicId": "topic_1779423590781_128",
+        "title": "Topic 20",
+        "startMs": 433840,
+        "endMs": 471640
+      },
+      {
+        "topicId": "topic_1779423624116_136",
+        "title": "Topic 21",
+        "startMs": 471640,
+        "endMs": 501040
+      },
+      {
+        "topicId": "topic_1779423655576_145",
+        "title": "Topic 22",
+        "startMs": 501040,
+        "endMs": 521440
+      },
+      {
+        "topicId": "topic_1779423675402_151",
+        "title": "Topic 23",
+        "startMs": 521440,
+        "endMs": 532840
+      },
+      {
+        "topicId": "topic_1779423687327_155",
+        "title": "Topic 24",
+        "startMs": 532840,
+        "endMs": 562240
+      },
+      {
+        "topicId": "topic_1779423717565_167",
+        "title": "Topic 25",
+        "startMs": 562240,
+        "endMs": 580240
+      },
+      {
+        "topicId": "topic_1779423732529_173",
+        "title": "Topic 26",
+        "startMs": 580240,
+        "endMs": 589240
+      },
+      {
+        "topicId": "topic_1779423747209_180",
+        "title": "Topic 27",
+        "startMs": 589240,
+        "endMs": 609640
+      },
+      {
+        "topicId": "topic_1779423760349_185",
+        "title": "Topic 28",
+        "startMs": 609640,
+        "endMs": 645640
+      },
+      {
+        "topicId": "topic_1779423803359_198",
+        "title": "Topic 29",
+        "startMs": 645640,
+        "endMs": 666040
+      },
+      {
+        "topicId": "topic_1779423825287_209",
+        "title": "Topic 30",
+        "startMs": 666040,
+        "endMs": 691840
+      },
+      {
+        "topicId": "topic_1779423850628_215",
+        "title": "Topic 31",
+        "startMs": 691840,
+        "endMs": 712240
+      },
+      {
+        "topicId": "topic_1779423868845_223",
+        "title": "Topic 32",
+        "startMs": 712240,
+        "endMs": 765040
+      },
+      {
+        "topicId": "topic_1779423915461_237",
+        "title": "Topic 33",
+        "startMs": 765040,
+        "endMs": 783640
+      },
+      {
+        "topicId": "topic_1779423931053_243",
+        "title": "Topic 34",
+        "startMs": 783640,
+        "endMs": 798040
+      },
+      {
+        "topicId": "topic_1779423958453_252",
+        "title": "Topic 35",
+        "startMs": 798040,
+        "endMs": 822040
+      },
+      {
+        "topicId": "topic_1779423976581_259",
+        "title": "Topic 36",
+        "startMs": 822040,
+        "endMs": 840640
+      },
+      {
+        "topicId": "topic_1779423993038_266",
+        "title": "Topic 37",
+        "startMs": 840640,
+        "endMs": 853240
+      },
+      {
+        "topicId": "topic_1779424006562_271",
+        "title": "Topic 38",
+        "startMs": 853240,
+        "endMs": 877840
+      },
+      {
+        "topicId": "topic_1779424039897_279",
+        "title": "Topic 39",
+        "startMs": 877840,
+        "endMs": 901840
+      },
+      {
+        "topicId": "topic_1779424061257_286",
+        "title": "Topic 40",
+        "startMs": 901840,
+        "endMs": 922240
+      },
+      {
+        "topicId": "topic_1779424084817_294",
+        "title": "Topic 41",
+        "startMs": 922240,
+        "endMs": 963040
+      },
+      {
+        "topicId": "topic_1779424120272_302",
+        "title": "Topic 42",
+        "startMs": 963040,
+        "endMs": 983440
+      },
+      {
+        "topicId": "topic_1779424130076_306",
+        "title": "Topic 43",
+        "startMs": 983440,
+        "endMs": 996040
+      },
+      {
+        "topicId": "topic_1779424147126_313",
+        "title": "Topic 44",
+        "startMs": 996040,
+        "endMs": 1016440
+      },
+      {
+        "topicId": "topic_1779424156299_316",
+        "title": "Topic 45",
+        "startMs": 1016440,
+        "endMs": 1026640
+      },
+      {
+        "topicId": "topic_1779424176980_319",
+        "title": "Topic 46",
+        "startMs": 1026640,
+        "endMs": 1047040
+      },
+      {
+        "topicId": "topic_1779424201204_326",
+        "title": "Topic 47",
+        "startMs": 1047040,
+        "endMs": 1067440
+      },
+      {
+        "topicId": "topic_1779424217818_334",
+        "title": "Topic 48",
+        "startMs": 1067440,
+        "endMs": 1078240
+      },
+      {
+        "topicId": "topic_1779424230344_339",
+        "title": "Topic 49",
+        "startMs": 1078240,
+        "endMs": 1091440
+      },
+      {
+        "topicId": "topic_1779424248368_346",
+        "title": "Topic 50",
+        "startMs": 1091440,
+        "endMs": 1111840
+      },
+      {
+        "topicId": "topic_1779424258800_349",
+        "title": "Topic 51",
+        "startMs": 1111840,
+        "endMs": 1141240
+      },
+      {
+        "topicId": "topic_1779424299465_358",
+        "title": "Topic 52",
+        "startMs": 1141240,
+        "endMs": 1161640
+      },
+      {
+        "topicId": "topic_1779424323096_366",
+        "title": "Topic 53",
+        "startMs": 1161640,
+        "endMs": 1180240
+      },
+      {
+        "topicId": "topic_1779424340816_374",
+        "title": "Topic 54",
+        "startMs": 1180240,
+        "endMs": 1199440
+      },
+      {
+        "topicId": "topic_1779424354418_376",
+        "title": "Topic 55",
+        "startMs": 1199440,
+        "endMs": 1219840
+      },
+      {
+        "topicId": "topic_1779424371393_381",
+        "title": "Topic 56",
+        "startMs": 1219840,
+        "endMs": 1236640
+      },
+      {
+        "topicId": "topic_1779424383483_386",
+        "title": "Topic 57",
+        "startMs": 1236640,
+        "endMs": 1252840
+      },
+      {
+        "topicId": "topic_1779424405381_390",
+        "title": "Topic 58",
+        "startMs": 1252840,
+        "endMs": 1273240
+      },
+      {
+        "topicId": "topic_1779424429156_397",
+        "title": "Topic 59",
+        "startMs": 1273240,
+        "endMs": 1293640
+      },
+      {
+        "topicId": "topic_1779424455314_407",
+        "title": "Topic 60",
+        "startMs": 1293640,
+        "endMs": 1341640
+      },
+      {
+        "topicId": "topic_1779424520376_421",
+        "title": "Topic 61",
+        "startMs": 1341640,
+        "endMs": 1392640
+      },
+      {
+        "topicId": "topic_1779424629313_438",
+        "title": "Topic 62",
+        "startMs": 1392640,
+        "endMs": 1433440
+      },
+      {
+        "topicId": "topic_1779424714092_450",
+        "title": "Topic 63",
+        "startMs": 1433440,
+        "endMs": 1453840
+      },
+      {
+        "topicId": "topic_1779424776127_457",
+        "title": "Topic 64",
+        "startMs": 1453840,
+        "endMs": 1480840
+      },
+      {
+        "topicId": "topic_1779424846030_467",
+        "title": "Topic 65",
+        "startMs": 1480840,
+        "endMs": 1498840
+      },
+      {
+        "topicId": "topic_1779424891396_477",
+        "title": "Topic 66",
+        "startMs": 1498840,
+        "endMs": 1513240
+      },
+      {
+        "topicId": "topic_1779424920203_482",
+        "title": "Topic 67",
+        "startMs": 1513240,
+        "endMs": 1533640
+      },
+      {
+        "topicId": "topic_1779424939038_486",
+        "title": "Topic 68",
+        "startMs": 1533640,
+        "endMs": 1544440
+      },
+      {
+        "topicId": "topic_1779424977184_491",
+        "title": "Topic 69",
+        "startMs": 1544440,
+        "endMs": 1557040
+      },
+      {
+        "topicId": "topic_1779425007209_499",
+        "title": "Topic 70",
+        "startMs": 1557040,
+        "endMs": 1577440
+      },
+      {
+        "topicId": "topic_1779425046773_505",
+        "title": "Topic 71",
+        "startMs": 1577440,
+        "endMs": 1595440
+      },
+      {
+        "topicId": "topic_1779425080701_516",
+        "title": "Topic 72",
+        "startMs": 1595440,
+        "endMs": 1623040
+      },
+      {
+        "topicId": "topic_1779425137751_525",
+        "title": "Topic 73",
+        "startMs": 1623040,
+        "endMs": 1643440
+      },
+      {
+        "topicId": "topic_1779425181371_535",
+        "title": "Topic 74",
+        "startMs": 1643440,
+        "endMs": 1653640
+      },
+      {
+        "topicId": "topic_1779425218959_542",
+        "title": "Topic 75",
+        "startMs": 1653640,
+        "endMs": 1674040
+      },
+      {
+        "topicId": "topic_1779425254159_549",
+        "title": "Topic 76",
+        "startMs": 1674040,
+        "endMs": 1687840
+      },
+      {
+        "topicId": "topic_1779425307661_555",
+        "title": "Topic 77",
+        "startMs": 1690240,
+        "endMs": 1710640
+      },
+      {
+        "topicId": "topic_1779425343628_558",
+        "title": "Topic 78",
+        "startMs": 1710640,
+        "endMs": 1731040
+      },
+      {
+        "topicId": "topic_1779425381254_567",
+        "title": "Topic 79",
+        "startMs": 1731040,
+        "endMs": 1788640
+      },
+      {
+        "topicId": "topic_1779425511634_578",
+        "title": "Topic 80",
+        "startMs": 1788640,
+        "endMs": 1795840
+      },
+      {
+        "topicId": "topic_1779425536662_585",
+        "title": "Topic 81",
+        "startMs": 1795840,
+        "endMs": 1804840
+      },
+      {
+        "topicId": "topic_1779425554395_590",
+        "title": "Topic 82",
+        "startMs": 1804840,
+        "endMs": 1845640
+      },
+      {
+        "topicId": "topic_1779425577953_596",
+        "title": "Topic 83",
+        "startMs": 1845640,
+        "endMs": 1866040
+      },
+      {
+        "topicId": "topic_1779425593459_603",
+        "title": "Topic 84",
+        "startMs": 1866040,
+        "endMs": 1886440
+      },
+      {
+        "topicId": "topic_1779425609970_608",
+        "title": "Topic 85",
+        "startMs": 1886440,
+        "endMs": 1906840
+      },
+      {
+        "topicId": "topic_1779425618919_612",
+        "title": "Topic 86",
+        "startMs": 1906840,
+        "endMs": 1920640
+      },
+      {
+        "topicId": "topic_1779425636112_616",
+        "title": "Topic 87",
+        "startMs": 1920640,
+        "endMs": 1937440
+      },
+      {
+        "topicId": "topic_1779425649623_620",
+        "title": "Topic 88",
+        "startMs": 1937440,
+        "endMs": 1959640
+      },
+      {
+        "topicId": "topic_1779425665857_624",
+        "title": "Topic 89",
+        "startMs": 1959640,
+        "endMs": 1980040
+      },
+      {
+        "topicId": "topic_1779425676392_628",
+        "title": "Topic 90",
+        "startMs": 1980040,
+        "endMs": 2011240
+      },
+      {
+        "topicId": "topic_1779425699658_635",
+        "title": "Topic 91",
+        "startMs": 2011240,
+        "endMs": 2024440
+      },
+      {
+        "topicId": "topic_1779425719240_640",
+        "title": "Topic 92",
+        "startMs": 2024440,
+        "endMs": 2051440
+      },
+      {
+        "topicId": "topic_1779425730279_644",
+        "title": "Topic 93",
+        "startMs": 2051440,
+        "endMs": 2062240
+      },
+      {
+        "topicId": "topic_1779425748473_649",
+        "title": "Topic 94",
+        "startMs": 2062240,
+        "endMs": 2101240
+      },
+      {
+        "topicId": "topic_1779425762294_654",
+        "title": "Topic 95",
+        "startMs": 2101240,
+        "endMs": 2124640
+      },
+      {
+        "topicId": "topic_1779425792108_657",
+        "title": "Topic 96",
+        "startMs": 2124640,
+        "endMs": 2145040
+      },
+      {
+        "topicId": "topic_1779425810397_661",
+        "title": "Topic 97",
+        "startMs": 2145040,
+        "endMs": 2170840
+      },
+      {
+        "topicId": "topic_1779425824304_665",
+        "title": "Topic 98",
+        "startMs": 2170840,
+        "endMs": 2185840
+      },
+      {
+        "topicId": "topic_1779425841777_670",
+        "title": "Topic 99",
+        "startMs": 2209240,
+        "endMs": 2221240
+      },
+      {
+        "topicId": "topic_1779425856050_675",
+        "title": "Topic 100",
+        "startMs": 2221240,
+        "endMs": 2280640
+      },
+      {
+        "topicId": "topic_1779425893037_686",
+        "title": "Topic 101",
+        "startMs": 2300440,
+        "endMs": 2311240
+      },
+      {
+        "topicId": "topic_1779425907676_692",
+        "title": "Topic 102",
+        "startMs": 2338240,
+        "endMs": 2350240
+      }
+    ],
+    "nodes": [
+      {
+        "id": "segment_1779423150376_4:n1",
+        "type": "claim",
+        "text": "N1 N1 N1 N1 N1 ",
+        "timestampMs": 9640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423150376_4:n2",
+        "type": "claim",
+        "text": "N2 N2 N2 N2 N2 N",
+        "timestampMs": 9640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423150376_4:n3",
+        "type": "example",
+        "text": "N3 N3 N3 N3 N3",
+        "timestampMs": 9640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423170760_9:new_n1",
+        "type": "reason",
+        "text": "N4 N4 N4 N4 N4 N4 N4 N4 N4 ",
+        "timestampMs": 30040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423170760_9:new_n2",
+        "type": "example",
+        "text": "N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N5 N",
+        "timestampMs": 30040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423191142_14:new_n1",
+        "type": "claim",
+        "text": "N6 N6 N6 N6 N6 N6 N",
+        "timestampMs": 50440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423191142_14:new_n2",
+        "type": "reason",
+        "text": "N7 N7 N7 N7 N7 N7 ",
+        "timestampMs": 50440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423191142_14:new_n3",
+        "type": "reason",
+        "text": "N8 N8 N8 N8 N8 N8 ",
+        "timestampMs": 50440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423191142_14:new_n4",
+        "type": "reason",
+        "text": "N9 N9 N9 N9 N9 N9",
+        "timestampMs": 50440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423231347_24:n1",
+        "type": "claim",
+        "text": "N10 N10 N10 N10 N10 N10 N10 N10 N",
+        "timestampMs": 111040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423231347_24:n2",
+        "type": "reason",
+        "text": "N11 N11 N11 N11 N11 N11 ",
+        "timestampMs": 111040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423231347_24:n3",
+        "type": "example",
+        "text": "N12 N12 N12 N12 N12 N12 N12 N12",
+        "timestampMs": 111040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423251748_30:new_r1",
+        "type": "reason",
+        "text": "N13 N13 N13 N13 N13 N13 N",
+        "timestampMs": 131440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423251748_30:new_r2",
+        "type": "reason",
+        "text": "N14 N14 N14 N14 N14 N14",
+        "timestampMs": 131440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423251748_30:new_n1",
+        "type": "conclusion",
+        "text": "N15 N15 N15 N15 N15 N15 N15",
+        "timestampMs": 131440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423292558_38:new_d2_1",
+        "type": "claim",
+        "text": "N16 N16 N16 N16 N1",
+        "timestampMs": 151840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423292558_38:new_d2_2",
+        "type": "example",
+        "text": "N17 N17 N17 N1",
+        "timestampMs": 151840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423292558_38:new_d3_1",
+        "type": "claim",
+        "text": "N18 N18 N18 N18 N1",
+        "timestampMs": 151840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423292558_38:new_d3_2",
+        "type": "example",
+        "text": "N19 N19 N19 N19",
+        "timestampMs": 151840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423312946_45:new_ex1",
+        "type": "example",
+        "text": "N20 N20 N20 N20 N20 N20 N20 N20 N20 N20 N2",
+        "timestampMs": 172240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423333369_49:new_d4_1",
+        "type": "claim",
+        "text": "N21 N21 N21 N",
+        "timestampMs": 192640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423333369_49:new_d4_2",
+        "type": "example",
+        "text": "N22 N22 N22 N",
+        "timestampMs": 192640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423333369_49:new_d5_1",
+        "type": "claim",
+        "text": "N23 N23 N",
+        "timestampMs": 192640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423333369_49:new_d5_2",
+        "type": "example",
+        "text": "N24 N24 N24 N2",
+        "timestampMs": 192640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423353750_54:segment_1779423333369_49:new_2nd_need",
+        "type": "claim",
+        "text": "N25 N25 N25 N25 N",
+        "timestampMs": 213040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423353750_54:segment_1779423333369_49:new_kg_claim",
+        "type": "reason",
+        "text": "N26 N26 N26 N26 N26 N2",
+        "timestampMs": 213040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423374146_58:new_rag_claim",
+        "type": "reason",
+        "text": "N27 N27 N27 N2",
+        "timestampMs": 233440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423374146_58:new_efficiency_claim",
+        "type": "reason",
+        "text": "N28 N28 N28 N28 N28 N",
+        "timestampMs": 233440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423374146_58:new_efficiency_ex",
+        "type": "example",
+        "text": "N29 N29 N29 N29 N29 N2",
+        "timestampMs": 233440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423374146_58:new_timeline_claim",
+        "type": "claim",
+        "text": "N30 N30 N30 N3",
+        "timestampMs": 233440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423394591_65:seg_253840_1",
+        "type": "reason",
+        "text": "N31 N31 N31 N31 N31 N31 N31 N",
+        "timestampMs": 253840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423394591_65:seg_253840_2",
+        "type": "example",
+        "text": "N32 N32 N32 N32 N32 N3",
+        "timestampMs": 253840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423394591_65:seg_253840_3",
+        "type": "claim",
+        "text": "N33 N33 N33 N33 N33 N33 N33 N3",
+        "timestampMs": 253840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423414966_71:n1",
+        "type": "reason",
+        "text": "N34 N34 N34 N34 N34 N34",
+        "timestampMs": 274240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423414966_71:n2",
+        "type": "reason",
+        "text": "N35 N35 N35 N35 N35 N35 N35 N3",
+        "timestampMs": 274240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423414966_71:n3",
+        "type": "reason",
+        "text": "N36 N36 N",
+        "timestampMs": 274240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423414966_71:n4",
+        "type": "example",
+        "text": "N37 N37 N37 N37",
+        "timestampMs": 274240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423435371_78:seg_294640_1",
+        "type": "claim",
+        "text": "N38 N38 N38 N38 N38 N3",
+        "timestampMs": 294640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423435371_78:seg_294640_2",
+        "type": "claim",
+        "text": "N39 N39 N39 N39 ",
+        "timestampMs": 294640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423435371_78:seg_294640_3",
+        "type": "reason",
+        "text": "N40 N40 N40 N4",
+        "timestampMs": 315040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423435371_78:seg_294640_4",
+        "type": "claim",
+        "text": "N41 N41 ",
+        "timestampMs": 315040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423455759_84:n1",
+        "type": "reason",
+        "text": "N42 N42 N42 N42 N42 ",
+        "timestampMs": 315040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423455759_84:n2",
+        "type": "reason",
+        "text": "N43 N43 N43 N43 N",
+        "timestampMs": 315040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423455759_84:n3",
+        "type": "example",
+        "text": "N44 N44 N44 N",
+        "timestampMs": 315040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423455759_84:n4",
+        "type": "claim",
+        "text": "N45 N45 N45 N",
+        "timestampMs": 315040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423455759_84:n5",
+        "type": "reason",
+        "text": "N46 N46 N46 N46 N4",
+        "timestampMs": 315040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423476165_92:n1",
+        "type": "claim",
+        "text": "N47 N47 N47 N4",
+        "timestampMs": 335440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423476165_92:n2",
+        "type": "claim",
+        "text": "N48 N48 N48",
+        "timestampMs": 335440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423476165_92:n3",
+        "type": "conclusion",
+        "text": "N49 N49 N49 N49",
+        "timestampMs": 355840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423476165_92:n4",
+        "type": "claim",
+        "text": "N50 N50 N50 N50 N",
+        "timestampMs": 355840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423476165_92:n5",
+        "type": "reason",
+        "text": "N51 N51 N51 N51",
+        "timestampMs": 355840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423476165_92:n6",
+        "type": "example",
+        "text": "N52 N52 N52 N52 N",
+        "timestampMs": 355840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423476165_92:n7",
+        "type": "claim",
+        "text": "N53 N53 N53 N53 ",
+        "timestampMs": 355840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423496543_101:new_1",
+        "type": "example",
+        "text": "N54 N54 N54 N",
+        "timestampMs": 355840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423496543_101:new_2",
+        "type": "claim",
+        "text": "N55 N55 N55 N55 N55 N",
+        "timestampMs": 355840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423496543_101:new_3",
+        "type": "example",
+        "text": "N56 N56 N56 N56 N56 N56 ",
+        "timestampMs": 355840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423509488_107:n_开车痛点",
+        "type": "claim",
+        "text": "N57 N57 N57 N57 ",
+        "timestampMs": 376240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423528378_111:new_需求1",
+        "type": "claim",
+        "text": "N58 N58 N58 ",
+        "timestampMs": 387640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423528378_111:new_需求2",
+        "type": "claim",
+        "text": "N59 N59 N59 N",
+        "timestampMs": 387640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423528378_111:new_需求3",
+        "type": "claim",
+        "text": "N60 N60 N60 N6",
+        "timestampMs": 387640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423528378_111:new_需求4",
+        "type": "reason",
+        "text": "N61 N61 N6",
+        "timestampMs": 387640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423579356_124:new_技术方案1",
+        "type": "claim",
+        "text": "N62 N62 N62 N62 N",
+        "timestampMs": 433840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423579356_124:new_技术方案2",
+        "type": "claim",
+        "text": "N63 N63 N63 N6",
+        "timestampMs": 433840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423579356_124:new_技术方案3",
+        "type": "reason",
+        "text": "N64 N64 N64 ",
+        "timestampMs": 433840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423641739_140:n1",
+        "type": "claim",
+        "text": "N65 N65 N65 N",
+        "timestampMs": 501040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423641739_140:n2",
+        "type": "example",
+        "text": "N66 N66 N66 N66 N66 N66 N66 N6",
+        "timestampMs": 501040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423641739_140:n3",
+        "type": "reason",
+        "text": "N67 N67 N67 N67 N6",
+        "timestampMs": 501040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423641739_140:n4",
+        "type": "claim",
+        "text": "N68 N68 N68 N68 N",
+        "timestampMs": 501040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423655711_146:new_gpu_瓶颈1",
+        "type": "claim",
+        "text": "N69 N69 N69 N6",
+        "timestampMs": 532840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423655711_146:new_gpu_瓶颈2",
+        "type": "reason",
+        "text": "N70 N70 N70 N70 N7",
+        "timestampMs": 532840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423655711_146:new_索尔提升1",
+        "type": "claim",
+        "text": "N71 N71 N71 N71 N71 N",
+        "timestampMs": 532840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423700554_159:n1",
+        "type": "claim",
+        "text": "N72 N72 N7",
+        "timestampMs": 562240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423700554_159:n2",
+        "type": "reason",
+        "text": "N73 N73 N73 N73 ",
+        "timestampMs": 562240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423700554_159:n3",
+        "type": "example",
+        "text": "N74 N74 N74",
+        "timestampMs": 562240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423700554_159:n4",
+        "type": "example",
+        "text": "N75 N75 N7",
+        "timestampMs": 562240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423700554_159:n5",
+        "type": "example",
+        "text": "N76 N76 N7",
+        "timestampMs": 562240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423700554_159:n6",
+        "type": "example",
+        "text": "N77 N77 N7",
+        "timestampMs": 562240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423717711_169:segment_1779423700554_159:n7",
+        "type": "reason",
+        "text": "N78 N78 N",
+        "timestampMs": 580240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423717711_169:segment_1779423700554_159:n8",
+        "type": "reason",
+        "text": "N79 N79 N7",
+        "timestampMs": 580240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423732595_174:new_node_1",
+        "type": "reason",
+        "text": "N80 N80 N80 N80 N8",
+        "timestampMs": 589240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423732595_174:new_node_2",
+        "type": "reason",
+        "text": "N81 N81 N81",
+        "timestampMs": 589240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423732595_174:new_node_3",
+        "type": "reason",
+        "text": "N82 N82 N82 N",
+        "timestampMs": 589240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423747315_181:new_node_1",
+        "type": "claim",
+        "text": "N83 N83 N83 N83 N83 N83 ",
+        "timestampMs": 609640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423747315_181:new_node_2",
+        "type": "example",
+        "text": "N84 N84 N84 N84 N8",
+        "timestampMs": 609640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423747315_181:new_node_3",
+        "type": "example",
+        "text": "N85 N85 N85 N85",
+        "timestampMs": 609640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423765973_188:new_node_1",
+        "type": "reason",
+        "text": "N86 N86 N86 N86 N86 N86 N",
+        "timestampMs": 619240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423765973_188:new_node_2",
+        "type": "question",
+        "text": "N87 N87 N87 N87 N87 N87 N8",
+        "timestampMs": 645640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423786344_194:new_node_1",
+        "type": "reason",
+        "text": "N88 N88 N88 N88 N88 N88 N",
+        "timestampMs": 666040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423786344_194:new_node_2",
+        "type": "question",
+        "text": "N89 N89 N8",
+        "timestampMs": 666040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423786344_194:new_node_3",
+        "type": "claim",
+        "text": "N90 N90 N90 N",
+        "timestampMs": 666040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423812161_201:new_node_1",
+        "type": "reason",
+        "text": "N91 N91 N91 ",
+        "timestampMs": 666040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423812161_201:new_node_2",
+        "type": "claim",
+        "text": "N92 N92 N92 N92 ",
+        "timestampMs": 666040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423812161_201:new_node_3",
+        "type": "example",
+        "text": "N93 N93 N93 N",
+        "timestampMs": 666040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423812161_201:new_node_4",
+        "type": "reason",
+        "text": "N94 N94 N94 N94 N9",
+        "timestampMs": 666040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423812161_201:new_node_5",
+        "type": "reason",
+        "text": "N95 N95 N95 ",
+        "timestampMs": 666040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423812161_201:new_node_6",
+        "type": "claim",
+        "text": "N96 N96 N96 N",
+        "timestampMs": 666040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423832562_211:segment_1779423930336_209:new_node_1",
+        "type": "claim",
+        "text": "N97 N97 N97 N97 N",
+        "timestampMs": 691840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423832562_211:segment_1779423930336_209:new_node_2",
+        "type": "reason",
+        "text": "N98 N98 N98 N98 N98 N98",
+        "timestampMs": 691840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423832562_211:segment_1779423930336_209:new_node_3",
+        "type": "reason",
+        "text": "N99 N99 N99 N99 N99 N99",
+        "timestampMs": 691840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423832562_211:segment_1779423930336_209:new_node_4",
+        "type": "claim",
+        "text": "N100 N100 N100 N",
+        "timestampMs": 691840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423852961_217:new_node_5",
+        "type": "example",
+        "text": "N101 N101 N101",
+        "timestampMs": 712240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423852961_217:new_node_6",
+        "type": "reason",
+        "text": "N102 N102 N102 N10",
+        "timestampMs": 712240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423852961_217:new_node_7",
+        "type": "reason",
+        "text": "N103 N103 N103 N10",
+        "timestampMs": 712240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423903954_236:n1",
+        "type": "question",
+        "text": "N104 N104 N104 N104 N104",
+        "timestampMs": 765040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423918340_239:new_node_8",
+        "type": "example",
+        "text": "N105 N105 N105 N105 N105 N105 N105 ",
+        "timestampMs": 783640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423942361_246:new_node_reason_1",
+        "type": "reason",
+        "text": "N106 N106 N106",
+        "timestampMs": 798040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423942361_246:new_node_reason_2",
+        "type": "reason",
+        "text": "N107 N107 N1",
+        "timestampMs": 798040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423942361_246:new_node_example_1",
+        "type": "example",
+        "text": "N108 N108 N",
+        "timestampMs": 798040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423942361_246:new_node_claim_1",
+        "type": "claim",
+        "text": "N109 N109 N109",
+        "timestampMs": 798040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423960959_255:n1",
+        "type": "example",
+        "text": "N110 N110 N110 N110 N110 N110",
+        "timestampMs": 822040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423976728_261:new_node_ incremental_1",
+        "type": "reason",
+        "text": "N111 N111 N11",
+        "timestampMs": 840640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779423976728_261:new_node_incremental_2",
+        "type": "conclusion",
+        "text": "N112 N112 N112 N",
+        "timestampMs": 853240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424024289_276:n1",
+        "type": "claim",
+        "text": "N113 N113 N113 N11",
+        "timestampMs": 877840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424024289_276:n2",
+        "type": "example",
+        "text": "N114 N114 N114 N1",
+        "timestampMs": 888840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424024289_276:n3",
+        "type": "example",
+        "text": "N115 N115 ",
+        "timestampMs": 888840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424042539_281:segment_1779424049499_288:n1",
+        "type": "claim",
+        "text": "N116 N116 N116 N",
+        "timestampMs": 901840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424042539_281:segment_1779424049499_288:n2",
+        "type": "example",
+        "text": "N117 N117 N117 N117 ",
+        "timestampMs": 910840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424042539_281:segment_1779424049499_288:n3",
+        "type": "example",
+        "text": "N118 N118 N118 ",
+        "timestampMs": 910840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424042539_281:segment_1779424049499_288:n4",
+        "type": "example",
+        "text": "N119 N119 N119 N1",
+        "timestampMs": 910840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424062974_288:new_1",
+        "type": "claim",
+        "text": "N120 N120 N",
+        "timestampMs": 922240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424062974_288:new_2",
+        "type": "example",
+        "text": "N121 N121 N1",
+        "timestampMs": 932240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424062974_288:new_3",
+        "type": "example",
+        "text": "N122 N122 N12",
+        "timestampMs": 932240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424062974_288:new_4",
+        "type": "conclusion",
+        "text": "N123 N123 N123 N123 N123 ",
+        "timestampMs": 942640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424103750_297:new_5",
+        "type": "reason",
+        "text": "N124 N124 N124 N124 N12",
+        "timestampMs": 963040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424103750_297:new_6",
+        "type": "reason",
+        "text": "N125 N125 N125 N125",
+        "timestampMs": 963040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424103750_297:new_7",
+        "type": "claim",
+        "text": "N126 N126 N126 N1",
+        "timestampMs": 983440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424120465_303:new_8",
+        "type": "reason",
+        "text": "N127 N127 N127 N1",
+        "timestampMs": 983440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424120465_303:new_9",
+        "type": "example",
+        "text": "N128 N128 N128 N128 N",
+        "timestampMs": 996040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424136771_308:new_10",
+        "type": "reason",
+        "text": "N129 N129 N129 N129 N1",
+        "timestampMs": 1001040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424136771_308:new_11",
+        "type": "reason",
+        "text": "N130 N130 N130 N130 N130",
+        "timestampMs": 1008040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424147279_314:new_12",
+        "type": "reason",
+        "text": "N131 N131 N131 N",
+        "timestampMs": 1022640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424187774_321:new_1",
+        "type": "claim",
+        "text": "N132 N132 N132 N132 N132 N1",
+        "timestampMs": 1047040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424187774_321:new_2",
+        "type": "reason",
+        "text": "N133 N133 N133 N133 N133",
+        "timestampMs": 1047040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424187774_321:new_3",
+        "type": "claim",
+        "text": "N134 N134 N134 N134 N13",
+        "timestampMs": 1067440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424201458_328:segment_1779424187774_321:new_4",
+        "type": "question",
+        "text": "N135 N135 N135 N135 N",
+        "timestampMs": 1067440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424201458_328:segment_1779424187774_321:new_5",
+        "type": "question",
+        "text": "N136 N136 N136 N136",
+        "timestampMs": 1078240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424217984_336:new_example_volvo",
+        "type": "example",
+        "text": "N137 N137 N137 N137 N137 ",
+        "timestampMs": 1084840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424217984_336:new_reason_safety_not_permanent",
+        "type": "reason",
+        "text": "N138 N138 N138",
+        "timestampMs": 1084840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424232212_341:new_brand_safety_volvo",
+        "type": "claim",
+        "text": "N139 N139 N139 N13",
+        "timestampMs": 1091440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424232212_341:new_before_chinese_nev",
+        "type": "reason",
+        "text": "N140 N140 N140 N140 N140 N140 N1",
+        "timestampMs": 1091440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424248624_347:new_reason_market_positioning",
+        "type": "reason",
+        "text": "N141 N141 N141 N14",
+        "timestampMs": 1111840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424281941_353:new_three_dimensions",
+        "type": "claim",
+        "text": "N142 N142 N14",
+        "timestampMs": 1141240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424281941_353:new_competition_dimension",
+        "type": "reason",
+        "text": "N143 N143 N143 N143 N1",
+        "timestampMs": 1141240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424281941_353:new_time_advantage_only",
+        "type": "claim",
+        "text": "N144 N144 N144 N144 N144",
+        "timestampMs": 1161640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424300564_360:segment_1779424295624_358:new_chip_moat",
+        "type": "claim",
+        "text": "N145 N145 N1",
+        "timestampMs": 1161640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424300564_360:segment_1779424295624_358:new_apple_example",
+        "type": "example",
+        "text": "N146 N146 N146",
+        "timestampMs": 1161640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424300564_360:segment_1779424295624_358:new_embodied_ai_chip",
+        "type": "claim",
+        "text": "N147 N147 N147 N147",
+        "timestampMs": 1180240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424323415_368:new_brand_moat",
+        "type": "claim",
+        "text": "N148 N148 N1",
+        "timestampMs": 1180240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424323415_368:new_family_vehicle_pioneer",
+        "type": "claim",
+        "text": "N149 N149 N14",
+        "timestampMs": 1180240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424323415_368:new_brand_uncertainty",
+        "type": "reason",
+        "text": "N150 N150 N1",
+        "timestampMs": 1180240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424323415_368:new_chip_confidence",
+        "type": "reason",
+        "text": "N151 N151 N151",
+        "timestampMs": 1180240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424356935_378:n1",
+        "type": "claim",
+        "text": "N152 N152 N15",
+        "timestampMs": 1219840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424356935_378:n2",
+        "type": "reason",
+        "text": "N153 N153 N153 N1",
+        "timestampMs": 1219840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424373139_383:n3",
+        "type": "claim",
+        "text": "N154 N15",
+        "timestampMs": 1252840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424393541_388:new_research_support",
+        "type": "reason",
+        "text": "N155 N155 N155 N155 N155",
+        "timestampMs": 1273240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424414061_392:new_brand_lead_10x",
+        "type": "claim",
+        "text": "N156 N156 N156 N156 ",
+        "timestampMs": 1273240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424414061_392:new_family_concept_extension",
+        "type": "claim",
+        "text": "N157 N157 N157",
+        "timestampMs": 1273240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424414061_392:new_traditional_family",
+        "type": "example",
+        "text": "N158 N158 N158 N158 N158",
+        "timestampMs": 1273240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424414061_392:new_maa_option",
+        "type": "reason",
+        "text": "N159 N159 N159 N159 N15",
+        "timestampMs": 1273240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424434368_399:new_i6_compact_option",
+        "type": "reason",
+        "text": "N160 N160 N",
+        "timestampMs": 1293640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424434368_399:new_l9_stability",
+        "type": "example",
+        "text": "N161 N161 N",
+        "timestampMs": 1293640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424434368_399:new_offroad_capability",
+        "type": "reason",
+        "text": "N162 N162",
+        "timestampMs": 1314040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424434368_399:new_mountain_driving_fun",
+        "type": "example",
+        "text": "N163 N163",
+        "timestampMs": 1314040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424434368_399:new_single_performance",
+        "type": "claim",
+        "text": "N164 N164 N1",
+        "timestampMs": 1314040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424434368_399:new_family_comfort",
+        "type": "claim",
+        "text": "N165 N165 N1",
+        "timestampMs": 1314040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424498944_414:segment_1779424474602_408:parking_behavior_data",
+        "type": "claim",
+        "text": "N166 N166 N166 N166 N16",
+        "timestampMs": 1341640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424498944_414:segment_1779424474602_408:car_comfort_parking",
+        "type": "reason",
+        "text": "N167 N167 N167 N167 N1",
+        "timestampMs": 1341640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424498944_414:segment_1779424474602_408:l9_zero_gravity_seat",
+        "type": "example",
+        "text": "N168 N168 N16",
+        "timestampMs": 1366840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424608871_432:segment_1779424555700_426:daddy_sacrifice_perception",
+        "type": "claim",
+        "text": "N169 N169 N169 N16",
+        "timestampMs": 1392640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424608871_432:segment_1779424555700_426:driver_most_important_seat",
+        "type": "reason",
+        "text": "N170 N170 N17",
+        "timestampMs": 1413040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424608871_432:segment_1779424555700_426:driver_as_pillar",
+        "type": "reason",
+        "text": "N171 N171 N",
+        "timestampMs": 1413040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424693671_445:segment_1779424662524_440:4d_cinema_effect",
+        "type": "claim",
+        "text": "N172 N172 N172 N172 N1",
+        "timestampMs": 1433440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424693671_445:segment_1779424662524_440:chassis_enables_4d",
+        "type": "reason",
+        "text": "N173 N173 N173 N",
+        "timestampMs": 1433440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424693671_445:segment_1779424662524_440:4d_only_luxury_theaters",
+        "type": "example",
+        "text": "N174 N174 N174 N174",
+        "timestampMs": 1433440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424693671_445:segment_1779424662524_440:4d_in_theme_parks",
+        "type": "example",
+        "text": "N175 N175 N175 N",
+        "timestampMs": 1433440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424751935_455:segment_1779424693671_445:segment_1779424555700_426:ai_embodied_intelligence_question",
+        "type": "question",
+        "text": "N176 N176 N176 N176 N176 N1",
+        "timestampMs": 1453840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424825980_464:ai_not_crossed_line",
+        "type": "claim",
+        "text": "N177 N177 N177 N177 N177 N177",
+        "timestampMs": 1480840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424825980_464:threshold_crossing_future",
+        "type": "claim",
+        "text": "N178 N178 N178 N17",
+        "timestampMs": 1480840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424872395_471:segment_1779424889492_472:segment_1779424825980_464:perceived_as_scifi",
+        "type": "claim",
+        "text": "N179 N179 N179 N179 ",
+        "timestampMs": 1498840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424872395_471:segment_1779424889492_472:segment_1779424825980_464:car_still_useful",
+        "type": "reason",
+        "text": "N180 N180 N180 ",
+        "timestampMs": 1513240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424907804_478:l3_deterministic_implementation",
+        "type": "reason",
+        "text": "N181 N181 N181 N181 N181 ",
+        "timestampMs": 1513240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424928148_484:new_node_1",
+        "type": "example",
+        "text": "N182 N182 N182 N182",
+        "timestampMs": 1533640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424990946_493:segment_1557040_1577440:l3_2027_timeline",
+        "type": "claim",
+        "text": "N183 N183 N183 N183 N",
+        "timestampMs": 1557040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424990946_493:segment_1557040_1577440:needs_regulation_insurance",
+        "type": "reason",
+        "text": "N184 N184 N184 N1",
+        "timestampMs": 1567040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424990946_493:segment_1557040_1577440:china_regulatory_advantage",
+        "type": "reason",
+        "text": "N185 N185 N185 N",
+        "timestampMs": 1570040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779424990946_493:segment_1557040_1577440:china_safety_focus",
+        "type": "reason",
+        "text": "N186 N186 N1",
+        "timestampMs": 1574040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425030820_501:public_fatigue_autonomy",
+        "type": "reason",
+        "text": "N187 N187 N187 N187 ",
+        "timestampMs": 1590440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425058657_509:new_imitation_to_understanding_hurdle",
+        "type": "claim",
+        "text": "N188 N188 N188 N188",
+        "timestampMs": 1600000,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425058657_509:new_tech_stack_upgrade_needed",
+        "type": "reason",
+        "text": "N189 N189 N189 N189 ",
+        "timestampMs": 1605000,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425058657_509:new_l3_two_to_three_years",
+        "type": "claim",
+        "text": "N190 N190 N19",
+        "timestampMs": 1615000,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425058657_509:new_existing_tech_sufficient",
+        "type": "reason",
+        "text": "N191 N191 N",
+        "timestampMs": 1618000,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425118209_519:segment_1779425076673_517:public_robot_frustration_higher",
+        "type": "reason",
+        "text": "N192 N192 N192 N192 ",
+        "timestampMs": 1626000,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425118209_519:segment_1779425076673_517:robots_still_feel_distant",
+        "type": "claim",
+        "text": "N193 N193 N19",
+        "timestampMs": 1630000,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425118209_519:segment_1779425076673_517:auto_driving_10_20_years",
+        "type": "reason",
+        "text": "N194 N194 N194 ",
+        "timestampMs": 1634000,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425118209_519:segment_1779425076673_517:robot_expectations_very_high",
+        "type": "reason",
+        "text": "N195 N195 N195 N1",
+        "timestampMs": 1638000,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425118209_519:segment_1779425076673_517:marketing_successful",
+        "type": "reason",
+        "text": "N196 N196 N19",
+        "timestampMs": 1640000,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425163994_528:segment_1779425118209_519:marathon_and_spring_festival",
+        "type": "example",
+        "text": "N197 N197 N197 N197",
+        "timestampMs": 1647000,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425163994_528:segment_1779425118209_519:robot_commercialization_challenge",
+        "type": "claim",
+        "text": "N198 N198 N198 N1",
+        "timestampMs": 1650000,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425198079_538:new_1653640_1674040:financing_needs_promotion",
+        "type": "reason",
+        "text": "N199 N199 N199 N19",
+        "timestampMs": 1657000,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425198079_538:new_1653640_1674040:2015_2016_l4_claim",
+        "type": "example",
+        "text": "N200 N200 N200 N200 ",
+        "timestampMs": 1665000,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425198079_538:new_1653640_1674040:musk_cross_country_claim",
+        "type": "example",
+        "text": "N201 N201 N201 N2",
+        "timestampMs": 1669000,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425233596_544:new_1674040_1687840:tesla_vehicle_products_question",
+        "type": "question",
+        "text": "N202 N202 N202 ",
+        "timestampMs": 1674040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425233596_544:new_1674040_1687840:tesla_products_understanding_sufficient",
+        "type": "claim",
+        "text": "N203 N203 N203 N",
+        "timestampMs": 1674040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425233596_544:new_1674040_1687840:future_products_inquiry",
+        "type": "question",
+        "text": "N204 N204 N204 N204 ",
+        "timestampMs": 1674040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425284271_552:segment_1779425277122_551:new_1690240_1710640:home_computing_product",
+        "type": "reason",
+        "text": "N205 N205 N205 N205 N205 N205",
+        "timestampMs": 1690240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425360255_561:segment_1779425328471_558:new_1731040_1751440:better_than_existing",
+        "type": "claim",
+        "text": "N206 N206 N206 N2",
+        "timestampMs": 1731040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425360255_561:segment_1779425328471_558:new_1731040_1751440:future_home_devices_integrate",
+        "type": "reason",
+        "text": "N207 N207 N207 N207 N207 N207 N2",
+        "timestampMs": 1731040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425360255_561:segment_1779425328471_558:new_1731040_1751440:geek_users_adoption",
+        "type": "claim",
+        "text": "N208 N208 N2",
+        "timestampMs": 1731040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425360255_561:segment_1779425328471_558:new_1731040_1751440:10gbe_requirement",
+        "type": "reason",
+        "text": "N209 N209",
+        "timestampMs": 1731040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425494714_576:segment_1788640_1795840:agi_commonly_usable",
+        "type": "claim",
+        "text": "N210 N210 N210 N210 N210 N210 N210 N",
+        "timestampMs": 1788640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425494714_576:segment_1788640_1795840:cost_projection",
+        "type": "reason",
+        "text": "N211 N211 N2",
+        "timestampMs": 1788640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425516829_579:segment_1795840_1804840:memory_most_expensive",
+        "type": "claim",
+        "text": "N212 N21",
+        "timestampMs": 1795840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425516829_579:segment_1795840_1804840:chip_cost_calculable",
+        "type": "reason",
+        "text": "N213 N21",
+        "timestampMs": 1795840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425516829_579:segment_1795840_1804840:memory_cost_uncertain",
+        "type": "reason",
+        "text": "N214 N214 ",
+        "timestampMs": 1795840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425537007_586:new_1804840_1825240:dynamic_dataflow_memory_efficiency",
+        "type": "reason",
+        "text": "N215 N215 N215 N215 N21",
+        "timestampMs": 1804840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425537007_586:new_1804840_1825240:ai_emphasis_data_movement",
+        "type": "claim",
+        "text": "N216 N216 N216 N",
+        "timestampMs": 1804840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425537007_586:new_1804840_1825240:architecture_fairness",
+        "type": "reason",
+        "text": "N217 N217 N21",
+        "timestampMs": 1804840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425563639_592:segment_1779425557168_591:new_1845640_1866040:internal_base_capabilities",
+        "type": "claim",
+        "text": "N218 N218 N218 N218 N218",
+        "timestampMs": 1845640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425563639_592:segment_1779425557168_591:new_1845640_1866040:talent_retention",
+        "type": "reason",
+        "text": "N219 N219 N219",
+        "timestampMs": 1845640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425563639_592:segment_1779425557168_591:new_1845640_1866040:robot_business_necessary",
+        "type": "claim",
+        "text": "N220 N220 N2",
+        "timestampMs": 1845640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425563639_592:segment_1779425557168_591:new_1845640_1866040:timeline_question",
+        "type": "question",
+        "text": "N221 N221 N221 N221",
+        "timestampMs": 1845640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425563639_592:segment_1779425557168_591:new_1845640_1866040:timeline_hope",
+        "type": "claim",
+        "text": "N222 N222 N",
+        "timestampMs": 1845640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425578157_597:segment_1779425580464_594:new_1866040_1886440:function_robot",
+        "type": "claim",
+        "text": "N223 N223 N223 N223",
+        "timestampMs": 1866040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425578157_597:segment_1779425580464_594:new_1866040_1886440:production_target",
+        "type": "claim",
+        "text": "N224 N224 N224",
+        "timestampMs": 1866040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425578157_597:segment_1779425580464_594:new_1866040_1886440:affordable_price",
+        "type": "reason",
+        "text": "N225 N225",
+        "timestampMs": 1866040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425578157_597:segment_1779425580464_594:new_1866040_1886440:humanoid_robot",
+        "type": "claim",
+        "text": "N226 N226 N226",
+        "timestampMs": 1866040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425578157_597:segment_1779425580464_594:new_1866040_1886440:complex_structure",
+        "type": "reason",
+        "text": "N227 N227 N227 N227 ",
+        "timestampMs": 1866040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425593611_604:new_1886440_1906840:priority_focus",
+        "type": "claim",
+        "text": "N228 N228 N",
+        "timestampMs": 1886440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425593611_604:new_1886440_1906840:technical_difficulty",
+        "type": "reason",
+        "text": "N229 N229 ",
+        "timestampMs": 1886440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425593611_604:new_1886440_1906840:cognitive_bubble",
+        "type": "claim",
+        "text": "N230 N230 N23",
+        "timestampMs": 1886440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425593611_604:new_1886440_1906840:demonstration_effect",
+        "type": "reason",
+        "text": "N231 N231 N231 N231 ",
+        "timestampMs": 1886440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425610157_610:new_1906840_1920640:home_servant_expectation",
+        "type": "example",
+        "text": "N232 N232 N232 N232",
+        "timestampMs": 1906840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425610157_610:new_1906840_1920640:far_future_reality",
+        "type": "reason",
+        "text": "N233 N233 N233",
+        "timestampMs": 1906840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425619115_614:new_1920640_1937440:talent_recruitment_challenge",
+        "type": "claim",
+        "text": "N234 N234 N234 N234 N2",
+        "timestampMs": 1920640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425619115_614:new_1920640_1937440:common_industry_problem",
+        "type": "reason",
+        "text": "N235 N235 N235 N235 N235 ",
+        "timestampMs": 1920640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425636325_618:segment_1779425633147_618:new_1937440_1959640:internship_recruitment",
+        "type": "reason",
+        "text": "N236 N236 N236 N236 N2",
+        "timestampMs": 1937440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425649802_621:segment_1779425660496_622:new_1959640_1980040:paper_publication_importance",
+        "type": "reason",
+        "text": "N237 N237 N237 ",
+        "timestampMs": 1959640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425649802_621:segment_1779425660496_622:new_1959640_1980040:school_cooperation",
+        "type": "reason",
+        "text": "N238 N238 N238 ",
+        "timestampMs": 1959640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425666081_625:new_1980040_1990840:school_cooperation_detail",
+        "type": "reason",
+        "text": "N239 N239 N239 N23",
+        "timestampMs": 1980040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425676573_629:segment_1779425680327_627:new_1990840_2011240:vision_explanation_strategy",
+        "type": "reason",
+        "text": "N240 N240 N240 N240 N240 N2",
+        "timestampMs": 1990840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425676573_629:segment_1779425680327_627:new_1990840_2011240:chip_future_potential",
+        "type": "reason",
+        "text": "N241 N241 N241 N241 N2",
+        "timestampMs": 1990840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425676573_629:segment_1779425680327_627:new_1990840_2011240:model_competitiveness",
+        "type": "reason",
+        "text": "N242 N242 N242 N242 N242",
+        "timestampMs": 1990840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425676573_629:segment_1779425680327_627:new_1990840_2011240:company_barrier",
+        "type": "reason",
+        "text": "N243 N243 N243 N243 N243",
+        "timestampMs": 1990840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425691858_634:segment_1779425693201_631:new_2011240_2024440:competitive_salary",
+        "type": "reason",
+        "text": "N244 N244 N244 N24",
+        "timestampMs": 2011240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425699941_637:segment_1779425710960_639:new_2024440_2051440:sincere_talent_attitude",
+        "type": "reason",
+        "text": "N245 N245 N245 N245 N245 N24",
+        "timestampMs": 2024440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425699941_637:segment_1779425710960_639:new_2024440_2051440:talent_perception",
+        "type": "reason",
+        "text": "N246 N246 N246 N",
+        "timestampMs": 2024440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425719444_642:new_2051440_2062240_interview_learning",
+        "type": "claim",
+        "text": "N247 N247 N2",
+        "timestampMs": 2051440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425719444_642:new_2051440_2062240_interview_clarify",
+        "type": "claim",
+        "text": "N248 N248 N248",
+        "timestampMs": 2051440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425730566_646:new_2062240_2101240_mid_size_advantage",
+        "type": "reason",
+        "text": "N249 N249 N249",
+        "timestampMs": 2062240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425730566_646:new_2062240_2101240_conditions_exist",
+        "type": "reason",
+        "text": "N250 N250 N25",
+        "timestampMs": 2062240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425748616_650:new_2101240_2115040_startup_difficult",
+        "type": "reason",
+        "text": "N251 N251 N251 N25",
+        "timestampMs": 2101240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425748616_650:new_2101240_2115040_cog_in_machine",
+        "type": "claim",
+        "text": "N252 N252 N252",
+        "timestampMs": 2101240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425748616_650:new_2101240_2115040_all_sizes_enter_robotics",
+        "type": "reason",
+        "text": "N253 N253 N253 ",
+        "timestampMs": 2101240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425748616_650:new_2101240_2115040_own_judgment",
+        "type": "claim",
+        "text": "N254 N254 ",
+        "timestampMs": 2101240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425792380_659:n1",
+        "type": "claim",
+        "text": "N255 N255 N255 N255 N255 N255 N255",
+        "timestampMs": 2145040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425792380_659:n2",
+        "type": "claim",
+        "text": "N256 N256 N256 N256 ",
+        "timestampMs": 2145040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425810762_662:new_2170840_2185840_ai_team_size",
+        "type": "reason",
+        "text": "N257 N257 N2",
+        "timestampMs": 2170840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425810762_662:new_2170840_2185840_ai_team_breakdown",
+        "type": "reason",
+        "text": "N258 N258 N258 N",
+        "timestampMs": 2170840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425824495_666:segment_1779425810762_662:new_2209240_2221240_interview_level",
+        "type": "claim",
+        "text": "N259 N259 N259 ",
+        "timestampMs": 2209240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425824495_666:segment_1779425810762_662:new_2209240_2221240_interview_campus",
+        "type": "claim",
+        "text": "N260 N260 N",
+        "timestampMs": 2209240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425824495_666:segment_1779425810762_662:new_2209240_2221240_interview_volume_question",
+        "type": "question",
+        "text": "N261 N261 ",
+        "timestampMs": 2209240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425841988_672:n1",
+        "type": "claim",
+        "text": "N262 N262 N",
+        "timestampMs": 2221240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425841988_672:n2",
+        "type": "reason",
+        "text": "N263 N26",
+        "timestampMs": 2249440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425856308_677:new_2258440_2280640_interview_specific_rate",
+        "type": "reason",
+        "text": "N264 N264 N264 N264 N",
+        "timestampMs": 2258440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425856308_677:new_2258440_2280640_holiday_interview",
+        "type": "reason",
+        "text": "N265 N26",
+        "timestampMs": 2258440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425856308_677:new_2258440_2280640_love_interview",
+        "type": "claim",
+        "text": "N266 N266 N2",
+        "timestampMs": 2258440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425871562_682:new_2300440_2311240_learning_process",
+        "type": "reason",
+        "text": "N267 N267 N26",
+        "timestampMs": 2300440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425871562_682:new_2300440_2311240_startup_ceo_insufficient",
+        "type": "claim",
+        "text": "N268 N268 N268 N",
+        "timestampMs": 2300440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425893225_688:segment_1779425888430_687:new_2338240_2350240_own_interview_fear",
+        "type": "reason",
+        "text": "N269 N269 N26",
+        "timestampMs": 2338240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425893225_688:segment_1779425888430_687:new_2338240_2350240_need_determination",
+        "type": "reason",
+        "text": "N270 N270 N270 N",
+        "timestampMs": 2338240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779425893225_688:segment_1779425888430_687:new_2338240_2350240_bad_habit",
+        "type": "claim",
+        "text": "N271 N271",
+        "timestampMs": 2338240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_1779423164120_5",
+        "source": "segment_1779423150376_4:n1",
+        "target": "segment_1779423150376_4:n2",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423164120_6",
+        "source": "segment_1779423150376_4:n3",
+        "target": "segment_1779423150376_4:n1",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423185335_10",
+        "source": "segment_1779423170760_9:new_n1",
+        "target": "segment_1779423150376_4:n3",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423185335_11",
+        "source": "segment_1779423170760_9:new_n2",
+        "target": "segment_1779423170760_9:new_n1",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423206697_15",
+        "source": "segment_1779423191142_14:new_n1",
+        "target": "segment_1779423150376_4:n1",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423206697_16",
+        "source": "segment_1779423191142_14:new_n2",
+        "target": "segment_1779423191142_14:new_n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423206697_17",
+        "source": "segment_1779423191142_14:new_n3",
+        "target": "segment_1779423191142_14:new_n2",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423206697_18",
+        "source": "segment_1779423191142_14:new_n4",
+        "target": "segment_1779423191142_14:new_n3",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423245923_25",
+        "source": "segment_1779423231347_24:n2",
+        "target": "segment_1779423231347_24:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423245923_26",
+        "source": "segment_1779423231347_24:n3",
+        "target": "segment_1779423231347_24:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423245923_27",
+        "source": "segment_1779423231347_24:n3",
+        "target": "segment_1779423231347_24:n2",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423264652_31",
+        "source": "segment_1779423251748_30:new_r1",
+        "target": "segment_1779423231347_24:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423264652_32",
+        "source": "segment_1779423251748_30:new_r2",
+        "target": "segment_1779423231347_24:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423264652_33",
+        "source": "segment_1779423251748_30:new_n1",
+        "target": "segment_1779423231347_24:n1",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423306083_39",
+        "source": "segment_1779423292558_38:new_d2_1",
+        "target": "segment_1779423251748_30:new_n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423306083_40",
+        "source": "segment_1779423292558_38:new_d2_2",
+        "target": "segment_1779423292558_38:new_d2_1",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423306083_41",
+        "source": "segment_1779423292558_38:new_d3_1",
+        "target": "segment_1779423251748_30:new_n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423306083_42",
+        "source": "segment_1779423292558_38:new_d3_2",
+        "target": "segment_1779423292558_38:new_d3_1",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423326348_46",
+        "source": "segment_1779423312946_45:new_ex1",
+        "target": "segment_1779423292558_38:new_d3_1",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423344884_50",
+        "source": "segment_1779423333369_49:new_d4_2",
+        "target": "segment_1779423333369_49:new_d4_1",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423344884_51",
+        "source": "segment_1779423333369_49:new_d5_2",
+        "target": "segment_1779423333369_49:new_d5_1",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423364999_55",
+        "source": "segment_1779423353750_54:segment_1779423333369_49:new_kg_claim",
+        "target": "segment_1779423292558_38:new_d3_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423388954_59",
+        "source": "segment_1779423374146_58:new_rag_claim",
+        "target": "segment_1779423333369_49:new_d4_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423388954_60",
+        "source": "segment_1779423374146_58:new_efficiency_claim",
+        "target": "segment_1779423333369_49:new_d5_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423388954_61",
+        "source": "segment_1779423374146_58:new_efficiency_ex",
+        "target": "segment_1779423374146_58:new_efficiency_claim",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423388954_62",
+        "source": "segment_1779423374146_58:new_timeline_claim",
+        "target": "segment_1779423333369_49:new_d5_1",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423408116_66",
+        "source": "segment_1779423394591_65:seg_253840_1",
+        "target": "segment_1779423353750_54:segment_1779423333369_49:new_2nd_need",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423408116_67",
+        "source": "segment_1779423394591_65:seg_253840_2",
+        "target": "segment_1779423394591_65:seg_253840_1",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423408116_68",
+        "source": "segment_1779423394591_65:seg_253840_3",
+        "target": "segment_1779423353750_54:segment_1779423333369_49:new_2nd_need",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423430853_72",
+        "source": "segment_1779423414966_71:n1",
+        "target": "segment_1779423394591_65:seg_253840_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423430853_73",
+        "source": "segment_1779423414966_71:n2",
+        "target": "segment_1779423394591_65:seg_253840_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423430853_74",
+        "source": "segment_1779423414966_71:n3",
+        "target": "segment_1779423394591_65:seg_253840_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423430853_75",
+        "source": "segment_1779423414966_71:n4",
+        "target": "segment_1779423414966_71:n3",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423451242_79",
+        "source": "segment_1779423435371_78:seg_294640_2",
+        "target": "segment_1779423435371_78:seg_294640_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423451242_80",
+        "source": "segment_1779423435371_78:seg_294640_3",
+        "target": "segment_1779423435371_78:seg_294640_2",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423451242_81",
+        "source": "segment_1779423435371_78:seg_294640_4",
+        "target": "segment_1779423435371_78:seg_294640_3",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423468391_85",
+        "source": "segment_1779423455759_84:n1",
+        "target": "segment_1779423435371_78:seg_294640_4",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423468391_86",
+        "source": "segment_1779423455759_84:n2",
+        "target": "segment_1779423455759_84:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423468391_87",
+        "source": "segment_1779423455759_84:n3",
+        "target": "segment_1779423455759_84:n2",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423468391_88",
+        "source": "segment_1779423455759_84:n4",
+        "target": "segment_1779423435371_78:seg_294640_2",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423468391_89",
+        "source": "segment_1779423455759_84:n5",
+        "target": "segment_1779423455759_84:n4",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423495390_93",
+        "source": "segment_1779423476165_92:n1",
+        "target": "segment_1779423476165_92:n3",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423495390_94",
+        "source": "segment_1779423476165_92:n2",
+        "target": "segment_1779423476165_92:n3",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423495390_95",
+        "source": "segment_1779423476165_92:n4",
+        "target": "segment_1779423476165_92:n3",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423495390_96",
+        "source": "segment_1779423476165_92:n5",
+        "target": "segment_1779423476165_92:n4",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423495390_97",
+        "source": "segment_1779423476165_92:n6",
+        "target": "segment_1779423476165_92:n7",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423495390_98",
+        "source": "segment_1779423476165_92:n7",
+        "target": "segment_1779423476165_92:n4",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423509381_103",
+        "source": "segment_1779423496543_101:new_1",
+        "target": "segment_1779423476165_92:n6",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423509381_104",
+        "source": "segment_1779423496543_101:new_2",
+        "target": "segment_1779423476165_92:n7",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423509381_105",
+        "source": "segment_1779423496543_101:new_3",
+        "target": "segment_1779423476165_92:n7",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423520352_108",
+        "source": "segment_1779423509488_107:n_开车痛点",
+        "target": "segment_1779423496543_101:new_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423543751_113",
+        "source": "segment_1779423528378_111:new_需求1",
+        "target": "segment_1779423476165_92:n5",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423543751_114",
+        "source": "segment_1779423528378_111:new_需求2",
+        "target": "segment_1779423476165_92:n5",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423543751_115",
+        "source": "segment_1779423528378_111:new_需求3",
+        "target": "segment_1779423528378_111:new_需求1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423543751_116",
+        "source": "segment_1779423528378_111:new_需求4",
+        "target": "segment_1779423528378_111:new_需求3",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423590779_126",
+        "source": "segment_1779423579356_124:new_技术方案1",
+        "target": "segment_1779423579356_124:new_技术方案2",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423590779_127",
+        "source": "segment_1779423579356_124:new_技术方案3",
+        "target": "segment_1779423579356_124:new_技术方案2",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423655569_142",
+        "source": "segment_1779423641739_140:n2",
+        "target": "segment_1779423641739_140:n1",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423655569_143",
+        "source": "segment_1779423641739_140:n3",
+        "target": "segment_1779423641739_140:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423655569_144",
+        "source": "segment_1779423641739_140:n4",
+        "target": "segment_1779423641739_140:n3",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423675399_148",
+        "source": "segment_1779423655711_146:new_gpu_瓶颈2",
+        "target": "segment_1779423655711_146:new_gpu_瓶颈1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423675399_149",
+        "source": "segment_1779423655711_146:new_gpu_瓶颈1",
+        "target": "segment_1779423641739_140:n1",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423675399_150",
+        "source": "segment_1779423655711_146:new_索尔提升1",
+        "target": "segment_1779423655711_146:new_gpu_瓶颈1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423717561_162",
+        "source": "segment_1779423700554_159:n1",
+        "target": "segment_1779423700554_159:n2",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423717561_163",
+        "source": "segment_1779423700554_159:n2",
+        "target": "segment_1779423700554_159:n3",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423717561_164",
+        "source": "segment_1779423700554_159:n2",
+        "target": "segment_1779423700554_159:n4",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423717561_165",
+        "source": "segment_1779423700554_159:n2",
+        "target": "segment_1779423700554_159:n5",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423717561_166",
+        "source": "segment_1779423700554_159:n2",
+        "target": "segment_1779423700554_159:n6",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423732527_171",
+        "source": "segment_1779423700554_159:n2",
+        "target": "segment_1779423717711_169:segment_1779423700554_159:n7",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423732527_172",
+        "source": "segment_1779423700554_159:n2",
+        "target": "segment_1779423717711_169:segment_1779423700554_159:n8",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423747207_177",
+        "source": "segment_1779423732595_174:new_node_1",
+        "target": "segment_1779423717711_169:segment_1779423700554_159:n8",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423747207_178",
+        "source": "segment_1779423732595_174:new_node_2",
+        "target": "segment_1779423717711_169:segment_1779423700554_159:n8",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423747207_179",
+        "source": "segment_1779423732595_174:new_node_3",
+        "target": "segment_1779423717711_169:segment_1779423700554_159:n8",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423760344_182",
+        "source": "segment_1779423747315_181:new_node_1",
+        "target": "segment_1779423717711_169:segment_1779423700554_159:n8",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423760344_183",
+        "source": "segment_1779423747315_181:new_node_2",
+        "target": "segment_1779423747315_181:new_node_1",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423760344_184",
+        "source": "segment_1779423747315_181:new_node_3",
+        "target": "segment_1779423747315_181:new_node_1",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423784243_190",
+        "source": "segment_1779423765973_188:new_node_1",
+        "target": "segment_1779423747315_181:new_node_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423784243_191",
+        "source": "segment_1779423765973_188:new_node_2",
+        "target": "segment_1779423747315_181:new_node_1",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423803355_196",
+        "source": "segment_1779423786344_194:new_node_1",
+        "target": "segment_1779423765973_188:new_node_2",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423803355_197",
+        "source": "segment_1779423786344_194:new_node_3",
+        "target": "segment_1779423765973_188:new_node_1",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423825284_202",
+        "source": "segment_1779423812161_201:new_node_1",
+        "target": "segment_1779423786344_194:new_node_3",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423825284_203",
+        "source": "segment_1779423812161_201:new_node_2",
+        "target": "segment_1779423812161_201:new_node_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423825284_204",
+        "source": "segment_1779423812161_201:new_node_3",
+        "target": "segment_1779423812161_201:new_node_2",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423825284_205",
+        "source": "segment_1779423812161_201:new_node_4",
+        "target": "segment_1779423812161_201:new_node_2",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423825284_206",
+        "source": "segment_1779423812161_201:new_node_5",
+        "target": "segment_1779423812161_201:new_node_4",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423825284_207",
+        "source": "segment_1779423812161_201:new_node_6",
+        "target": "segment_1779423812161_201:new_node_2",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423825284_208",
+        "source": "segment_1779423812161_201:new_node_2",
+        "target": "segment_1779423786344_194:new_node_2",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423850621_212",
+        "source": "segment_1779423832562_211:segment_1779423930336_209:new_node_1",
+        "target": "segment_1779423812161_201:new_node_6",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423850621_213",
+        "source": "segment_1779423832562_211:segment_1779423930336_209:new_node_2",
+        "target": "segment_1779423832562_211:segment_1779423930336_209:new_node_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423850621_214",
+        "source": "segment_1779423832562_211:segment_1779423930336_209:new_node_4",
+        "target": "segment_1779423832562_211:segment_1779423930336_209:new_node_1",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423868842_220",
+        "source": "segment_1779423852961_217:new_node_5",
+        "target": "segment_1779423832562_211:segment_1779423930336_209:new_node_4",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423868842_221",
+        "source": "segment_1779423852961_217:new_node_6",
+        "target": "segment_1779423832562_211:segment_1779423930336_209:new_node_4",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423868842_222",
+        "source": "segment_1779423852961_217:new_node_7",
+        "target": "segment_1779423852961_217:new_node_6",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423931050_241",
+        "source": "segment_1779423918340_239:new_node_8",
+        "target": "segment_1779423832562_211:segment_1779423930336_209:new_node_1",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423931050_242",
+        "source": "segment_1779423918340_239:new_node_8",
+        "target": "segment_1779423903954_236:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423958444_248",
+        "source": "segment_1779423942361_246:new_node_reason_1",
+        "target": "segment_1779423942361_246:new_node_claim_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423958444_249",
+        "source": "segment_1779423942361_246:new_node_reason_2",
+        "target": "segment_1779423942361_246:new_node_claim_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423958444_250",
+        "source": "segment_1779423942361_246:new_node_example_1",
+        "target": "segment_1779423942361_246:new_node_claim_1",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423958444_251",
+        "source": "segment_1779423942361_246:new_node_reason_1",
+        "target": "segment_1779423918340_239:new_node_8",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779423976578_258",
+        "source": "segment_1779423960959_255:n1",
+        "target": "segment_1779423942361_246:new_node_claim_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424039894_277",
+        "source": "segment_1779424024289_276:n2",
+        "target": "segment_1779424024289_276:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424039894_278",
+        "source": "segment_1779424024289_276:n3",
+        "target": "segment_1779424024289_276:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424061249_282",
+        "source": "segment_1779424042539_281:segment_1779424049499_288:n1",
+        "target": "segment_1779424024289_276:n3",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424061249_283",
+        "source": "segment_1779424042539_281:segment_1779424049499_288:n2",
+        "target": "segment_1779424024289_276:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424061249_284",
+        "source": "segment_1779424042539_281:segment_1779424049499_288:n3",
+        "target": "segment_1779424024289_276:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424061249_285",
+        "source": "segment_1779424042539_281:segment_1779424049499_288:n4",
+        "target": "segment_1779424024289_276:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424084815_290",
+        "source": "segment_1779424062974_288:new_1",
+        "target": "segment_1779424062974_288:new_4",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424084815_291",
+        "source": "segment_1779424062974_288:new_2",
+        "target": "segment_1779424062974_288:new_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424084815_292",
+        "source": "segment_1779424062974_288:new_3",
+        "target": "segment_1779424062974_288:new_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424084815_293",
+        "source": "segment_1779424062974_288:new_4",
+        "target": "segment_1779424024289_276:n1",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424120269_299",
+        "source": "segment_1779424103750_297:new_5",
+        "target": "segment_1779424103750_297:new_6",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424120269_300",
+        "source": "segment_1779424103750_297:new_6",
+        "target": "segment_1779424062974_288:new_3",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424120269_301",
+        "source": "segment_1779424103750_297:new_7",
+        "target": "segment_1779424062974_288:new_4",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424130071_304",
+        "source": "segment_1779424120465_303:new_8",
+        "target": "segment_1779424103750_297:new_7",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424130071_305",
+        "source": "segment_1779424120465_303:new_9",
+        "target": "segment_1779424120465_303:new_8",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424147124_310",
+        "source": "segment_1779424136771_308:new_10",
+        "target": "segment_1779424103750_297:new_7",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424147124_311",
+        "source": "segment_1779424136771_308:new_10",
+        "target": "segment_1779424120465_303:new_9",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424147124_312",
+        "source": "segment_1779424136771_308:new_11",
+        "target": "segment_1779424103750_297:new_7",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424156297_315",
+        "source": "segment_1779424147279_314:new_12",
+        "target": "segment_1779424103750_297:new_7",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424201198_324",
+        "source": "segment_1779424187774_321:new_2",
+        "target": "segment_1779424187774_321:new_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424201198_325",
+        "source": "segment_1779424187774_321:new_1",
+        "target": "segment_1779424187774_321:new_3",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424217814_331",
+        "source": "segment_1779424201458_328:segment_1779424187774_321:new_4",
+        "target": "segment_1779424187774_321:new_3",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424217814_332",
+        "source": "segment_1779424201458_328:segment_1779424187774_321:new_4",
+        "target": "segment_1779424187774_321:new_1",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424217814_333",
+        "source": "segment_1779424201458_328:segment_1779424187774_321:new_5",
+        "target": "segment_1779424201458_328:segment_1779424187774_321:new_4",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424230341_337",
+        "source": "segment_1779424217984_336:new_example_volvo",
+        "target": "segment_1779424217984_336:new_reason_safety_not_permanent",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424230341_338",
+        "source": "segment_1779424217984_336:new_reason_safety_not_permanent",
+        "target": "segment_1779424201458_328:segment_1779424187774_321:new_5",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424248361_343",
+        "source": "segment_1779424232212_341:new_brand_safety_volvo",
+        "target": "segment_1779424217984_336:new_example_volvo",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424248361_344",
+        "source": "segment_1779424232212_341:new_before_chinese_nev",
+        "target": "segment_1779424232212_341:new_brand_safety_volvo",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424248361_345",
+        "source": "segment_1779424217984_336:new_reason_safety_not_permanent",
+        "target": "segment_1779424232212_341:new_brand_safety_volvo",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424258796_348",
+        "source": "segment_1779424248624_347:new_reason_market_positioning",
+        "target": "segment_1779424232212_341:new_brand_safety_volvo",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424299461_354",
+        "source": "segment_1779424281941_353:new_three_dimensions",
+        "target": "segment_1779424201458_328:segment_1779424187774_321:new_5",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424299461_355",
+        "source": "segment_1779424281941_353:new_competition_dimension",
+        "target": "segment_1779424281941_353:new_three_dimensions",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424299461_356",
+        "source": "segment_1779424281941_353:new_time_advantage_only",
+        "target": "segment_1779424281941_353:new_competition_dimension",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424299461_357",
+        "source": "segment_1779424281941_353:new_time_advantage_only",
+        "target": "segment_1779424201458_328:segment_1779424187774_321:new_5",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424323089_363",
+        "source": "segment_1779424300564_360:segment_1779424295624_358:new_chip_moat",
+        "target": "segment_1779424281941_353:new_three_dimensions",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424323089_364",
+        "source": "segment_1779424300564_360:segment_1779424295624_358:new_apple_example",
+        "target": "segment_1779424300564_360:segment_1779424295624_358:new_chip_moat",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424323089_365",
+        "source": "segment_1779424300564_360:segment_1779424295624_358:new_embodied_ai_chip",
+        "target": "segment_1779424300564_360:segment_1779424295624_358:new_chip_moat",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424340808_370",
+        "source": "segment_1779424323415_368:new_brand_moat",
+        "target": "segment_1779424281941_353:new_three_dimensions",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424340808_371",
+        "source": "segment_1779424323415_368:new_family_vehicle_pioneer",
+        "target": "segment_1779424323415_368:new_brand_moat",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424340808_372",
+        "source": "segment_1779424323415_368:new_brand_uncertainty",
+        "target": "segment_1779424323415_368:new_brand_moat",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424340808_373",
+        "source": "segment_1779424323415_368:new_chip_confidence",
+        "target": "segment_1779424300564_360:segment_1779424295624_358:new_chip_moat",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424371357_379",
+        "source": "segment_1779424356935_378:n2",
+        "target": "segment_1779424323415_368:new_family_vehicle_pioneer",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424371357_380",
+        "source": "segment_1779424356935_378:n1",
+        "target": "segment_1779424356935_378:n2",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424383477_384",
+        "source": "segment_1779424373139_383:n3",
+        "target": "segment_1779424356935_378:n1",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424383477_385",
+        "source": "segment_1779424373139_383:n3",
+        "target": "segment_1779424356935_378:n2",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424405374_389",
+        "source": "segment_1779424393541_388:new_research_support",
+        "target": "segment_1779424373139_383:n3",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424429147_393",
+        "source": "segment_1779424414061_392:new_brand_lead_10x",
+        "target": "segment_1779424323415_368:new_brand_moat",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424429147_394",
+        "source": "segment_1779424414061_392:new_traditional_family",
+        "target": "segment_1779424414061_392:new_family_concept_extension",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424429147_395",
+        "source": "segment_1779424414061_392:new_maa_option",
+        "target": "segment_1779424414061_392:new_family_concept_extension",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424429148_396",
+        "source": "segment_1779424414061_392:new_family_concept_extension",
+        "target": "segment_1779424373139_383:n3",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424455180_401",
+        "source": "segment_1779424434368_399:new_i6_compact_option",
+        "target": "segment_1779424414061_392:new_family_concept_extension",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424455180_402",
+        "source": "segment_1779424434368_399:new_l9_stability",
+        "target": "segment_1779424414061_392:new_maa_option",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424455180_403",
+        "source": "segment_1779424434368_399:new_offroad_capability",
+        "target": "segment_1779424434368_399:new_single_performance",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424455180_404",
+        "source": "segment_1779424434368_399:new_mountain_driving_fun",
+        "target": "segment_1779424434368_399:new_single_performance",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424455180_405",
+        "source": "segment_1779424434368_399:new_single_performance",
+        "target": "segment_1779424414061_392:new_family_concept_extension",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424455180_406",
+        "source": "segment_1779424434368_399:new_family_comfort",
+        "target": "segment_1779424414061_392:new_family_concept_extension",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424520168_418",
+        "source": "segment_1779424498944_414:segment_1779424474602_408:parking_behavior_data",
+        "target": "segment_1779424434368_399:new_single_performance",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424520168_419",
+        "source": "segment_1779424498944_414:segment_1779424474602_408:car_comfort_parking",
+        "target": "segment_1779424434368_399:new_single_performance",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424520168_420",
+        "source": "segment_1779424498944_414:segment_1779424474602_408:l9_zero_gravity_seat",
+        "target": "segment_1779424434368_399:new_single_performance",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424629291_435",
+        "source": "segment_1779424608871_432:segment_1779424555700_426:daddy_sacrifice_perception",
+        "target": "segment_1779424608871_432:segment_1779424555700_426:driver_most_important_seat",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424629291_436",
+        "source": "segment_1779424608871_432:segment_1779424555700_426:driver_as_pillar",
+        "target": "segment_1779424608871_432:segment_1779424555700_426:driver_most_important_seat",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424629291_437",
+        "source": "segment_1779424608871_432:segment_1779424555700_426:driver_most_important_seat",
+        "target": "segment_1779424434368_399:new_family_comfort",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424714036_447",
+        "source": "segment_1779424693671_445:segment_1779424662524_440:chassis_enables_4d",
+        "target": "segment_1779424693671_445:segment_1779424662524_440:4d_cinema_effect",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424714036_448",
+        "source": "segment_1779424693671_445:segment_1779424662524_440:4d_only_luxury_theaters",
+        "target": "segment_1779424693671_445:segment_1779424662524_440:4d_cinema_effect",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424714036_449",
+        "source": "segment_1779424693671_445:segment_1779424662524_440:4d_in_theme_parks",
+        "target": "segment_1779424693671_445:segment_1779424662524_440:4d_cinema_effect",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424845928_466",
+        "source": "segment_1779424825980_464:ai_not_crossed_line",
+        "target": "segment_1779424825980_464:threshold_crossing_future",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424891327_474",
+        "source": "segment_1779424825980_464:ai_not_crossed_line",
+        "target": "segment_1779424872395_471:segment_1779424889492_472:segment_1779424825980_464:perceived_as_scifi",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424891327_475",
+        "source": "segment_1779424872395_471:segment_1779424889492_472:segment_1779424825980_464:perceived_as_scifi",
+        "target": "segment_1779424825980_464:threshold_crossing_future",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424891327_476",
+        "source": "segment_1779424872395_471:segment_1779424889492_472:segment_1779424825980_464:car_still_useful",
+        "target": "segment_1779424825980_464:ai_not_crossed_line",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424920111_481",
+        "source": "segment_1779424907804_478:l3_deterministic_implementation",
+        "target": "segment_1779424872395_471:segment_1779424889492_472:segment_1779424825980_464:car_still_useful",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779424939032_485",
+        "source": "segment_1779424928148_484:new_node_1",
+        "target": "segment_1779424907804_478:l3_deterministic_implementation",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425007141_495",
+        "source": "segment_1779424990946_493:segment_1557040_1577440:l3_2027_timeline",
+        "target": "segment_1779424907804_478:l3_deterministic_implementation",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425007141_496",
+        "source": "segment_1779424990946_493:segment_1557040_1577440:needs_regulation_insurance",
+        "target": "segment_1779424990946_493:segment_1557040_1577440:l3_2027_timeline",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425007141_497",
+        "source": "segment_1779424990946_493:segment_1557040_1577440:china_regulatory_advantage",
+        "target": "segment_1779424990946_493:segment_1557040_1577440:needs_regulation_insurance",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425007141_498",
+        "source": "segment_1779424990946_493:segment_1557040_1577440:china_safety_focus",
+        "target": "segment_1779424990946_493:segment_1557040_1577440:needs_regulation_insurance",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425046733_504",
+        "source": "segment_1779424990946_493:segment_1557040_1577440:china_safety_focus",
+        "target": "segment_1779425030820_501:public_fatigue_autonomy",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425078368_511",
+        "source": "segment_1779425058657_509:new_imitation_to_understanding_hurdle",
+        "target": "segment_1779425058657_509:new_tech_stack_upgrade_needed",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425078368_512",
+        "source": "segment_1779425058657_509:new_l3_two_to_three_years",
+        "target": "segment_1779425058657_509:new_imitation_to_understanding_hurdle",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425078368_513",
+        "source": "segment_1779425058657_509:new_l3_two_to_three_years",
+        "target": "segment_1779425058657_509:new_existing_tech_sufficient",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425078368_514",
+        "source": "segment_1779425058657_509:new_tech_stack_upgrade_needed",
+        "target": "segment_1779424990946_493:segment_1557040_1577440:l3_2027_timeline",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425137694_521",
+        "source": "segment_1779425118209_519:segment_1779425076673_517:public_robot_frustration_higher",
+        "target": "segment_1779425030820_501:public_fatigue_autonomy",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425137694_522",
+        "source": "segment_1779425118209_519:segment_1779425076673_517:public_robot_frustration_higher",
+        "target": "segment_1779425118209_519:segment_1779425076673_517:robots_still_feel_distant",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425137694_523",
+        "source": "segment_1779425118209_519:segment_1779425076673_517:robot_expectations_very_high",
+        "target": "segment_1779425118209_519:segment_1779425076673_517:marketing_successful",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425137694_524",
+        "source": "segment_1779425118209_519:segment_1779425076673_517:auto_driving_10_20_years",
+        "target": "segment_1779425030820_501:public_fatigue_autonomy",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425181364_531",
+        "source": "segment_1779425163994_528:segment_1779425118209_519:robot_commercialization_challenge",
+        "target": "segment_1779425118209_519:segment_1779425076673_517:robot_expectations_very_high",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425181364_532",
+        "source": "segment_1779425163994_528:segment_1779425118209_519:robot_commercialization_challenge",
+        "target": "segment_1779425118209_519:segment_1779425076673_517:marketing_successful",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425181364_533",
+        "source": "segment_1779425163994_528:segment_1779425118209_519:marathon_and_spring_festival",
+        "target": "segment_1779425118209_519:segment_1779425076673_517:robot_expectations_very_high",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425181364_534",
+        "source": "segment_1779425163994_528:segment_1779425118209_519:marathon_and_spring_festival",
+        "target": "segment_1779425163994_528:segment_1779425118209_519:robot_commercialization_challenge",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425218919_539",
+        "source": "segment_1779425198079_538:new_1653640_1674040:financing_needs_promotion",
+        "target": "segment_1779425163994_528:segment_1779425118209_519:robot_commercialization_challenge",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425218919_540",
+        "source": "segment_1779425198079_538:new_1653640_1674040:2015_2016_l4_claim",
+        "target": "segment_1779425118209_519:segment_1779425076673_517:auto_driving_10_20_years",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425218919_541",
+        "source": "segment_1779425198079_538:new_1653640_1674040:musk_cross_country_claim",
+        "target": "segment_1779425118209_519:segment_1779425076673_517:auto_driving_10_20_years",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425254066_547",
+        "source": "segment_1779425233596_544:new_1674040_1687840:tesla_vehicle_products_question",
+        "target": "segment_1779425118209_519:segment_1779425076673_517:auto_driving_10_20_years",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425254066_548",
+        "source": "segment_1779425233596_544:new_1674040_1687840:future_products_inquiry",
+        "target": "segment_1779425118209_519:segment_1779425076673_517:robot_expectations_very_high",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425304842_554",
+        "source": "segment_1779425284271_552:segment_1779425277122_551:new_1690240_1710640:home_computing_product",
+        "target": "segment_1779425233596_544:new_1674040_1687840:future_products_inquiry",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425381052_563",
+        "source": "segment_1779425360255_561:segment_1779425328471_558:new_1731040_1751440:better_than_existing",
+        "target": "segment_1779425284271_552:segment_1779425277122_551:new_1690240_1710640:home_computing_product",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425381052_564",
+        "source": "segment_1779425360255_561:segment_1779425328471_558:new_1731040_1751440:future_home_devices_integrate",
+        "target": "segment_1779425284271_552:segment_1779425277122_551:new_1690240_1710640:home_computing_product",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425381052_565",
+        "source": "segment_1779425360255_561:segment_1779425328471_558:new_1731040_1751440:geek_users_adoption",
+        "target": "segment_1779425284271_552:segment_1779425277122_551:new_1690240_1710640:home_computing_product",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425381052_566",
+        "source": "segment_1779425360255_561:segment_1779425328471_558:new_1731040_1751440:10gbe_requirement",
+        "target": "segment_1779425284271_552:segment_1779425277122_551:new_1690240_1710640:home_computing_product",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425511627_577",
+        "source": "segment_1779425494714_576:segment_1788640_1795840:agi_commonly_usable",
+        "target": "segment_1779425494714_576:segment_1788640_1795840:cost_projection",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425536660_580",
+        "source": "segment_1779425516829_579:segment_1795840_1804840:memory_most_expensive",
+        "target": "segment_1779425494714_576:segment_1788640_1795840:cost_projection",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425536660_581",
+        "source": "segment_1779425516829_579:segment_1795840_1804840:chip_cost_calculable",
+        "target": "segment_1779425494714_576:segment_1788640_1795840:cost_projection",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425536660_582",
+        "source": "segment_1779425516829_579:segment_1795840_1804840:memory_cost_uncertain",
+        "target": "segment_1779425494714_576:segment_1788640_1795840:cost_projection",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425536660_583",
+        "source": "segment_1779425516829_579:segment_1795840_1804840:chip_cost_calculable",
+        "target": "segment_1779425516829_579:segment_1795840_1804840:memory_most_expensive",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425536660_584",
+        "source": "segment_1779425516829_579:segment_1795840_1804840:memory_cost_uncertain",
+        "target": "segment_1779425516829_579:segment_1795840_1804840:memory_most_expensive",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425554389_587",
+        "source": "segment_1779425537007_586:new_1804840_1825240:dynamic_dataflow_memory_efficiency",
+        "target": "segment_1779425516829_579:segment_1795840_1804840:memory_most_expensive",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425554389_588",
+        "source": "segment_1779425537007_586:new_1804840_1825240:ai_emphasis_data_movement",
+        "target": "segment_1779425516829_579:segment_1795840_1804840:memory_most_expensive",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425554389_589",
+        "source": "segment_1779425537007_586:new_1804840_1825240:architecture_fairness",
+        "target": "segment_1779425494714_576:segment_1788640_1795840:agi_commonly_usable",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425577951_593",
+        "source": "segment_1779425563639_592:segment_1779425557168_591:new_1845640_1866040:internal_base_capabilities",
+        "target": "segment_1779425563639_592:segment_1779425557168_591:new_1845640_1866040:talent_retention",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425577951_594",
+        "source": "segment_1779425563639_592:segment_1779425557168_591:new_1845640_1866040:talent_retention",
+        "target": "segment_1779425563639_592:segment_1779425557168_591:new_1845640_1866040:robot_business_necessary",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425577951_595",
+        "source": "segment_1779425563639_592:segment_1779425557168_591:new_1845640_1866040:timeline_hope",
+        "target": "segment_1779425563639_592:segment_1779425557168_591:new_1845640_1866040:timeline_question",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425593455_598",
+        "source": "segment_1779425578157_597:segment_1779425580464_594:new_1866040_1886440:function_robot",
+        "target": "segment_1779425563639_592:segment_1779425557168_591:new_1845640_1866040:timeline_hope",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425593455_599",
+        "source": "segment_1779425578157_597:segment_1779425580464_594:new_1866040_1886440:production_target",
+        "target": "segment_1779425578157_597:segment_1779425580464_594:new_1866040_1886440:function_robot",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425593455_600",
+        "source": "segment_1779425578157_597:segment_1779425580464_594:new_1866040_1886440:affordable_price",
+        "target": "segment_1779425578157_597:segment_1779425580464_594:new_1866040_1886440:function_robot",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425593455_601",
+        "source": "segment_1779425578157_597:segment_1779425580464_594:new_1866040_1886440:humanoid_robot",
+        "target": "segment_1779425578157_597:segment_1779425580464_594:new_1866040_1886440:function_robot",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425593455_602",
+        "source": "segment_1779425578157_597:segment_1779425580464_594:new_1866040_1886440:complex_structure",
+        "target": "segment_1779425578157_597:segment_1779425580464_594:new_1866040_1886440:humanoid_robot",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425609965_605",
+        "source": "segment_1779425593611_604:new_1886440_1906840:technical_difficulty",
+        "target": "segment_1779425593611_604:new_1886440_1906840:priority_focus",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425609965_606",
+        "source": "segment_1779425593611_604:new_1886440_1906840:demonstration_effect",
+        "target": "segment_1779425593611_604:new_1886440_1906840:cognitive_bubble",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425609965_607",
+        "source": "segment_1779425593611_604:new_1886440_1906840:cognitive_bubble",
+        "target": "segment_1779425578157_597:segment_1779425580464_594:new_1866040_1886440:function_robot",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425618917_611",
+        "source": "segment_1779425610157_610:new_1906840_1920640:home_servant_expectation",
+        "target": "segment_1779425593611_604:new_1886440_1906840:cognitive_bubble",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425636107_615",
+        "source": "segment_1779425619115_614:new_1920640_1937440:common_industry_problem",
+        "target": "segment_1779425619115_614:new_1920640_1937440:talent_recruitment_challenge",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425649621_619",
+        "source": "segment_1779425636325_618:segment_1779425633147_618:new_1937440_1959640:internship_recruitment",
+        "target": "segment_1779425619115_614:new_1920640_1937440:talent_recruitment_challenge",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425665854_622",
+        "source": "segment_1779425649802_621:segment_1779425660496_622:new_1959640_1980040:paper_publication_importance",
+        "target": "segment_1779425619115_614:new_1920640_1937440:talent_recruitment_challenge",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425665854_623",
+        "source": "segment_1779425649802_621:segment_1779425660496_622:new_1959640_1980040:school_cooperation",
+        "target": "segment_1779425619115_614:new_1920640_1937440:talent_recruitment_challenge",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425676388_626",
+        "source": "segment_1779425666081_625:new_1980040_1990840:school_cooperation_detail",
+        "target": "segment_1779425649802_621:segment_1779425660496_622:new_1959640_1980040:school_cooperation",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425676388_627",
+        "source": "segment_1779425666081_625:new_1980040_1990840:school_cooperation_detail",
+        "target": "segment_1779425619115_614:new_1920640_1937440:talent_recruitment_challenge",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425691606_630",
+        "source": "segment_1779425676573_629:segment_1779425680327_627:new_1990840_2011240:vision_explanation_strategy",
+        "target": "segment_1779425619115_614:new_1920640_1937440:talent_recruitment_challenge",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425691606_631",
+        "source": "segment_1779425676573_629:segment_1779425680327_627:new_1990840_2011240:chip_future_potential",
+        "target": "segment_1779425676573_629:segment_1779425680327_627:new_1990840_2011240:vision_explanation_strategy",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425691606_632",
+        "source": "segment_1779425676573_629:segment_1779425680327_627:new_1990840_2011240:model_competitiveness",
+        "target": "segment_1779425676573_629:segment_1779425680327_627:new_1990840_2011240:vision_explanation_strategy",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425691606_633",
+        "source": "segment_1779425676573_629:segment_1779425680327_627:new_1990840_2011240:company_barrier",
+        "target": "segment_1779425676573_629:segment_1779425680327_627:new_1990840_2011240:vision_explanation_strategy",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425719235_638",
+        "source": "segment_1779425699941_637:segment_1779425710960_639:new_2024440_2051440:sincere_talent_attitude",
+        "target": "segment_1779425691858_634:segment_1779425693201_631:new_2011240_2024440:competitive_salary",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425719235_639",
+        "source": "segment_1779425699941_637:segment_1779425710960_639:new_2024440_2051440:talent_perception",
+        "target": "segment_1779425699941_637:segment_1779425710960_639:new_2024440_2051440:sincere_talent_attitude",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425730276_643",
+        "source": "segment_1779425719444_642:new_2051440_2062240_interview_clarify",
+        "target": "segment_1779425719444_642:new_2051440_2062240_interview_learning",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425748470_647",
+        "source": "segment_1779425730566_646:new_2062240_2101240_mid_size_advantage",
+        "target": "segment_1779425691858_634:segment_1779425693201_631:new_2011240_2024440:competitive_salary",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425748470_648",
+        "source": "segment_1779425730566_646:new_2062240_2101240_conditions_exist",
+        "target": "segment_1779425730566_646:new_2062240_2101240_mid_size_advantage",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425762290_651",
+        "source": "segment_1779425748616_650:new_2101240_2115040_all_sizes_enter_robotics",
+        "target": "segment_1779425730566_646:new_2062240_2101240_conditions_exist",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425762290_652",
+        "source": "segment_1779425748616_650:new_2101240_2115040_startup_difficult",
+        "target": "segment_1779425748616_650:new_2101240_2115040_cog_in_machine",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425762290_653",
+        "source": "segment_1779425748616_650:new_2101240_2115040_own_judgment",
+        "target": "segment_1779425748616_650:new_2101240_2115040_startup_difficult",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425810389_660",
+        "source": "segment_1779425792380_659:n1",
+        "target": "segment_1779425792380_659:n2",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425824300_663",
+        "source": "segment_1779425810762_662:new_2170840_2185840_ai_team_size",
+        "target": "segment_1779425792380_659:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425824300_664",
+        "source": "segment_1779425810762_662:new_2170840_2185840_ai_team_breakdown",
+        "target": "segment_1779425792380_659:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425841772_667",
+        "source": "segment_1779425824495_666:segment_1779425810762_662:new_2209240_2221240_interview_level",
+        "target": "segment_1779425810762_662:new_2170840_2185840_ai_team_size",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425841772_668",
+        "source": "segment_1779425824495_666:segment_1779425810762_662:new_2209240_2221240_interview_campus",
+        "target": "segment_1779425824495_666:segment_1779425810762_662:new_2209240_2221240_interview_level",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425841772_669",
+        "source": "segment_1779425824495_666:segment_1779425810762_662:new_2209240_2221240_interview_volume_question",
+        "target": "segment_1779425824495_666:segment_1779425810762_662:new_2209240_2221240_interview_level",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425856047_673",
+        "source": "segment_1779425841988_672:n1",
+        "target": "segment_1779425824495_666:segment_1779425810762_662:new_2209240_2221240_interview_volume_question",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425856047_674",
+        "source": "segment_1779425841988_672:n2",
+        "target": "segment_1779425841988_672:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425871384_678",
+        "source": "segment_1779425856308_677:new_2258440_2280640_interview_specific_rate",
+        "target": "segment_1779425841988_672:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425871384_679",
+        "source": "segment_1779425856308_677:new_2258440_2280640_interview_specific_rate",
+        "target": "segment_1779425841988_672:n2",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425871384_680",
+        "source": "segment_1779425856308_677:new_2258440_2280640_holiday_interview",
+        "target": "segment_1779425841988_672:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425871384_681",
+        "source": "segment_1779425856308_677:new_2258440_2280640_love_interview",
+        "target": "segment_1779425841988_672:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425893033_683",
+        "source": "segment_1779425871562_682:new_2300440_2311240_learning_process",
+        "target": "segment_1779425856308_677:new_2258440_2280640_love_interview",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425893033_684",
+        "source": "segment_1779425871562_682:new_2300440_2311240_learning_process",
+        "target": "segment_1779425841988_672:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425893033_685",
+        "source": "segment_1779425871562_682:new_2300440_2311240_startup_ceo_insufficient",
+        "target": "segment_1779425824495_666:segment_1779425810762_662:new_2209240_2221240_interview_level",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425907674_689",
+        "source": "segment_1779425893225_688:segment_1779425888430_687:new_2338240_2350240_own_interview_fear",
+        "target": "segment_1779425871562_682:new_2300440_2311240_startup_ceo_insufficient",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425907674_690",
+        "source": "segment_1779425893225_688:segment_1779425888430_687:new_2338240_2350240_need_determination",
+        "target": "segment_1779425871562_682:new_2300440_2311240_startup_ceo_insufficient",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779425907674_691",
+        "source": "segment_1779425893225_688:segment_1779425888430_687:new_2338240_2350240_own_interview_fear",
+        "target": "segment_1779425893225_688:segment_1779425888430_687:new_2338240_2350240_bad_habit",
+        "type": "supports",
+        "evidenceChunkIds": []
+      }
+    ],
+    "viewHints": {
+      "defaultView": "hierarchy",
+      "scores": {
+        "causal": 11.235294117647058,
+        "comparison": 1.5294117647058825,
+        "hierarchy": 11.80392156862745,
+        "timeline": 0
+      }
+    },
+    "updatedAt": 1779425907677
+  },
+  "hardExpectations": {
+    "physicalOverlapPairs": 2,
+    "clearanceViolationPairs": 7,
+    "coordinateValidity": true,
+    "minClearancePx": 16
+  },
+  "degradationBudget": {
+    "edgeNodeOcclusions": 0.15,
+    "edgeEdgeCrossings": 0.15,
+    "avgEdgeLength": 0.15,
+    "longEdgeRatio": 0.15,
+    "canvasWidth": 0.2
+  },
+  "tags": [
+    "r3b-release",
+    "dump-49",
+    "regression"
+  ],
+  "softBaselines": {
+    "edgeNodeOcclusions": 13,
+    "edgeEdgeCrossings": 4,
+    "avgEdgeLength": 219,
+    "p95EdgeLength": 323,
+    "longEdgeRatio": 0,
+    "canvasWidth": 771.9520386496524,
+    "canvasHeight": 31293.270787232406,
+    "aspectRatio": 0.024668307889522605
+  },
+  "algorithmId": "r3b",
+  "algorithmVersion": "round3",
+  "metricsVersion": "v2",
+  "clearancePx": 16
+}

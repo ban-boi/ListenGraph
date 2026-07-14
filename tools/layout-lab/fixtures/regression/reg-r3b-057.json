@@ -1,0 +1,318 @@
+{
+  "id": "reg-r3b-057",
+  "kind": "regression",
+  "description": "R3b release corpus dump#57 (13n/9e)",
+  "problemDescription": "Release-gate readability / overlap / clearance contract",
+  "split": "holdout",
+  "source": "real-graphs-dump.json#57",
+  "status": "baselined",
+  "graph": {
+    "sessionId": "regression_reg-r3b-057",
+    "revision": 16,
+    "topics": [
+      {
+        "topicId": "topic_1779727452937_5",
+        "title": "Topic 1",
+        "startMs": 0,
+        "endMs": 29440
+      },
+      {
+        "topicId": "topic_1779727458017_10",
+        "title": "Topic 2",
+        "startMs": 29440,
+        "endMs": 36040
+      },
+      {
+        "topicId": "topic_1779727474951_15",
+        "title": "Topic 3",
+        "startMs": 36040,
+        "endMs": 52840
+      },
+      {
+        "topicId": "topic_1779727488341_21",
+        "title": "Topic 4",
+        "startMs": 52840,
+        "endMs": 64840
+      },
+      {
+        "topicId": "topic_1779727507218_24",
+        "title": "Topic 5",
+        "startMs": 64840,
+        "endMs": 85240
+      },
+      {
+        "topicId": "topic_1779727523006_27",
+        "title": "Topic 6",
+        "startMs": 85240,
+        "endMs": 100240
+      },
+      {
+        "topicId": "topic_1779727537816_30",
+        "title": "Topic 7",
+        "startMs": 100240,
+        "endMs": 114640
+      },
+      {
+        "topicId": "topic_1779727563897_35",
+        "title": "Topic 8",
+        "startMs": 114640,
+        "endMs": 161440
+      },
+      {
+        "topicId": "topic_1779727612451_44",
+        "title": "Topic 9",
+        "startMs": 161440,
+        "endMs": 189040
+      },
+      {
+        "topicId": "topic_1779727626715_48",
+        "title": "Topic 10",
+        "startMs": 189040,
+        "endMs": 202240
+      },
+      {
+        "topicId": "topic_1779727651819_55",
+        "title": "Topic 11",
+        "startMs": 202240,
+        "endMs": 225640
+      },
+      {
+        "topicId": "topic_1779727668993_58",
+        "title": "Topic 12",
+        "startMs": 225640,
+        "endMs": 246040
+      },
+      {
+        "topicId": "topic_1779727686350_62",
+        "title": "Topic 13",
+        "startMs": 246040,
+        "endMs": 263440
+      },
+      {
+        "topicId": "topic_1779727707368_67",
+        "title": "Topic 14",
+        "startMs": 263440,
+        "endMs": 283840
+      },
+      {
+        "topicId": "topic_1779727719456_70",
+        "title": "Topic 15",
+        "startMs": 283840,
+        "endMs": 291640
+      }
+    ],
+    "nodes": [
+      {
+        "id": "segment_1779727450802_4:n1",
+        "type": "claim",
+        "text": "N1 N1 N1 N1 N1 ",
+        "timestampMs": 9040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779727450802_4:n2",
+        "type": "claim",
+        "text": "N2 N2 N2 N2 N2 N2 N2 ",
+        "timestampMs": 9040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779727450802_4:n3",
+        "type": "question",
+        "text": "N3 N3 N3 N3 N3 N3 ",
+        "timestampMs": 9040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779727450802_4:n4",
+        "type": "claim",
+        "text": "N4 N4 N4 N4 N4 N4 N4 N4",
+        "timestampMs": 9040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779727486212_19:new:n1",
+        "type": "reason",
+        "text": "N5 N5 N5 N5 N5 N5 N5 N5 N5",
+        "timestampMs": 52840,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779727610407_41:n5",
+        "type": "reason",
+        "text": "N6 N6 N6 N6 N6 N6 N6 N6 N6 ",
+        "timestampMs": 161440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779727610407_41:n6",
+        "type": "claim",
+        "text": "N7 N7 N7 N7 N7 N7 N",
+        "timestampMs": 161440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779727623583_46:segment_1779727610407_41:new:n2",
+        "type": "reason",
+        "text": "N8 N8 N8 N8 N8 N8 N8 N8 N8",
+        "timestampMs": 189040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779727647000_52:segment_1779727623583_46:segment_1779727610407_41:new:n3",
+        "type": "reason",
+        "text": "N9 N9 N9 N9 N9 N9 N9 N9 N9 N9 N9 ",
+        "timestampMs": 202240,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779727667407_57:n1",
+        "type": "question",
+        "text": "N10 N10 N10 N10 ",
+        "timestampMs": 225640,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779727684803_60:n4",
+        "type": "example",
+        "text": "N11 N11 N11 N11 ",
+        "timestampMs": 246040,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779727705205_64:new:n7",
+        "type": "reason",
+        "text": "N12 N12 N12 N12 N12 N12 N12 N12 N12 N1",
+        "timestampMs": 263440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1779727705205_64:new:n8",
+        "type": "example",
+        "text": "N13 N13 N13 N13 N13 N",
+        "timestampMs": 263440,
+        "status": "draft",
+        "evidenceChunkIds": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_1779727488339_20",
+        "source": "segment_1779727486212_19:new:n1",
+        "target": "segment_1779727450802_4:n3",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779727612448_42",
+        "source": "segment_1779727610407_41:n5",
+        "target": "segment_1779727450802_4:n3",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779727612448_43",
+        "source": "segment_1779727610407_41:n6",
+        "target": "segment_1779727450802_4:n3",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779727626711_47",
+        "source": "segment_1779727623583_46:segment_1779727610407_41:new:n2",
+        "target": "segment_1779727610407_41:n6",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779727651817_53",
+        "source": "segment_1779727647000_52:segment_1779727623583_46:segment_1779727610407_41:new:n3",
+        "target": "segment_1779727623583_46:segment_1779727610407_41:new:n2",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779727651817_54",
+        "source": "segment_1779727647000_52:segment_1779727623583_46:segment_1779727610407_41:new:n3",
+        "target": "segment_1779727610407_41:n6",
+        "type": "follows",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779727686347_61",
+        "source": "segment_1779727684803_60:n4",
+        "target": "segment_1779727667407_57:n1",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779727707364_65",
+        "source": "segment_1779727705205_64:new:n7",
+        "target": "segment_1779727667407_57:n1",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1779727707364_66",
+        "source": "segment_1779727705205_64:new:n8",
+        "target": "segment_1779727667407_57:n1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      }
+    ],
+    "viewHints": {
+      "defaultView": "comparison",
+      "scores": {
+        "causal": 2.2222222222222223,
+        "comparison": 10,
+        "hierarchy": 4.444444444444445,
+        "timeline": 0
+      }
+    },
+    "updatedAt": 1779727719456
+  },
+  "hardExpectations": {
+    "physicalOverlapPairs": 0,
+    "clearanceViolationPairs": 0,
+    "coordinateValidity": true,
+    "minClearancePx": 16
+  },
+  "degradationBudget": {
+    "edgeNodeOcclusions": 0.15,
+    "edgeEdgeCrossings": 0.15,
+    "avgEdgeLength": 0.15,
+    "longEdgeRatio": 0.15,
+    "canvasWidth": 0.2
+  },
+  "tags": [
+    "r3b-release",
+    "dump-57",
+    "holdout"
+  ],
+  "softBaselines": {
+    "edgeNodeOcclusions": 0,
+    "edgeEdgeCrossings": 0,
+    "avgEdgeLength": 210,
+    "p95EdgeLength": 226,
+    "longEdgeRatio": 0,
+    "canvasWidth": 557.6715670997452,
+    "canvasHeight": 1790.3910932442118,
+    "aspectRatio": 0.31148030684694544
+  },
+  "algorithmId": "r3b",
+  "algorithmVersion": "round3",
+  "metricsVersion": "v2",
+  "clearancePx": 16
+}

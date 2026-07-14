@@ -1,0 +1,135 @@
+{
+  "id": "reg-r3b-021",
+  "kind": "regression",
+  "description": "R3b release corpus dump#21 (5n/4e)",
+  "problemDescription": "Release-gate readability / overlap / clearance contract",
+  "split": "regression",
+  "source": "real-graphs-dump.json#21",
+  "status": "baselined",
+  "graph": {
+    "sessionId": "regression_reg-r3b-021",
+    "revision": 1,
+    "topics": [
+      {
+        "topicId": "topic_1776250358783_115",
+        "title": "Topic 1",
+        "startMs": 447420,
+        "endMs": 472400
+      }
+    ],
+    "nodes": [
+      {
+        "id": "segment_1776250351036_110:inc_claim_ai_demo_cost_prohibitive_pre_ai",
+        "type": "claim",
+        "text": "N1 N1 N1 N1 N1 N1 N1 N1 N",
+        "timestampMs": 447420,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776250351036_110:inc_reason_specific_demo_example",
+        "type": "example",
+        "text": "N2 N2 N2 N2 N2 N2 N2 N2 N",
+        "timestampMs": 447420,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776250351036_110:inc_claim_ai_makes_impossible_possible",
+        "type": "claim",
+        "text": "N3 N3 N3 N3 N3 N3 N",
+        "timestampMs": 447420,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776250351036_110:inc_reason_ai_strong_productivity",
+        "type": "reason",
+        "text": "N4 N4 N4 N4 N4 N",
+        "timestampMs": 447420,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776250351036_110:inc_claim_ai_value_distinction",
+        "type": "claim",
+        "text": "N5 N5 N5 N5 N5 N5 ",
+        "timestampMs": 447420,
+        "status": "draft",
+        "evidenceChunkIds": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_1776250358780_111",
+        "source": "segment_1776250351036_110:inc_reason_specific_demo_example",
+        "target": "segment_1776250351036_110:inc_claim_ai_demo_cost_prohibitive_pre_ai",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776250358780_112",
+        "source": "segment_1776250351036_110:inc_claim_ai_demo_cost_prohibitive_pre_ai",
+        "target": "segment_1776250351036_110:inc_claim_ai_makes_impossible_possible",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776250358780_113",
+        "source": "segment_1776250351036_110:inc_claim_ai_makes_impossible_possible",
+        "target": "segment_1776250351036_110:inc_reason_ai_strong_productivity",
+        "type": "causes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776250358780_114",
+        "source": "segment_1776250351036_110:inc_reason_ai_strong_productivity",
+        "target": "segment_1776250351036_110:inc_claim_ai_value_distinction",
+        "type": "supports",
+        "evidenceChunkIds": []
+      }
+    ],
+    "viewHints": {
+      "defaultView": "causal",
+      "scores": {
+        "causal": 5,
+        "comparison": 3,
+        "hierarchy": 2,
+        "timeline": 0
+      }
+    },
+    "updatedAt": 1776250358784
+  },
+  "hardExpectations": {
+    "physicalOverlapPairs": 0,
+    "clearanceViolationPairs": 0,
+    "coordinateValidity": true,
+    "minClearancePx": 16
+  },
+  "degradationBudget": {
+    "edgeNodeOcclusions": 0.15,
+    "edgeEdgeCrossings": 0.15,
+    "avgEdgeLength": 0.15,
+    "longEdgeRatio": 0.15,
+    "canvasWidth": 0.2
+  },
+  "tags": [
+    "r3b-release",
+    "dump-21",
+    "regression"
+  ],
+  "softBaselines": {
+    "edgeNodeOcclusions": 0,
+    "edgeEdgeCrossings": 0,
+    "avgEdgeLength": 200,
+    "p95EdgeLength": 205,
+    "longEdgeRatio": 0,
+    "canvasWidth": 313.6821622570974,
+    "canvasHeight": 869.6565991761912,
+    "aspectRatio": 0.3606965813336464
+  },
+  "algorithmId": "r3b",
+  "algorithmVersion": "round3",
+  "metricsVersion": "v2",
+  "clearancePx": 16
+}

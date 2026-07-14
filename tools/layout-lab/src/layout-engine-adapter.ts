@@ -42,8 +42,8 @@ export function createR3bAdapter(): LayoutEngineAdapter {
     id: 'r3b',
     version: 'round3',
     computeLayout(graph: MergedGraph): LayoutResult {
-      const renderModel: RenderModel = computeClusterForceLayout(graph, 0, 'R3b');
       const allSizes = computeAllNodeSizes(graph.nodes);
+      const renderModel: RenderModel = computeClusterForceLayout(graph, 0, 'R3b', allSizes);
 
       const positions: Record<string, CenterPos> = {};
       const sizes: Record<string, NodeSize> = {};

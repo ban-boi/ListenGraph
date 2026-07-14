@@ -56,4 +56,20 @@ describe('redactMergedGraph', () => {
       src.edges.map((e) => [e.source, e.target, e.type]),
     );
   });
+
+  it('剔除 schema 未收录的 viewHints 键（如 flow）', () => {
+    const src = sample();
+    src.viewHints = {
+      defaultView: 'causal',
+      scores: {
+        causal: 0.9,
+        timeline: 0.1,
+        // dump 历史键；不在 ViewType 中
+        flow: 0.5,
+      } as MergedGraph['viewHints'] extends { scores?: infer S } ? S : never,
+    };
+    const out = redactMergedGraph(src, { caseId: 'x' });
+    expect(out.viewHints?.scores).toEqual({ causal: 0.9, timeline: 0.1 });
+    expect(out.viewHints?.defaultView).toBe('causal');
+  });
 });

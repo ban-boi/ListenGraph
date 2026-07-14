@@ -1,0 +1,186 @@
+{
+  "id": "reg-r3b-018",
+  "kind": "regression",
+  "description": "R3b release corpus dump#18 (8n/7e)",
+  "problemDescription": "Release-gate readability / overlap / clearance contract",
+  "split": "regression",
+  "source": "real-graphs-dump.json#18",
+  "status": "baselined",
+  "graph": {
+    "sessionId": "regression_reg-r3b-018",
+    "revision": 2,
+    "topics": [
+      {
+        "topicId": "topic_1776239900769_9",
+        "title": "Topic 1",
+        "startMs": 5660,
+        "endMs": 32340
+      },
+      {
+        "topicId": "topic_1776239923921_15",
+        "title": "Topic 2",
+        "startMs": 32400,
+        "endMs": 52000
+      }
+    ],
+    "nodes": [
+      {
+        "id": "segment_1776239894978_4:n1",
+        "type": "claim",
+        "text": "N1 N1 N1 N1 N1 N1 ",
+        "timestampMs": 26320,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776239894978_4:n2",
+        "type": "reason",
+        "text": "N2 N2 N2 N2 N2 N2",
+        "timestampMs": 26320,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776239894978_4:n3",
+        "type": "claim",
+        "text": "N3 N3 N3 N3 N3 N3 N3",
+        "timestampMs": 26320,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776239894978_4:n4",
+        "type": "example",
+        "text": "N4 N4 N4 N4 N4 N4 ",
+        "timestampMs": 26320,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776239894978_4:n5",
+        "type": "reason",
+        "text": "N5 N5 N5 N5 N5 ",
+        "timestampMs": 26320,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776239915988_11:new_n1",
+        "type": "reason",
+        "text": "N6 N6 N6 N6 N6 N6 N",
+        "timestampMs": 32400,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776239915988_11:new_n2",
+        "type": "claim",
+        "text": "N7 N7 N7 N7 N7 N",
+        "timestampMs": 32400,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776239915988_11:new_n3",
+        "type": "example",
+        "text": "N8 N8 N8 N8 N8 N8 N8 N8 ",
+        "timestampMs": 32400,
+        "status": "draft",
+        "evidenceChunkIds": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_1776239900768_5",
+        "source": "segment_1776239894978_4:n1",
+        "target": "segment_1776239894978_4:n2",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776239900768_6",
+        "source": "segment_1776239894978_4:n2",
+        "target": "segment_1776239894978_4:n3",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776239900768_7",
+        "source": "segment_1776239894978_4:n3",
+        "target": "segment_1776239894978_4:n4",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776239900768_8",
+        "source": "segment_1776239894978_4:n5",
+        "target": "segment_1776239894978_4:n3",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776239923920_12",
+        "source": "segment_1776239915988_11:new_n1",
+        "target": "segment_1776239894978_4:n5",
+        "type": "opposes",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776239923920_13",
+        "source": "segment_1776239915988_11:new_n1",
+        "target": "segment_1776239915988_11:new_n2",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776239923920_14",
+        "source": "segment_1776239915988_11:new_n2",
+        "target": "segment_1776239915988_11:new_n3",
+        "type": "example_of",
+        "evidenceChunkIds": []
+      }
+    ],
+    "viewHints": {
+      "defaultView": "hierarchy",
+      "scores": {
+        "causal": 4,
+        "comparison": 3,
+        "hierarchy": 8,
+        "timeline": 0
+      }
+    },
+    "updatedAt": 1776239923921
+  },
+  "hardExpectations": {
+    "physicalOverlapPairs": 0,
+    "clearanceViolationPairs": 0,
+    "coordinateValidity": true,
+    "minClearancePx": 16
+  },
+  "degradationBudget": {
+    "edgeNodeOcclusions": 0.15,
+    "edgeEdgeCrossings": 0.15,
+    "avgEdgeLength": 0.15,
+    "longEdgeRatio": 0.15,
+    "canvasWidth": 0.2
+  },
+  "tags": [
+    "r3b-release",
+    "dump-18",
+    "regression"
+  ],
+  "softBaselines": {
+    "edgeNodeOcclusions": 0,
+    "edgeEdgeCrossings": 0,
+    "avgEdgeLength": 209,
+    "p95EdgeLength": 225,
+    "longEdgeRatio": 0,
+    "canvasWidth": 613.8935108039886,
+    "canvasHeight": 1209.979778376728,
+    "aspectRatio": 0.5073584879472692
+  },
+  "algorithmId": "r3b",
+  "algorithmVersion": "round3",
+  "metricsVersion": "v2",
+  "clearancePx": 16
+}

@@ -1,4 +1,185 @@
 {
   "version": 1,
-  "cases": []
+  "cases": [
+    {
+      "id": "reg-r3b-049",
+      "file": "reg-r3b-049.json",
+      "tags": [
+        "r3b-release",
+        "dump-49",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#49 (271n/255e)"
+    },
+    {
+      "id": "reg-r3b-041",
+      "file": "reg-r3b-041.json",
+      "tags": [
+        "r3b-release",
+        "dump-41",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#41 (258n/242e)"
+    },
+    {
+      "id": "reg-r3b-048",
+      "file": "reg-r3b-048.json",
+      "tags": [
+        "r3b-release",
+        "dump-48",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#48 (237n/223e)"
+    },
+    {
+      "id": "reg-r3b-034",
+      "file": "reg-r3b-034.json",
+      "tags": [
+        "r3b-release",
+        "dump-34",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#34 (187n/179e)"
+    },
+    {
+      "id": "reg-r3b-047",
+      "file": "reg-r3b-047.json",
+      "tags": [
+        "r3b-release",
+        "dump-47",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#47 (180n/171e)"
+    },
+    {
+      "id": "reg-r3b-040",
+      "file": "reg-r3b-040.json",
+      "tags": [
+        "r3b-release",
+        "dump-40",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#40 (161n/154e)"
+    },
+    {
+      "id": "reg-r3b-029",
+      "file": "reg-r3b-029.json",
+      "tags": [
+        "r3b-release",
+        "dump-29",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#29 (140n/131e)"
+    },
+    {
+      "id": "reg-r3b-028",
+      "file": "reg-r3b-028.json",
+      "tags": [
+        "r3b-release",
+        "dump-28",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#28 (137n/127e)"
+    },
+    {
+      "id": "reg-r3b-018",
+      "file": "reg-r3b-018.json",
+      "tags": [
+        "r3b-release",
+        "dump-18",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#18 (8n/7e)"
+    },
+    {
+      "id": "reg-r3b-021",
+      "file": "reg-r3b-021.json",
+      "tags": [
+        "r3b-release",
+        "dump-21",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#21 (5n/4e)"
+    },
+    {
+      "id": "reg-r3b-006",
+      "file": "reg-r3b-006.json",
+      "tags": [
+        "r3b-release",
+        "dump-6",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#6 (12n/0e)"
+    },
+    {
+      "id": "reg-r3b-033",
+      "file": "reg-r3b-033.json",
+      "tags": [
+        "r3b-release",
+        "dump-33",
+        "regression"
+      ],
+      "description": "R3b release corpus dump#33 (64n/56e)"
+    },
+    {
+      "id": "reg-r3b-039",
+      "file": "reg-r3b-039.json",
+      "tags": [
+        "r3b-release",
+        "dump-39",
+        "holdout"
+      ],
+      "description": "R3b release corpus dump#39 (118n/115e)"
+    },
+    {
+      "id": "reg-r3b-061",
+      "file": "reg-r3b-061.json",
+      "tags": [
+        "r3b-release",
+        "dump-61",
+        "holdout"
+      ],
+      "description": "R3b release corpus dump#61 (116n/84e)"
+    },
+    {
+      "id": "reg-r3b-031",
+      "file": "reg-r3b-031.json",
+      "tags": [
+        "r3b-release",
+        "dump-31",
+        "holdout"
+      ],
+      "description": "R3b release corpus dump#31 (112n/111e)"
+    },
+    {
+      "id": "reg-r3b-057",
+      "file": "reg-r3b-057.json",
+      "tags": [
+        "r3b-release",
+        "dump-57",
+        "holdout"
+      ],
+      "description": "R3b release corpus dump#57 (13n/9e)"
+    },
+    {
+      "id": "reg-r3b-016",
+      "file": "reg-r3b-016.json",
+      "tags": [
+        "r3b-release",
+        "dump-16",
+        "holdout"
+      ],
+      "description": "R3b release corpus dump#16 (2n/2e)"
+    },
+    {
+      "id": "reg-r3b-051",
+      "file": "reg-r3b-051.json",
+      "tags": [
+        "r3b-release",
+        "dump-51",
+        "holdout"
+      ],
+      "description": "R3b release corpus dump#51 (66n/37e)"
+    }
+  ]
 }

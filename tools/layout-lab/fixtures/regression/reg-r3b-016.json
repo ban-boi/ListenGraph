@@ -1,0 +1,97 @@
+{
+  "id": "reg-r3b-016",
+  "kind": "regression",
+  "description": "R3b release corpus dump#16 (2n/2e)",
+  "problemDescription": "Release-gate readability / overlap / clearance contract",
+  "split": "holdout",
+  "source": "real-graphs-dump.json#16",
+  "status": "baselined",
+  "graph": {
+    "sessionId": "regression_reg-r3b-016",
+    "revision": 1,
+    "topics": [
+      {
+        "topicId": "topic_1776141454840_84",
+        "title": "Topic 1",
+        "startMs": 413380,
+        "endMs": 425740
+      }
+    ],
+    "nodes": [
+      {
+        "id": "segment_1776141450050_81:new_award_attention",
+        "type": "reason",
+        "text": "N1 N1 N1 N1 ",
+        "timestampMs": 413380,
+        "status": "draft",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "segment_1776141450050_81:new_ability_alone_insufficiency",
+        "type": "reason",
+        "text": "N2 N2 N2 N2 N2 ",
+        "timestampMs": 413380,
+        "status": "draft",
+        "evidenceChunkIds": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_1776141454839_82",
+        "source": "segment_1776141450050_81:new_award_attention",
+        "target": "segment_1776141404210_67:new_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      },
+      {
+        "id": "edge_1776141454839_83",
+        "source": "segment_1776141450050_81:new_ability_alone_insufficiency",
+        "target": "segment_1776141404210_67:new_1",
+        "type": "supports",
+        "evidenceChunkIds": []
+      }
+    ],
+    "viewHints": {
+      "defaultView": "causal",
+      "scores": {
+        "causal": 2,
+        "comparison": 0,
+        "hierarchy": 2,
+        "timeline": 0
+      }
+    },
+    "updatedAt": 1776141454840
+  },
+  "hardExpectations": {
+    "physicalOverlapPairs": 0,
+    "clearanceViolationPairs": 0,
+    "coordinateValidity": true,
+    "minClearancePx": 16
+  },
+  "degradationBudget": {
+    "edgeNodeOcclusions": 0.15,
+    "edgeEdgeCrossings": 0.15,
+    "avgEdgeLength": 0.15,
+    "longEdgeRatio": 0.15,
+    "canvasWidth": 0.2
+  },
+  "tags": [
+    "r3b-release",
+    "dump-16",
+    "holdout"
+  ],
+  "softBaselines": {
+    "edgeNodeOcclusions": 0,
+    "edgeEdgeCrossings": 0,
+    "avgEdgeLength": 0,
+    "p95EdgeLength": 0,
+    "longEdgeRatio": 0,
+    "canvasWidth": 200,
+    "canvasHeight": 260,
+    "aspectRatio": 0.7692307692307693
+  },
+  "algorithmId": "r3b",
+  "algorithmVersion": "round3",
+  "metricsVersion": "v2",
+  "clearancePx": 16
+}
