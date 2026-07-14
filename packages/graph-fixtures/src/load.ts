@@ -4,8 +4,20 @@ import { fileURLToPath } from 'node:url';
 
 import type { MergedGraph } from '@listen-graphic/schema';
 
-import { fixtureManifestSchema, mergedGraphSchema, sequenceFixtureSchema } from './schemas';
-import type { FixtureManifest, ManifestEntry, SequenceFixture } from './types';
+import {
+  fixtureManifestSchema,
+  mergedGraphSchema,
+  regressionCaseSchema,
+  regressionManifestSchema,
+  sequenceFixtureSchema,
+} from './schemas';
+import type {
+  FixtureManifest,
+  ManifestEntry,
+  RegressionCase,
+  RegressionManifest,
+  SequenceFixture,
+} from './types';
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'fixtures');
 
@@ -58,4 +70,14 @@ export function loadSnapshot(id: string): MergedGraph {
 
   const raw = readJsonFile<unknown>(entry.file);
   return mergedGraphSchema.parse(raw);
+}
+
+/** 解析回归 case（不绑定 graph-fixtures 目录；文件 I/O 由 layout-lab regression-store 负责） */
+export function parseRegressionCase(raw: unknown): RegressionCase {
+  return regressionCaseSchema.parse(raw);
+}
+
+/** 解析回归 manifest */
+export function parseRegressionManifest(raw: unknown): RegressionManifest {
+  return regressionManifestSchema.parse(raw);
 }
