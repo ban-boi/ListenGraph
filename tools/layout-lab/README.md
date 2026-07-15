@@ -4,6 +4,24 @@
 > 设计文档：`docs/superpowers/specs/2026-07-03-layout-lab-round1-design.md`
 > 实现计划：`docs/superpowers/plans/2026-07-03-layout-lab-round1.md`
 
+## R3b 发布门
+
+```bash
+# 需本地 inputs/real-graphs-dump.json
+pnpm test:layout-regression              # 12 regression case（product engine）
+pnpm test:layout-regression:holdout      # 6 holdout case（product engine）
+pnpm test:r3b-release-gate               # 双包 + round5(23样本) + stability + prod 包验证
+```
+
+Fail-closed：0 case / 仅 candidate / 截图跳过 / perf 超 ceiling(400/800ms) → 非零退出。
+perf 超 target(200/500ms) 只 warning，不阻断。
+
+**生产默认**：`pnpm --filter extension build` → R3b（读 `.env.production`）。
+**回滚包**：`pnpm --filter extension build:stable` → 无 R3b（读 `.env.stable`，`--mode stable`）。
+
+回归用 product engine（`computeIncrementalLayout + computeRealNodeSize`，产品真实路径）；
+`--engine lab` 仅供调参基准对照。`run-regression` 无 `--engine` 会报错。
+
 ## 一次性准备
 
 ```bash

@@ -7,6 +7,7 @@
     "dev": "vite",
     "dev:chrome": "vite build --watch --mode development",
     "build": "tsc -b && vite build",
+    "build:stable": "tsc -b && vite build --mode stable",
     "build:fixture-lab": "vite build --mode fixture-lab",
     "build:r3b": "tsc -b && vite build --mode r3b",
     "build:r3b:fixture-lab": "tsc -b && vite build --mode r3b-fixture-lab",

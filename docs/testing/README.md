@@ -148,6 +148,20 @@ Sherpa 专用便捷入口：
 - 会后 debug/export/replay 可达性
 - 真实 provider 的薄验收
 
+## R3b 布局发布门（layout-lab）
+
+需本地 `tools/layout-lab/inputs/real-graphs-dump.json`（不入库）：
+
+```bash
+pnpm test:layout-regression              # 12 regression case（product engine）
+pnpm test:layout-regression:holdout      # 6 holdout case（product engine）
+pnpm test:r3b-release-gate               # 双包 + round5(23样本) + stability + prod 包验证
+```
+
+- Fail-closed：0 case / 仅 candidate / 截图跳过 / perf 超 ceiling(400/800ms) → 非零退出。
+- perf 超 target(200/500ms) 只 warning。
+- 生产默认 `pnpm --filter extension build` → R3b；回滚 `build:stable`。
+
 ## 推荐执行顺序
 
 ### 日常开发
