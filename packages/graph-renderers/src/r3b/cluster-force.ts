@@ -16,7 +16,8 @@ export type RenderEdge = { source: string; target: string; type: EdgeType };
 export type ClusterInfo = { id: string; type: 'major' | 'minor'; nodeIds: string[]; bounds: { x: number; y: number; width: number; height: number } };
 export type RenderModel = { items: RenderItem[]; edges: RenderEdge[]; clusters: ClusterInfo[]; meta: { candidate: string; graphIndex: number; nodeCount: number; edgeCount: number; clusterCount: number; majorCount: number; minorCount: number } };
 
-const CLUSTER_GAP = 60;
+export const CLUSTER_GAP = 60;
+export const CLUSTER_PADDING = 16;
 const LOOSE_NOTE_ITEM_HEIGHT = 32;
 const LOOSE_NOTE_ITEM_WIDTH = 200;
 
@@ -207,8 +208,7 @@ export function computeClusterForceLayout(
     }
     if (localMinX === Infinity) { localMinX = 0; localMinY = 0; }
 
-    // 归一化 local 坐标到 0,0 起点
-    const CLUSTER_PADDING = 16;
+    // 归一化 local 坐标到 0,0 起点（用模块级 CLUSTER_PADDING）
     for (const item of localItems) {
       if ('position' in item) {
         item.position.x = item.position.x - localMinX + CLUSTER_PADDING;
@@ -253,4 +253,88 @@ export function computeClusterForceLayout(
       clusterCount: partition.clusters.length, majorCount, minorCount,
     },
   };
+}
+
+/**
+ * 统一首帧初始化器（方案 1.5）。
+ *
+ * 把 lab 已验证的"分簇局部力导向 + 簇间纵向 placement"提取成内核函数，
+ * 供 computeIncrementalLayout 在空状态（首帧）调用，替代旧的"全图圆形初始化 + 内联力迭代"。
+ *
+ * 与 computeClusterForceLayout 的差异：
+ * - 全程 center 语义（cx,cy），不产出 RenderModel/top-left；
+ * - major / minor 都用 layoutClusterForce（真实卡片尺寸），不再用 200×32 looseNote；
+ * - 输出 positions + clusterOrigins + clusters，直接喂给 IncrementalState。
+ *
+ * 坐标语义：positions 为节点中心点；clusterOrigins 为每簇左上角（含 CLUSTER_PADDING 偏移）。
+ */
+export type InitialClusterLayout = {
+  /** 节点中心点坐标 */
+  positions: Record<string, CenterPos>;
+  /** 每簇的左上角原点（含 padding） */
+  clusterOrigins: Record<string, { x: number; y: number }>;
+  /** 簇列表（与 partitionClusters 顺序一致） */
+  clusters: Array<{ id: string; nodeIds: string[]; type: 'major' | 'minor' }>;
+};
+
+export function computeInitialClusterLayout(
+  graph: MergedGraph,
+  sizes: Record<string, NodeSize>,
+): InitialClusterLayout {
+  const partition = partitionClusters(graph);
+  const positions: Record<string, CenterPos> = {};
+  const clusterOrigins: Record<string, { x: number; y: number }> = {};
+  const clusters: Array<{ id: string; nodeIds: string[]; type: 'major' | 'minor' }> = [];
+
+  let currentY = 0;
+
+  for (const cluster of partition.clusters) {
+    const clusterNodeIds = new Set(cluster.nodeIds);
+    const clusterNodes = graph.nodes.filter((n) => clusterNodeIds.has(n.id));
+    const clusterEdges = graph.edges.filter(
+      (e) => clusterNodeIds.has(e.source) && clusterNodeIds.has(e.target) && e.source !== e.target,
+    );
+
+    // 簇内力导向（center 语义）—— major / minor 统一走这一条
+    const localCenter = layoutClusterForce(clusterNodes, clusterEdges, sizes, 'R3b');
+
+    // 簇内 center bounds（用 center ± size/2）
+    let localMinX = Infinity;
+    let localMinY = Infinity;
+    let localMaxY = -Infinity;
+    for (const id of cluster.nodeIds) {
+      const cp = localCenter[id];
+      const s = sizes[id];
+      if (!cp || !s) continue;
+      localMinX = Math.min(localMinX, cp.cx - s.width / 2);
+      localMinY = Math.min(localMinY, cp.cy - s.height / 2);
+      localMaxY = Math.max(localMaxY, cp.cy + s.height / 2);
+    }
+    if (localMinX === Infinity) { localMinX = 0; localMinY = 0; localMaxY = 0; }
+
+    // 归一化本簇到 (CLUSTER_PADDING, CLUSTER_PADDING) 起点
+    for (const id of cluster.nodeIds) {
+      const cp = localCenter[id];
+      if (!cp) continue;
+      cp.cx = cp.cx - localMinX + CLUSTER_PADDING;
+      cp.cy = cp.cy - localMinY + CLUSTER_PADDING;
+    }
+    const localHeight = (localMaxY - localMinY) + CLUSTER_PADDING * 2;
+
+    // 纵向堆叠：本簇平移到 currentY
+    const placeY = currentY;
+    for (const id of cluster.nodeIds) {
+      const cp = localCenter[id];
+      if (!cp) continue;
+      positions[id] = { cx: cp.cx, cy: cp.cy + placeY };
+    }
+    clusterOrigins[cluster.id] = { x: CLUSTER_PADDING, y: placeY + CLUSTER_PADDING };
+
+    clusters.push({ id: cluster.id, nodeIds: cluster.nodeIds, type: cluster.type as 'major' | 'minor' });
+
+    // 双倍 gap 保证簇间 ≥64px 净间距（与 lab computeClusterForceLayout :242 一致）
+    currentY = placeY + localHeight + CLUSTER_GAP * 2;
+  }
+
+  return { positions, clusterOrigins, clusters };
 }

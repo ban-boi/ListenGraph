@@ -10,6 +10,7 @@ import {
   matchClusters,
   type IncrementalState,
 } from './types';
+import { computeInitialClusterLayout } from './cluster-force';
 
 const STRUCTURAL_TYPES = new Set<EdgeType>(['causes', 'supports', 'example_of', 'follows', 'opposes']);
 
@@ -63,16 +64,18 @@ export function computeIncrementalLayout(
 
   // Initialize positions
   const positions: Record<string, CenterPos> = {};
+  // 首帧初始化器结果（仅 isFirstRevision 时非 null，供 clusterOrigins 复用）
+  let firstFrameInit: ReturnType<typeof computeInitialClusterLayout> | null = null;
 
   if (isFirstRevision) {
-    const radius = Math.max(200, graph.nodes.length * 15);
-    graph.nodes.forEach((n, i) => {
-      const angle = (i / graph.nodes.length) * Math.PI * 2;
-      positions[n.id] = {
-        cx: Math.cos(angle) * radius + (i % 3) * 10,
-        cy: Math.sin(angle) * radius + (i % 3) * 10,
-      };
-    });
+    // 方案 1.5：首帧用统一的分簇纵向堆叠初始化器（与 lab 真相源对齐）。
+    // 旧实现是"全图圆形初始化 + 内联力迭代"，多簇时所有簇挤在同一原点圆心、
+    // 簇间无分离，导致大量重叠（实测 #049 30簇 137 对重叠）。
+    // 新初始化器逐簇局部力导向 + currentY 纵向堆叠，多簇不塌缩。
+    firstFrameInit = computeInitialClusterLayout(graph, sizes);
+    for (const id of Object.keys(firstFrameInit.positions)) {
+      positions[id] = { ...firstFrameInit.positions[id] };
+    }
   } else {
     for (const n of graph.nodes) {
       if (prevState.positions[n.id]) {
@@ -92,7 +95,10 @@ export function computeIncrementalLayout(
   for (const n of graph.nodes) velocities[n.id] = { x: 0, y: 0 };
 
   // Per-cluster force simulation
-  // 硬固定模式：增量时旧节点完全跳过力迭代（0px 移动），只对新节点算力
+  // 硬固定模式：增量时旧节点完全跳过力迭代（0px 移动），只对新节点算力。
+  // 首帧跳过：positions 已由 computeInitialClusterLayout 完成簇内力导向 + 簇间堆叠，
+  // 再跑这个全图循环会把已堆好的簇重新搅在一起（旧 bug 的根源）。
+  if (!isFirstRevision) {
   for (const cluster of partition.clusters) {
     const clusterNodeIds = new Set(cluster.nodeIds);
 
@@ -207,6 +213,7 @@ export function computeIncrementalLayout(
       }
     }
   }
+  } // end if (!isFirstRevision) — 首帧跳过力迭代
 
   // Displacement stats（硬固定模式：旧节点位移应全为 0，除非碰撞消除微调）
   let stats: DisplacementStats | null = null;
@@ -239,9 +246,13 @@ export function computeIncrementalLayout(
 
   // Cluster 匹配 + clusterOrigins 继承（spec 4.3.1 + 4.6）
   const newClusters = partition.clusters.map((c) => ({ id: c.id, nodeIds: c.nodeIds, type: c.type as 'major' | 'minor' }));
-  const clusterOrigins: Record<string, { x: number; y: number }> = {};
+  let clusterOrigins: Record<string, { x: number; y: number }> = {};
 
-  if (!isFirstRevision) {
+  if (isFirstRevision) {
+    // 首帧：直接用初始化器产出的真实 clusterOrigins（纵向堆叠后的左上角），
+    // 供后续 revision 的 matchClusters 继承逻辑读取，保证簇稳定性。
+    clusterOrigins = firstFrameInit?.clusterOrigins ?? {};
+  } else {
     const matches = matchClusters(
       newClusters.map((c) => ({ id: c.id, nodeIds: c.nodeIds })),
       prevState.prevClusters,
@@ -311,12 +322,15 @@ function resolveOverlapsWithMobility(
         const penX = (sa.width + sb.width) / 2 + padding - Math.abs(dx);
         const penY = (sa.height + sb.height) / 2 + padding - Math.abs(dy);
         if (penX <= 0 || penY <= 0) continue;
-        anyOverlap = true;
         const ma = mobilities[a] ?? 1.0;
         const mb = mobilities[b] ?? 1.0;
         const totalMob = ma + mb;
-        const ratioA = totalMob > 0 ? ma / totalMob : 0.5;
-        const ratioB = totalMob > 0 ? mb / totalMob : 0.5;
+        // 稳定性修复：两个老节点 mobility 都是 0 时，绝不推动任一方——
+        // 否则会破坏增量"老节点严格 0px"契约。接受残留重叠（动老节点比残留重叠更糟）。
+        if (totalMob === 0) continue;
+        anyOverlap = true;
+        const ratioA = ma / totalMob;
+        const ratioB = mb / totalMob;
 
         // 沿较小 penetration 轴推开
         if (penX < penY) {

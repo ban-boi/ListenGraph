@@ -59,7 +59,19 @@ export function GraphNodeCard({
             ? '0 0 8px rgba(245, 158, 11, 0.4)'
             : 'var(--shadow-xs)',
         ...(data.nodeSize
-          ? { width: data.nodeSize.width, height: data.nodeSize.height, boxSizing: 'border-box' as const, overflow: 'hidden' as const }
+          ? {
+              // R3b：nodeSize 是卡片唯一几何权威。
+              // 用 min/max 三件套锁死宽高，避免 .lg-node-card 的 CSS min-width:220px
+              // 压倒 inline width，导致短文本节点 DOM 渲染宽度 > kernel 布局宽度而重叠。
+              width: data.nodeSize.width,
+              minWidth: data.nodeSize.width,
+              maxWidth: data.nodeSize.width,
+              height: data.nodeSize.height,
+              minHeight: data.nodeSize.height,
+              maxHeight: data.nodeSize.height,
+              boxSizing: 'border-box' as const,
+              overflow: 'hidden' as const,
+            }
           : { minWidth: isCompact ? 140 : 220, maxWidth: isCompact ? 200 : 260 }),
         opacity: status === 'draft' ? 0.7 : isTourAnchor ? 0.72 : 1,
         transition: 'all var(--dur-normal) var(--ease-out)',

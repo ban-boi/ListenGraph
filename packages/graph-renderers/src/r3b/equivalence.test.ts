@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { computeIncrementalLayout, createEmptyIncrementalState, computeAllNodeSizes } from './index';
-import type { MergedGraph } from '@listen-graphic/schema';
+import { partitionClusters } from './partition';
+import type { MergedGraph, GraphNode, GraphEdge } from '@listen-graphic/schema';
 
 /**
  * 等价性 + 确定性测试。
@@ -23,27 +24,30 @@ const seq = JSON.parse(readFileSync(seqPath, 'utf8')) as { steps: Array<{ graph:
 const graph = seq.steps[seq.steps.length - 1].graph;
 
 /**
- * Golden positions：提取内核到 graph-renderers 时（commit dc36ef8）录制。
- * 坐标圆整到 0.01px。任何内核改动若导致这些坐标漂移，测试会失败——
- * 这是"提取等价性"的真正回归保护（改动合法时需显式更新此快照）。
+ * Golden positions：方案 1.5 首帧初始化器上线后重录（computeIncrementalLayout
+ * 首帧改为调用 computeInitialClusterLayout，分簇纵向堆叠）。
+ * seq-late-burst 最终态是单簇（16 节点全连通），故新首帧退化为单簇力导向，
+ * 与旧"圆形初始化+内联力迭代"形态等价，仅坐标系原点因 CLUSTER_PADDING 归一化而偏移
+ * （cx 差 ~22px、cy 整体下移 ~845px）。坐标圆整到 0.01px。
+ * 任何内核改动若导致这些坐标漂移，测试会失败——改动合法时需显式更新此快照。
  */
 const GOLDEN_POSITIONS: Record<string, { cx: number; cy: number }> = {
-  n1: { cx: 303.83, cy: 148.03 },
-  n2: { cx: 523.47, cy: 120.44 },
-  n3: { cx: 444.83, cy: 380.8 },
-  n4: { cx: 519.86, cy: 254.18 },
-  n5: { cx: 248.44, cy: 416.34 },
-  n6: { cx: 132.48, cy: 323.48 },
-  n7: { cx: 327.92, cy: 306.25 },
-  n8: { cx: 78.55, cy: 203.06 },
-  n9: { cx: 316.82, cy: -20.01 },
-  n10: { cx: 83.79, cy: 69.48 },
-  n11: { cx: 126.82, cy: -51.59 },
-  n12: { cx: 506.82, cy: -11.53 },
-  n13: { cx: 354.25, cy: -171.33 },
-  n14: { cx: 389.84, cy: -404.99 },
-  n15: { cx: 420.9, cy: -612.66 },
-  n16: { cx: 448.64, cy: -799.95 },
+  n1: { cx: 326.05, cy: 992.98 },
+  n2: { cx: 545.69, cy: 965.39 },
+  n3: { cx: 467.05, cy: 1225.75 },
+  n4: { cx: 542.08, cy: 1099.12 },
+  n5: { cx: 270.65, cy: 1261.29 },
+  n6: { cx: 154.69, cy: 1168.43 },
+  n7: { cx: 350.14, cy: 1151.20 },
+  n8: { cx: 100.76, cy: 1048.01 },
+  n9: { cx: 339.03, cy: 824.94 },
+  n10: { cx: 106.00, cy: 914.43 },
+  n11: { cx: 149.03, cy: 793.36 },
+  n12: { cx: 529.03, cy: 833.42 },
+  n13: { cx: 376.47, cy: 673.62 },
+  n14: { cx: 412.06, cy: 439.96 },
+  n15: { cx: 443.12, cy: 232.29 },
+  n16: { cx: 470.85, cy: 45.00 },
 };
 
 describe('R3b 等价性与确定性（合成 fixture + golden baseline）', () => {
@@ -69,6 +73,72 @@ describe('R3b 等价性与确定性（合成 fixture + golden baseline）', () =
     for (const id of Object.keys(r1.positions)) {
       expect(r2.positions[id].cx).toBe(r1.positions[id].cx);
       expect(r2.positions[id].cy).toBe(r1.positions[id].cy);
+    }
+  });
+});
+
+// ---- 多簇根因修复断言（方案 1.5）----
+// 直接锁住"多簇首帧不塌缩"这个根因修复：旧实现（圆形初始化）会让多簇挤成一坨重叠，
+// 新首帧（computeInitialClusterLayout 纵向堆叠）应让不同簇的 Y 区间分离、0 物理重叠。
+function makeMultiClusterGraph(components: number, nodesPerComp: number): MergedGraph {
+  const nodes: GraphNode[] = [];
+  const edges: GraphEdge[] = [];
+  for (let c = 0; c < components; c++) {
+    for (let i = 0; i < nodesPerComp; i++) {
+      nodes.push({
+        id: `c${c}n${i}`,
+        type: 'claim',
+        text: `节点 ${c}-${i} 的文本内容`,
+        timestampMs: c * 1000 + i,
+        status: 'confirmed',
+      });
+    }
+    for (let i = 0; i < nodesPerComp - 1; i++) {
+      edges.push({ id: `e-c${c}-${i}`, source: `c${c}n${i}`, target: `c${c}n${i + 1}`, type: 'supports' });
+    }
+  }
+  return { sessionId: 'test-multi', revision: 0, nodes, edges, topics: [], updatedAt: 0 };
+}
+
+describe('R3b 多簇首帧不塌缩（根因修复回归保护）', () => {
+  it('多簇首帧：computeIncrementalLayout 输出 0 物理重叠', () => {
+    const g = makeMultiClusterGraph(5, 4);
+    const sizes = computeAllNodeSizes(g.nodes);
+    const result = computeIncrementalLayout(g, createEmptyIncrementalState(), 'R3b', sizes);
+    // 物理重叠检测（AABB 相交）
+    const ids = Object.keys(result.positions);
+    let overlaps = 0;
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        const a = result.positions[ids[i]], b = result.positions[ids[j]];
+        const sa = sizes[ids[i]], sb = sizes[ids[j]];
+        const ox = Math.abs(a.cx - b.cx) < (sa.width + sb.width) / 2;
+        const oy = Math.abs(a.cy - b.cy) < (sa.height + sb.height) / 2;
+        if (ox && oy) overlaps++;
+      }
+    }
+    expect(overlaps, '多簇首帧不应有任何物理重叠（旧实现会塌缩）').toBe(0);
+  });
+
+  it('多簇首帧：不同簇的 Y 区间不重叠（簇间纵向堆叠有效）', () => {
+    const g = makeMultiClusterGraph(4, 3);
+    const sizes = computeAllNodeSizes(g.nodes);
+    const result = computeIncrementalLayout(g, createEmptyIncrementalState(), 'R3b', sizes);
+    const partition = partitionClusters(g);
+    const ranges = partition.clusters.map((c) => {
+      let top = Infinity, bottom = -Infinity;
+      for (const id of c.nodeIds) {
+        const p = result.positions[id], s = sizes[id];
+        if (!p || !s) continue;
+        top = Math.min(top, p.cy - s.height / 2);
+        bottom = Math.max(bottom, p.cy + s.height / 2);
+      }
+      return { id: c.id, top, bottom };
+    }).sort((a, b) => a.top - b.top);
+    // 任意相邻簇之间应有正 gap（不塌缩）
+    for (let i = 0; i < ranges.length - 1; i++) {
+      const gap = ranges[i + 1].top - ranges[i].bottom;
+      expect(gap, `簇 ${ranges[i].id} 与 ${ranges[i + 1].id} Y 区间不应重叠`).toBeGreaterThan(0);
     }
   });
 });
