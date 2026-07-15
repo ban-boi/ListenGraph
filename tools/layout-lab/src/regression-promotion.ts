@@ -104,3 +104,50 @@ export function acceptBaseline(
   saveRegressionCase(updated);
   return updated;
 }
+
+/**
+ * 受控 rebaseline：允许 baselined 状态的 case 用新 adapter 重录 softBaselines。
+ *
+ * 与 acceptBaseline 的差异：
+ * - acceptBaseline 只接 candidate（首次固化）
+ * - rebaseline 接 baselined（更换 adapter 时重录，例如 lab → product 路径切换）
+ *
+ * 不改 hardExpectations / degradationBudget / split / status（仍 baselined），
+ * 只重算 softBaselines + 更新 algorithmId/algorithmVersion 标记新的引擎来源。
+ */
+export function rebaseline(
+  caseId: string,
+  adapter: LayoutEngineAdapter,
+): RegressionCase {
+  const testCase = loadRegressionCase(caseId);
+  if (testCase.status !== 'baselined') {
+    throw new Error(`rebaseline 只接受 baselined 状态的 case（${caseId} 当前: ${testCase.status}）`);
+  }
+
+  const result = adapter.computeLayout(testCase.graph);
+  const positions = centerToTopLeft(result.positions, result.sizes);
+  const edges = testCase.graph.edges.map((e) => ({ source: e.source, target: e.target }));
+  const metrics = computeLayoutQuality(edges, positions, result.sizes);
+
+  const updated: RegressionCase = {
+    ...testCase,
+    // status 保持 baselined；只重录 soft metrics + 引擎标记
+    softBaselines: {
+      edgeNodeOcclusions: metrics.soft.edgeNodeOcclusions,
+      edgeEdgeCrossings: metrics.soft.edgeEdgeCrossings,
+      avgEdgeLength: metrics.soft.avgEdgeLength,
+      p95EdgeLength: metrics.soft.p95EdgeLength,
+      longEdgeRatio: metrics.soft.longEdgeRatio,
+      canvasWidth: metrics.soft.canvasWidth,
+      canvasHeight: metrics.soft.canvasHeight,
+      aspectRatio: metrics.soft.aspectRatio,
+    },
+    algorithmId: adapter.id,
+    algorithmVersion: adapter.version,
+    metricsVersion: 'v2',
+    clearancePx: testCase.hardExpectations.minClearancePx ?? 16,
+  };
+
+  saveRegressionCase(updated);
+  return updated;
+}

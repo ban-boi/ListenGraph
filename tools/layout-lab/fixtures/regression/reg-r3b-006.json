@@ -145,9 +145,9 @@
     "avgEdgeLength": 0,
     "p95EdgeLength": 0,
     "longEdgeRatio": 0,
-    "canvasWidth": 200,
-    "canvasHeight": 2100,
-    "aspectRatio": 0.09523809523809523
+    "canvasWidth": 220,
+    "canvasHeight": 2848,
+    "aspectRatio": 0.07724719101123595
   },
   "degradationBudget": {
     "edgeNodeOcclusions": 0.15,
@@ -161,7 +161,7 @@
     "dump-6",
     "regression"
   ],
-  "algorithmId": "r3b",
+  "algorithmId": "r3b-product",
   "algorithmVersion": "round3",
   "metricsVersion": "v2",
   "clearancePx": 16

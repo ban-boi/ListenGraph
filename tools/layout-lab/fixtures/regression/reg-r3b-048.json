@@ -3839,13 +3839,13 @@
   },
   "softBaselines": {
     "edgeNodeOcclusions": 20,
-    "edgeEdgeCrossings": 10,
-    "avgEdgeLength": 235,
-    "p95EdgeLength": 370,
+    "edgeEdgeCrossings": 6,
+    "avgEdgeLength": 254,
+    "p95EdgeLength": 418,
     "longEdgeRatio": 0,
-    "canvasWidth": 828.3917959822514,
-    "canvasHeight": 24554.626394188246,
-    "aspectRatio": 0.033736689073726685
+    "canvasWidth": 887.460069057857,
+    "canvasHeight": 27231.22255647608,
+    "aspectRatio": 0.03258979897862877
   },
   "degradationBudget": {
     "edgeNodeOcclusions": 0.15,
@@ -3859,7 +3859,7 @@
     "dump-48",
     "tuning"
   ],
-  "algorithmId": "r3b",
+  "algorithmId": "r3b-product",
   "algorithmVersion": "round3",
   "metricsVersion": "v2",
   "clearancePx": 16

@@ -3,13 +3,19 @@
  * CLI：运行回归套件。
  *
  * 用法：
- *   cd tools/layout-lab/run && npx tsx ../src/run-layout-regression.ts --split regression
- *   cd tools/layout-lab/run && npx tsx ../src/run-layout-regression.ts --split holdout
- *   cd tools/layout-lab/run && npx tsx ../src/run-layout-regression.ts --case-id specific-case
+ *   cd tools/layout-lab/run && npx tsx ../src/run-layout-regression.ts --engine product --split regression
+ *   cd tools/layout-lab/run && npx tsx ../src/run-layout-regression.ts --engine product --split holdout
+ *   cd tools/layout-lab/run && npx tsx ../src/run-layout-regression.ts --engine lab --split regression  # lab 调试
+ *   cd tools/layout-lab/run && npx tsx ../src/run-layout-regression.ts --engine product --case-id specific-case
+ *
+ * --engine 必填（product | lab），无则报错退出，避免误跑错引擎路径：
+ * - product = computeIncrementalLayout + 产品尺寸（发布门用）
+ * - lab = computeClusterForceLayout + lab 尺寸（调参基准/真相源）
  */
 import { parseArgs } from 'node:util';
 
-import { createR3bAdapter } from './layout-engine-adapter';
+import { createProductR3bAdapter, createR3bAdapter } from './layout-engine-adapter';
+import type { LayoutEngineAdapter } from './layout-engine-adapter';
 import {
   evaluateSuiteExit,
   formatRegressionReport,
@@ -20,12 +26,19 @@ import { listRegressionCases } from './regression-store';
 
 const { values } = parseArgs({
   options: {
+    engine: { type: 'string' },
     split: { type: 'string' },
     'case-id': { type: 'string' },
   },
 });
 
-const adapter = createR3bAdapter();
+// --engine 必填，避免误跑
+if (values.engine !== 'product' && values.engine !== 'lab') {
+  console.error('[gate] --engine 必填（product | lab）。product=发布门真实路径，lab=调参基准。');
+  process.exit(1);
+}
+const adapter: LayoutEngineAdapter =
+  values.engine === 'product' ? createProductR3bAdapter() : createR3bAdapter();
 const allCases = listRegressionCases();
 
 if (values['case-id']) {

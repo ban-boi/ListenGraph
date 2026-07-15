@@ -84,6 +84,16 @@
     "coordinateValidity": true,
     "minClearancePx": 16
   },
+  "softBaselines": {
+    "edgeNodeOcclusions": 0,
+    "edgeEdgeCrossings": 0,
+    "avgEdgeLength": 239,
+    "p95EdgeLength": 239,
+    "longEdgeRatio": 1,
+    "canvasWidth": 530.3280410844845,
+    "canvasHeight": 530,
+    "aspectRatio": 1.0006189454424237
+  },
   "degradationBudget": {
     "edgeNodeOcclusions": 0.15,
     "edgeEdgeCrossings": 0.15,
@@ -96,17 +106,7 @@
     "dump-1",
     "regression"
   ],
-  "softBaselines": {
-    "edgeNodeOcclusions": 0,
-    "edgeEdgeCrossings": 0,
-    "avgEdgeLength": 212,
-    "p95EdgeLength": 212,
-    "longEdgeRatio": 1,
-    "canvasWidth": 485.56188585953646,
-    "canvasHeight": 443.9195569967926,
-    "aspectRatio": 1.093806024551977
-  },
-  "algorithmId": "r3b",
+  "algorithmId": "r3b-product",
   "algorithmVersion": "round3",
   "metricsVersion": "v2",
   "clearancePx": 16

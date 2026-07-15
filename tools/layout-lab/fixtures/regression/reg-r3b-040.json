@@ -2778,12 +2778,12 @@
   "softBaselines": {
     "edgeNodeOcclusions": 1,
     "edgeEdgeCrossings": 0,
-    "avgEdgeLength": 225,
-    "p95EdgeLength": 318,
+    "avgEdgeLength": 247,
+    "p95EdgeLength": 340,
     "longEdgeRatio": 0,
-    "canvasWidth": 757.354113563825,
-    "canvasHeight": 21599.206198357933,
-    "aspectRatio": 0.03506397904666526
+    "canvasWidth": 787.3431027687177,
+    "canvasHeight": 23558.909325274275,
+    "aspectRatio": 0.03342018477587359
   },
   "degradationBudget": {
     "edgeNodeOcclusions": 0.15,
@@ -2797,7 +2797,7 @@
     "dump-40",
     "tuning"
   ],
-  "algorithmId": "r3b",
+  "algorithmId": "r3b-product",
   "algorithmVersion": "round3",
   "metricsVersion": "v2",
   "clearancePx": 16

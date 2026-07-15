@@ -74,6 +74,30 @@ const steps: Step[] = [
     name: 'stability',
     run: () => runPnpm(['--filter', 'listen-graph-layout-lab', 'stability'], 'stability'),
   },
+  {
+    // 收尾：重建真实 prod 包（r3b 模式），覆盖被 fixture-lab 污染的 dist。
+    // fixture-lab 模式会把 __listenGraphicFixture 注入 dist，prod 包必须不含。
+    name: 'build:r3b (prod candidate)',
+    run: () => runPnpm(['--filter', 'extension', 'build:r3b'], 'build:r3b (prod candidate)'),
+  },
+  {
+    // 验证候选 prod 包不含 fixture API（可发布性）。
+    name: 'verify no fixture API in dist',
+    run: () => {
+      console.log('\n========== [gate] verify no fixture API in dist ==========\n');
+      const sidepanelJs = path.join(DIST, 'sidepanel/sidepanel.js');
+      if (!fs.existsSync(sidepanelJs)) {
+        console.error(`[r3b-release-gate] FAIL: missing ${sidepanelJs}`);
+        process.exit(1);
+      }
+      const code = fs.readFileSync(sidepanelJs, 'utf8');
+      if (code.includes('__listenGraphicFixture')) {
+        console.error('[r3b-release-gate] FAIL: prod dist 含 __listenGraphicFixture（不可发布）');
+        process.exit(1);
+      }
+      console.log('[r3b-release-gate] dist 不含 fixture API ✓');
+    },
+  },
 ];
 
 console.log(`[r3b-release-gate] ROOT=${ROOT}`);

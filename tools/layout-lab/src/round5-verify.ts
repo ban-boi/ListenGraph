@@ -79,17 +79,51 @@ async function openSidepanel(context: BrowserContext, extensionId: string): Prom
 
 async function collectDomRects(page: Page): Promise<DomRect[]> {
   return page.evaluate(() => {
-    const cards = Array.from(document.querySelectorAll('[data-testid^="graph-node-card-"]'));
+    // 只选外层卡片，排除卡片内的 header/body/speaker 等子元素。
+    const SKIP = new Set(['header', 'body', 'speaker']);
+    const all = Array.from(document.querySelectorAll('[data-testid^="graph-node-card-"]'));
+    const cards = all.filter((el) => {
+      const tid = el.getAttribute('data-testid') ?? '';
+      const id = tid.replace(/^graph-node-card-/, '');
+      return id && !SKIP.has(id);
+    });
+    // 采集 flow-space 坐标（不受 viewport pan/zoom 影响）：
+    // 读 .react-flow__node 的 transform translate(x,y) 作 left/top，
+    // 用卡片 offsetWidth/offsetHeight 算 right/bottom。
+    // 修复：旧实现用 getBoundingClientRect()（屏幕坐标），会被 fitView 的 viewport zoom
+    // 缩放——#12 两节点图 zoom=2 时边长 244→488、clearance 门槛 16px 被放大成 32px。
+    // flow-space 让 overlap/edgeLength/clearance 都回到图坐标语义。
     return cards.map((el) => {
-      const r = el.getBoundingClientRect();
+      const rfNode = el.closest('.react-flow__node') as HTMLElement | null;
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      let left = 0;
+      let top = 0;
+      if (rfNode?.style?.transform) {
+        const m = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(rfNode.style.transform);
+        if (m) {
+          left = parseFloat(m[1]);
+          top = parseFloat(m[2]);
+        }
+      }
       return {
         id: el.getAttribute('data-testid') ?? '',
-        left: r.left,
-        top: r.top,
-        right: r.right,
-        bottom: r.bottom,
+        left,
+        top,
+        right: left + w,
+        bottom: top + h,
       };
     });
+  });
+}
+
+/** 记录 viewport zoom（屏幕可读性参考指标，不参与几何门槛）。 */
+async function readViewportZoom(page: Page): Promise<number | null> {
+  return page.evaluate(() => {
+    const vp = document.querySelector('.react-flow__viewport') as HTMLElement | null;
+    const t = vp?.style?.transform ?? '';
+    const m = /scale\(([\d.]+)\)/.exec(t);
+    return m ? parseFloat(m[1]) : null;
   });
 }
 
@@ -101,6 +135,7 @@ function toSampleMetrics(m: ReturnType<typeof computeDomLayoutMetrics>): SampleM
     pairCount: m.pairCount,
     edgeEdgeCrossings: m.edgeEdgeCrossings,
     nodeCount: m.nodeCount,
+    edgeCount: m.edgeCount,
   };
 }
 
@@ -114,7 +149,13 @@ async function measureReactCommitP95(page: Page, graph: MergedGraph): Promise<nu
       globalThis.__listenGraphicFixture?.loadGraph(g);
       const deadline = performance.now() + 10000;
       for (;;) {
-        const n = document.querySelectorAll('[data-testid^="graph-node-card-"]').length;
+        // 只数外层卡片（排除 header/body/speaker 子元素，否则计数 ×3/×4 导致过早满足）
+        const SKIP = new Set(['header', 'body', 'speaker']);
+        const n = Array.from(document.querySelectorAll('[data-testid^="graph-node-card-"]'))
+          .filter((el) => {
+            const id = (el.getAttribute('data-testid') ?? '').replace(/^graph-node-card-/, '');
+            return id && !SKIP.has(id);
+          }).length;
         if (n >= g.nodes.length) break;
         if (performance.now() > deadline) throw new Error('commit timeout');
         await new Promise<void>((r) => {
@@ -219,7 +260,7 @@ async function verifySequenceIncremental(dump: MergedGraph[]): Promise<void> {
   }
 }
 
-function measureP95(dump: MergedGraph[]): { p95: number; times: number[]; ok: boolean } {
+function measureP95(dump: MergedGraph[]): { p95: number; times: number[] } {
   const graph = dump[49];
   if (!graph) throw new Error('dump[49] missing');
   const sizes = computeAllNodeSizes(graph.nodes);
@@ -237,11 +278,8 @@ function measureP95(dump: MergedGraph[]): { p95: number; times: number[]; ok: bo
   console.log(
     `[perf] #49 computeIncrementalLayout times(ms)=${times.map((t) => t.toFixed(1)).join(',')} p95=${p95.toFixed(1)}`,
   );
-  const ok = p95 < 200;
-  if (!ok) {
-    console.error(`[perf] FAIL: compute p95 ${p95.toFixed(1)}ms >= 200ms`);
-  }
-  return { p95, times, ok };
+  // perf 判定（target warning / ceiling fail）统一在 evaluateRound5Gate 做，避免第二套判断源。
+  return { p95, times };
 }
 
 function writeSummaryAndExit(summary: Round5Summary): never {
@@ -250,6 +288,9 @@ function writeSummaryAndExit(summary: Round5Summary): never {
     path.join(OUT, 'summary.json'),
     JSON.stringify({ ...summary, gate }, null, 2),
   );
+  if (gate.warnings.length > 0) {
+    console.warn('[round5] WARN:\n - ' + gate.warnings.join('\n - '));
+  }
   if (gate.code !== 0) {
     console.error('[round5] FAIL:\n - ' + gate.failures.join('\n - '));
     process.exit(1);
@@ -294,7 +335,6 @@ async function main(): Promise<void> {
       perf: {
         computeP95: perfKernel.p95,
         reactCommitP95: REACT_COMMIT_P95_SKIPPED,
-        ok: perfKernel.ok,
       },
       sequenceOk: true,
     });
@@ -316,7 +356,6 @@ async function main(): Promise<void> {
     perf: {
       computeP95: perfKernel.p95,
       reactCommitP95,
-      ok: perfKernel.ok,
     },
     sequenceOk: true,
   });

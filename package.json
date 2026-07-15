@@ -29,8 +29,8 @@
     "compare:structure:segments": "pnpm --filter extension compare:structure:segments",
     "judge:acceptance": "pnpm --filter extension judge:acceptance",
     "test:layout-lab": "pnpm --filter listen-graph-layout-lab test",
-    "test:layout-regression": "pnpm --filter listen-graph-layout-lab run-regression --split regression",
-    "test:layout-regression:holdout": "pnpm --filter listen-graph-layout-lab run-regression --split holdout",
+    "test:layout-regression": "pnpm --filter listen-graph-layout-lab run-regression --engine product --split regression",
+    "test:layout-regression:holdout": "pnpm --filter listen-graph-layout-lab run-regression --engine product --split holdout",
     "test:r3b-release-gate": "pnpm --filter listen-graph-layout-lab release-gate"
   },
   "devDependencies": {
